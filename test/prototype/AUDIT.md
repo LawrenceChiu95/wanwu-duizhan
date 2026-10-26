@@ -63,7 +63,7 @@ A：真实Rapier撞击冲量×100×双方硬度比平方根；B：max(攻×克�
 
 ## 碰撞误差：已改善，不能宣布画面零穿模
 
-原独立距离查询在实际回放姿态量到单件5.35厘米、拼装7.15厘米重叠（calibration/before-position-correction-penetration.json）。增求解次数、刚度或120Hz试验未同时守住精度和节奏，原始回执见precision-*.json、step120-*.json；没有采用。
+原独立距离查询在实际回放姿态量到单件5.35厘米、拼装7.15厘米重叠（calibration/before-position-correction-penetration-check.json）。增求解次数、刚度或120Hz试验未同时守住精度和节奏，原始回执见precision-*.json、step120-*.json；没有采用。
 
 固定版保留60Hz Rapier，速度求解后用实际凸包距离做位置约束校正，连底座与所有挂件一起查；按对方质量占比分开，保持整体质心，不发伤害或附加速度。最多8次，停止目标0.5毫米，遇复杂多点接触可能未完全收敛；不是凭空传送来指定赢家。
 
