@@ -1,0 +1,34 @@
+[
+  {
+    "kind": "pbr",
+    "file": "pan-lux3d-pbr.glb",
+    "sha256": "8a73df24413a4f6d394c08b87658fabf03f2a058564155d6d6a0d19db611ff34",
+    "bytes": 20108344,
+    "hasTexture": true,
+    "verifyDrift": 0
+  },
+  {
+    "kind": "lite",
+    "file": "pan-lux3d.glb",
+    "sha256": "93429afe28f371797ed83a01298aafc838479eabe611dcfb6827f9c5583ffdfa",
+    "bytes": 707912,
+    "hasTexture": false,
+    "verifyDrift": 0
+  },
+  {
+    "kind": "pbr",
+    "file": "lamp-lux3d-pbr.glb",
+    "sha256": "0ecd18e7d38661e95b21848b292acadf500ab4bb709d16742b239dede4517b4a",
+    "bytes": 17186996,
+    "hasTexture": true,
+    "verifyDrift": 0
+  },
+  {
+    "kind": "lite",
+    "file": "lamp-lux3d.glb",
+    "sha256": "62943ef2c3fc87ef776ee2839ce969beee6b5274ebb8a89ba6e3446e7f1ead9a",
+    "bytes": 709292,
+    "hasTexture": false,
+    "verifyDrift": 0
+  }
+]
