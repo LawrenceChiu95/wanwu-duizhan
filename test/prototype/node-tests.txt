@@ -1,0 +1,17 @@
+
+> test
+> node --test ../test/prototype/sim.test.mjs
+
+✔ six normalized licensed GLBs, hull <=64, finite and mass = density*volume (5.798125ms)
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.181792ms)
+✔ real simulations: deterministic replay, A/B initial state, physical separation and HP accounting (270.044333ms)
+✔ compound COM follows layout; world part transforms and per-part hit identity (278.933584ms)
+✔ invalid input fails explicitly (1.3195ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1206.834042
