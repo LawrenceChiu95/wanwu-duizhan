@@ -1,0 +1,29 @@
+{
+  "isolatedDirectory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-calibration-OpYvim",
+  "variant": "step120",
+  "results": [
+    {
+      "type": "batch",
+      "mode": "B",
+      "seed": 2,
+      "left": "pot",
+      "right": "slipper",
+      "solverManifoldMaximum": 0.05346793308854103,
+      "renderedFrameMaximum": 0.012104268185794353,
+      "at": 52.46666666666667,
+      "over5cmFrames": 0,
+      "frames": 1801
+    },
+    {
+      "type": "layouts",
+      "mode": "B",
+      "seed": 1,
+      "layout": "front:pillow:forward|top:broom:vertical|side:pot:horizontal",
+      "solverManifoldMaximum": 0.08375681191682816,
+      "renderedFrameMaximum": 0,
+      "at": 0,
+      "over5cmFrames": 0,
+      "frames": 1062
+    }
+  ]
+}

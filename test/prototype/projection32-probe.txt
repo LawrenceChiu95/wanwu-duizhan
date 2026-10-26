@@ -1,0 +1,207 @@
+[
+  {
+    "type": "batch",
+    "source": "original 5.35cm failure",
+    "mode": "B",
+    "seed": 2,
+    "left": "pot",
+    "right": "slipper",
+    "diagnostics": {
+      "maxPenetration": 0.0005212766118347645,
+      "maxGeometricPenetration": 0.016063835471868515,
+      "maxResidualPenetration": 0.0003522232291288674,
+      "maxPositionCorrection": 0.016163835471868514,
+      "correctionSteps": 16,
+      "contactFrames": 25,
+      "longestContact": 0.03333333333333333
+    },
+    "renderedFrameMaximum": 0.00019067348330281675,
+    "at": 36.86666666666667,
+    "over1mmFrames": 0,
+    "frames": 1273
+  },
+  {
+    "type": "layouts",
+    "source": "original 7.15cm failure",
+    "mode": "B",
+    "seed": 1,
+    "layout": "front:pillow:forward|top:broom:vertical|side:pot:horizontal",
+    "diagnostics": {
+      "maxPenetration": 0.0004356795980129391,
+      "maxGeometricPenetration": 0.034498147666454315,
+      "maxResidualPenetration": 0.0004940032958984375,
+      "maxPositionCorrection": 0.07819281631074847,
+      "correctionSteps": 17,
+      "contactFrames": 34,
+      "longestContact": 0.05
+    },
+    "renderedFrameMaximum": 0.00022830592934042215,
+    "at": 15.6,
+    "over1mmFrames": 0,
+    "frames": 1346
+  },
+  {
+    "type": "batch",
+    "source": "current worst maxPenetration",
+    "mode": "A",
+    "seed": 2,
+    "left": "broom",
+    "right": "pot",
+    "diagnostics": {
+      "maxPenetration": 0.0013859739992767572,
+      "maxGeometricPenetration": 0.013174215331673622,
+      "maxResidualPenetration": 0.0003054290427826345,
+      "maxPositionCorrection": 0.013274215331673622,
+      "correctionSteps": 5,
+      "contactFrames": 13,
+      "longestContact": 0.03333333333333333
+    },
+    "renderedFrameMaximum": 0,
+    "at": 0,
+    "over1mmFrames": 0,
+    "frames": 704
+  },
+  {
+    "type": "batch",
+    "source": "current worst maxResidualPenetration",
+    "mode": "A",
+    "seed": 2,
+    "left": "pot",
+    "right": "pillow",
+    "diagnostics": {
+      "maxPenetration": 0.0004941051593050361,
+      "maxGeometricPenetration": 0.035926997661590576,
+      "maxResidualPenetration": 0.0004941094666719437,
+      "maxPositionCorrection": 0.03602699766159058,
+      "correctionSteps": 12,
+      "contactFrames": 17,
+      "longestContact": 0.03333333333333333
+    },
+    "renderedFrameMaximum": 0.00035223548184148967,
+    "at": 18.633333333333333,
+    "over1mmFrames": 0,
+    "frames": 970
+  },
+  {
+    "type": "batch",
+    "source": "current worst maxPenetration",
+    "mode": "B",
+    "seed": 2,
+    "left": "broom",
+    "right": "pot",
+    "diagnostics": {
+      "maxPenetration": 0.0013859739992767572,
+      "maxGeometricPenetration": 0.013174215331673622,
+      "maxResidualPenetration": 0.0003054290427826345,
+      "maxPositionCorrection": 0.013274215331673622,
+      "correctionSteps": 7,
+      "contactFrames": 16,
+      "longestContact": 0.03333333333333333
+    },
+    "renderedFrameMaximum": 0,
+    "at": 0,
+    "over1mmFrames": 0,
+    "frames": 940
+  },
+  {
+    "type": "batch",
+    "source": "current worst maxResidualPenetration",
+    "mode": "B",
+    "seed": 2,
+    "left": "pot",
+    "right": "pillow",
+    "diagnostics": {
+      "maxPenetration": 0.0004941051593050361,
+      "maxGeometricPenetration": 0.035926997661590576,
+      "maxResidualPenetration": 0.0004941094666719437,
+      "maxPositionCorrection": 0.03602699766159058,
+      "correctionSteps": 21,
+      "contactFrames": 34,
+      "longestContact": 0.03333333333333333
+    },
+    "renderedFrameMaximum": 0.00035223548184148967,
+    "at": 18.633333333333333,
+    "over1mmFrames": 0,
+    "frames": 1674
+  },
+  {
+    "type": "layouts",
+    "source": "current worst maxPenetration",
+    "mode": "A",
+    "seed": 3,
+    "layout": "front:pillow:forward|top:pot:vertical|side:broom:vertical",
+    "diagnostics": {
+      "maxPenetration": 0.003883741796016693,
+      "maxGeometricPenetration": 0.016979902982711792,
+      "maxResidualPenetration": 0.00022061086201574653,
+      "maxPositionCorrection": 0.01707990298271179,
+      "correctionSteps": 7,
+      "contactFrames": 25,
+      "longestContact": 0.05
+    },
+    "renderedFrameMaximum": 0.00013181826216168702,
+    "at": 10.266666666666666,
+    "over1mmFrames": 0,
+    "frames": 1479
+  },
+  {
+    "type": "layouts",
+    "source": "current worst maxResidualPenetration",
+    "mode": "A",
+    "seed": 2,
+    "layout": "front:pillow:vertical|top:pot:horizontal|side:broom:vertical",
+    "diagnostics": {
+      "maxPenetration": 0.0010095492471009493,
+      "maxGeometricPenetration": 0.020853316411376,
+      "maxResidualPenetration": 0.002042833948507905,
+      "maxPositionCorrection": 0.08782921669706709,
+      "correctionSteps": 14,
+      "contactFrames": 24,
+      "longestContact": 0.2833333333333333
+    },
+    "renderedFrameMaximum": 0.0012117649894207716,
+    "at": 10.666666666666666,
+    "over1mmFrames": 2,
+    "frames": 469
+  },
+  {
+    "type": "layouts",
+    "source": "current worst maxPenetration",
+    "mode": "B",
+    "seed": 3,
+    "layout": "front:pillow:forward|top:pot:vertical|side:broom:vertical",
+    "diagnostics": {
+      "maxPenetration": 0.003883741796016693,
+      "maxGeometricPenetration": 0.016979902982711792,
+      "maxResidualPenetration": 0.00022061086201574653,
+      "maxPositionCorrection": 0.01707990298271179,
+      "correctionSteps": 7,
+      "contactFrames": 25,
+      "longestContact": 0.05
+    },
+    "renderedFrameMaximum": 0.00013181826216168702,
+    "at": 10.266666666666666,
+    "over1mmFrames": 0,
+    "frames": 1479
+  },
+  {
+    "type": "layouts",
+    "source": "current worst maxResidualPenetration",
+    "mode": "B",
+    "seed": 2,
+    "layout": "front:pillow:vertical|top:pot:horizontal|side:broom:vertical",
+    "diagnostics": {
+      "maxPenetration": 0.0010095492471009493,
+      "maxGeometricPenetration": 0.020853316411376,
+      "maxResidualPenetration": 0.002042833948507905,
+      "maxPositionCorrection": 0.08782921669706709,
+      "correctionSteps": 14,
+      "contactFrames": 24,
+      "longestContact": 0.2833333333333333
+    },
+    "renderedFrameMaximum": 0.0012117649894207716,
+    "at": 10.666666666666666,
+    "over1mmFrames": 2,
+    "frames": 469
+  }
+]

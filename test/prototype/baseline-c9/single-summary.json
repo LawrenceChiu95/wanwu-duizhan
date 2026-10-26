@@ -1,0 +1,238 @@
+{
+  "rounds": 150,
+  "wallSeconds": 4.17957275,
+  "modes": {
+    "A": {
+      "averageDuration": 43.72111111111111,
+      "under20": 0,
+      "timeouts": 5,
+      "ringouts": 0,
+      "matrix": [
+        {
+          "item": "scissors",
+          "scissors": "—",
+          "lamp": "1/5",
+          "broom": "1/5",
+          "pot": "0/5",
+          "slipper": "5/5",
+          "pillow": "4/5"
+        },
+        {
+          "item": "lamp",
+          "scissors": "0/5",
+          "lamp": "—",
+          "broom": "0/5",
+          "pot": "0/5",
+          "slipper": "1/5",
+          "pillow": "2/5"
+        },
+        {
+          "item": "broom",
+          "scissors": "0/5",
+          "lamp": "0/5",
+          "broom": "—",
+          "pot": "0/5",
+          "slipper": "2/5",
+          "pillow": "0/5"
+        },
+        {
+          "item": "pot",
+          "scissors": "5/5",
+          "lamp": "1/5",
+          "broom": "0/5",
+          "pot": "—",
+          "slipper": "4/5",
+          "pillow": "2/5"
+        },
+        {
+          "item": "slipper",
+          "scissors": "0/5",
+          "lamp": "0/5",
+          "broom": "0/5",
+          "pot": "0/5",
+          "slipper": "—",
+          "pillow": "2/5"
+        },
+        {
+          "item": "pillow",
+          "scissors": "0/5",
+          "lamp": "0/5",
+          "broom": "0/5",
+          "pot": "0/5",
+          "slipper": "1/5",
+          "pillow": "—"
+        }
+      ],
+      "records": [
+        {
+          "item": "scissors",
+          "wins": 11,
+          "losses": 5,
+          "draws": 9
+        },
+        {
+          "item": "lamp",
+          "wins": 3,
+          "losses": 2,
+          "draws": 20
+        },
+        {
+          "item": "broom",
+          "wins": 2,
+          "losses": 1,
+          "draws": 22
+        },
+        {
+          "item": "pot",
+          "wins": 12,
+          "losses": 0,
+          "draws": 13
+        },
+        {
+          "item": "slipper",
+          "wins": 2,
+          "losses": 13,
+          "draws": 10
+        },
+        {
+          "item": "pillow",
+          "wins": 1,
+          "losses": 10,
+          "draws": 14
+        }
+      ]
+    },
+    "B": {
+      "averageDuration": 41.05466666666666,
+      "under20": 0,
+      "timeouts": 3,
+      "ringouts": 0,
+      "matrix": [
+        {
+          "item": "scissors",
+          "scissors": "—",
+          "lamp": "0/5",
+          "broom": "0/5",
+          "pot": "0/5",
+          "slipper": "5/5",
+          "pillow": "4/5"
+        },
+        {
+          "item": "lamp",
+          "scissors": "5/5",
+          "lamp": "—",
+          "broom": "2/5",
+          "pot": "0/5",
+          "slipper": "5/5",
+          "pillow": "5/5"
+        },
+        {
+          "item": "broom",
+          "scissors": "1/5",
+          "lamp": "0/5",
+          "broom": "—",
+          "pot": "0/5",
+          "slipper": "4/5",
+          "pillow": "0/5"
+        },
+        {
+          "item": "pot",
+          "scissors": "5/5",
+          "lamp": "5/5",
+          "broom": "5/5",
+          "pot": "—",
+          "slipper": "5/5",
+          "pillow": "5/5"
+        },
+        {
+          "item": "slipper",
+          "scissors": "0/5",
+          "lamp": "0/5",
+          "broom": "0/5",
+          "pot": "0/5",
+          "slipper": "—",
+          "pillow": "0/5"
+        },
+        {
+          "item": "pillow",
+          "scissors": "0/5",
+          "lamp": "0/5",
+          "broom": "2/5",
+          "pot": "0/5",
+          "slipper": "5/5",
+          "pillow": "—"
+        }
+      ],
+      "records": [
+        {
+          "item": "scissors",
+          "wins": 9,
+          "losses": 11,
+          "draws": 5
+        },
+        {
+          "item": "lamp",
+          "wins": 17,
+          "losses": 5,
+          "draws": 3
+        },
+        {
+          "item": "broom",
+          "wins": 5,
+          "losses": 9,
+          "draws": 11
+        },
+        {
+          "item": "pot",
+          "wins": 25,
+          "losses": 0,
+          "draws": 0
+        },
+        {
+          "item": "slipper",
+          "wins": 0,
+          "losses": 24,
+          "draws": 1
+        },
+        {
+          "item": "pillow",
+          "wins": 7,
+          "losses": 14,
+          "draws": 4
+        }
+      ]
+    }
+  },
+  "outcomes": {
+    "A": {
+      "rounds": 75,
+      "finishes": {
+        "contact": 61,
+        "timeout": 5,
+        "zone": 9
+      },
+      "draws": 44,
+      "under20": 0,
+      "min": 23.4,
+      "median": 44.1,
+      "q1": 37.53333333333333,
+      "q3": 50.016666666666666,
+      "max": 60
+    },
+    "B": {
+      "rounds": 75,
+      "finishes": {
+        "contact": 60,
+        "zone": 12,
+        "timeout": 3
+      },
+      "draws": 12,
+      "under20": 0,
+      "min": 24.45,
+      "median": 41.15,
+      "q1": 34.96666666666667,
+      "q3": 45.75,
+      "max": 60
+    }
+  }
+}

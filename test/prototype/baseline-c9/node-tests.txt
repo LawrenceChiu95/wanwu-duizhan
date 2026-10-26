@@ -1,0 +1,14 @@
+✔ six licensed GLBs plus two Lux3D variants: measured geometry, hashes and material mass (18.651208ms)
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.52975ms)
+✔ real simulations: deterministic replay, A/B initial state, physical separation and HP accounting (529.9615ms)
+✔ 162 unique layouts, same-seed contact reversal and timeout percentage decision (319.974625ms)
+✔ compound COM follows layout; world part transforms and per-part hit identity (1055.441959ms)
+✔ invalid input fails explicitly (2.459833ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2696.918458

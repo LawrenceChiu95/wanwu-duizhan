@@ -1,0 +1,96 @@
+{
+  "items": 8,
+  "models": [
+    {
+      "id": "scissors",
+      "maxBoundsDrift": 6.938893903907228e-18,
+      "textures": []
+    },
+    {
+      "id": "lamp",
+      "maxBoundsDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "broom",
+      "maxBoundsDrift": 1.3877787807814457e-17,
+      "textures": []
+    },
+    {
+      "id": "pot",
+      "maxBoundsDrift": 2.7755575615628914e-17,
+      "textures": []
+    },
+    {
+      "id": "slipper",
+      "maxBoundsDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "pillow",
+      "maxBoundsDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "pan-lux3d",
+      "maxBoundsDrift": 0.0001035282253126768,
+      "textures": [
+        {
+          "key": "map",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "metalnessMap",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "roughnessMap",
+          "width": 1024,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "lamp-lux3d",
+      "maxBoundsDrift": 0.0006396158175160233,
+      "textures": [
+        {
+          "key": "map",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "metalnessMap",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "roughnessMap",
+          "width": 1024,
+          "height": 1024
+        }
+      ]
+    }
+  ],
+  "deterministic": true,
+  "sameInitial": true,
+  "sha256": "b49f4a675f5b57c8a8910589a95bbce3b0ea7f7c384b5610a8ab8fca01445c2c",
+  "rounds": [
+    {
+      "mode": "A",
+      "duration": 16.383333333333333,
+      "winner": 0,
+      "events": 11
+    },
+    {
+      "mode": "B",
+      "duration": 23.983333333333334,
+      "winner": 0,
+      "events": 15
+    }
+  ],
+  "computeMs": 229.5,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+}

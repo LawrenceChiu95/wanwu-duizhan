@@ -1,0 +1,11 @@
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.754458ms)
+✔ invalid input fails explicitly (0.653917ms)
+✔ attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker (0.689375ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 109.535167

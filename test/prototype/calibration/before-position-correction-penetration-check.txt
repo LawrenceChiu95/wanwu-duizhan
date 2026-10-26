@@ -1,0 +1,25 @@
+[
+  {
+    "type": "batch",
+    "mode": "B",
+    "seed": 2,
+    "left": "pot",
+    "right": "slipper",
+    "solverManifoldMaximum": 0.05346793308854103,
+    "renderedFrameMaximum": 0.05346793308854103,
+    "at": 33.5,
+    "over5cmFrames": 1,
+    "frames": 1801
+  },
+  {
+    "type": "layouts",
+    "mode": "B",
+    "seed": 1,
+    "layout": "front:pillow:forward|top:broom:vertical|side:pot:horizontal",
+    "solverManifoldMaximum": 0.08375681191682816,
+    "renderedFrameMaximum": 0.07153172791004181,
+    "at": 14.2,
+    "over5cmFrames": 1,
+    "frames": 1116
+  }
+]

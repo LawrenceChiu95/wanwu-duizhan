@@ -1,0 +1,1 @@
+{"isolatedDirectory":"/Users/lawrence/Projects/agent-copies.noindex/wanwu-calibration-meL78e","summary":{"A":{"under20":11,"shortest":13.1,"median":32.86666666666667,"finishes":{"contact":65,"zone":10}},"B":{"under20":4,"shortest":13.733333333333333,"median":37.516666666666666,"finishes":{"contact":65,"zone":7,"timeout":3}}}}

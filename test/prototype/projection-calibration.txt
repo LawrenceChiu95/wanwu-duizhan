@@ -1,0 +1,139 @@
+{
+  "wallSeconds": 66.418248292,
+  "goals": {
+    "A": {
+      "stats": {
+        "rounds": 75,
+        "finishes": {
+          "contact": 59,
+          "zone": 12,
+          "timeout": 4
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 4,
+        "under20": 2,
+        "under8": 0,
+        "min": 16.383333333333333,
+        "q1": 30.566666666666666,
+        "median": 39,
+        "q3": 48.1,
+        "max": 60
+      },
+      "favoredPairs": 13,
+      "totalPairs": 15,
+      "undefeatedAll": [],
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true,
+        "matchupDifference": true,
+        "noAllWinOrLoss": true
+      },
+      "passed": true
+    },
+    "B": {
+      "stats": {
+        "rounds": 75,
+        "finishes": {
+          "contact": 53,
+          "zone": 14,
+          "timeout": 8
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 8,
+        "under20": 0,
+        "under8": 0,
+        "min": 20.416666666666668,
+        "q1": 33.1,
+        "median": 43.43333333333333,
+        "q3": 51.916666666666664,
+        "max": 60
+      },
+      "favoredPairs": 6,
+      "totalPairs": 15,
+      "undefeatedAll": [],
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": false,
+        "simultaneous": true,
+        "matchupDifference": true,
+        "noAllWinOrLoss": true
+      },
+      "passed": false
+    }
+  },
+  "assembly": {
+    "A": {
+      "stats": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 426,
+          "zone": 56,
+          "timeout": 4
+        },
+        "draws": 7,
+        "simultaneousKOs": 11,
+        "resolvedByAttacker": 4,
+        "timeouts": 4,
+        "under20": 27,
+        "under8": 0,
+        "min": 11.433333333333334,
+        "q1": 27.7,
+        "median": 34.733333333333334,
+        "q3": 42.53333333333333,
+        "max": 60
+      },
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true
+      }
+    },
+    "B": {
+      "stats": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 424,
+          "zone": 53,
+          "timeout": 9
+        },
+        "draws": 0,
+        "simultaneousKOs": 2,
+        "resolvedByAttacker": 2,
+        "timeouts": 9,
+        "under20": 12,
+        "under8": 0,
+        "min": 11.433333333333334,
+        "q1": 30.166666666666668,
+        "median": 37.45,
+        "q3": 45.45,
+        "max": 60
+      },
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true
+      }
+    }
+  }
+}

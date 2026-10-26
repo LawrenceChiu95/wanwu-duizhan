@@ -1,0 +1,4 @@
+import fs from 'node:fs/promises';import {spawnSync} from 'node:child_process';
+const root='/Users/lawrence/Projects/wanwu-duizhan',catalog=JSON.parse(await fs.readFile(root+'/data/catalog.json'));
+for(const value of [3.8,4.5]){const c=structuredClone(catalog);c.arena.statDamageScale=value;await fs.writeFile('data/catalog.json',JSON.stringify(c));
+ const r=spawnSync(process.execPath,['--input-type=module','-e',"import {runBatch,singleGoals} from './sim/batch.js';const rows=await runBatch();console.log(JSON.stringify({rows,goals:Object.fromEntries(['A','B'].map(mode=>[mode,singleGoals(rows.filter(r=>r.mode===mode))]))}));"],{encoding:'utf8',maxBuffer:1e7});if(r.status)throw Error(r.stderr);const x={statDamageScale:value,...JSON.parse(r.stdout)};await fs.writeFile(root+'/test/prototype/projection-scale-'+value+'.json',JSON.stringify(x,null,2));console.log(JSON.stringify({...x,rows:undefined}));}
