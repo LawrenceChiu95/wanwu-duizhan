@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import RAPIER from '../../sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs';
-import {simulateV3,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner} from '../../sim/v3.js';
+import {simulateV3,createV3Match,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner} from '../../sim/v3.js';
 import {loadRules,strikeRoles}from'../../sim/index.js';
-import{vec,arr,add,sub,rotate,euler,length}from'../../sim/math.js';
+import{vec,arr,add,sub,rotate,euler,length,random}from'../../sim/math.js';
 import{definition}from'./probe.mjs';
 const digest=r=>crypto.createHash('sha256').update(JSON.stringify(r)).digest('hex');
 const c=await loadRules(),rules=await loadV3Rules(),catalog=await loadCatalog();
@@ -103,4 +103,36 @@ test('same-step double break: less overkill wins, exact tie is a draw, reason to
  assert.equal(why.target,1);assert.equal(why.attacker,0);assert.equal(broken.length,2);assert.equal(why.loserPartsLeft,0);
  assert.deepEqual(why.loserBroken.map(b=>b.item).sort(),['lamp-lux3d','pan-lux3d']);
  assert.equal(r.decisive.eventIndex,r.events.indexOf(r.events.findLast(e=>e.t===ko.t&&e.target===1&&e.targetPart==='core'&&e.hpAfter===0)));
+});
+test('manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical',async()=>{
+ const fighters=[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
+ // Live: step one at a time like the page does, pressing at uneven moments (some on cooldown and ignored).
+ const m=await createV3Match({fighters,mode:'A',seed:5,manual:{sides:['input','ai']}}),pick=random(99);let next=20,tries=0;
+ while(!m.done){if(m.step>=next){m.press(0,pick()<.5?'dash':'block');tries++;next=m.step+1+Math.floor(pick()*90);}m.advance();}
+ const live=m.result(),inputs=live.meta.manual.inputs;
+ assert.ok(inputs.length>=4&&inputs.length<tries,`${inputs.length} of ${tries} presses taken`);
+ assert.deepEqual(live.events.filter(e=>e.type==='press'&&e.side===0).map(e=>[e.t,e.action]),inputs.map(x=>[x.step*live.meta.rules.dt,x.action]));
+ assert.ok(live.events.some(e=>e.type==='dash'&&e.phase==='go'&&e.side===1)&&live.events.some(e=>e.type==='block'&&e.side===1),'the computer dashes and blocks');
+ const again=await simulateV3({fighters,mode:'A',seed:5,manual:{sides:['input','ai'],inputs}});
+ assert.equal(crypto.createHash('sha256').update(JSON.stringify(again)).digest('hex'),crypto.createHash('sha256').update(JSON.stringify(live)).digest('hex'));
+ // Computer on both sides: fixed by the seed.
+ const ai=()=>simulateV3({fighters,mode:'A',seed:11,manual:{sides:['ai','ai']}});
+ assert.equal(JSON.stringify(await ai()),JSON.stringify(await ai()));
+ // Auto replays carry no manual rules or events.
+ const auto=await simulateV3({fighters,mode:'A',seed:5});
+ assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
+});
+test('manual mode: a lunge into a raised shield is bounced (parry), a landed lunge hits harder',async()=>{
+ const fighters=[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
+ const r=await simulateV3({fighters,mode:'A',seed:3,manual:{sides:['ai','ai']}}),M=r.meta.rules.manual;
+ const parry=r.events.find(e=>e.type==='parry'),landed=r.events.find(e=>(e.type==='hit'||e.type==='weak')&&e.dash&&!e.shield&&e.role==='attack');
+ assert.ok(parry,'a parry');assert.ok(landed,'a landed lunge');
+ assert.ok(r.events.some(e=>e.type==='dash'&&e.phase==='end'&&e.outcome==='blocked'&&e.side===parry.attacker&&e.t===parry.t));
+ assert.ok(landed.damageBeforeHpClamp>=Math.min(landed.rawDamage,landed.damageCap)*M.dashDamage-1e-9);
+ // The lunger bounces hard; the shield holder barely moves (unless it was lunging itself in the same instant).
+ for(const p of r.events.filter(e=>e.type==='parry')){
+  const recoil=r.events.find(e=>e.type==='recoil'&&e.t===p.t),both=r.events.some(e=>e.type==='dash'&&e.phase==='end'&&e.t===p.t&&e.side===p.target);
+  assert.equal(recoil.recoilScale[p.attacker],M.bounceRecoil);if(!both)assert.equal(recoil.recoilScale[p.target],M.blockRecoil);
+ }
+ for(const e of r.events.filter(e=>(e.type==='hit'||e.type==='weak')&&e.shield))assert.ok(e.damageBeforeHpClamp<=e.rawDamage*M.blockDamage+1e-9);
 });

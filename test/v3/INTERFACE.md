@@ -28,3 +28,10 @@ const replay=await simulateV3({fighters:[fighter('broom'),fighter('pot')],mode:'
 持续接触达到0.1秒的段另报`meta.diagnostics.scrapeEpisodes/scrapeCount/scrapeDuration/maxScrapeDuration`，持续段中的重复冲量不重复计有效撞击；有力度的初次接近仍是一撞。
 
 三个可直接播放的完整回放见 `samples/index.json`、`samples/ordinary.json`、`samples/breaks.json`、`samples/weak.json`；每份都有完整输入及参数快照。重新生成：`nice -n 20 node test/v3/samples.mjs`。旧版/新版同种子对照另存 `replays/`，目前尚未收齐。
+
+## 手动模式（冲 / 挡，10-27 晚）
+
+- 入口：`simulateV3({fighters,mode,seed,manual})` 整局算完；`createV3Match({...同上})` 一步一步走（网页实时打用它）：`m.advance()` 走一个物理步（1/120 秒），`m.press(side,'dash'|'block')` 排队、下一步开头生效（冷却中按了不算、不记），`m.control(side)` 给按钮状态（`dashIn/blockIn` 还要几秒、`charging/dashing/shield`），`m.done` 后 `m.result()` 就是和 `simulateV3` 一样的回放。
+- `manual={sides:[a,b],inputs}`：每边 `'input'`（玩家按键，或回放时按 `inputs=[{step,side,action}]` 在第 step 步开头按）或 `'ai'`（电脑：每 0.1 秒看一次，对面在蓄力/冲时有一定概率挡，距离合适时有一定概率冲；独立种子流，同种子结果固定）。回放 `meta.manual={sides,inputs}` 记下玩家实际生效的按键；拿它重算逐字节一致（`sim.test.mjs`、`cross-engine.mjs` 都覆盖）。不传 `manual` 时上面这些一概不跑，`meta.rules` 也不带 `manual` 段，自动版回放和加手动模式之前逐字节相同。
+- 参数在 `v3-rules.json` 的 `manual`：冲＝蓄力 0.3 秒（刹住、不追）→ 以 5 m/s 扑向对方核心 0.45 秒（不受中心吸、速度上限 5.5）→ 冷却 4.5 秒；扑中的那一下算冲的一方出手（哪件碰到哪件仍由物理定），伤害 ×1.25、对方击退 ×1.6，不受伤害和反冲冷却限制。挡＝护盾 1 秒，期间受到的伤害 ×0.3、击退 ×0.3，冷却 5 秒；冲撞上护盾＝被弹开（冲的一方击退 ×2.6）。
+- 事件：`press {side,action,source}`；`dash {side,phase:'charge'|'go'|'end',until?,dir?,outcome?:'hit'|'blocked'|'miss',point?}`；`block {side,until}`；`parry {attacker,target,point}`（冲被挡住）；`hit/weak` 另有 `dash`（冲的这一下）、`shield`（目标举着盾）、`parry`；`recoil` 另有 `recoilScale:[左,右]`。`decisive.why` 另有 `dash`（决定胜负那一下是不是冲出来的）。

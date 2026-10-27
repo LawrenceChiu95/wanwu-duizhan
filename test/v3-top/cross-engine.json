@@ -1,7 +1,7 @@
 {
- "games": 25,
+ "games": 30,
  "node": "v25.5.0",
  "chrome": "Chrome/156.0.0.0",
- "equal": 25,
+ "equal": 30,
  "mismatched": []
 }

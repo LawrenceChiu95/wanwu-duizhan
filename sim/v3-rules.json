@@ -83,5 +83,22 @@
   "damageScale": {
     "A": 0.8,
     "B": 1
+  },
+  "manual": {
+    "chargeTime": 0.3,
+    "chargeBrake": 6,
+    "dashTime": 0.45,
+    "dashSpeed": 5,
+    "dashSpeedLimit": 5.5,
+    "dashThrust": 8,
+    "dashCooldown": 4.5,
+    "dashDamage": 1.25,
+    "dashRecoil": 1.6,
+    "blockTime": 1,
+    "blockCooldown": 5,
+    "blockDamage": 0.3,
+    "blockRecoil": 0.3,
+    "bounceRecoil": 2.6,
+    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "dashChance": 0.25, "blockRange": 2.8, "blockReact": 0.15}
   }
 }
