@@ -1359,7 +1359,7 @@
       "mass": 2.5,
       "source": {
         "url": "https://www.aholo3d.cn/ (Aholo Lux3D 生成)",
-        "author": "Wren / Aholo Lux3D",
+        "author": "Aholo Lux3D",
         "license": "本人生成，按 Aholo 黑客松条款使用",
         "sourceSha256": "0bb96cdac5351e4c7b0825f9e72e30ac94b43dbbd0201641f5ac9075cb7adf6c",
         "normalizedSha256": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265"
@@ -1572,7 +1572,7 @@
       "mass": 1.5,
       "source": {
         "url": "https://www.aholo3d.cn/ (Aholo Lux3D 生成)",
-        "author": "Wren / Aholo Lux3D",
+        "author": "Aholo Lux3D",
         "license": "本人生成，按 Aholo 黑客松条款使用",
         "sourceSha256": "da321870bfa4f00fad1aa6d43ab017da811646d00605f35459ac9087f5b651e9",
         "normalizedSha256": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457"
