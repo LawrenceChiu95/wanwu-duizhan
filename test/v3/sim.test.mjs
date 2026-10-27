@@ -122,12 +122,14 @@ test('manual mode: presses taken per fixed step and recorded; replaying the same
  const auto=await simulateV3({fighters,mode:'A',seed:5});
  assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
 });
-test('manual mode: a lunge into a raised shield is bounced (parry), a landed lunge hits harder',async()=>{
+test('manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap',async()=>{
  const fighters=[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
  const r=await simulateV3({fighters,mode:'A',seed:3,manual:{sides:['ai','ai']}}),M=r.meta.rules.manual;
  const parry=r.events.find(e=>e.type==='parry'),landed=r.events.find(e=>(e.type==='hit'||e.type==='weak')&&e.dash&&!e.shield&&e.role==='attack');
  assert.ok(parry,'a parry');assert.ok(landed,'a landed lunge');
  assert.ok(r.events.some(e=>e.type==='dash'&&e.phase==='end'&&e.outcome==='blocked'&&e.side===parry.attacker&&e.t===parry.t));
+ // Deliberate (Elara, after Sol d75073bd): the 30% / 40% single-hit cap is for ordinary impacts; a landed lunge
+ // multiplies by dashDamage (1.25) AFTER the cap, so one hit can take up to 37.5% / 50% (a full core still needs two).
  assert.ok(landed.damageBeforeHpClamp>=Math.min(landed.rawDamage,landed.damageCap)*M.dashDamage-1e-9);
  // The lunger bounces hard; the shield holder barely moves (unless it was lunging itself in the same instant).
  for(const p of r.events.filter(e=>e.type==='parry')){
