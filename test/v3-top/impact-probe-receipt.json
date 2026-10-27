@@ -1,0 +1,919 @@
+{
+ "method": {
+  "games": "6 item pairs × seeds 1–4, mode A (same as feel.mjs); v1 = one item at the core; top = item out at e0, pillow (pan-lux3d for pillow) hugging at e180",
+  "sha256": "sha256 of JSON.stringify(replay); probeOff runs finish before impact-probe.mjs is imported (World.step unwrapped)",
+  "readStep": "the physics step of the hit event (t / dt); v1 dt = 1/60, top dt = 1/120",
+  "firstImpulseStep": "first step of the unbroken run of steps with solver impulse between the two fighters that ends at readStep",
+  "oldReading": "hit event normalSpeeds[0] + normalSpeeds[1] (what feel.mjs used before R2)",
+  "preImpact": "approach speed along the contact normal from the velocities just before firstImpulseStep (the R2 reading)",
+  "atReadStep": "the same signed reading taken just before readStep, for comparison"
+ },
+ "summary": {
+  "replaysEqual": true,
+  "games": 24,
+  "v1": {
+   "hits": 149,
+   "late": 35,
+   "lateOldMedian": 0.449,
+   "latePreImpactMedian": 1.0206
+  },
+  "top": {
+   "hits": 549,
+   "late": 0
+  }
+ },
+ "late": {
+  "v1": [
+   {
+    "game": 0,
+    "a": "broom",
+    "b": "pan-lux3d",
+    "seed": 1,
+    "t": 10.033333,
+    "readStep": 602,
+    "firstImpulseStep": 601,
+    "stepsLate": 1,
+    "oldReading": 0.0964,
+    "preImpact": 0.7814,
+    "atReadStep": -0.6902
+   },
+   {
+    "game": 1,
+    "a": "broom",
+    "b": "pan-lux3d",
+    "seed": 2,
+    "t": 4.35,
+    "readStep": 261,
+    "firstImpulseStep": 260,
+    "stepsLate": 1,
+    "oldReading": 0.7183,
+    "preImpact": 1.8569,
+    "atReadStep": -1.1724
+   },
+   {
+    "game": 4,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 1,
+    "t": 4.316667,
+    "readStep": 259,
+    "firstImpulseStep": 258,
+    "stepsLate": 1,
+    "oldReading": 0.0763,
+    "preImpact": 1.4686,
+    "atReadStep": -1.97
+   },
+   {
+    "game": 4,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 1,
+    "t": 15.983333,
+    "readStep": 959,
+    "firstImpulseStep": 958,
+    "stepsLate": 1,
+    "oldReading": 3.9979,
+    "preImpact": 3.1545,
+    "atReadStep": 3.9979
+   },
+   {
+    "game": 4,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 1,
+    "t": 44.733333,
+    "readStep": 2684,
+    "firstImpulseStep": 2683,
+    "stepsLate": 1,
+    "oldReading": 0.6837,
+    "preImpact": 0.9757,
+    "atReadStep": -0.9309
+   },
+   {
+    "game": 4,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 1,
+    "t": 57.566667,
+    "readStep": 3454,
+    "firstImpulseStep": 3453,
+    "stepsLate": 1,
+    "oldReading": 3.6057,
+    "preImpact": 1.121,
+    "atReadStep": 2.9592
+   },
+   {
+    "game": 5,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 2,
+    "t": 26.55,
+    "readStep": 1593,
+    "firstImpulseStep": 1592,
+    "stepsLate": 1,
+    "oldReading": 0.0468,
+    "preImpact": 1.6182,
+    "atReadStep": -2.0253
+   },
+   {
+    "game": 5,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 2,
+    "t": 32.183333,
+    "readStep": 1931,
+    "firstImpulseStep": 1929,
+    "stepsLate": 2,
+    "oldReading": 1.0098,
+    "preImpact": 0.9549,
+    "atReadStep": 1.0098
+   },
+   {
+    "game": 5,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 2,
+    "t": 39.916667,
+    "readStep": 2395,
+    "firstImpulseStep": 2394,
+    "stepsLate": 1,
+    "oldReading": 0.2097,
+    "preImpact": 1.0177,
+    "atReadStep": 0.489
+   },
+   {
+    "game": 5,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 2,
+    "t": 45.266667,
+    "readStep": 2716,
+    "firstImpulseStep": 2715,
+    "stepsLate": 1,
+    "oldReading": 2.0526,
+    "preImpact": 0.9477,
+    "atReadStep": 2.0526
+   },
+   {
+    "game": 5,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 2,
+    "t": 51.133333,
+    "readStep": 3068,
+    "firstImpulseStep": 3067,
+    "stepsLate": 1,
+    "oldReading": 3.2478,
+    "preImpact": 2.2659,
+    "atReadStep": 3.2478
+   },
+   {
+    "game": 6,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 3,
+    "t": 4.333333,
+    "readStep": 260,
+    "firstImpulseStep": 258,
+    "stepsLate": 2,
+    "oldReading": 2.4,
+    "preImpact": 2.6784,
+    "atReadStep": -1.5122
+   },
+   {
+    "game": 6,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 3,
+    "t": 10.45,
+    "readStep": 627,
+    "firstImpulseStep": 626,
+    "stepsLate": 1,
+    "oldReading": 0.7497,
+    "preImpact": 2.8077,
+    "atReadStep": 0.466
+   },
+   {
+    "game": 6,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 3,
+    "t": 24.633333,
+    "readStep": 1478,
+    "firstImpulseStep": 1477,
+    "stepsLate": 1,
+    "oldReading": 0.3692,
+    "preImpact": 1.8842,
+    "atReadStep": -2.3582
+   },
+   {
+    "game": 6,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 3,
+    "t": 46.816667,
+    "readStep": 2809,
+    "firstImpulseStep": 2808,
+    "stepsLate": 1,
+    "oldReading": 0.5553,
+    "preImpact": 0.1504,
+    "atReadStep": 0.3059
+   },
+   {
+    "game": 7,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 4,
+    "t": 4.1,
+    "readStep": 246,
+    "firstImpulseStep": 245,
+    "stepsLate": 1,
+    "oldReading": 0.7822,
+    "preImpact": 2.7253,
+    "atReadStep": 0.7384
+   },
+   {
+    "game": 7,
+    "a": "scissors",
+    "b": "pillow",
+    "seed": 4,
+    "t": 25.95,
+    "readStep": 1557,
+    "firstImpulseStep": 1556,
+    "stepsLate": 1,
+    "oldReading": 0.2807,
+    "preImpact": 1.2687,
+    "atReadStep": -0.7198
+   },
+   {
+    "game": 9,
+    "a": "lamp-lux3d",
+    "b": "slipper",
+    "seed": 2,
+    "t": 8.466667,
+    "readStep": 508,
+    "firstImpulseStep": 507,
+    "stepsLate": 1,
+    "oldReading": 0.449,
+    "preImpact": 1.2355,
+    "atReadStep": -0.9441
+   },
+   {
+    "game": 9,
+    "a": "lamp-lux3d",
+    "b": "slipper",
+    "seed": 2,
+    "t": 18.5,
+    "readStep": 1110,
+    "firstImpulseStep": 1109,
+    "stepsLate": 1,
+    "oldReading": 0.3378,
+    "preImpact": 1.632,
+    "atReadStep": -1.5298
+   },
+   {
+    "game": 10,
+    "a": "lamp-lux3d",
+    "b": "slipper",
+    "seed": 3,
+    "t": 44.833333,
+    "readStep": 2690,
+    "firstImpulseStep": 2688,
+    "stepsLate": 2,
+    "oldReading": 1.4607,
+    "preImpact": 2.9692,
+    "atReadStep": 1.4607
+   },
+   {
+    "game": 11,
+    "a": "lamp-lux3d",
+    "b": "slipper",
+    "seed": 4,
+    "t": 25.516667,
+    "readStep": 1531,
+    "firstImpulseStep": 1530,
+    "stepsLate": 1,
+    "oldReading": 0.2265,
+    "preImpact": 0.8088,
+    "atReadStep": -0.8334
+   },
+   {
+    "game": 13,
+    "a": "pot",
+    "b": "broom",
+    "seed": 2,
+    "t": 12.9,
+    "readStep": 774,
+    "firstImpulseStep": 773,
+    "stepsLate": 1,
+    "oldReading": 0.472,
+    "preImpact": 0.7073,
+    "atReadStep": -0.5925
+   },
+   {
+    "game": 14,
+    "a": "pot",
+    "b": "broom",
+    "seed": 3,
+    "t": 31.166667,
+    "readStep": 1870,
+    "firstImpulseStep": 1869,
+    "stepsLate": 1,
+    "oldReading": 0.3362,
+    "preImpact": 0.0633,
+    "atReadStep": 0.0609
+   },
+   {
+    "game": 15,
+    "a": "pot",
+    "b": "broom",
+    "seed": 4,
+    "t": 15.466667,
+    "readStep": 928,
+    "firstImpulseStep": 927,
+    "stepsLate": 1,
+    "oldReading": 0.0507,
+    "preImpact": 1.367,
+    "atReadStep": -0.9058
+   },
+   {
+    "game": 15,
+    "a": "pot",
+    "b": "broom",
+    "seed": 4,
+    "t": 21.033333,
+    "readStep": 1262,
+    "firstImpulseStep": 1261,
+    "stepsLate": 1,
+    "oldReading": 0.7582,
+    "preImpact": 1.0206,
+    "atReadStep": 0.1218
+   },
+   {
+    "game": 15,
+    "a": "pot",
+    "b": "broom",
+    "seed": 4,
+    "t": 45.05,
+    "readStep": 2703,
+    "firstImpulseStep": 2702,
+    "stepsLate": 1,
+    "oldReading": 0.7001,
+    "preImpact": 0.2394,
+    "atReadStep": -0.1271
+   },
+   {
+    "game": 16,
+    "a": "pillow",
+    "b": "lamp",
+    "seed": 1,
+    "t": 18.366667,
+    "readStep": 1102,
+    "firstImpulseStep": 1101,
+    "stepsLate": 1,
+    "oldReading": 0.3506,
+    "preImpact": 0.268,
+    "atReadStep": -0.1688
+   },
+   {
+    "game": 17,
+    "a": "pillow",
+    "b": "lamp",
+    "seed": 2,
+    "t": 46.866667,
+    "readStep": 2812,
+    "firstImpulseStep": 2811,
+    "stepsLate": 1,
+    "oldReading": 0.3545,
+    "preImpact": 0.9839,
+    "atReadStep": -0.6178
+   },
+   {
+    "game": 18,
+    "a": "pillow",
+    "b": "lamp",
+    "seed": 3,
+    "t": 23.1,
+    "readStep": 1386,
+    "firstImpulseStep": 1385,
+    "stepsLate": 1,
+    "oldReading": 0.1471,
+    "preImpact": 1.4122,
+    "atReadStep": -1.0785
+   },
+   {
+    "game": 18,
+    "a": "pillow",
+    "b": "lamp",
+    "seed": 3,
+    "t": 30.55,
+    "readStep": 1833,
+    "firstImpulseStep": 1832,
+    "stepsLate": 1,
+    "oldReading": 0.2305,
+    "preImpact": 1.0116,
+    "atReadStep": -0.5894
+   },
+   {
+    "game": 18,
+    "a": "pillow",
+    "b": "lamp",
+    "seed": 3,
+    "t": 55.916667,
+    "readStep": 3355,
+    "firstImpulseStep": 3354,
+    "stepsLate": 1,
+    "oldReading": 0.2158,
+    "preImpact": 0.2338,
+    "atReadStep": -0.1798
+   },
+   {
+    "game": 20,
+    "a": "slipper",
+    "b": "scissors",
+    "seed": 1,
+    "t": 58.733333,
+    "readStep": 3524,
+    "firstImpulseStep": 3523,
+    "stepsLate": 1,
+    "oldReading": 0.3104,
+    "preImpact": 0.7323,
+    "atReadStep": 0.1342
+   },
+   {
+    "game": 21,
+    "a": "slipper",
+    "b": "scissors",
+    "seed": 2,
+    "t": 4.35,
+    "readStep": 261,
+    "firstImpulseStep": 260,
+    "stepsLate": 1,
+    "oldReading": 0.4665,
+    "preImpact": 0.6128,
+    "atReadStep": 0.4081
+   },
+   {
+    "game": 22,
+    "a": "slipper",
+    "b": "scissors",
+    "seed": 3,
+    "t": 51.316667,
+    "readStep": 3079,
+    "firstImpulseStep": 3078,
+    "stepsLate": 1,
+    "oldReading": 1.4185,
+    "preImpact": 2.1772,
+    "atReadStep": 1.4185
+   },
+   {
+    "game": 23,
+    "a": "slipper",
+    "b": "scissors",
+    "seed": 4,
+    "t": 42.533333,
+    "readStep": 2552,
+    "firstImpulseStep": 2551,
+    "stepsLate": 1,
+    "oldReading": 0.347,
+    "preImpact": 0.926,
+    "atReadStep": -1.0992
+   }
+  ],
+  "top": []
+ },
+ "rows": [
+  {
+   "game": 0,
+   "a": "broom",
+   "b": "pan-lux3d",
+   "seed": 1,
+   "v1": {
+    "probeOff": "37349c4fa59bc72fd1f4bb2a98c5487503ffb0f1a1d9193ce39f70ed9ab2a5e2",
+    "probeOn": "37349c4fa59bc72fd1f4bb2a98c5487503ffb0f1a1d9193ce39f70ed9ab2a5e2",
+    "equal": true,
+    "steps": 1661
+   },
+   "top": {
+    "probeOff": "cf1639a31c0a56dceaa82b0bda0185e8eb9d9fd84eabe29243a7d4ca9e4eda11",
+    "probeOn": "cf1639a31c0a56dceaa82b0bda0185e8eb9d9fd84eabe29243a7d4ca9e4eda11",
+    "equal": true,
+    "steps": 3790
+   }
+  },
+  {
+   "game": 1,
+   "a": "broom",
+   "b": "pan-lux3d",
+   "seed": 2,
+   "v1": {
+    "probeOff": "9e4b541837c39f4faf1beb682584e23eca96a20a74d3e74f2c3012bc86da2e77",
+    "probeOn": "9e4b541837c39f4faf1beb682584e23eca96a20a74d3e74f2c3012bc86da2e77",
+    "equal": true,
+    "steps": 1835
+   },
+   "top": {
+    "probeOff": "8b76ec562ecf1f2a67f7e01ff05d340260e645a09ba8577d83ef588ba158393b",
+    "probeOn": "8b76ec562ecf1f2a67f7e01ff05d340260e645a09ba8577d83ef588ba158393b",
+    "equal": true,
+    "steps": 3759
+   }
+  },
+  {
+   "game": 2,
+   "a": "broom",
+   "b": "pan-lux3d",
+   "seed": 3,
+   "v1": {
+    "probeOff": "b895d4546c8880ccf58439e5362afe2c02a61e443a2397f6cc1baee8c24b526a",
+    "probeOn": "b895d4546c8880ccf58439e5362afe2c02a61e443a2397f6cc1baee8c24b526a",
+    "equal": true,
+    "steps": 2955
+   },
+   "top": {
+    "probeOff": "e34cb2358fe83e935e6a55d45b55307514b5ebcf5204c9c2bf3e5be31f00f970",
+    "probeOn": "e34cb2358fe83e935e6a55d45b55307514b5ebcf5204c9c2bf3e5be31f00f970",
+    "equal": true,
+    "steps": 4764
+   }
+  },
+  {
+   "game": 3,
+   "a": "broom",
+   "b": "pan-lux3d",
+   "seed": 4,
+   "v1": {
+    "probeOff": "c40f61699b0ed1aab3fed74aa5c8015e62343927278ab17f7f7905816733f2e9",
+    "probeOn": "c40f61699b0ed1aab3fed74aa5c8015e62343927278ab17f7f7905816733f2e9",
+    "equal": true,
+    "steps": 1657
+   },
+   "top": {
+    "probeOff": "a67a54a21821e126e82437872276e2a6240b5feaa50ea4fdcc7366e03cbea02a",
+    "probeOn": "a67a54a21821e126e82437872276e2a6240b5feaa50ea4fdcc7366e03cbea02a",
+    "equal": true,
+    "steps": 4079
+   }
+  },
+  {
+   "game": 4,
+   "a": "scissors",
+   "b": "pillow",
+   "seed": 1,
+   "v1": {
+    "probeOff": "c30952aa48ee7c42f1cc311182923faa514dd2339f19cdc4ebd517b4b3345161",
+    "probeOn": "c30952aa48ee7c42f1cc311182923faa514dd2339f19cdc4ebd517b4b3345161",
+    "equal": true,
+    "steps": 3568
+   },
+   "top": {
+    "probeOff": "8392953d486cde7488fcbb137dc27ed22a9ea8758bd089ae1a7aaeb45463c063",
+    "probeOn": "8392953d486cde7488fcbb137dc27ed22a9ea8758bd089ae1a7aaeb45463c063",
+    "equal": true,
+    "steps": 4376
+   }
+  },
+  {
+   "game": 5,
+   "a": "scissors",
+   "b": "pillow",
+   "seed": 2,
+   "v1": {
+    "probeOff": "b34355b6ea3100bc577c5d60e80a99ba314fb20b57b3e5324228cbbf3908bc4d",
+    "probeOn": "b34355b6ea3100bc577c5d60e80a99ba314fb20b57b3e5324228cbbf3908bc4d",
+    "equal": true,
+    "steps": 3068
+   },
+   "top": {
+    "probeOff": "32a5009ec37baca50052b44adef3980c7833a426efe5c641b11989fe2a99726b",
+    "probeOn": "32a5009ec37baca50052b44adef3980c7833a426efe5c641b11989fe2a99726b",
+    "equal": true,
+    "steps": 3984
+   }
+  },
+  {
+   "game": 6,
+   "a": "scissors",
+   "b": "pillow",
+   "seed": 3,
+   "v1": {
+    "probeOff": "31d81a5876b38b9affba629130fca0b8e2686698ca68d5dab9ff18496a7a9505",
+    "probeOn": "31d81a5876b38b9affba629130fca0b8e2686698ca68d5dab9ff18496a7a9505",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "71d0a372792b6e1dfe59919d290ca88c086a3801f7784ec5cf73ff0bafa72ecb",
+    "probeOn": "71d0a372792b6e1dfe59919d290ca88c086a3801f7784ec5cf73ff0bafa72ecb",
+    "equal": true,
+    "steps": 3844
+   }
+  },
+  {
+   "game": 7,
+   "a": "scissors",
+   "b": "pillow",
+   "seed": 4,
+   "v1": {
+    "probeOff": "2544f3a6ed7382591f9dd50013bb2f1cf90f4a6cdcc1fe7cad2709fa44539449",
+    "probeOn": "2544f3a6ed7382591f9dd50013bb2f1cf90f4a6cdcc1fe7cad2709fa44539449",
+    "equal": true,
+    "steps": 3135
+   },
+   "top": {
+    "probeOff": "c2b2484534faae24940a182103363366f3492d1c749bfb7e58ffe1d1306a78e7",
+    "probeOn": "c2b2484534faae24940a182103363366f3492d1c749bfb7e58ffe1d1306a78e7",
+    "equal": true,
+    "steps": 3868
+   }
+  },
+  {
+   "game": 8,
+   "a": "lamp-lux3d",
+   "b": "slipper",
+   "seed": 1,
+   "v1": {
+    "probeOff": "fd3b1613b1607c0064aa0c0533cdecea2bc422111ff4da0b591c95cdf7668233",
+    "probeOn": "fd3b1613b1607c0064aa0c0533cdecea2bc422111ff4da0b591c95cdf7668233",
+    "equal": true,
+    "steps": 2805
+   },
+   "top": {
+    "probeOff": "ade12fd308b2e2cc6fc0942695f63bc6cef5d9a25933a590daa6af28be84e60d",
+    "probeOn": "ade12fd308b2e2cc6fc0942695f63bc6cef5d9a25933a590daa6af28be84e60d",
+    "equal": true,
+    "steps": 4540
+   }
+  },
+  {
+   "game": 9,
+   "a": "lamp-lux3d",
+   "b": "slipper",
+   "seed": 2,
+   "v1": {
+    "probeOff": "d5d46ca0858071cc4eac3449e06c80ed46b74c96fbb9710f37bc8c20b0cbe8fe",
+    "probeOn": "d5d46ca0858071cc4eac3449e06c80ed46b74c96fbb9710f37bc8c20b0cbe8fe",
+    "equal": true,
+    "steps": 3057
+   },
+   "top": {
+    "probeOff": "4904651c81e1fefca25c22aae0af3216b19456445aa7720d3584042c2d4015e5",
+    "probeOn": "4904651c81e1fefca25c22aae0af3216b19456445aa7720d3584042c2d4015e5",
+    "equal": true,
+    "steps": 3998
+   }
+  },
+  {
+   "game": 10,
+   "a": "lamp-lux3d",
+   "b": "slipper",
+   "seed": 3,
+   "v1": {
+    "probeOff": "024a738f3266e936884d97033f49cd16ef7dc65660445af8d0be358b399391b4",
+    "probeOn": "024a738f3266e936884d97033f49cd16ef7dc65660445af8d0be358b399391b4",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "a14669256daf11f8ed0d22f3a8dbe4d30a6f55d17c7c6bddb2576204d6488103",
+    "probeOn": "a14669256daf11f8ed0d22f3a8dbe4d30a6f55d17c7c6bddb2576204d6488103",
+    "equal": true,
+    "steps": 4500
+   }
+  },
+  {
+   "game": 11,
+   "a": "lamp-lux3d",
+   "b": "slipper",
+   "seed": 4,
+   "v1": {
+    "probeOff": "4e1bbe585fd6de5f18d620d77642e4af76e457c81eea08dd1601a33370cbe77d",
+    "probeOn": "4e1bbe585fd6de5f18d620d77642e4af76e457c81eea08dd1601a33370cbe77d",
+    "equal": true,
+    "steps": 2581
+   },
+   "top": {
+    "probeOff": "3b7797ae2afdaa92eb383d9482c80677e0275c2493711471319269d37edc6d43",
+    "probeOn": "3b7797ae2afdaa92eb383d9482c80677e0275c2493711471319269d37edc6d43",
+    "equal": true,
+    "steps": 3280
+   }
+  },
+  {
+   "game": 12,
+   "a": "pot",
+   "b": "broom",
+   "seed": 1,
+   "v1": {
+    "probeOff": "de8784dc88f28f6c0751794581a306f6cad181bf542c8e33502571815270c00a",
+    "probeOn": "de8784dc88f28f6c0751794581a306f6cad181bf542c8e33502571815270c00a",
+    "equal": true,
+    "steps": 2223
+   },
+   "top": {
+    "probeOff": "db2ab86c630505880cfe19e27d0870aa66e9f971f9fb33f398a57948388a06de",
+    "probeOn": "db2ab86c630505880cfe19e27d0870aa66e9f971f9fb33f398a57948388a06de",
+    "equal": true,
+    "steps": 4708
+   }
+  },
+  {
+   "game": 13,
+   "a": "pot",
+   "b": "broom",
+   "seed": 2,
+   "v1": {
+    "probeOff": "90f1f8600a23f00446fb741092aa1f7fa9315be9642a35ca03e87881f65f2064",
+    "probeOn": "90f1f8600a23f00446fb741092aa1f7fa9315be9642a35ca03e87881f65f2064",
+    "equal": true,
+    "steps": 3464
+   },
+   "top": {
+    "probeOff": "364fdd858b6fa320f888a9d7d46bb444f9b55c16470f23c519164cdc5c394119",
+    "probeOn": "364fdd858b6fa320f888a9d7d46bb444f9b55c16470f23c519164cdc5c394119",
+    "equal": true,
+    "steps": 4322
+   }
+  },
+  {
+   "game": 14,
+   "a": "pot",
+   "b": "broom",
+   "seed": 3,
+   "v1": {
+    "probeOff": "807367f0e0341c1d8a73c7731794a420e7db6f271d31161990a2b309bde86a3d",
+    "probeOn": "807367f0e0341c1d8a73c7731794a420e7db6f271d31161990a2b309bde86a3d",
+    "equal": true,
+    "steps": 2052
+   },
+   "top": {
+    "probeOff": "8620c6238e7d23e590c412623c8cce4862e080bf64c538315a20978f6cf87851",
+    "probeOn": "8620c6238e7d23e590c412623c8cce4862e080bf64c538315a20978f6cf87851",
+    "equal": true,
+    "steps": 4686
+   }
+  },
+  {
+   "game": 15,
+   "a": "pot",
+   "b": "broom",
+   "seed": 4,
+   "v1": {
+    "probeOff": "3b3ad1ba8dee11f0728ac70547065238aed05ae97283931e023b93ce36125740",
+    "probeOn": "3b3ad1ba8dee11f0728ac70547065238aed05ae97283931e023b93ce36125740",
+    "equal": true,
+    "steps": 2703
+   },
+   "top": {
+    "probeOff": "f33c8760e9715bb7ae6b3846e76e0b2c139eb57284b7b31bee4e546b6aaa9e3b",
+    "probeOn": "f33c8760e9715bb7ae6b3846e76e0b2c139eb57284b7b31bee4e546b6aaa9e3b",
+    "equal": true,
+    "steps": 3877
+   }
+  },
+  {
+   "game": 16,
+   "a": "pillow",
+   "b": "lamp",
+   "seed": 1,
+   "v1": {
+    "probeOff": "fa2acb998157c4816d23e2f5a9adb6058529d900d92fac3c987c96f2f87d422d",
+    "probeOn": "fa2acb998157c4816d23e2f5a9adb6058529d900d92fac3c987c96f2f87d422d",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "c56706b6d0322cb5b0b51a44e5f11959dbfd95985b40a44acca1b18434603e32",
+    "probeOn": "c56706b6d0322cb5b0b51a44e5f11959dbfd95985b40a44acca1b18434603e32",
+    "equal": true,
+    "steps": 4704
+   }
+  },
+  {
+   "game": 17,
+   "a": "pillow",
+   "b": "lamp",
+   "seed": 2,
+   "v1": {
+    "probeOff": "e7b31f06b946cb09b377e71f04e792041ed9982cf9ca84bcd313a591a628fb43",
+    "probeOn": "e7b31f06b946cb09b377e71f04e792041ed9982cf9ca84bcd313a591a628fb43",
+    "equal": true,
+    "steps": 3183
+   },
+   "top": {
+    "probeOff": "b28defe12576e07db96d7561195480a8c5ad44e615357ffdf09036181bd47ed9",
+    "probeOn": "b28defe12576e07db96d7561195480a8c5ad44e615357ffdf09036181bd47ed9",
+    "equal": true,
+    "steps": 3315
+   }
+  },
+  {
+   "game": 18,
+   "a": "pillow",
+   "b": "lamp",
+   "seed": 3,
+   "v1": {
+    "probeOff": "30d9f78c3fb8291fc54fbeb64d78def341116fb03e2a681729623e8c24883ad2",
+    "probeOn": "30d9f78c3fb8291fc54fbeb64d78def341116fb03e2a681729623e8c24883ad2",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "2f787b4840646fa7dd40c47149cb637135da8e34f6b6f22076f563619b0eec69",
+    "probeOn": "2f787b4840646fa7dd40c47149cb637135da8e34f6b6f22076f563619b0eec69",
+    "equal": true,
+    "steps": 4485
+   }
+  },
+  {
+   "game": 19,
+   "a": "pillow",
+   "b": "lamp",
+   "seed": 4,
+   "v1": {
+    "probeOff": "4058c2476755fbcb1144ba9293b27d1c263fabc3a7d6c3865e70ed135449087c",
+    "probeOn": "4058c2476755fbcb1144ba9293b27d1c263fabc3a7d6c3865e70ed135449087c",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "ee3e852eb6e05804c3d2c246fca99c94b87abf6959087aa641586b55ae6c2f20",
+    "probeOn": "ee3e852eb6e05804c3d2c246fca99c94b87abf6959087aa641586b55ae6c2f20",
+    "equal": true,
+    "steps": 4977
+   }
+  },
+  {
+   "game": 20,
+   "a": "slipper",
+   "b": "scissors",
+   "seed": 1,
+   "v1": {
+    "probeOff": "21beb7168782cf591af7a13d1c4c75c17432aa38407e50591e2b53f1644a64eb",
+    "probeOn": "21beb7168782cf591af7a13d1c4c75c17432aa38407e50591e2b53f1644a64eb",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "3ff58884bfeb77e08453d9e07e289e1e7b1a9afcf6984232b0c7ec2c65e2c082",
+    "probeOn": "3ff58884bfeb77e08453d9e07e289e1e7b1a9afcf6984232b0c7ec2c65e2c082",
+    "equal": true,
+    "steps": 3892
+   }
+  },
+  {
+   "game": 21,
+   "a": "slipper",
+   "b": "scissors",
+   "seed": 2,
+   "v1": {
+    "probeOff": "c7893b1046866c8056aa8429cf2d029e49b31353126ac1f5563c97930ccb5c71",
+    "probeOn": "c7893b1046866c8056aa8429cf2d029e49b31353126ac1f5563c97930ccb5c71",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "190d4736c3f702d68fea6e17de7da3cd0aa689b2aee7e42b03d6e5d02fca0bfa",
+    "probeOn": "190d4736c3f702d68fea6e17de7da3cd0aa689b2aee7e42b03d6e5d02fca0bfa",
+    "equal": true,
+    "steps": 3771
+   }
+  },
+  {
+   "game": 22,
+   "a": "slipper",
+   "b": "scissors",
+   "seed": 3,
+   "v1": {
+    "probeOff": "8cbdecdb71e81907ee628c976f4cf425d6d107316e9255ec44733addf73289ca",
+    "probeOn": "8cbdecdb71e81907ee628c976f4cf425d6d107316e9255ec44733addf73289ca",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "2ecee3e8fa6afcb8f5650b8053c3bd22531a7adb44c40cf0c39f1ec0b2ef02d6",
+    "probeOn": "2ecee3e8fa6afcb8f5650b8053c3bd22531a7adb44c40cf0c39f1ec0b2ef02d6",
+    "equal": true,
+    "steps": 3468
+   }
+  },
+  {
+   "game": 23,
+   "a": "slipper",
+   "b": "scissors",
+   "seed": 4,
+   "v1": {
+    "probeOff": "54d2a873ff374568efcdfad252b1a883c5e509c2278f8de00eb2ae3eb6d90d2f",
+    "probeOn": "54d2a873ff374568efcdfad252b1a883c5e509c2278f8de00eb2ae3eb6d90d2f",
+    "equal": true,
+    "steps": 3600
+   },
+   "top": {
+    "probeOff": "7b781fc4cb5b91245815be65e0ec269e63537ae596c47aafd06421758ab905e8",
+    "probeOn": "7b781fc4cb5b91245815be65e0ec269e63537ae596c47aafd06421758ab905e8",
+    "equal": true,
+    "steps": 4071
+   }
+  }
+ ]
+}
