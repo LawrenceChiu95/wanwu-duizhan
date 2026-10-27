@@ -147,6 +147,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .bhead { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
 .bhead b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--c0); }
 .bhead span { font-size: 12px; color: var(--mute); }
+.bhead .ctl { margin-left: auto; height: 32px; width: 124px; flex: none; }
+.bhead .ctl button { font-size: 15px; }
+.bhead .ctl svg { width: 15px; height: 15px; }
 .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .slot { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 9px 8px 8px; min-width: 0;
   background: linear-gradient(160deg, rgba(255, 138, 61, 0.1), rgba(13, 18, 33, 0.92) 45%); box-shadow: inset 0 0 0 1px rgba(255, 138, 61, 0.28);
@@ -178,6 +181,30 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .go:active, .actions button:active, .seg button:active, .item:active { transform: translateY(1px); }
 @keyframes shine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
 
+/* ---------- Manual mode: two thumb buttons in the room below the arena ---------- */
+#pad { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 18px); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; z-index: 2; }
+.pad { position: relative; height: 76px; display: flex; align-items: center; justify-content: center; gap: 10px; overflow: hidden; touch-action: none;
+  font-family: var(--display); font-size: 36px; line-height: 1; letter-spacing: 0.04em; transition: filter 0.2s, transform 0.08s; }
+.pad svg { position: relative; width: 32px; height: 32px; stroke-width: 2.4; }
+.pad span { position: relative; }
+.pad.dash { color: #1a0900; background: linear-gradient(100deg, #ffd9b0, var(--c0) 48%, var(--c0d)); clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 0 16px rgba(255, 120, 40, 0.45)); }
+.pad.block { color: #04121f; background: linear-gradient(100deg, #effcff, #9fe6ff 50%, #3db4ff); clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 0 16px rgba(120, 220, 255, 0.4)); }
+/* Cooldown: the button goes dark and its colour sweeps back in clockwise from the top; when the sweep closes, the button is lit again. */
+.pad .cd { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: conic-gradient(var(--sweep) calc((1 - var(--cd, 0)) * 1turn), transparent 0); }
+.pad.dash { --sweep: rgba(255, 128, 48, 0.5); }
+.pad.block { --sweep: rgba(90, 196, 255, 0.46); }
+.pad.cooling { color: rgba(226, 234, 248, 0.62); background: linear-gradient(100deg, #1c2333, #111622); filter: none; }
+.pad.cooling .cd { opacity: 1; }
+.pad.ready::after { content: ""; position: absolute; top: 0; bottom: 0; width: 34%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: shine 2.2s ease-in-out infinite; }
+.pad.on { animation: padOn 0.16s ease-in-out infinite alternate; }
+.pad:active { transform: translateY(2px) scale(0.985); }
+@keyframes padOn { to { filter: brightness(1.35) drop-shadow(0 0 22px rgba(255, 255, 255, 0.6)); } }
+.call.dash em { background: #fff; color: #1a0900; }
+.call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
+.call.parry b { font-size: 24px; }
+
 /* ---------- Result card ---------- */
 #result { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 26px); padding: 16px 16px 14px; text-align: center; overflow: hidden;
   background: linear-gradient(170deg, rgba(20, 27, 48, 0.96), rgba(7, 9, 18, 0.96)); box-shadow: inset 0 0 0 1px var(--line), 0 14px 40px rgba(0, 0, 0, 0.55);
@@ -200,6 +227,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
 .link { position: absolute; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 5px); font-size: 10px; color: var(--mute); opacity: 0.7; padding: 2px 0; }
+#pad:not([hidden]) ~ .link { display: none; }
 
 /* ---------- Sheets ---------- */
 #sheet, #credits { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
@@ -227,6 +255,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #error { position: absolute; left: 12px; right: 12px; top: 90px; padding: 10px 12px; background: #3a0f17; color: #ffd5da; font-size: 13px; line-height: 1.45; white-space: pre-wrap; user-select: text; -webkit-user-select: text; z-index: 9; }
 
 @media (max-width: 340px) {
+  .bhead span { display: none; }
+  .pad { height: 66px; font-size: 30px; }
+  .pad svg { width: 26px; height: 26px; }
   .item b { font-size: 20px; }
   .item .spec { font-size: 9.5px; }
   .seg button { font-size: 14px; gap: 2px; }

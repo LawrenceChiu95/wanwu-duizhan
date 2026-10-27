@@ -5,7 +5,7 @@ const SLOW = 0.25;
 // the hit last ~1 s on screen and the 0.35 s after it ~1.4 s, plus ramps. The camera push starts
 // earlier so it is already on the contact point when the hit lands.
 export const SLOW_BEFORE = 0.25, SLOW_AFTER = 0.35, RAMP = 0.1, PUSH_LEAD = 0.45;
-const HIT_STOP = {hit: 0.045, weak: 0.16, break: 0.14, ko: 0.24};
+const HIT_STOP = {hit: 0.045, weak: 0.16, break: 0.14, ko: 0.24, parry: 0.12};
 const DECISIVE_STOP = 0.3;
 const CONTACT = new Set(['hit', 'weak']);
 
@@ -34,6 +34,7 @@ export class Playback {
     this.end = replay.meta.duration;
     this.stopT = stopTime(replay);
     this.events = replay.events.filter(e => e.t <= this.stopT && e.type !== 'contact' && e.type !== 'recoil');
+    this.seen = replay.events.length;
     this.decisiveEvent = decisiveAnchor(replay);
     this.slowAt = this.decisiveEvent ? this.decisiveEvent.t : null;
     this.slowEnabled = true;
@@ -44,6 +45,16 @@ export class Playback {
       fighters: replay.frames[0].fighters.map(f => ({pos: v3(), quat: q4(), vel: v3(), angularVelocity: v3(), hp: f.hp, maxHp: f.maxHp, parts: f.parts.map(p => ({alive: true, hp: p.hp, maxHp: p.maxHp}))}))
     };
     this.sample(0);
+  }
+
+  /**
+   * Live match (manual mode): the sim runs just ahead of what is shown. Take the events it has produced since, and
+   * once it is over its end; until then there is no end and no decisive slow motion (that comes as a replay).
+   */
+  sync(done) {
+    const all = this.r.events;
+    for (; this.seen < all.length; this.seen++) { const e = all[this.seen]; if (e.type !== 'contact' && e.type !== 'recoil') this.events.push(e); }
+    if (done) { this.end = this.r.meta.duration; this.stopT = stopTime(this.r); }
   }
 
   /** 1 outside the decisive window, easing down to 0.25 inside it. */

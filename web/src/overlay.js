@@ -41,9 +41,10 @@ export class Overlay {
    * Who hit with what: a short plate at the contact point in the striker's colour (「锅」, 「锅 暴击」). Plates that
    * would land on one another stack upward, so a quick exchange stays readable; each is gone within CALL_TIME.
    */
-  callout(point, side, name, {crit = false, cls = ''} = {}) {
+  callout(point, side, name, {crit = false, dash = false, cls = ''} = {}) {
     const el = document.createElement('div');
-    el.className = `call t${side} ${cls}`;
+    el.className = `call t${side} ${cls}${dash ? ' dash' : ''}`;
+    if (dash) { const em = document.createElement('em'); em.textContent = '冲'; el.append(em); }
     const b = document.createElement('b');
     b.textContent = name;
     el.append(b);

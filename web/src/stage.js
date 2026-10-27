@@ -105,6 +105,18 @@ const planeShader = {
       #include <colorspace_fragment>
     }`
 };
+// Shield bubble: bright rim, faint face, a slow ripple, additive.
+const shieldShader = {
+  vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vP = position; vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uColor; uniform float uOpacity; uniform float uTime;
+    void main(){
+      float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+      float rim = pow(f, 2.2);
+      float ripple = 0.5 + 0.5 * sin(vP.y * 60.0 - uTime * 9.0);
+      gl_FragColor = vec4(uColor * uOpacity * (rim * 1.5 + 0.12 + 0.12 * ripple * f), 1.0);
+      #include <colorspace_fragment>
+    }`
+};
 const particleShader = {
   vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 color; varying vec3 vC; varying float vA; uniform float uScale; uniform float uMax;
     void main(){ vC = color; vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = min(uMax, aSize * uScale / max(0.05, -mv.z)); gl_Position = projectionMatrix * mv; }`,
@@ -275,6 +287,7 @@ export class Stage {
 
     this.haloTex = radialTexture(0.9, 0.35);
     this.coreGeo = new THREE.SphereGeometry(coreRadius, 40, 28);
+    this.shieldGeo = new THREE.SphereGeometry(coreRadius * 2.6, 40, 28);
     this.coreTex = TEAM.map(coreTextures);
     this.particles = new Particles(this.scene);
     this.rings = new Rings(this.scene);
@@ -376,7 +389,12 @@ export class Stage {
     });
     this.scene.add(root);
     const sweep = Math.max(this.coreRadius, ...parts.map(p => p.r1));
-    return {root, core, coreUniforms, halo, parts, sweep, center: new THREE.Vector3(), spin: 0, flash: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
+    // Manual mode: shield bubble round the core (1 s), wind-up glow and the lunge's streak, all on the sim clock.
+    const shield = new THREE.Mesh(this.shieldGeo, new THREE.ShaderMaterial({...shieldShader, uniforms: {uColor: {value: new THREE.Color('#bff4ff').lerp(team, 0.25)}, uOpacity: {value: 0}, uTime: {value: 0}}, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+    shield.visible = false;
+    shield.renderOrder = 4;
+    root.add(shield);
+    return {root, core, coreUniforms, halo, parts, sweep, shield, act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
   }
 
   /** Applies one sampled replay state: body transform, angular speed about its up axis, alive flags, HP. */
@@ -408,6 +426,35 @@ export class Stage {
   }
   burst(point, colors, count, speed, size, life, drift) { this.particles.burst(point, colors, count, speed, size, life, drift); }
   ring(point, color, from, to, dur) { this.rings.spawn(point, color, from, to, dur); }
+  /** Manual mode: wind-up before a lunge (glow, a ring closing in, pressed down a little). */
+  charge(i, secs) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.charge = f.act.chargeLen = secs;
+    this.rings.spawn(f.center, TEAM[i].clone().lerp(new THREE.Color('#ffffff'), 0.3), 1.6, 0.25, secs);
+  }
+  /** The lunge itself: a burst behind and a streak while it flies. */
+  lunge(i, dir, secs) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.charge = 0;
+    f.act.dash = secs;
+    const back = f.center.clone().addScaledVector(new THREE.Vector3().fromArray(dir), -0.25);
+    this.burst(back, [TEAM[i], new THREE.Color('#ffffff'), TEAM[i]], 26, 1.2, 0.03, 0.4, new THREE.Vector3().fromArray(dir).multiplyScalar(-1.5));
+    this.ring(f.center, TEAM[i], 0.2, 0.9, 0.3);
+  }
+  endLunge(i) { const f = this.fighters[i]; if (f) f.act.dash = 0; }
+  raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.shield.visible = true; } }
+  /** A lunge bounced off this shield: the bubble flares, a pale ring snaps out. */
+  parry(i, point) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.parry = 0.35;
+    this.ring(point, new THREE.Color('#e6fbff'), 0.1, 1.5, 0.45);
+    this.ring(f.center, new THREE.Color('#bff4ff'), 0.3, 1.1, 0.35);
+    this.burst(point, [new THREE.Color('#ffffff'), new THREE.Color('#bff4ff'), new THREE.Color('#9fe6ff')], 50, 2.6, 0.03, 0.5);
+  }
+  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0}); f.shield.visible = false; } }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
   shake(px) { const c = this.cam; if (c.shakeAge < SHAKE_TIME && c.shakeAmp > px) return; c.shakeAge = 0; c.shakeAmp = px; }
 
@@ -457,6 +504,7 @@ export class Stage {
       for (const p of f.parts) { p.flash = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
     }
     this.cam.shakeAge = SHAKE_TIME;
+    this.clearActs();
   }
 
   /** build: close on the player's top. fight / result: the one fixed pose over the whole arena. */
@@ -479,8 +527,11 @@ export class Stage {
    * plane, plus the longer top's piece reach and height) fits in the safe area (below the HUD, above the
    * bottom controls) with a small margin. Depends only on the screen and the two loadouts.
    */
+  /** Manual mode's buttons (px from the bottom). They sit in the room below the arena; only if it is not there does the arena make way. */
+  setPad(px) { if (px !== this.view.pad) { this.view.pad = px; this.cam.fixed = null; } }
   frameArena() {
-    const {w, h, top, bottom} = this.view, c = this.cam;
+    const {w, h, top, pad = 0} = this.view, c = this.cam;
+    let {bottom} = this.view;
     let reach = this.coreRadius, rise = this.coreRadius;
     for (const f of this.fighters) for (const p of f.parts) { reach = Math.max(reach, p.reach); rise = Math.max(rise, -p.y0, p.y1, p.reach); }
     const R = Math.max(ARENA_RIM + 0.15, CORE_TRAVEL + reach), Y = CORE_RISE + rise;
@@ -494,12 +545,13 @@ export class Stage {
     const span = D => {
       let u = 0, v0 = Infinity, v1 = -Infinity;
       for (const p of pts) { const d = tmp.copy(p).addScaledVector(fwd, D), z = d.dot(fwd); u = Math.max(u, Math.abs(d.dot(right) / z)); const v = d.dot(upv) / z; v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
-      return {fit: Math.max(u / uLim, (v1 - v0) / 2 / vLim), vc: (v0 + v1) / 2};
+      return {fit: Math.max(u / uLim, (v1 - v0) / 2 / vLim), vc: (v0 + v1) / 2, half: (v1 - v0) / 2};
     };
     let lo = R, hi = 500;
     for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (span(mid).fit > 1) lo = mid; else hi = mid; }
     // Centre the arena's picture in the safe area: the principal point goes where its middle should be.
-    const {vc} = span(hi), safeMid = top + (h - top - bottom) / 2;
+    const {vc, half} = span(hi), safeMid = top + (h - top - bottom) / 2;
+    if (pad > bottom && safeMid + half / tanV * h / 2 > h - pad - 4) { this.view.bottom = pad; this.frameArena(); this.view.bottom = bottom; return; }
     c.fixed = {quat, pos: fwd.clone().multiplyScalar(-hi), offsetY: h / 2 - (safeMid + vc / tanV * h / 2), R, Y, dist: hi};
   }
   updateCamera(dt, snap) {
@@ -571,6 +623,28 @@ export class Stage {
         p.fan.material.uniforms.uOpacity.value = 0.9 * Math.min(1, Math.max(0, Math.abs(f.spin) - 1) / 6);
       }
     }
+    for (const f of this.fighters) {
+      const a = f.act;
+      if (a.charge > 0) {
+        // Wind-up: the core brightens in pulses and the whole top sinks a little.
+        a.charge = Math.max(0, a.charge - simDt);
+        const k = 1 - a.charge / a.chargeLen;
+        f.coreUniforms.uFlash.value = Math.max(f.coreUniforms.uFlash.value, 0.25 + 0.5 * k * (0.6 + 0.4 * Math.sin(this.time * 40)));
+        f.root.position.y -= 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.2));
+      }
+      if (a.dash > 0) {
+        a.dash = Math.max(0, a.dash - simDt);
+        this.particles.burst(f.center, [TEAM[this.fighters.indexOf(f)], new THREE.Color('#ffffff')], 3, 0.15, 0.04, 0.32);
+      }
+      if (a.shield > 0 || a.parry > 0) {
+        a.shield = Math.max(0, a.shield - simDt);
+        a.parry = Math.max(0, a.parry - simDt);
+        const fade = Math.min(1, (a.shieldLen - a.shield) / 0.08, a.shield / 0.2);
+        f.shield.material.uniforms.uOpacity.value = Math.max(0.9 * fade, a.parry / 0.35 * 1.6);
+        f.shield.material.uniforms.uTime.value = this.time;
+        f.shield.visible = f.coreAlive;
+      } else f.shield.visible = false;
+    }
     for (let k = this.debris.length - 1; k >= 0; k--) {
       const d = this.debris[k];
       d.age += simDt;
@@ -588,11 +662,11 @@ export class Stage {
 
   /**
    * Test aid: how far (CSS px) any visible core or mounted piece reaches outside the safe area (below the HUD,
-   * above the caption or result card). Positive = cut off by that much; negative = the smallest margin left.
-   * Pieces use their mesh bounding boxes, so this errs on the side of reporting an overflow.
+   * above the caption or result card, and above the 冲/挡 buttons in manual mode). Positive = cut off by that much;
+   * negative = the smallest margin left. Pieces use their mesh bounding boxes, so this errs on the side of reporting an overflow.
    */
   safeOverflow() {
-    const {w, h, top, bottom} = this.view;
+    const {w, h, top, pad = 0} = this.view, bottom = Math.max(this.view.bottom, pad);
     this.scene.updateMatrixWorld();
     this.camera.updateMatrixWorld();
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog} from '../../sim/index.js';
-import {simulateV3, loadV3Rules, mountExtents} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels} from './models.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE} from './stage.js';
@@ -15,8 +15,11 @@ const el = {
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
   result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
   sheet: $('sheet'), sheetGrid: $('sheetGrid'), sheetTitle: $('sheetTitle'),
-  credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error')
+  credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
+  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn')
 };
+// Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
+const LIVE_LEAD = 0.05;
 // The six things on offer; pot and lamp are the textured Lux3D generations.
 const OFFER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillow'];
 // The computer's fixed build.
@@ -92,12 +95,14 @@ async function main() {
   const mine = structuredClone(fromUrl() ?? DEFAULT);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
+  // 自动 / 手动 (same loadout, same opponent); manual adds the 冲 / 挡 buttons.
+  let control = q.get('play') === 'manual' ? 'manual' : 'auto', live = null;
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
   el.busy.hidden = true;
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
-  let breaksAt = new Set(), pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
+  let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
   // Opponent tag on the build screen.
@@ -121,6 +126,7 @@ async function main() {
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
+    for (const b of document.querySelectorAll('[data-control]')) b.setAttribute('aria-checked', String(b.dataset.control === control));
   }
   let buildReq = 0;
   async function rebuildMine() {
@@ -134,6 +140,9 @@ async function main() {
   function showBuild() {
     phase = 'build';
     pb = replay = null;
+    live?.match.free();
+    live = null;
+    el.pad.hidden = true;
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
     overlay.clear();
@@ -213,8 +222,9 @@ async function main() {
       stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
-        overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak'});
-        if (!core && e.targetOrient === 'hug' && e.type === 'hit') overlay.callout(point, e.target, '挡住', {cls: 'block'});
+        overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak', dash: e.dash && !e.parry});
+        if (!core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry) overlay.callout(point, e.target, '挡住', {cls: 'block'});
+        if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
       }
       if (core) overlay.screenFlash(0.18);
@@ -225,6 +235,17 @@ async function main() {
       // The camera never moves; only a piece or a core breaking jolts the picture a few px.
       stage.shake(4);
       overlay.screenFlash(0.25);
+    } else if (e.type === 'dash') {
+      if (e.phase === 'charge') stage.charge(e.side, e.until - e.t);
+      else if (e.phase === 'go') stage.lunge(e.side, e.dir, rules.manual.dashTime);
+      else stage.endLunge(e.side);
+    } else if (e.type === 'block') {
+      stage.raiseShield(e.side, e.until - e.t);
+    } else if (e.type === 'parry') {
+      // A lunge into a raised shield: it is bounced, and that should read at a glance.
+      stage.parry(e.target, point);
+      overlay.callout(point, e.target, '挡住', {cls: 'parry'});
+      overlay.screenFlash(0.2);
     } else if (e.type === 'ko') {
       // Every core that broke goes (both, when they break in the same instant).
       for (const i of e.targets ?? [e.target]) {
@@ -255,13 +276,23 @@ async function main() {
     await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)));
     await nextPaint();
     const t0 = performance.now();
-    // Yield to the page every few hundred physics steps so the preview keeps spinning.
-    const r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, onProgress: () => new Promise(res => setTimeout(res, 0))});
+    let r;
+    live?.match.free();
+    live = null;
+    if (control === 'manual') {
+      // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
+      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, manual: {sides: ['input', 'ai']}});
+      if (id !== runId) { match.free(); return; }
+      r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
+      live = {match, done: false};
+    } else {
+      // Yield to the page every few hundred physics steps so the preview keeps spinning.
+      r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, onProgress: () => new Promise(res => setTimeout(res, 0))});
+    }
     test.simMs = performance.now() - t0;
     if (id !== runId) return;
     el.busy.hidden = true;
     replay = r;
-    breaksAt = new Set(r.events.filter(x => x.type === 'break').map(x => `${x.t}|${x.target}|${x.targetPart}`));
     pb = new Playback(r);
     liveSlowShown = false;
     stage.setFighters(r.meta.initial.map(f => f.definition));
@@ -274,7 +305,8 @@ async function main() {
     el.build.hidden = true;
     el.foe.hidden = true;
     el.hud.hidden = false;
-    setCaption(false, reasonLine(r));
+    el.pad.hidden = !live;
+    if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
     layout_();
     stage.pose(pb.state);
@@ -282,9 +314,10 @@ async function main() {
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
-    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'manual' ? '&play=manual' : ''}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
+    el.pad.hidden = true;
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
       overlay.clear();
@@ -305,8 +338,11 @@ async function main() {
     if (m.winner !== null) stage.revealOnResult(m.winner, el.result.offsetTop);
   }
   function replaySlow() {
+    // A live match had no decisive slow motion; its finished replay has.
+    if (live && !pb.full) { pb = new Playback(replay); pb.full = true; }
     if (!pb || pb.slowAt === null) return;
     el.result.hidden = true;
+    el.pad.hidden = true;
     stage.clearFx();
     overlay.clear();
     pb.slowEnabled = true;
@@ -341,6 +377,24 @@ async function main() {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
   }));
   document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; mine.spread = b.dataset.spread; rebuildMine(); }; });
+  document.querySelectorAll('[data-control]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; control = b.dataset.control; syncBuild(); }; });
+  // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
+  function press(action) {
+    if (!live || live.done || phase !== 'play') return;
+    live.match.press(0, action);
+  }
+  for (const [btn, action] of [[el.dashBtn, 'dash'], [el.blockBtn, 'block']]) btn.addEventListener('pointerdown', ev => { ev.preventDefault(); press(action); });
+  addEventListener('keydown', ev => { if (ev.repeat) return; if (ev.code === 'KeyJ' || ev.code === 'Space') { ev.preventDefault(); press('dash'); } else if (ev.code === 'KeyK' || ev.code === 'ShiftLeft' || ev.code === 'ShiftRight') press('block'); });
+  function updatePad() {
+    if (!live || el.pad.hidden) return;
+    const c = live.match.control(0), M = rules.manual;
+    for (const [btn, left, total, on] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield]]) {
+      btn.style.setProperty('--cd', on ? 0 : (left / total).toFixed(3));
+      btn.classList.toggle('on', on);
+      btn.classList.toggle('cooling', !on && left > 0);
+      btn.classList.toggle('ready', !on && left <= 0 && !live.done);
+    }
+  }
   $('sheetClose').onclick = () => { el.sheet.hidden = true; };
   el.sheet.onclick = e => { if (e.target === el.sheet) el.sheet.hidden = true; };
   el.go.onclick = () => start();
@@ -358,6 +412,8 @@ async function main() {
     // the caption is showing, so nothing that appears or goes away ever moves the camera.
     const top = building ? el.foe.offsetHeight : el.hud.offsetHeight;
     const bottom = building ? el.build.offsetHeight : el.caption.offsetHeight + 24;
+    // Manual: the buttons take the room under the arena (the arena only makes way if that room is not there).
+    stage.setPad(building || el.pad.hidden ? 0 : h - el.pad.offsetTop + 8);
     stage.resize(w, h, top, bottom);
   }
   new ResizeObserver(layout_).observe(el.app);
@@ -367,12 +423,16 @@ async function main() {
     frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, nth: 1, seen: 0, speed: 1, safe: null,
     onEvent(e) {
       if (!this.freezeOn || this.pending >= 0) return;
-      const ok = this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
+      const ok = this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
       if (ok && ++this.seen >= this.nth) this.pending = this.freezeDelay;
     }
   };
   window.__top = {
-    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    press,
+    setControl(c) { control = c; syncBuild(); },
+    // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
+    replayJson: () => replay && JSON.stringify(replay),
+    status: () => ({phase, control, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
@@ -404,6 +464,13 @@ async function main() {
       spinAngle += dt * PREVIEW_SPIN;
       stage.pose(previewState());
     } else if (phase === 'play' || phase === 'replay') {
+      if (phase === 'play' && live && !live.done) {
+        // Keep the live sim just ahead of the picture; once it is over, the replay is complete.
+        const m = live.match;
+        while (!m.done && m.t < pb.t + dt + LIVE_LEAD) m.advance();
+        if (m.done) { live.done = true; replay = m.result(); pb.r = replay; setCaption(false, reasonLine(replay)); }
+        pb.sync(live.done);
+      }
       simDt = pb.advance(dt, 1, onEvent);
       stage.pose(pb.state);
       const slow = pb.slowAmount(pb.t);
@@ -445,7 +512,11 @@ async function main() {
       }
       stage.pose(pb.state);
       el.slowtag.classList.toggle('on', phase === 'finale' && pb.slowAmount(v) > 0.3);
-      if (phase === 'finale' && finaleAge > 1.4 && pb.slowFactor(v) > 0.99) showResult();
+      // Manual: the decisive blow comes back as a slow replay before the result.
+      if (phase === 'finale' && finaleAge > 1.4 && pb.slowFactor(v) > 0.99) {
+        if (live && !live.replayed) { live.replayed = true; replaySlow(); }
+        if (phase === 'finale') showResult();
+      }
     }
     stage.updateCamera(dt, false);
     if (test.safe && dt > 0 && phase !== 'build' && phase !== 'computing') {
@@ -454,7 +525,7 @@ async function main() {
     }
     stage.render(dt, simDt);
     overlay.update(dt, true);
-    if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); }
+    if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }
   }
   showBuild();
   requestAnimationFrame(frame);
