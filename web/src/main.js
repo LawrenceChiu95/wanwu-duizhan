@@ -1,25 +1,34 @@
 import * as THREE from 'three';
-import {loadCatalog, loadRules, simulate} from '../../sim/index.js';
+import {loadCatalog} from '../../sim/index.js';
+import {simulateV3, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels} from './models.js';
 import {Stage, TEAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
+import {reasonLine, NAMES} from './reason.js';
 
 const $ = id => document.getElementById(id);
 const el = {
   app: $('app'), canvas: $('view'), fx: $('fx'), flash: $('flash'), banner: $('banner'),
-  caption: $('caption'), captionText: $('captionText'), captionTag: $('captionTag'), slowtag: $('slowtag'), clock: $('clock'),
-  result: $('result'), winnerLine: $('winnerLine'), reasonLine: $('reasonLine'), whyLine: $('whyLine'),
-  controls: $('controls'), hud: $('hud'), seed: $('seedInput'), go: $('goBtn'),
+  caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),
+  hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
+  result: $('result'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
   sheet: $('sheet'), sheetGrid: $('sheetGrid'), sheetTitle: $('sheetTitle'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error')
 };
-const MAX_SEED = 0xffffffff;
-const REASON = {ko: '血量打空', ringout: '被撞出擂台', 'double-ko': '同归于尽', timeout: '时间到'};
-const MODE_NAME = {A: '物理', B: '数值'};
+// The six things on offer; pot and lamp are the textured Lux3D generations.
+const OFFER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillow'];
+// The computer's fixed build.
+const FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
+const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
+const PREVIEW_SPIN = 2.4;
 const HEX = TEAM.map(c => '#' + c.getHexString());
-const WHITE = new THREE.Color('#ffffff'), HOT = new THREE.Color('#ffe14d'), RED = new THREE.Color('#ff4d5e');
+const WHITE = new THREE.Color('#ffffff'), HOT = new THREE.Color('#ffe14d'), SPARK = new THREE.Color('#ffd27a'), BLOCK = new THREE.Color('#b8f0ff');
+const ICON = {
+  out: '<svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>',
+  hug: '<svg class="ico" viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>'
+};
 
 function showError(err) {
   el.error.hidden = false;
@@ -29,21 +38,13 @@ function showError(err) {
 addEventListener('error', e => showError(e.error ?? e.message));
 addEventListener('unhandledrejection', e => showError(e.reason));
 
-// How the match ended; older replays without finishType are inferred from meta.reason.
-const finishOf = r => r.decisive.finishType ?? (r.meta.reason === 'ringout' ? 'ringout' : r.meta.reason === 'timeout' ? 'timeout' : 'contact');
-// Random seeds stay short enough to read and type (1–9999); any seed up to MAX_SEED still works.
-const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
-// Lux3D items (generated from a photo) keep a short name plus a small tag.
-const isLux = item => /Lux3D/i.test(item.name) || item.glb.includes('/lux3d/');
-const shortName = item => item.name.replace(/[（(]Lux3D[)）]\s*$/i, '');
+const isLux = id => id.endsWith('-lux3d');
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const nameHtml = item => esc(shortName(item)) + (isLux(item) ? '<i class="lux">Lux3D</i>' : '');
-const sizeCm = item => Math.round(Math.max(...item.bounds.max.map((v, k) => v - item.bounds.min[k])) * 100);
 const nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.parts[0].orient}, {item: b.parts[1].item, mount: b.spread, orient: b.parts[1].orient}]});
+const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 
 function renderCredits(items) {
-  // The attribution table and notes from data/CREDITS.md (with links); items it does not
-  // list yet (e.g. Lux3D generations) fall back to the catalog's own source fields.
   const link = s => s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
   const html = [];
@@ -52,9 +53,9 @@ function renderCredits(items) {
   for (const line of creditsMd.split('\n')) {
     const l = line.trim();
     if (/^\|/.test(l)) {
-      if (/^\|[\s|:-]+\|$/.test(l)) continue; // separator row
+      if (/^\|[\s|:-]+\|$/.test(l)) continue;
       if (!list) { html.push('<ul>'); list = true; tableHead = true; }
-      if (tableHead) { tableHead = false; continue; } // header row
+      if (tableHead) { tableHead = false; continue; }
       html.push(`<li>${l.split('|').slice(1, -1).map(c => link(esc(c.trim()))).join(' · ')}</li>`);
       continue;
     }
@@ -64,372 +65,286 @@ function renderCredits(items) {
     else html.push(`<p>${link(esc(l))}</p>`);
   }
   close();
-  // Anything the credits file does not mention yet falls back to the catalog's source fields.
-  const extra = items.filter(i => !creditsMd.includes(i.glb.split('/').pop()) && !creditsMd.includes(i.name));
-  if (extra.length) html.push('<ul>' + extra.map(i => `<li>${esc(i.name)} · ${esc(i.source?.author ?? '')} · ${esc(i.source?.license ?? '')} · ${link(esc(i.source?.url ?? ''))}</li>`).join('') + '</ul>');
   el.creditsBody.innerHTML = html.join('');
 }
 
 async function main() {
   el.busy.hidden = false;
-  const [items, rules] = await Promise.all([loadCatalog(), loadRules()]);
+  const [items, rules] = await Promise.all([loadCatalog(), loadV3Rules()]);
   const byId = new Map(items.map(i => [i.id, i]));
-  const arena = rules.arena;
-  const stage = new Stage(el.canvas, rules);
+  const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
+  const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
+  const stage = new Stage(el.canvas, {items, coreRadius: rules.core.radius, layout});
   const overlay = new Overlay(stage, el);
   renderCredits(items);
 
   const q = new URLSearchParams(location.search);
-  const pickRandom = exclude => {
-    const pool = items.filter(i => i.id !== exclude);
-    return pool[Math.floor(Math.random() * pool.length)].id;
+  const mode = q.get('mode') === 'B' ? 'B' : 'A';
+  const fromUrl = () => {
+    const p = (q.get('mine') ?? '').split(',');
+    if (p.length !== 5) return null;
+    const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
+    return b.parts.every(x => OFFER.includes(x.item) && ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) ? b : null;
   };
-  const urlSeed = q.has('seed') ? Number(q.get('seed')) : NaN;
-  const s = {
-    a: byId.has(q.get('a')) ? q.get('a') : pickRandom(),
-    b: null,
-    mode: q.get('mode') === 'B' ? 'B' : 'A',
-    seed: Number.isInteger(urlSeed) && urlSeed >= 0 && urlSeed <= MAX_SEED ? urlSeed : randomSeed(),
-    speed: q.get('speed') === '0.5' ? 0.5 : 1
-  };
-  s.b = byId.has(q.get('b')) ? q.get('b') : pickRandom(s.a);
-  await loadModels([byId.get(s.a), byId.get(s.b)]);
+  const mine = structuredClone(fromUrl() ?? DEFAULT);
+  let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
+  const fixedSeed = q.has('seed');
+  await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
   el.busy.hidden = true;
 
-  // ---------- match state ----------
-  let phase = 'loading'; // loading | idle | play | finale | result | replay
-  let pb = null, replay = null, finish = 'contact', midFight = false, liveCut = false, autoReplay = false, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
-  const hpView = [0, 1].map(() => ({hp: 1, chip: 1, since: 0}));
-  const def = id => ({parts: [{item: id, mount: 'core', rot: [0, 0, 0]}]});
+  // ---------- state ----------
+  let phase = 'loading'; // loading | build | computing | play | finale | result | replay
+  let breaksAt = new Set(), pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
+  const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
-  function idleState() {
-    const st = {zoneRadius: arena.zoneStartRadius, fighters: []};
-    [s.a, s.b].forEach((id, i) => {
-      const pos = new THREE.Vector3(i === 0 ? -1.25 : 1.25, 0, 0);
-      const quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.25 * Math.sin(idleSpin * 0.7 + i), (i === 0 ? 1 : -1) * Math.PI / 2 + idleSpin * 0.6, 0.15));
-      st.fighters.push({pos, quat, hp: 1, maxHp: 1, parts: [{pos, quat}]});
+  // Opponent tag on the build screen.
+  el.foeParts.innerHTML = FOE.parts.map(p => `<span>${NAMES[p.item]}${ICON[p.orient]}</span>`).join('');
+
+  // ---------- build preview: both tops spin slowly where the match will start ----------
+  const previewState = () => {
+    const defs = [toDef(mine), toDef(FOE)], d = sweepOf(defs[0]) + sweepOf(defs[1]) + rules.initialGap;
+    return {fighters: defs.map((def, i) => {
+      const quat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), spinAngle * (i ? 1 : 1) + (i ? 1.3 : 0));
+      return {pos: new THREE.Vector3(i === 0 ? -d / 2 : d / 2, 0, 0), quat, angularVelocity: new THREE.Vector3(0, PREVIEW_SPIN, 0), hp: 1, maxHp: 1, parts: def.parts.map(() => ({alive: true, hp: 1, maxHp: 1}))};
+    })};
+  };
+  function syncBuild() {
+    document.querySelectorAll('.slot').forEach(slot => {
+      const k = Number(slot.dataset.slot), part = mine.parts[k];
+      slot.querySelector('.item b').textContent = NAMES[part.item];
+      slot.querySelector('.lux').hidden = !isLux(part.item);
+      for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
-    return st;
+    for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
   }
-  let idleReq = 0;
-  async function showIdle() {
-    const req = ++idleReq;
-    el.busyText.textContent = '载入中';
-    el.busy.hidden = false;
-    await loadModels([byId.get(s.a), byId.get(s.b)]);
-    el.busy.hidden = true;
-    if (req !== idleReq) return;
-    phase = 'idle';
-    stage.setFighters([def(s.a), def(s.b)]);
+  let buildReq = 0;
+  async function rebuildMine() {
+    const req = ++buildReq;
+    syncBuild();
+    await loadModels(mine.parts.map(p => byId.get(p.item)));
+    if (req !== buildReq || phase !== 'build') return;
+    stage.replaceFighter(0, toDef(mine));
+    stage.pose(previewState());
+  }
+  function showBuild() {
+    phase = 'build';
+    pb = replay = null;
+    stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
     overlay.clear();
-    stage.pose(idleState());
-    stage.updateCamera(0, true);
-    for (const h of hpView) Object.assign(h, {hp: 1, chip: 1});
+    stage.setCameraMode('build');
+    stage.pose(previewState());
+    el.hud.hidden = true;
     el.result.hidden = true;
+    el.build.hidden = false;
+    el.foe.hidden = false;
     setCaption(false);
-    syncControls();
+    el.go.disabled = false;
+    [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
+    syncBuild();
+    layout_();
+    stage.updateCamera(0, true);
   }
 
   // ---------- HUD ----------
-  const captionLines = () => Math.round(el.captionText.scrollHeight / parseFloat(getComputedStyle(el.captionText).lineHeight));
-  function setCaption(on, text) {
-    if (text !== undefined) {
-      // Keep the caption to two lines: step the size down for long ones.
-      el.captionText.textContent = text;
-      el.captionText.style.fontSize = '';
-      if (captionLines() > 2) el.captionText.style.fontSize = '14px';
-    }
-    el.caption.classList.toggle('on', on);
-    // Keep the fighters framed above the caption while it is up.
-    stage.setBottomPanel(on ? el.caption.offsetHeight + 8 : 0);
+  function buildHud(defs) {
+    defs.forEach((def, i) => {
+      const box = el.hud.querySelector(`.s${i} .parts`);
+      box.innerHTML = def.parts.map(p => `<span class="pc">${ICON[p.orient]}<b>${NAMES[p.item]}</b><span class="mini"><i></i></span></span>`).join('');
+    });
   }
   function updateHud(dt, state) {
-    [0, 1].forEach(i => {
-      const f = state.fighters[i];
-      const v = hpView[i];
-      const frac = Math.max(0, f.hp / f.maxHp);
-      if (frac < v.hp - 1e-6) v.since = 0;
-      v.hp = frac;
+    state.fighters.forEach((f, i) => {
+      const v = hpView[i], frac = Math.max(0, f.hp / f.maxHp);
+      if (frac < v.core - 1e-6) v.since = 0;
+      v.core = frac;
       v.since += dt;
-      if (v.since > 0.45) v.chip = Math.max(v.hp, v.chip - dt * 0.6);
-      if (v.chip < v.hp) v.chip = v.hp;
-      $(`fill${i}`).style.transform = `scaleX(${v.hp})`;
-      $(`chip${i}`).style.transform = `scaleX(${v.chip})`;
-      $(`hp${i}`).textContent = phase === 'idle' ? `${arena.fighterHp ?? byId.get(i ? s.b : s.a).stats.hp}` : `${Math.ceil(f.hp)}`;
+      if (v.since > 0.45) v.chip = Math.max(v.core, v.chip - dt * 0.6);
+      if (v.chip < v.core) v.chip = v.core;
+      const side = el.hud.querySelector(`.s${i}`);
+      side.querySelector('.core .fill').style.transform = `scaleX(${v.core})`;
+      side.querySelector('.core .chip').style.transform = `scaleX(${v.chip})`;
+      side.querySelectorAll('.pc').forEach((pc, k) => {
+        const p = f.parts[k], pf = Math.max(0, p.hp / p.maxHp), bar = pc.querySelector('.mini i');
+        bar.style.transform = `scaleX(${pf})`;
+        bar.classList.toggle('low', pf < 0.4);
+        pc.classList.toggle('gone', !p.alive);
+      });
+      overlay.setCoreHp(i, frac);
     });
-    el.clock.textContent = pb && phase !== 'idle' ? Math.floor(pb.t) : '0';
+    el.clock.textContent = pb ? Math.floor(pb.t) : '0';
   }
-  function syncControls() {
-    [0, 1].forEach(i => {
-      const item = byId.get(i ? s.b : s.a);
-      const btn = $(`pick${i}`);
-      btn.querySelector('b').innerHTML = nameHtml(item);
-      btn.querySelector('small').textContent = isLux(item) ? '' : `${sizeCm(item)} cm`; // the tag needs the room
-      if (phase === 'idle') $(`name${i}`).innerHTML = nameHtml(item);
-    });
-    for (const b of document.querySelectorAll('#modeSeg button')) b.setAttribute('aria-checked', String(b.dataset.mode === s.mode));
-    for (const b of document.querySelectorAll('#speedSeg button')) b.setAttribute('aria-checked', String(Number(b.dataset.speed) === s.speed));
-    if (document.activeElement !== el.seed) el.seed.value = String(s.seed);
-    const playing = phase === 'play' || phase === 'finale' || phase === 'replay';
-    el.go.classList.toggle('restart', playing);
-    el.go.querySelector('span').textContent = playing ? '重开' : '开打';
-    el.go.querySelector('svg').innerHTML = playing ? '<path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" />' : '<path d="M7 5l12 7-12 7z" />';
+  function setCaption(on, text) {
+    if (text !== undefined) el.captionText.textContent = text;
+    el.caption.classList.toggle('on', on);
   }
 
   // ---------- events → effects ----------
-  // Endings are coloured by the winner (a double KO fires both KOs; the last one is not the winner).
-  const winColor = () => (replay.meta.winner === null || replay.meta.winner === undefined ? '#ffffff' : HEX[replay.meta.winner]);
   function onEvent(e) {
-    // attacker can be null (zone, or a contact the sim could not assign); fall back to the other side for colours.
-    const tgt = e.target, att = e.attacker ?? 1 - tgt;
-    const point = new THREE.Vector3().fromArray(e.point);
-    const center = stage.fighters[tgt].center;
-    // Numbers sit on the target's far side, so the two numbers of one contact don't stack.
-    const away = center.clone().sub(stage.fighters[1 - tgt].center);
-    const numAt = center.clone().addScaledVector(away.normalize(), stage.fighters[tgt].radius * 0.6);
-    const dmg = e.damage >= 10 ? Math.round(e.damage) : e.damage.toFixed(1);
-    // Under 1 damage (recoil, zone ticks, grazes) gets no floating number: they only cluttered the screen.
-    const number = (at, cls, label) => { if (e.damage >= 1) overlay.number(at, `-${dmg}`, cls, label); };
-    if (e.damage > 0 && e.damage < 0.05) {
-      // Rounds to nothing: no number.
-    } else if (e.role === 'recoil') {
-      // The striker's own small jolt: keep it quiet so the real hit reads as the cause.
-      stage.flashFighter(tgt, 0.25);
-      number(numAt, 'recoil');
-    } else if (e.type === 'hit') {
-      stage.burst(point, [WHITE, TEAM[att]], 10, 1.4, 0.018, 0.45);
-      stage.flashFighter(tgt, 0.55);
-      stage.shake(0.3);
-      number(numAt, `t${tgt}`);
-    } else if (e.type === 'weak' || e.weak === true) {
-      // The only real crit: a weak-point contact whose seeded roll succeeded (INTERFACE.md).
-      overlay.screenFlash(0.6);
-      stage.burst(point, [HOT, WHITE, HOT], 40, 2.6, 0.026, 0.7);
-      stage.ring(point, HOT, 0.05, 0.9, 0.45);
-      stage.ring(point, HOT, 0.05, 0.45, 0.3);
-      stage.flashFighter(tgt, 1);
-      stage.shake(0.9);
-      number(numAt, 'weak', '暴击');
-    } else if (e.type === 'crit') {
-      // type=crit only means a big ordinary hit (>=20): heavier than a hit, no crit label or screen flash.
-      stage.burst(point, [WHITE, TEAM[att]], 20, 2.0, 0.022, 0.55);
-      stage.flashFighter(tgt, 0.8);
-      stage.shake(0.5);
-      number(numAt, `t${tgt} big`);
-    } else if (e.type === 'zone') {
-      number(center.clone(), 'zone');
-    } else if (e.type === 'ko' && finish === 'zone') {
-      // Died to the shrinking zone: say it plainly, no knockout fanfare.
-      stage.burst(center, [RED, TEAM[tgt]], 18, 0.8, 0.02, 1.0);
-      stage.dimFighter(tgt);
-      stage.shake(0.2);
-      overlay.showBanner('圈外倒下', '#ff6b78', 1.4, 'top');
+    const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
+    if (e.type === 'hit' || e.type === 'weak') {
+      if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
+      const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2;
+      stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
+      // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
+      stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
+      stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
+      // A hugging piece took the blow instead of the core: say so.
+      if (!core && e.targetOrient === 'hug' && e.type === 'hit') overlay.number(point, '挡住', 'block');
+      stage.shake(core ? 0.75 : big ? 0.5 : 0.3);
+      if (core) overlay.screenFlash(0.18);
+      if (e.type === 'weak') { overlay.screenFlash(0.45); if (!breaksAt.has(`${e.t}|${e.target}|${e.targetPart}`)) overlay.number(point, '暴击', 'weak'); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+    } else if (e.type === 'break') {
+      stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
+      overlay.number(new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8);
+      stage.shake(0.8);
+      overlay.screenFlash(0.25);
     } else if (e.type === 'ko') {
-      stage.burst(center, [TEAM[tgt], WHITE, TEAM[tgt]], 60, 3.2, 0.03, 1.1);
-      stage.ring(center, TEAM[tgt], 0.1, 1.6, 0.7);
-      stage.flashFighter(tgt, 1);
-      stage.dimFighter(tgt);
+      const f = stage.fighters[e.target];
+      if (f) {
+        stage.burst(f.center, [TEAM[e.target], WHITE, TEAM[e.target], SPARK], 90, 3.4, 0.032, 1.2);
+        stage.ring(f.center, TEAM[e.target], 0.1, 1.8, 0.7);
+        stage.flashPart(e.target, 'core', 1);
+        stage.scatter(e.target);
+      }
       stage.shake(1.1);
       overlay.screenFlash(0.5);
-      overlay.showBanner('KO', winColor(), 1.2, 'top');
-    } else if (e.type === 'ringout') {
-      stage.burst(point, [RED, WHITE, TEAM[tgt]], 50, 3, 0.03, 1.0);
-      stage.ring(point, RED, 0.1, 1.8, 0.7);
-      stage.shake(1);
-      overlay.screenFlash(0.35);
-      overlay.showBanner('出界', winColor(), 1.2, 'top');
+      overlay.showBanner('核心碎了', replay.meta.winner === 0 ? HEX[0] : '#ffffff', 1.3);
     }
     test.onEvent(e);
   }
 
-  // ---------- run ----------
+  // ---------- match ----------
   let runId = 0;
   async function start() {
-    const raw = el.seed.value.trim() || String(s.seed);
-    const seed = /^\d+$/.test(raw) ? Number(raw) : NaN;
-    if (!Number.isInteger(seed) || seed > MAX_SEED) {
-      el.seed.parentElement.style.boxShadow = 'inset 0 0 0 2px #ff4d5e';
-      return;
-    }
-    el.seed.parentElement.style.boxShadow = '';
-    s.seed = seed;
+    if (phase !== 'build') return;
     const id = ++runId;
-    idleReq++; // a pending idle preview must not override the match
+    if (!fixedSeed) seed = randomSeed();
+    phase = 'computing';
+    el.go.disabled = true;
     el.busyText.textContent = '计算中';
     el.busy.hidden = false;
-    el.result.hidden = true;
-    await loadModels([byId.get(s.a), byId.get(s.b)]);
+    await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)));
     await nextPaint();
     const t0 = performance.now();
-    const r = await simulate({fighters: [def(s.a), def(s.b)], mode: s.mode, seed: s.seed});
+    // Yield to the page every few hundred physics steps so the preview keeps spinning.
+    const r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, onProgress: () => new Promise(res => setTimeout(res, 0))});
     test.simMs = performance.now() - t0;
     if (id !== runId) return;
     el.busy.hidden = true;
     replay = r;
-    finish = finishOf(r);
+    breaksAt = new Set(r.events.filter(x => x.type === 'break').map(x => `${x.t}|${x.target}|${x.targetPart}`));
     pb = new Playback(r);
-    // Zone deaths and timeouts: the hit to show happened mid-fight, so it is replayed after the end
-    // (then the result card) instead of slowing the fight down while it is still going.
-    midFight = pb.slowAt !== null && pb.slowAt < pb.end - 0.5;
-    pb.slowEnabled = !midFight;
-    autoReplay = midFight;
-    el.captionTag.textContent = finish === 'ringout' ? '决定性一击 · 出界' : '决定性一击';
+    liveSlowShown = false;
     stage.setFighters(r.meta.initial.map(f => f.definition));
     stage.clearFx();
     overlay.clear();
+    stage.setCameraMode('fight');
+    buildHud(r.meta.initial.map(f => f.definition));
+    for (const h of hpView) Object.assign(h, {core: 1, chip: 1, since: 9});
+    [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
+    el.build.hidden = true;
+    el.foe.hidden = true;
+    el.hud.hidden = false;
+    setCaption(false, reasonLine(r));
+    captionHold = 0;
+    layout_();
     stage.pose(pb.state);
     stage.updateCamera(0, true);
-    for (const h of hpView) Object.assign(h, {hp: 1, chip: 1, since: 9});
-    [0, 1].forEach(i => { $(`name${i}`).innerHTML = r.meta.initial[i].definition.parts.map(p => nameHtml(byId.get(p.item))).join('+'); });
-    setCaption(false, r.decisive.caption);
-    captionHold = 0;
-    liveCut = false;
     phase = 'play';
-    overlay.showBanner('开打', '#ffffff', 0.9);
-    history.replaceState(null, '', `?a=${s.a}&b=${s.b}&mode=${s.mode}&seed=${s.seed}`);
-    syncControls();
+    overlay.showBanner('开转', '#ffffff', 0.8);
+    history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}`);
   }
   function showResult() {
     if (pb.t < pb.end - 1e-6) {
-      // Back from a mid-match replay: put the board back to how the match ended.
       stage.clearFx();
       overlay.clear();
       pb.seek(pb.end);
       stage.pose(pb.state);
-      for (const e of pb.events) if (e.type === 'ko') stage.dimFighter(e.target);
-      for (const [i, f] of pb.state.fighters.entries()) Object.assign(hpView[i], {hp: f.hp / f.maxHp, chip: f.hp / f.maxHp, since: 9});
-      for (const f of pb.state.fighters) f.vel.set(0, 0, 0);
     }
     phase = 'result';
     const m = replay.meta;
-    const names = m.initial.map(f => f.definition.parts.map(p => nameHtml(byId.get(p.item))).join('+'));
-    el.winnerLine.innerHTML = m.winner === null ? '平局' : `<em style="color:${HEX[m.winner]}">${names[m.winner]}</em> 胜`;
-    const why = finish === 'zone' ? '在圈外掉光了血' : m.reason === 'double-ko' ? '同时倒下' : REASON[m.reason] ?? m.reason;
-    el.reasonLine.textContent = `${why} · ${m.duration.toFixed(1)} 秒 · ${MODE_NAME[m.mode]} · #${m.seed}`;
-    el.whyLine.textContent = replay.decisive.caption;
+    el.winnerLine.innerHTML = m.winner === null ? '平局' : m.winner === 0 ? `<em style="color:${HEX[0]};font-style:normal">你赢了</em>` : '你输了';
+    el.whyLine.textContent = reasonLine(replay);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false);
     el.result.hidden = false;
-    stage.setBottomPanel(el.result.offsetHeight + 8);
-    syncControls();
-  }
-  /** Cut the camera to a clear side view of the decisive hit (aimed from the hit frame's pose). */
-  function aimCut() {
-    const t = pb.t;
-    pb.sample(pb.slowAt);
-    stage.pose(pb.state);
-    stage.aimAtHit(new THREE.Vector3().fromArray(pb.decisiveEvent.point));
-    pb.sample(t);
-    stage.pose(pb.state);
-    stage.snapFocus();
+    layout_();
   }
   function replaySlow() {
-    if (!pb) return;
+    if (!pb || pb.slowAt === null) return;
     el.result.hidden = true;
     stage.clearFx();
     overlay.clear();
     pb.slowEnabled = true;
-    el.captionTag.textContent = `${midFight ? '最大一击' : '决定性一击'} · 回放`;
-    // Anchored on the decisive hit itself (see decisiveAnchor), not on decisive.t0/t1.
-    if (pb.decisiveEvent) {
-      // A replay is a cut: aim the camera from the hit frame's pose so the contact is not hidden.
-      pb.seek(pb.slowAt);
-      stage.pose(pb.state);
-      stage.aimAtHit(new THREE.Vector3().fromArray(pb.decisiveEvent.point));
-    }
     pb.seek(pb.replayFrom);
     replayEnd = 0;
     stage.pose(pb.state);
-    stage.snapFocus();
-    for (const [i, f] of pb.state.fighters.entries()) Object.assign(hpView[i], {hp: f.hp / f.maxHp, chip: f.hp / f.maxHp, since: 9});
     phase = 'replay';
-    syncControls();
+    layout_();
   }
 
   // ---------- controls ----------
-  let sheetSide = 0;
-  function openSheet(side) {
-    sheetSide = side;
-    el.sheet.querySelector('.panel').className = `panel sheet${side}`;
-    el.sheetTitle.textContent = side ? '右边（蓝）' : '左边（橙）';
-    const current = side ? s.b : s.a;
+  let sheetSlot = 0;
+  function openSheet(k) {
+    sheetSlot = k;
+    el.sheetTitle.textContent = k ? '第二件' : '第一件';
     el.sheetGrid.innerHTML = '';
-    for (const item of items) {
+    const other = mine.parts[1 - k].item;
+    for (const id of OFFER) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = item.id === current ? 'sel' : '';
-      b.innerHTML = `<b>${nameHtml(item)}</b><small>${sizeCm(item)} cm</small>`;
-      b.onclick = () => choose(item.id);
+      b.className = id === mine.parts[k].item ? 'sel' : '';
+      b.disabled = id === other;
+      const item = byId.get(id), size = Math.round(Math.max(...item.bounds.max.map((v, i) => v - item.bounds.min[i])) * 100);
+      b.innerHTML = `<b>${NAMES[id]}</b><small>${isLux(id) ? '<i class="lux">Lux3D</i> ' : ''}${size} cm · ${item.mass} kg</small>`;
+      b.onclick = () => { mine.parts[k].item = id; el.sheet.hidden = true; rebuildMine(); };
       el.sheetGrid.append(b);
     }
-    const r = document.createElement('button');
-    r.type = 'button';
-    r.className = 'rand';
-    r.innerHTML = '<b>随机</b><small>?</small>';
-    r.onclick = () => choose(pickRandom(side ? s.a : s.b));
-    el.sheetGrid.append(r);
     el.sheet.hidden = false;
   }
-  function choose(id) {
-    if (sheetSide) s.b = id; else s.a = id;
-    el.sheet.hidden = true;
-    if (phase === 'idle' || phase === 'result') showIdle();
-    syncControls();
-  }
-  $('pick0').onclick = () => openSheet(0);
-  $('pick1').onclick = () => openSheet(1);
+  document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openSheet(Number(b.dataset.pick)); }; });
+  document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
+    b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
+  }));
+  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; mine.spread = b.dataset.spread; rebuildMine(); }; });
   $('sheetClose').onclick = () => { el.sheet.hidden = true; };
   el.sheet.onclick = e => { if (e.target === el.sheet) el.sheet.hidden = true; };
-  $('shuffleBtn').onclick = () => {
-    s.a = pickRandom();
-    s.b = pickRandom(s.a);
-    if (phase === 'idle' || phase === 'result') showIdle();
-    syncControls();
-  };
-  for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => { s.mode = b.dataset.mode; syncControls(); };
-  for (const b of document.querySelectorAll('#speedSeg button')) b.onclick = () => { s.speed = Number(b.dataset.speed); syncControls(); };
-  $('reseedBtn').onclick = () => { s.seed = randomSeed(); el.seed.value = String(s.seed); el.seed.parentElement.style.boxShadow = ''; };
-  el.seed.addEventListener('input', () => {
-    el.seed.value = el.seed.value.replace(/\D/g, '');
-    const v = Number(el.seed.value);
-    if (el.seed.value && v <= MAX_SEED) { s.seed = v; el.seed.parentElement.style.boxShadow = ''; }
-  });
   el.go.onclick = () => start();
   $('replayBtn').onclick = () => replaySlow();
-  $('againBtn').onclick = () => { s.seed = randomSeed(); el.seed.value = String(s.seed); start(); };
+  $('againBtn').onclick = () => showBuild();
   $('creditsBtn').onclick = () => { el.credits.hidden = false; };
   $('creditsClose').onclick = () => { el.credits.hidden = true; };
   el.credits.onclick = e => { if (e.target === el.credits) el.credits.hidden = true; };
 
   // ---------- layout ----------
-  function layout() {
+  function layout_() {
     const w = el.app.clientWidth, h = el.app.clientHeight;
-    const top = el.hud.offsetHeight, bottom = el.controls.offsetHeight;
-    el.caption.style.bottom = el.result.style.bottom = `${bottom + 8}px`;
+    const building = !el.build.hidden;
+    const top = building ? el.foe.offsetHeight : el.hud.offsetHeight;
+    const bottom = building ? el.build.offsetHeight : !el.result.hidden ? el.result.offsetHeight + 20 : el.caption.classList.contains('on') ? el.caption.offsetHeight + 24 : 0;
     stage.resize(w, h, top, bottom);
   }
-  new ResizeObserver(layout).observe(el.app);
-  layout();
+  new ResizeObserver(layout_).observe(el.app);
 
   // ---------- test hooks (Playwright screenshots; no effect on normal play) ----------
   const test = {
-    frozen: false, freezeOnType: null, freezeDelay: 0, pending: -1, simMs: 0,
+    frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, nth: 1, seen: 0,
     onEvent(e) {
-      // 'decisive' = the anchored hit while slow motion is on; a type list skips that hit.
-      const hit = this.freezeOnType === 'decisive' ? e === pb.decisiveEvent && pb.slowEnabled : e !== pb.decisiveEvent && this.freezeOnType?.includes(e.type);
-      if (hit && this.pending < 0) this.pending = this.freezeDelay;
+      if (!this.freezeOn || this.pending >= 0) return;
+      const ok = this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
+      if (ok && ++this.seen >= this.nth) this.pending = this.freezeDelay;
     }
   };
-  window.__wanwu = {
-    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, slow: pb ? pb.slowAmount(pb.t) : 0, anchor: pb?.decisiveEvent ? {t: pb.decisiveEvent.t, type: pb.decisiveEvent.type, index: replay.events.indexOf(pb.decisiveEvent)} : null, caption: el.caption.classList.contains('on'), captionText: el.captionText.textContent, captionLines: captionLines(), simMs: test.simMs, meta: replay && {...replay.meta, initial: undefined}, decisive: replay?.decisive, events: replay?.events.length}),
-    freezeOn(types, delayMs = 60) { test.freezeOnType = types; test.freezeDelay = delayMs / 1000; test.pending = -1; },
+  window.__top = {
+    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
-    release() { test.frozen = false; test.freezeOnType = null; test.pending = -1; },
-    start,
+    release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
+    setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
     stage,
-    seek(t) { if (phase === 'play') { pb.seek(t); stage.pose(pb.state); } },
-    events: () => replay?.events.map((e, i) => ({i, t: e.t, type: e.type, role: e.role, damage: e.damage, weak: e.weak === true})) ?? []
+    start,
+    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage})) ?? []
   };
 
   // ---------- loop ----------
@@ -440,59 +355,52 @@ async function main() {
     last = now;
     if (test.pending >= 0) {
       test.pending -= dt;
-      if (test.pending < 0) { test.frozen = true; test.freezeOnType = null; }
+      if (test.pending < 0) { test.frozen = true; test.freezeOn = null; }
     }
     if (test.frozen) dt = 0;
-    if (phase === 'loading') return; // fighters not built yet
+    if (phase === 'loading') return;
     let simDt = dt;
-    if (phase === 'idle') {
-      idleSpin += dt;
-      stage.pose(idleState());
+    if (phase === 'build' || phase === 'computing') {
+      spinAngle += dt * PREVIEW_SPIN;
+      stage.pose(previewState());
     } else if (phase === 'play' || phase === 'replay') {
-      simDt = pb.advance(dt, s.speed, onEvent);
-      // Live decisive slow motion: one cut to a clear view of the contact as the push-in starts.
-      if (phase === 'play' && pb.slowEnabled && pb.decisiveEvent && !liveCut && pb.t >= pb.replayFrom + 0.35) { liveCut = true; aimCut(); }
+      simDt = pb.advance(dt, 1, onEvent);
       stage.pose(pb.state);
       const slow = pb.slowAmount(pb.t);
       stage.setPush(pb.pushAmount(pb.t), pb.decisiveEvent && new THREE.Vector3().fromArray(pb.decisiveEvent.point));
       el.slowtag.classList.toggle('on', slow > 0.3);
-      if (pb.inDecisive(pb.t)) { setCaption(true); captionHold = 1.6; }
-      else if (captionHold > 0) { captionHold -= dt; if (captionHold <= 0) setCaption(false); }
-      if (phase === 'replay' && pb.t < pb.end && pb.t >= pb.replayTo - 1e-9 && pb.hold <= 0) {
+      if (pb.inDecisive(pb.t)) { if (!el.caption.classList.contains('on')) { setCaption(true); layout_(); } captionHold = 1.6; }
+      else if (captionHold > 0) { captionHold -= dt; if (captionHold <= 0) { setCaption(false); layout_(); } }
+      if (phase === 'replay' && pb.t >= pb.replayTo - 1e-9 && pb.hold <= 0) {
         replayEnd += dt;
         if (replayEnd > 0.6) showResult();
       } else if (pb.done) {
-        if (phase === 'play' && finish === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
+        if (phase === 'play' && replay.meta.reason === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
         phase = 'finale';
         finaleAge = finaleSim = 0;
       }
     } else if (phase === 'finale' || phase === 'result') {
-      // Coast after the last frame (ring-outs keep flying). A finishing blow lands at the very end
-      // of the replay, so the rest of its slow motion plays out here at the same slowed rate.
+      // Coast after the last frame; the loser's core is gone, the winner keeps spinning.
       finaleAge += dt;
       const v = pb.end + finaleSim;
-      simDt = phase === 'finale' ? dt * s.speed * pb.slowFactor(v) : dt;
+      simDt = phase === 'finale' ? dt * pb.slowFactor(v) : dt;
       finaleSim += simDt;
       const drift = Math.exp(-finaleSim * 1.6);
       for (const f of pb.state.fighters) {
-        const step = f.vel.clone().multiplyScalar(simDt * drift);
-        f.pos.add(step);
-        for (const p of f.parts) p.pos.add(step);
+        f.pos.addScaledVector(f.vel, simDt * drift);
+        f.quat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0).applyQuaternion(f.quat), f.angularVelocity.length() * simDt * (f.hp > 0 ? 1 : drift)));
       }
       stage.pose(pb.state);
       stage.setPush(phase === 'finale' ? pb.pushAmount(v) : 0);
       el.slowtag.classList.toggle('on', phase === 'finale' && pb.slowAmount(v) > 0.3);
-      if (phase === 'finale' && finaleAge > (finish === 'contact' ? 1.3 : 1.6) && pb.slowFactor(v) > 0.99) {
-        if (autoReplay) { autoReplay = false; replaySlow(); } else showResult();
-      }
+      if (phase === 'finale' && finaleAge > 1.4 && pb.slowFactor(v) > 0.99) showResult();
     }
     stage.updateCamera(dt, false);
     stage.render(dt, simDt);
     overlay.update(dt, true);
-    updateHud(dt, phase === 'idle' ? idleState() : pb.state);
+    if (pb && phase !== 'build' && phase !== 'computing') updateHud(dt, pb.state);
   }
-  syncControls();
-  showIdle();
+  showBuild();
   requestAnimationFrame(frame);
   if (q.get('autoplay') === '1') start();
 }

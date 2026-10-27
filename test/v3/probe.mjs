@@ -1,7 +1,8 @@
 import {simulateV3} from '../../sim/v3.js';
 import {writeFile,mkdir} from 'node:fs/promises';
 import {performance} from 'node:perf_hooks';
-export const definition=item=>({parts:[{item,mount:'front',rot:[0,0,0]},{item:item==='slipper'?'pot':'slipper',mount:'back',rot:[0,0,0]}]});
+// Battle-top test build: the named item swings out at e0, a hugging second piece sits opposite.
+export const definition=item=>({parts:[{item,mount:'e0',orient:'out'},{item:item==='slipper'?'pot':'slipper',mount:'e180',orient:'hug'}]});
 export const median=values=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return s[Math.floor(s.length/2)];};
 export function metrics(r){
  const times=[...new Set(r.events.filter(e=>['hit','weak','crit'].includes(e.type)&&e.damage>0).map(e=>e.t))],contacts=r.events.filter(e=>e.type==='contact'&&e.impulse>=r.meta.rules.minimumImpulse).map(e=>e.t),gaps=times.slice(1).map((t,i)=>t-times[i]),cg=contacts.slice(1).map((t,i)=>t-contacts[i]);

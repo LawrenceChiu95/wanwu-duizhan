@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#070a12">
 <link rel="icon" href="data:,">
-<title>万物对战 · 球形擂台</title>
+<title>万物对战 · 战斗陀螺</title>
 <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
@@ -14,54 +14,67 @@
   <div id="fx" aria-hidden="true"></div>
   <div id="flash" aria-hidden="true"></div>
 
-  <header id="hud">
+  <header id="hud" hidden>
     <div class="side s0">
-      <div class="row"><b class="name" id="name0">—</b><span class="hp" id="hp0"></span></div>
-      <div class="bar"><i class="chip" id="chip0"></i><i class="fill" id="fill0"></i></div>
+      <div class="who"><i class="dot"></i><b>你</b></div>
+      <div class="core"><i class="ball"></i><div class="bar"><i class="chip"></i><i class="fill"></i></div></div>
+      <div class="parts"></div>
     </div>
-    <div class="mid"><span class="clock" id="clock">0</span><span class="slowtag" id="slowtag">0.25×</span></div>
+    <div class="mid"><span class="clock" id="clock">0</span><span class="slowtag" id="slowtag">慢放</span></div>
     <div class="side s1">
-      <div class="row"><span class="hp" id="hp1"></span><b class="name" id="name1">—</b></div>
-      <div class="bar"><i class="chip" id="chip1"></i><i class="fill" id="fill1"></i></div>
+      <div class="who"><b>对手</b><i class="dot"></i></div>
+      <div class="core"><div class="bar"><i class="chip"></i><i class="fill"></i></div><i class="ball"></i></div>
+      <div class="parts"></div>
     </div>
   </header>
-  <button id="creditsBtn" class="link" type="button">素材署名</button>
+
+  <header id="foe">
+    <span class="label">对手</span><span id="foeParts"></span>
+  </header>
 
   <div id="banner" aria-live="polite"></div>
-  <div id="caption" aria-live="polite"><span class="tag" id="captionTag">决定性一击</span><p id="captionText"></p></div>
+  <div id="caption" aria-live="polite"><p id="captionText"></p></div>
 
-  <section id="result" hidden>
-    <div class="winner" id="winnerLine"></div>
-    <div class="reason" id="reasonLine"></div>
-    <p class="why" id="whyLine"></p>
-    <div class="actions">
-      <button type="button" id="replayBtn"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看慢镜头</button>
-      <button type="button" id="againBtn" class="primary"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" /></svg>再来一局</button>
-    </div>
-  </section>
-
-  <footer id="controls">
-    <div class="row">
-      <button type="button" class="pick p0" id="pick0"><i class="dot"></i><b>—</b><small></small></button>
-      <span class="vs">VS</span>
-      <button type="button" class="pick p1" id="pick1"><i class="dot"></i><b>—</b><small></small></button>
-      <button type="button" class="icon" id="shuffleBtn" aria-label="随机两件"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1.3" class="f" /><circle cx="15" cy="15" r="1.3" class="f" /><circle cx="15" cy="9" r="1.3" class="f" /><circle cx="9" cy="15" r="1.3" class="f" /></svg>随机</button>
-    </div>
-    <div class="row">
-      <div class="seg" id="modeSeg" role="radiogroup" aria-label="算法">
-        <button type="button" data-mode="A" role="radio">物理</button><button type="button" data-mode="B" role="radio">数值</button>
+  <section id="build">
+    <div class="slots">
+      <div class="slot" data-slot="0">
+        <button type="button" class="item" data-pick="0"><b></b><i class="lux">Lux3D</i><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
+        <div class="seg orient" role="radiogroup">
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+        </div>
       </div>
-      <label class="seed"><span>#</span><input id="seedInput" inputmode="numeric" pattern="[0-9]*" maxlength="10" aria-label="种子"><button type="button" id="reseedBtn" aria-label="换种子"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></svg></button></label>
-      <div class="seg" id="speedSeg" role="radiogroup" aria-label="速度">
-        <button type="button" data-speed="0.5" role="radio">0.5×</button><button type="button" data-speed="1" role="radio">1×</button>
+      <div class="slot" data-slot="1">
+        <button type="button" class="item" data-pick="1"><b></b><i class="lux">Lux3D</i><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
+        <div class="seg orient" role="radiogroup">
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="seg spread" role="radiogroup" aria-label="两件的位置">
+        <button type="button" data-spread="e180" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M15.5 12H22" /></svg>对面</button>
+        <button type="button" data-spread="e90" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M12 15.5V22" /></svg>挨着</button>
       </div>
       <button type="button" class="go" id="goBtn"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" /></svg><span>开打</span></button>
     </div>
-  </footer>
+  </section>
+
+  <section id="result" hidden>
+    <div class="winner" id="winnerLine"></div>
+    <p class="why" id="whyLine"></p>
+    <div class="actions">
+      <button type="button" id="replayBtn" class="ghost" aria-label="重看慢镜头"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
+      <button type="button" id="againBtn" class="primary"><svg viewBox="0 0 24 24"><path d="M14.5 4.5l5 5L9 20H4v-5z" /></svg>换个装法再打</button>
+    </div>
+  </section>
+
+  <button id="creditsBtn" class="link" type="button">素材署名</button>
 
   <div id="sheet" hidden>
     <div class="panel">
-      <div class="head"><i class="dot"></i><b id="sheetTitle">选一件</b><button type="button" class="close" id="sheetClose" aria-label="关闭">×</button></div>
+      <div class="head"><b id="sheetTitle">换一件</b><button type="button" class="close" id="sheetClose" aria-label="关闭">×</button></div>
       <div class="grid" id="sheetGrid"></div>
     </div>
   </div>
