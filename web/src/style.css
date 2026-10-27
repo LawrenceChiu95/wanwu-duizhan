@@ -32,7 +32,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
       radial-gradient(900px 620px at 50% 50%, rgba(40, 70, 140, 0.22), transparent 70%),
       repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 22px),
       #05070d; }
-  #app { width: auto; aspect-ratio: 390 / 844; box-shadow: 0 0 0 1px rgba(160, 190, 255, 0.12), 0 30px 90px rgba(0, 0, 0, 0.65); }
+  /* A wider frame than a phone: the camera is fixed over the whole arena, so width is what makes the tops big. */
+  #app { width: auto; aspect-ratio: 2 / 3; box-shadow: 0 0 0 1px rgba(160, 190, 255, 0.12), 0 30px 90px rgba(0, 0, 0, 0.65); }
 }
 @media (min-aspect-ratio: 3/4) and (min-width: 900px) {
   .desk { display: flex; flex-direction: column; padding: 0 clamp(24px, 4vw, 72px); gap: 18px; }

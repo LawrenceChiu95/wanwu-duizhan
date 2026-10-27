@@ -6,6 +6,14 @@ export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
 const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
 const UP = new THREE.Vector3(0, 1, 0);
 
+// Fixed fight camera (Elara 98f93d28, after 远夏 5740feda: the following camera made him dizzy).
+// One pose for the whole fight: tilted down CAM_PITCH from horizontal, the player's top near (bottom), the
+// opponent far (top). No follow, no turn, no zoom; recomputed only when the screen size or the match changes.
+// CORE_TRAVEL: how far a core gets from the centre (240-game batch max 2.11 m); the drawn rim sits just outside.
+// CORE_RISE: how far a core leaves the spin plane (max 1.05 m).
+export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
+const CAM_PITCH = THREE.MathUtils.degToRad(60), CAM_YAW = Math.PI / 2, CAM_FOV = 28, FRAME_MARGIN = 6, SHAKE_TIME = 0.16, SLIDE_TIME = 0.8;
+
 function radialTexture(inner, outer) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
@@ -78,15 +86,22 @@ const backdropShader = {
 };
 // Faint rings in the spin plane around the pull centre: where "the middle" is, and how far apart they are.
 const planeShader = {
+  uniforms: {uRim: {value: ARENA_RIM}},
   vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `varying vec2 vP;
+  fragmentShader: `varying vec2 vP; uniform float uRim;
     void main(){
       float r = length(vP);
       float k = r / 0.5;
       float ring = 1.0 - smoothstep(0.0, fwidth(k) * 1.5, abs(fract(k) - 0.5) * -1.0 + 0.5);
-      float fade = (1.0 - smoothstep(1.2, 3.6, r));
+      float inside = 1.0 - smoothstep(uRim - 0.02, uRim + 0.02, r);
+      float fade = 1.0 - smoothstep(0.6, uRim, r) * 0.45;
       float centre = exp(-r * r * 18.0) * 0.3;
-      gl_FragColor = vec4(vec3(0.25, 0.55, 1.0) * (ring * 0.09 * fade + centre), 1.0);
+      // The arena edge: a bright line with a soft glow inside it, so the whole stage reads as one dish.
+      float rimW = fwidth(r) * 1.5;
+      float rim = 1.0 - smoothstep(0.0, rimW + 0.012, abs(r - uRim));
+      float glow = exp(-max(0.0, uRim - r) * 5.0) * inside;
+      float bed = inside * 0.035;
+      gl_FragColor = vec4(vec3(0.25, 0.55, 1.0) * (ring * 0.1 * fade * inside + centre + bed + glow * 0.07) + vec3(0.45, 0.75, 1.0) * rim * 0.55, 1.0);
       #include <colorspace_fragment>
     }`
 };
@@ -222,6 +237,7 @@ export class Stage {
   constructor(canvas, {items, coreRadius, layout}) {
     this.items = new Map(items.map(i => [i.id, i]));
     this.coreRadius = coreRadius;
+    this.arenaRim = ARENA_RIM;
     this.layout = layout;
     this.renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -234,7 +250,7 @@ export class Stage {
     this.scene.environmentIntensity = 0.45;
     pmrem.dispose();
 
-    this.camera = new THREE.PerspectiveCamera(58, 390 / 844, 0.05, 80);
+    this.camera = new THREE.PerspectiveCamera(CAM_FOV, 390 / 844, 0.1, 240);
     this.scene.add(this.camera);
     this.scene.add(new THREE.HemisphereLight('#c9dcff', '#20121a', 0.75));
     const key = new THREE.DirectionalLight('#fff4e6', 2.0);
@@ -248,10 +264,10 @@ export class Stage {
       l.target = target;
     }
 
-    const back = new THREE.Mesh(new THREE.SphereGeometry(9, 72, 48), new THREE.ShaderMaterial({...backdropShader, side: THREE.BackSide, depthWrite: false}));
+    const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.ShaderMaterial({...backdropShader, side: THREE.BackSide, depthWrite: false}));
     back.renderOrder = -2;
     this.scene.add(back);
-    const plane = new THREE.Mesh(new THREE.CircleGeometry(4, 96), new THREE.ShaderMaterial({...planeShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+    const plane = new THREE.Mesh(new THREE.CircleGeometry(ARENA_RIM + 0.2, 128), new THREE.ShaderMaterial({...planeShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
     plane.rotation.x = -Math.PI / 2;
     plane.position.y = -0.02;
     plane.renderOrder = -1;
@@ -265,7 +281,7 @@ export class Stage {
     this.fighters = [];
     this.debris = [];
     this.time = 0;
-    this.cam = {focus: new THREE.Vector3(), dist: 4, yaw: 0, pitch: 0.95, shake: 0, push: 0, pushAt: new THREE.Vector3(), ready: false, mode: 'fight'};
+    this.cam = {focus: new THREE.Vector3(), dist: 4, yaw: CAM_YAW, pitch: 0.95, ready: false, mode: 'fight', fixed: null, shakeAge: 1, shakeAmp: 0, offset: [0, 0], slide: null};
     this.view = {w: 390, h: 844, top: 70, bottom: 130};
   }
 
@@ -273,15 +289,22 @@ export class Stage {
     Object.assign(this.view, {w, h, top, bottom});
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
+    this.cam.fixed = null;
+    this.cam.slide = null;
     this.applyInsets();
     const dpr = this.renderer.getPixelRatio();
     this.particles.mat.uniforms.uScale.value = h * dpr / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
     this.particles.mat.uniforms.uMax.value = 16 * dpr;
   }
-  setInsets(top, bottom) { Object.assign(this.view, {top, bottom}); this.applyInsets(); }
   applyInsets() {
     const {w, h, top, bottom} = this.view;
-    this.camera.setViewOffset(w, h, 0, (bottom - top) / 2, w, h);
+    this.setOffset(0, (bottom - top) / 2);
+  }
+  /** Shifts the picture on screen (CSS px) without moving the camera: a pure 2D translation. */
+  setOffset(x, y) {
+    const {w, h} = this.view;
+    this.cam.offset = [x, y];
+    this.camera.setViewOffset(w, h, x, y, w, h);
     this.camera.updateProjectionMatrix();
   }
 
@@ -297,6 +320,7 @@ export class Stage {
     this.clearDebris();
     this.fighters = definitions.map((def, i) => this.buildFighter(def, i));
     this.cam.ready = false;
+    this.cam.fixed = null;
   }
   /** Rebuild one fighter in place (assembly edits), keeping its pose. */
   replaceFighter(i, def) {
@@ -384,8 +408,8 @@ export class Stage {
   }
   burst(point, colors, count, speed, size, life, drift) { this.particles.burst(point, colors, count, speed, size, life, drift); }
   ring(point, color, from, to, dur) { this.rings.spawn(point, color, from, to, dur); }
-  shake(amount) { this.cam.shake = Math.min(1.2, Math.max(this.cam.shake, amount)); }
-  setPush(amount, point) { this.cam.push = amount; if (point) this.cam.pushAt.copy(point); }
+  /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
+  shake(px) { const c = this.cam; if (c.shakeAge < SHAKE_TIME && c.shakeAmp > px) return; c.shakeAge = 0; c.shakeAmp = px; }
 
   /** A part breaks off: its model flies away from the break pose with the recorded velocity, tumbling and shrinking. */
   breakPart(i, partIndex, e) {
@@ -432,82 +456,94 @@ export class Stage {
       f.flash = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
       for (const p of f.parts) { p.flash = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
     }
-    this.cam.shake = 0;
-    this.cam.push = 0;
+    this.cam.shakeAge = SHAKE_TIME;
   }
 
+  /** build: close on the player's top. fight / result: the one fixed pose over the whole arena. */
+  setCameraMode(mode) { if (mode !== this.cam.mode) { this.cam.mode = mode; this.cam.ready = false; this.cam.slide = null; } }
   /**
-   * Camera from above the spin plane. fight: both tops framed, the player (0) near the bottom and the
-   * opponent (1) at the top; the yaw follows the line between them slowly. build: closer on the player.
+   * Result card up: if the winner's top sits under the card, slide the picture up once, just enough, over
+   * SLIDE_TIME (a picture translation, no turn, no zoom). Never past the HUD.
    */
-  /** build | fight | result (result frames only the given fighters, from higher up). */
-  setCameraMode(mode, only = null) { this.cam.mode = mode; this.cam.only = only; }
+  revealOnResult(i, cardTop) {
+    const f = this.fighters[i], c = this.cam, at = {x: 0, y: 0};
+    if (!f || !c.fixed || !this.project(f.center, at)) return;
+    let reach = this.coreRadius;
+    for (const p of f.parts) if (p.alive) reach = Math.max(reach, p.reach);
+    const r = this.screenRadius(f.center, reach), want = at.y + r - (cardTop - 10), room = at.y - r - this.view.top;
+    const by = Math.max(0, Math.min(want, room));
+    if (by > 0.5) c.slide = {by, age: 0};
+  }
+  /**
+   * The fixed pose: everything a top can reach (cores within CORE_TRAVEL of the centre and CORE_RISE of the
+   * plane, plus the longer top's piece reach and height) fits in the safe area (below the HUD, above the
+   * bottom controls) with a small margin. Depends only on the screen and the two loadouts.
+   */
+  frameArena() {
+    const {w, h, top, bottom} = this.view, c = this.cam;
+    let reach = this.coreRadius, rise = this.coreRadius;
+    for (const f of this.fighters) for (const p of f.parts) { reach = Math.max(reach, p.reach); rise = Math.max(rise, -p.y0, p.y1, p.reach); }
+    const R = Math.max(ARENA_RIM + 0.15, CORE_TRAVEL + reach), Y = CORE_RISE + rise;
+    const fwd = new THREE.Vector3(Math.sin(CAM_YAW) * Math.cos(CAM_PITCH), -Math.sin(CAM_PITCH), Math.cos(CAM_YAW) * Math.cos(CAM_PITCH));
+    const quat = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(), fwd, UP));
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(quat), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(quat);
+    const pts = [];
+    for (let k = 0; k < 48; k++) for (const y of [-Y, Y]) pts.push(new THREE.Vector3(Math.cos(k * Math.PI / 24) * R / Math.cos(Math.PI / 48), y, Math.sin(k * Math.PI / 24) * R / Math.cos(Math.PI / 48)));
+    const tanV = Math.tan(THREE.MathUtils.degToRad(CAM_FOV / 2)), tanH = tanV * w / h;
+    const uLim = tanH * (w - 2 * FRAME_MARGIN) / w, vLim = tanV * (h - top - bottom - 2 * FRAME_MARGIN) / h;
+    const span = D => {
+      let u = 0, v0 = Infinity, v1 = -Infinity;
+      for (const p of pts) { const d = tmp.copy(p).addScaledVector(fwd, D), z = d.dot(fwd); u = Math.max(u, Math.abs(d.dot(right) / z)); const v = d.dot(upv) / z; v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+      return {fit: Math.max(u / uLim, (v1 - v0) / 2 / vLim), vc: (v0 + v1) / 2};
+    };
+    let lo = R, hi = 500;
+    for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (span(mid).fit > 1) lo = mid; else hi = mid; }
+    // Centre the arena's picture in the safe area: the principal point goes where its middle should be.
+    const {vc} = span(hi), safeMid = top + (h - top - bottom) / 2;
+    c.fixed = {quat, pos: fwd.clone().multiplyScalar(-hi), offsetY: h / 2 - (safeMid + vc / tanV * h / 2), R, Y, dist: hi};
+  }
   updateCamera(dt, snap) {
     const [a, b] = this.fighters;
     if (!a || !b) return;
     const c = this.cam;
-    const axis = tmp.subVectors(b.center, a.center).setY(0);
-    if (axis.lengthSq() > 1e-6 && c.mode !== 'result') {
-      const want = Math.atan2(axis.x, axis.z);
-      let d = want - c.yaw;
-      d = Math.atan2(Math.sin(d), Math.cos(d));
-      if (snap || !c.ready) c.yaw = want;
-      // Follow only a clear turn of the line, and gently, so the view does not swim.
-      else if (Math.abs(d) > 0.25) c.yaw += Math.sign(d) * Math.min(Math.abs(d) - 0.25, dt * 1.6);
+    if (c.mode !== 'build') {
+      if (!c.fixed) this.frameArena();
+      c.ready = true;
+      this.camera.quaternion.copy(c.fixed.quat);
+      this.camera.position.copy(c.fixed.pos);
+      // Shake: translation of the picture only, a few px, gone within SHAKE_TIME.
+      let sx = 0, sy = 0;
+      if (c.shakeAge < SHAKE_TIME) {
+        c.shakeAge += dt;
+        const k = Math.max(0, 1 - c.shakeAge / SHAKE_TIME), ph = c.shakeAge * 2 * Math.PI * 14;
+        sx = Math.round(Math.sin(ph) * c.shakeAmp * k);
+        sy = Math.round(Math.cos(ph * 0.8) * c.shakeAmp * 0.6 * k);
+      }
+      let slide = 0;
+      if (c.slide) { c.slide.age = Math.min(SLIDE_TIME, c.slide.age + dt); const k = c.slide.age / SLIDE_TIME; slide = c.slide.by * k * k * (3 - 2 * k); }
+      const oy = c.fixed.offsetY + slide + sy;
+      if (c.offset[0] !== sx || c.offset[1] !== oy) this.setOffset(sx, oy);
+      return;
     }
-    // In the decisive slow motion the view tips toward top-down, so the near top cannot loom over the hit;
-    // the result looks down on the winner so its core and both pieces read.
-    const pitch = c.mode === 'build' ? 0.6 : c.mode === 'result' ? 1.22 : 0.92 + c.push * 0.3;
-    c.pitch += (pitch - c.pitch) * (snap || !c.ready ? 1 : 1 - Math.exp(-dt / (c.mode === 'result' ? 0.3 : 0.5)));
+    if (c.offset[0] !== 0 || c.offset[1] !== (this.view.bottom - this.view.top) / 2) this.applyInsets();
+    const axis = tmp.subVectors(b.center, a.center).setY(0);
+    c.yaw = axis.lengthSq() > 1e-6 ? Math.atan2(axis.x, axis.z) : CAM_YAW;
+    c.pitch = 0.6;
     const fwd = new THREE.Vector3(Math.sin(c.yaw) * Math.cos(c.pitch), -Math.sin(c.pitch), Math.cos(c.yaw) * Math.cos(c.pitch));
     tmpM.lookAt(new THREE.Vector3(), fwd, UP);
     tmpQ.setFromRotationMatrix(tmpM);
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(tmpQ), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(tmpQ);
     const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)), tanH = tanV * this.camera.aspect;
     const freeV = tanV * (this.view.h - this.view.top - this.view.bottom) / this.view.h;
-
-    if (c.mode === 'build') {
-      const focus = tmp2.copy(a.center).lerp(b.center, 0.22);
-      if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
-      const rel = tmp.copy(a.center).sub(c.focus), depth = rel.dot(fwd), rx = a.sweep * 1.05, ry = a.sweep * (Math.sin(c.pitch) * 0.9 + 0.2);
-      const need = Math.max(1.6, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
-      if (snap || !c.ready) c.dist = need; else c.dist += (need - c.dist) * (1 - Math.exp(-dt / 0.45));
-    } else {
-      // Keep every listed top whole in the safe area (below the HUD, above the caption or result card):
-      // each top's swept cylinder (its live pieces' reach and height), sampled around, is fitted with a margin.
-      const list = c.mode === 'result' && c.only ? c.only.map(i => this.fighters[i]).filter(Boolean) : [a, b];
-      const pts = [];
-      for (const f of list) {
-        let R = this.coreRadius, y0 = -this.coreRadius, y1 = this.coreRadius;
-        for (const p of f.parts) if (p.alive) { R = Math.max(R, p.reach); y0 = Math.min(y0, p.y0); y1 = Math.max(y1, p.y1); }
-        // About the top's own (possibly tilted) up axis; 12 samples, pushed out to circumscribe the circle.
-        R /= Math.cos(Math.PI / 12);
-        for (let k = 0; k < 12; k++) for (const y of [y0, y1]) pts.push(new THREE.Vector3(Math.cos(k * Math.PI / 6) * R, y, Math.sin(k * Math.PI / 6) * R).applyQuaternion(f.root.quaternion).add(f.center));
-      }
-      const base = new THREE.Vector3();
-      for (const f of list) base.add(f.center);
-      base.divideScalar(list.length);
-      let x0 = Infinity, x1 = -Infinity, v0 = Infinity, v1 = -Infinity;
-      for (const p of pts) { const d = tmp.copy(p).sub(base), x = d.dot(right), y = d.dot(upv); x0 = Math.min(x0, x); x1 = Math.max(x1, x); v0 = Math.min(v0, y); v1 = Math.max(v1, y); }
-      const focus = base.addScaledVector(right, (x0 + x1) / 2).addScaledVector(upv, (v0 + v1) / 2);
-      if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.15));
-      // Distance from the focus actually used, so a lagging pan is covered too.
-      const m = c.mode === 'result' ? 0.62 : 0.88;
-      let need = 0.8;
-      for (const p of pts) { const d = tmp.copy(p).sub(c.focus), z = d.dot(fwd); need = Math.max(need, Math.abs(d.dot(right)) / (tanH * m) - z, Math.abs(d.dot(upv)) / (freeV * m) - z); }
-      // Zoom out at once when the tops fly apart; come back in gently.
-      if (snap || !c.ready) c.dist = need;
-      else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.06 : c.mode === 'result' ? 0.3 : 0.6)));
-    }
+    // Assembly preview: close on the player's top, easing when its size changes.
+    const focus = tmp2.copy(a.center).lerp(b.center, 0.22);
+    if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
+    const rel = tmp.copy(a.center).sub(c.focus), depth = rel.dot(fwd), rx = a.sweep * 1.05, ry = a.sweep * (Math.sin(c.pitch) * 0.9 + 0.2);
+    const need = Math.max(1.6, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
+    if (snap || !c.ready) c.dist = need; else c.dist += (need - c.dist) * (1 - Math.exp(-dt / 0.45));
     c.ready = true;
-
     this.camera.quaternion.copy(tmpQ);
     this.camera.position.copy(c.focus).addScaledVector(fwd, -c.dist);
-    if (c.shake > 0.001) {
-      const s = c.shake * c.shake * 0.03 * c.dist;
-      this.camera.position.addScaledVector(right, (Math.random() - 0.5) * s).addScaledVector(upv, (Math.random() - 0.5) * s);
-      c.shake *= Math.exp(-dt * 9);
-    }
   }
 
   /** realDt drives camera, rings and glow; simDt drives particles and debris (slow motion applies). */

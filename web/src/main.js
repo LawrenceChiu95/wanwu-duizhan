@@ -3,7 +3,7 @@ import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels} from './models.js';
-import {Stage, TEAM} from './stage.js';
+import {Stage, TEAM, CORE_TRAVEL, CORE_RISE} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
 import {reasonLine, NAMES} from './reason.js';
@@ -196,13 +196,13 @@ async function main() {
       stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
       // A hugging piece took the blow instead of the core: say so.
       if (!core && e.targetOrient === 'hug' && e.type === 'hit') overlay.number(point, '挡住', 'block');
-      stage.shake(core ? 0.75 : big ? 0.5 : 0.3);
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); if (!breaksAt.has(`${e.t}|${e.target}|${e.targetPart}`)) overlay.number(point, '暴击', 'weak'); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       overlay.number(new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8);
-      stage.shake(0.8);
+      // The camera never moves; only a piece or a core breaking jolts the picture a few px.
+      stage.shake(4);
       overlay.screenFlash(0.25);
     } else if (e.type === 'ko') {
       // Every core that broke goes (both, when they break in the same instant).
@@ -214,7 +214,7 @@ async function main() {
         stage.flashPart(i, 'core', 1);
         stage.scatter(i);
       }
-      stage.shake(1.1);
+      stage.shake(6);
       overlay.screenFlash(0.5);
       overlay.showBanner('核心碎了', replay.meta.winner === 0 ? HEX[0] : '#ffffff', 1.3);
     }
@@ -272,7 +272,7 @@ async function main() {
     }
     phase = 'result';
     const m = replay.meta;
-    stage.setCameraMode('result', m.winner === null || m.reason === 'double-ko' ? null : [m.winner]);
+    stage.setCameraMode('result');
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;
@@ -281,6 +281,7 @@ async function main() {
     setCaption(false);
     el.result.hidden = false;
     layout_();
+    if (m.winner !== null) stage.revealOnResult(m.winner, el.result.offsetTop);
   }
   function replaySlow() {
     if (!pb || pb.slowAt === null) return;
@@ -332,8 +333,10 @@ async function main() {
   function layout_() {
     const w = el.app.clientWidth, h = el.app.clientHeight;
     const building = !el.build.hidden;
+    // Fight and result share one fixed frame: below the HUD, above the decisive caption's place, whether or not
+    // the caption is showing, so nothing that appears or goes away ever moves the camera.
     const top = building ? el.foe.offsetHeight : el.hud.offsetHeight;
-    const bottom = building ? el.build.offsetHeight : !el.result.hidden ? el.result.offsetHeight + 20 : el.caption.classList.contains('on') ? el.caption.offsetHeight + 24 : 0;
+    const bottom = building ? el.build.offsetHeight : el.caption.offsetHeight + 24;
     stage.resize(w, h, top, bottom);
   }
   new ResizeObserver(layout_).observe(el.app);
@@ -382,10 +385,9 @@ async function main() {
       simDt = pb.advance(dt, 1, onEvent);
       stage.pose(pb.state);
       const slow = pb.slowAmount(pb.t);
-      stage.setPush(pb.pushAmount(pb.t), pb.decisiveEvent && new THREE.Vector3().fromArray(pb.decisiveEvent.point));
       el.slowtag.classList.toggle('on', slow > 0.3);
-      if (pb.inDecisive(pb.t)) { if (!el.caption.classList.contains('on')) { setCaption(true); layout_(); } captionHold = 1.6; }
-      else if (captionHold > 0) { captionHold -= dt; if (captionHold <= 0) { setCaption(false); layout_(); } }
+      if (pb.inDecisive(pb.t)) { if (!el.caption.classList.contains('on')) setCaption(true); captionHold = 1.6; }
+      else if (captionHold > 0) { captionHold -= dt; if (captionHold <= 0) setCaption(false); }
       if (phase === 'replay' && pb.t >= pb.replayTo - 1e-9 && pb.hold <= 0) {
         replayEnd += dt;
         if (replayEnd > 0.6) showResult();
@@ -403,6 +405,10 @@ async function main() {
       const drift = Math.exp(-finaleSim * 1.6);
       for (const f of pb.state.fighters) {
         f.pos.addScaledVector(f.vel, simDt * drift);
+        // The camera is fixed: coasting never carries a top past where the fight itself can reach.
+        const d = Math.hypot(f.pos.x, f.pos.z);
+        if (d > CORE_TRAVEL) { f.pos.x *= CORE_TRAVEL / d; f.pos.z *= CORE_TRAVEL / d; }
+        f.pos.y = Math.max(-CORE_RISE, Math.min(CORE_RISE, f.pos.y));
         const up = new THREE.Vector3(0, 1, 0).applyQuaternion(f.quat);
         if (phase === 'result' && f.hp > 0) {
           // On the result card the winner stands up straight and slows to a lazy turn, so from above its
@@ -416,7 +422,6 @@ async function main() {
         f.quat.premultiply(new THREE.Quaternion().setFromAxisAngle(up, f.angularVelocity.length() * simDt * (f.hp > 0 ? 1 : drift)));
       }
       stage.pose(pb.state);
-      stage.setPush(phase === 'finale' ? pb.pushAmount(v) : 0);
       el.slowtag.classList.toggle('on', phase === 'finale' && pb.slowAmount(v) > 0.3);
       if (phase === 'finale' && finaleAge > 1.4 && pb.slowFactor(v) > 0.99) showResult();
     }
