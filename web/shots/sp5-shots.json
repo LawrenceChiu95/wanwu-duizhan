@@ -1,0 +1,127 @@
+{
+  "base": "http://127.0.0.1:4330/",
+  "a": "scissors",
+  "b": "pillow",
+  "seed": "5",
+  "report": {
+    "A": {
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "loadMs": 636,
+      "simMs": 111,
+      "fps": 60.06868560724321,
+      "critAt": 18.2,
+      "critType": "weak",
+      "weakEvents": [
+        {
+          "i": 5,
+          "t": 18.2,
+          "damage": 18.67025031108619
+        }
+      ],
+      "slowAt": {
+        "t": 23.716666666666665,
+        "anchor": {
+          "t": 23.716666666666665,
+          "type": "crit",
+          "index": 6
+        },
+        "phase": "replay",
+        "slow": 1,
+        "caption": true,
+        "captionText": "时间到，剪刀剩血多，赢了",
+        "captionLines": 1
+      },
+      "meta": {
+        "seed": 5,
+        "mode": "A",
+        "duration": 60,
+        "winner": 0,
+        "reason": "timeout",
+        "arenaRadius": 4.2,
+        "engine": "rapier3d-compat@0.21.0",
+        "schemaVersion": 1,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "diagnostics": {
+          "maxPenetration": 0.000328627647832036,
+          "maxGeometricPenetration": 0.012991405092179775,
+          "maxResidualPenetration": 0.00032862438820302486,
+          "maxPositionCorrection": 0.013091405092179775,
+          "correctionSteps": 19,
+          "contactFrames": 42,
+          "longestContact": 0.06666666666666667,
+          "skippedSlowContacts": 1
+        }
+      },
+      "decisive": {
+        "t0": 22.216666666666665,
+        "t1": 24.716666666666665,
+        "caption": "时间到，剪刀剩血多，赢了",
+        "detail": "时间到，按剩血百分比判胜。",
+        "eventIndex": 6,
+        "finishType": "timeout",
+        "finishEventIndex": null
+      }
+    },
+    "B": {
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "loadMs": 542,
+      "simMs": 46,
+      "fps": null,
+      "critAt": 18.2,
+      "critType": "weak",
+      "weakEvents": [
+        {
+          "i": 5,
+          "t": 18.2,
+          "damage": 46.475800154489
+        }
+      ],
+      "slowAt": {
+        "t": 42.11666666666667,
+        "anchor": {
+          "t": 42.11666666666667,
+          "type": "crit",
+          "index": 23
+        },
+        "phase": "play",
+        "slow": 1,
+        "caption": true,
+        "captionText": "剪刀克枕头，抢先撞中了",
+        "captionLines": 1
+      },
+      "meta": {
+        "seed": 5,
+        "mode": "B",
+        "duration": 42.11666666666667,
+        "winner": 0,
+        "reason": "ko",
+        "arenaRadius": 4.2,
+        "engine": "rapier3d-compat@0.21.0",
+        "schemaVersion": 1,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "diagnostics": {
+          "maxPenetration": 0.000328627647832036,
+          "maxGeometricPenetration": 0.012991405092179775,
+          "maxResidualPenetration": 0.00032862438820302486,
+          "maxPositionCorrection": 0.013091405092179775,
+          "correctionSteps": 13,
+          "contactFrames": 31,
+          "longestContact": 0.06666666666666667,
+          "skippedSlowContacts": 0
+        }
+      },
+      "decisive": {
+        "t0": 39.61666666666667,
+        "t1": 42.11666666666667,
+        "caption": "剪刀克枕头，抢先撞中了",
+        "detail": "剪刀属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 23,
+        "finishType": "contact",
+        "finishEventIndex": 23
+      }
+    }
+  },
+  "logs": []
+}

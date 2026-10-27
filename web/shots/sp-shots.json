@@ -1,0 +1,115 @@
+{
+  "base": "http://127.0.0.1:4330/",
+  "a": "scissors",
+  "b": "pillow",
+  "seed": "2",
+  "report": {
+    "A": {
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "loadMs": 619,
+      "simMs": 109,
+      "fps": 60.07243661795929,
+      "critAt": 4.250033333333333,
+      "critType": "crit",
+      "weakEvents": [],
+      "slowAt": {
+        "t": 51.13333333333333,
+        "anchor": {
+          "t": 51.13333333333333,
+          "type": "crit",
+          "index": 72
+        },
+        "phase": "play",
+        "slow": 1,
+        "caption": true,
+        "captionText": "剪刀更硬，撞疼了枕头",
+        "captionLines": 1
+      },
+      "meta": {
+        "seed": 2,
+        "mode": "A",
+        "duration": 51.13333333333333,
+        "winner": 0,
+        "reason": "ko",
+        "arenaRadius": 4.2,
+        "engine": "rapier3d-compat@0.21.0",
+        "schemaVersion": 1,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "diagnostics": {
+          "maxPenetration": 0.00039599568117409945,
+          "maxGeometricPenetration": 0.03592301905155182,
+          "maxResidualPenetration": 0.0003959976020269096,
+          "maxPositionCorrection": 0.03602301905155182,
+          "correctionSteps": 14,
+          "contactFrames": 30,
+          "longestContact": 0.05,
+          "skippedSlowContacts": 0
+        }
+      },
+      "decisive": {
+        "t0": 48.63333333333333,
+        "t1": 51.13333333333333,
+        "caption": "剪刀更硬，撞疼了枕头",
+        "detail": "剪刀属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：撞击冲量 0.2，硬度修正 1.55，扣掉 35.3 点血。",
+        "eventIndex": 72,
+        "finishType": "contact",
+        "finishEventIndex": 72
+      }
+    },
+    "B": {
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "loadMs": 484,
+      "simMs": 83,
+      "fps": null,
+      "critAt": 4.2500333333333336,
+      "critType": "crit",
+      "weakEvents": [],
+      "slowAt": {
+        "t": 45.266666666666666,
+        "anchor": {
+          "t": 45.266666666666666,
+          "type": "crit",
+          "index": 46
+        },
+        "phase": "play",
+        "slow": 1,
+        "caption": true,
+        "captionText": "剪刀撞中枕头，枕头掉血了",
+        "captionLines": 1
+      },
+      "meta": {
+        "seed": 2,
+        "mode": "B",
+        "duration": 45.266666666666666,
+        "winner": 0,
+        "reason": "ko",
+        "arenaRadius": 4.2,
+        "engine": "rapier3d-compat@0.21.0",
+        "schemaVersion": 1,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "diagnostics": {
+          "maxPenetration": 0.00039599568117409945,
+          "maxGeometricPenetration": 0.03592301905155182,
+          "maxResidualPenetration": 0.0003959976020269096,
+          "maxPositionCorrection": 0.03602301905155182,
+          "correctionSteps": 13,
+          "contactFrames": 27,
+          "longestContact": 0.05,
+          "skippedSlowContacts": 0
+        }
+      },
+      "decisive": {
+        "t0": 42.766666666666666,
+        "t1": 45.266666666666666,
+        "caption": "剪刀撞中枕头，枕头掉血了",
+        "detail": "剪刀属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 46,
+        "finishType": "contact",
+        "finishEventIndex": 46
+      }
+    }
+  },
+  "logs": []
+}
