@@ -97,7 +97,7 @@ async function main() {
 
   // ---------- match state ----------
   let phase = 'loading'; // loading | idle | play | finale | result | replay
-  let pb = null, replay = null, finish = 'contact', autoReplay = false, finaleAge = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
+  let pb = null, replay = null, finish = 'contact', autoReplay = false, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
   const hpView = [0, 1].map(() => ({hp: 1, chip: 1, since: 0}));
   const def = id => ({parts: [{item: id, mount: 'core', rot: [0, 0, 0]}]});
 
@@ -268,8 +268,8 @@ async function main() {
     syncControls();
   }
   function showResult() {
-    if (phase === 'replay') {
-      // Back from a replay: put the board back to how the match ended.
+    if (pb.t < pb.end - 1e-6) {
+      // Back from a mid-match replay: put the board back to how the match ended.
       stage.clearFx();
       overlay.clear();
       pb.seek(pb.end);
@@ -298,7 +298,8 @@ async function main() {
     overlay.clear();
     pb.slowEnabled = true;
     el.captionTag.textContent = `${finish === 'zone' ? '最大一击' : '决定性一击'} · 回放`;
-    pb.seek(replay.decisive.t0);
+    // Anchored on the decisive hit itself (see decisiveAnchor), not on decisive.t0/t1.
+    pb.seek(pb.replayFrom);
     replayEnd = 0;
     stage.pose(pb.state);
     for (const [i, f] of pb.state.fighters.entries()) Object.assign(hpView[i], {hp: f.hp / f.maxHp, chip: f.hp / f.maxHp, since: 9});
@@ -374,10 +375,14 @@ async function main() {
   // ---------- test hooks (Playwright screenshots; no effect on normal play) ----------
   const test = {
     frozen: false, freezeOnType: null, freezeDelay: 0, pending: -1, simMs: 0,
-    onEvent(e) { if (this.freezeOnType && this.freezeOnType.includes(e.type) && this.pending < 0) this.pending = this.freezeDelay; }
+    onEvent(e) {
+      // 'decisive' = the anchored hit while slow motion is on; a type list skips that hit.
+      const hit = this.freezeOnType === 'decisive' ? e === pb.decisiveEvent && pb.slowEnabled : e !== pb.decisiveEvent && this.freezeOnType?.includes(e.type);
+      if (hit && this.pending < 0) this.pending = this.freezeDelay;
+    }
   };
   window.__wanwu = {
-    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, slow: pb ? pb.slowAmount(pb.t) : 0, caption: el.caption.classList.contains('on'), simMs: test.simMs, meta: replay && {...replay.meta, initial: undefined}, decisive: replay?.decisive, events: replay?.events.length}),
+    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, slow: pb ? pb.slowAmount(pb.t) : 0, anchor: pb?.decisiveEvent ? {t: pb.decisiveEvent.t, type: pb.decisiveEvent.type, index: replay.events.indexOf(pb.decisiveEvent)} : null, caption: el.caption.classList.contains('on'), simMs: test.simMs, meta: replay && {...replay.meta, initial: undefined}, decisive: replay?.decisive, events: replay?.events.length}),
     freezeOn(types, delayMs = 60) { test.freezeOnType = types; test.freezeDelay = delayMs / 1000; test.pending = -1; },
     freeze() { test.frozen = true; },
     release() { test.frozen = false; test.freezeOnType = null; test.pending = -1; },
@@ -406,32 +411,35 @@ async function main() {
       simDt = pb.advance(dt, s.speed, onEvent);
       stage.pose(pb.state);
       const slow = pb.slowAmount(pb.t);
-      stage.setPush(slow, pb.decisiveEvent && new THREE.Vector3().fromArray(pb.decisiveEvent.point));
+      stage.setPush(pb.pushAmount(pb.t), pb.decisiveEvent && new THREE.Vector3().fromArray(pb.decisiveEvent.point));
       el.slowtag.classList.toggle('on', slow > 0.3);
       if (pb.inDecisive(pb.t)) { setCaption(true); captionHold = 1.6; }
       else if (captionHold > 0) { captionHold -= dt; if (captionHold <= 0) setCaption(false); }
-      if (phase === 'replay' && pb.t >= replay.decisive.t1 - 1e-9 && pb.hold <= 0) {
+      if (phase === 'replay' && pb.t < pb.end && pb.t >= pb.replayTo - 1e-9 && pb.hold <= 0) {
         replayEnd += dt;
         if (replayEnd > 0.6) showResult();
-      } else if (phase === 'play' && pb.done) {
-        if (finish === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
+      } else if (pb.done) {
+        if (phase === 'play' && finish === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
         phase = 'finale';
-        finaleAge = 0;
+        finaleAge = finaleSim = 0;
       }
     } else if (phase === 'finale' || phase === 'result') {
-      // Coast briefly after the last frame (ring-outs keep flying), then show the result.
+      // Coast after the last frame (ring-outs keep flying). A finishing blow lands at the very end
+      // of the replay, so the rest of its slow motion plays out here at the same slowed rate.
       finaleAge += dt;
-      const drift = Math.exp(-finaleAge * 1.6);
+      const v = pb.end + finaleSim;
+      simDt = phase === 'finale' ? dt * s.speed * pb.slowFactor(v) : dt;
+      finaleSim += simDt;
+      const drift = Math.exp(-finaleSim * 1.6);
       for (const f of pb.state.fighters) {
-        const step = f.vel.clone().multiplyScalar(dt * drift);
+        const step = f.vel.clone().multiplyScalar(simDt * drift);
         f.pos.add(step);
         for (const p of f.parts) p.pos.add(step);
       }
       stage.pose(pb.state);
-      const slow = phase === 'finale' ? pb.slowAmount(pb.t) * Math.max(0, 1 - finaleAge / 1.2) : 0;
-      stage.setPush(slow);
-      el.slowtag.classList.toggle('on', false);
-      if (phase === 'finale' && finaleAge > (finish === 'contact' ? 1.3 : 1.6)) {
+      stage.setPush(phase === 'finale' ? pb.pushAmount(v) : 0);
+      el.slowtag.classList.toggle('on', phase === 'finale' && pb.slowAmount(v) > 0.3);
+      if (phase === 'finale' && finaleAge > (finish === 'contact' ? 1.3 : 1.6) && pb.slowFactor(v) > 0.99) {
         if (autoReplay) { autoReplay = false; replaySlow(); } else showResult();
       }
     }

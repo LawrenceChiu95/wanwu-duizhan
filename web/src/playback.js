@@ -1,10 +1,28 @@
 import * as THREE from 'three';
 
 const SLOW = 0.25;
-// Decisive slow motion window around the decisive event, in replay seconds.
-// 0.7 s of replay at 0.25x ≈ 2.8 s on screen.
-const SLOW_BEFORE = 0.45, SLOW_AFTER = 0.25, RAMP = 0.12;
+// Decisive slow motion, centred on the decisive hit (replay seconds). At 0.25x the 0.25 s before
+// the hit last ~1 s on screen and the 0.3 s after it ~1.2 s, plus ramps. The camera push starts
+// earlier so it is already on the contact point when the hit lands.
+export const SLOW_BEFORE = 0.25, SLOW_AFTER = 0.3, RAMP = 0.1, PUSH_LEAD = 0.45;
 const HIT_STOP = {hit: 0.035, crit: 0.09, weak: 0.14, ko: 0.24, ringout: 0.2, zone: 0};
+const DECISIVE_STOP = 0.3;
+const CONTACT = new Set(['hit', 'crit', 'weak']);
+
+/**
+ * The hit to slow down on: decisive.eventIndex (the hit the caption describes); if that is not a
+ * contact, finishEventIndex when it is one; else the biggest attack. Ring-outs anchor on the exit.
+ */
+export function decisiveAnchor(replay) {
+  const {events, decisive} = replay;
+  const pick = i => (i === null || i === undefined ? null : events[i]);
+  const main = pick(decisive.eventIndex);
+  if (main && (CONTACT.has(main.type) || main.type === 'ringout')) return main;
+  if (decisive.finishType === 'timeout') return null;
+  const fin = pick(decisive.finishEventIndex);
+  if (fin && CONTACT.has(fin.type)) return fin;
+  return events.filter(e => CONTACT.has(e.type) && e.role !== 'recoil').sort((x, y) => y.damage - x.damage)[0] ?? null;
+}
 
 const v3 = () => new THREE.Vector3();
 const q4 = () => new THREE.Quaternion();
@@ -14,8 +32,7 @@ export class Playback {
   constructor(replay) {
     this.r = replay;
     this.end = replay.meta.duration;
-    const ev = replay.decisive.eventIndex;
-    this.decisiveEvent = ev === null || ev === undefined ? null : replay.events[ev];
+    this.decisiveEvent = decisiveAnchor(replay);
     this.slowAt = this.decisiveEvent ? this.decisiveEvent.t : null;
     this.slowEnabled = true;
     this.t = 0;
@@ -35,9 +52,18 @@ export class Playback {
     const k = Math.min(THREE.MathUtils.smoothstep(t, a - RAMP, a), 1 - THREE.MathUtils.smoothstep(t, b, b + RAMP));
     return 1 + (SLOW - 1) * k;
   }
-  /** 0..1 how deep into the decisive moment we are (for camera push and caption). */
+  /** 0..1 how deep into the decisive moment we are (caption, slow tag). */
   slowAmount(t) { return (1 - this.slowFactor(t)) / (1 - SLOW); }
+  /** 0..1 camera push toward the contact point; leads the slow motion so the shot is set before the hit. */
+  pushAmount(t) {
+    if (this.slowAt === null || !this.slowEnabled) return 0;
+    const a = this.slowAt - SLOW_BEFORE, b = this.slowAt + SLOW_AFTER;
+    return Math.min(THREE.MathUtils.smoothstep(t, a - PUSH_LEAD, a - RAMP), 1 - THREE.MathUtils.smoothstep(t, b, b + RAMP * 3));
+  }
   inDecisive(t) { return this.slowAt !== null && this.slowEnabled && t >= this.slowAt - SLOW_BEFORE - RAMP && t <= this.slowAt + SLOW_AFTER + RAMP; }
+  /** Where a replay of the decisive moment starts and stops. */
+  get replayFrom() { return Math.max(0, this.slowAt - SLOW_BEFORE - PUSH_LEAD - 0.35); }
+  get replayTo() { return Math.min(this.end, this.slowAt + SLOW_AFTER + RAMP + 0.35); }
 
   seek(t) {
     this.t = Math.max(0, Math.min(t, this.end));
@@ -64,7 +90,7 @@ export class Playback {
     while (this.cursor < events.length && events[this.cursor].t <= next) {
       const e = events[this.cursor++];
       onEvent(e, this.cursor - 1);
-      stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0);
+      stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
       // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
       if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {
         next = e.t;

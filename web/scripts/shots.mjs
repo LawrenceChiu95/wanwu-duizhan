@@ -56,15 +56,15 @@ for (const mode of ['A', 'B']) {
   await page.evaluate(() => { window.__wanwu.release(); window.__wanwu.freezeOn(['crit', 'weak'], 70); });
   const gpu = await page.evaluate(() => { const g = document.createElement('canvas').getContext('webgl2'); const e = g.getExtension('WEBGL_debug_renderer_info'); return g.getParameter(e.UNMASKED_RENDERER_WEBGL); });
   const fps = mode === 'A' ? await page.evaluate(() => new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 8000) requestAnimationFrame(f); else r(n / ((performance.now() - t0) / 1000)); }; requestAnimationFrame(f); })) : null;
-  s = await until(s => s.frozen || s.phase === 'result');
+  // A crit or weak hit other than the decisive one (if there is one before it).
+  s = await until(s => s.frozen || s.phase === 'result' || (s.anchor && s.t >= s.anchor.t - 0.8));
   if (s.frozen) await shot(`${mode}-2-crit.png`);
-  const critAt = s.t;
-  await page.evaluate(() => window.__wanwu.release());
-  s = await until(s => s.slow > 0.97 && s.caption);
-  await page.waitForTimeout(500);
-  await page.evaluate(() => window.__wanwu.freeze());
-  await shot(`${mode}-3-slowmo.png`);
-  const slowAt = (await status()).t;
+  const critAt = s.frozen ? s.t : null;
+  // The decisive hit itself, frozen on its impact frame during the slow motion.
+  await page.evaluate(() => { window.__wanwu.release(); window.__wanwu.freezeOn('decisive', 90); });
+  s = await until(s => s.frozen || s.phase === 'result');
+  if (s.frozen) await shot(`${mode}-3-slowmo.png`);
+  const slowAt = s.frozen ? {t: s.t, anchor: s.anchor, phase: s.phase, slow: s.slow, caption: s.caption} : null;
   await page.evaluate(() => window.__wanwu.release());
   s = await until(s => s.phase === 'result');
   await page.waitForTimeout(600);

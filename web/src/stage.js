@@ -341,7 +341,7 @@ export class Stage {
         c.quat.premultiply(new THREE.Quaternion().slerp(tmpQ, k)).normalize();
       }
     }
-    const focus = mid.clone().lerp(c.pushAt, c.push * 0.65);
+    const focus = mid.clone().lerp(c.pushAt, c.push * 0.85);
     c.focus.lerp(focus, snap ? 1 : 1 - Math.exp(-dt / 0.18));
 
     // Distance that keeps both bounding spheres inside the free area (with margin).
@@ -363,9 +363,10 @@ export class Stage {
         (Math.abs(rel.dot(right)) + f.radius) / (tanH * 0.86) - depth,
         (Math.abs(rel.dot(upv)) + f.radius) / (freeV * 0.86) - depth);
     }
-    need *= 1 - c.push * 0.42;
+    need = Math.max(c.push > 0 ? 0.7 : 1.0, need * (1 - c.push * 0.4));
     if (c.dist < 0 || snap) c.dist = need;
-    else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.22 : 0.9)));
+    // Zoom out quickly, zoom in gently — except while pushing in on the decisive hit.
+    else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.22 : c.push > 0.05 ? 0.3 : 0.9)));
 
     this.camera.quaternion.copy(c.quat);
     this.camera.position.copy(c.focus).addScaledVector(fv, -c.dist);
