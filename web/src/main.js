@@ -179,6 +179,23 @@ async function main() {
     });
     el.clock.textContent = pb ? Math.floor(pb.t) : '0';
   }
+  // The same blow on the HUD: the striking piece lights in its side's colour, the piece (or core bar) hit flashes white.
+  const hudChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .core .bar`) : el.hud.querySelectorAll(`.s${side} .pc`)[Number(part.split('-')[1])];
+  // Runs on the game clock (holds through hit-stop and a frozen frame), like the callouts.
+  const hudFlash = new Map();
+  function flashHud(e) {
+    const a = e.part === 'core' ? el.hud.querySelector(`.s${e.attacker} .ball`) : hudChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
+    if (a) hudFlash.set(a, {age: 0, cls: `strike${e.attacker}`});
+    if (b && b !== a) hudFlash.set(b, {age: 0, cls: 'hurt'});
+  }
+  function updateHudFlash(dt) {
+    for (const [node, f] of hudFlash) {
+      f.age += dt;
+      const on = f.age < 0.55;
+      node.classList.toggle(f.cls, on);
+      if (!on) hudFlash.delete(node);
+    }
+  }
   function setCaption(on, text) {
     if (text !== undefined) el.captionText.textContent = text;
     el.caption.classList.toggle('on', on);
@@ -194,10 +211,14 @@ async function main() {
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
       stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
       stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
-      // A hugging piece took the blow instead of the core: say so.
-      if (!core && e.targetOrient === 'hug' && e.type === 'hit') overlay.number(point, '挡住', 'block');
+      // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
+      if (e.damage > 0) {
+        overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak'});
+        if (!core && e.targetOrient === 'hug' && e.type === 'hit') overlay.callout(point, e.target, '挡住', {cls: 'block'});
+        flashHud(e);
+      }
       if (core) overlay.screenFlash(0.18);
-      if (e.type === 'weak') { overlay.screenFlash(0.45); if (!breaksAt.has(`${e.t}|${e.target}|${e.targetPart}`)) overlay.number(point, '暴击', 'weak'); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+      if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       overlay.number(new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8);
@@ -360,6 +381,7 @@ async function main() {
     safe: () => test.safe,
     setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
     stage,
+    overlay,
     start,
     events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage})) ?? []
   };
@@ -432,7 +454,7 @@ async function main() {
     }
     stage.render(dt, simDt);
     overlay.update(dt, true);
-    if (pb && phase !== 'build' && phase !== 'computing') updateHud(dt, pb.state);
+    if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); }
   }
   showBuild();
   requestAnimationFrame(frame);
