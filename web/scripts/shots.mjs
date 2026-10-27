@@ -64,7 +64,7 @@ for (const mode of ['A', 'B']) {
   await page.evaluate(() => { window.__wanwu.release(); window.__wanwu.freezeOn('decisive', 90); });
   s = await until(s => s.frozen || s.phase === 'result');
   if (s.frozen) await shot(`${mode}-3-slowmo.png`);
-  const slowAt = s.frozen ? {t: s.t, anchor: s.anchor, phase: s.phase, slow: s.slow, caption: s.caption} : null;
+  const slowAt = s.frozen ? {t: s.t, anchor: s.anchor, phase: s.phase, slow: s.slow, caption: s.caption, captionText: s.captionText, captionLines: s.captionLines} : null;
   await page.evaluate(() => window.__wanwu.release());
   s = await until(s => s.phase === 'result');
   await page.waitForTimeout(600);

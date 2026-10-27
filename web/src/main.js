@@ -131,8 +131,14 @@ async function main() {
   }
 
   // ---------- HUD ----------
+  const captionLines = () => Math.round(el.captionText.scrollHeight / parseFloat(getComputedStyle(el.captionText).lineHeight));
   function setCaption(on, text) {
-    if (text !== undefined) el.captionText.textContent = text;
+    if (text !== undefined) {
+      // Keep the caption to two lines: step the size down for long ones.
+      el.captionText.textContent = text;
+      el.captionText.style.fontSize = '';
+      if (captionLines() > 2) el.captionText.style.fontSize = '14px';
+    }
     el.caption.classList.toggle('on', on);
     // Keep the fighters framed above the caption while it is up.
     stage.setBottomPanel(on ? el.caption.offsetHeight + 8 : 0);
@@ -384,7 +390,7 @@ async function main() {
     }
   };
   window.__wanwu = {
-    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, slow: pb ? pb.slowAmount(pb.t) : 0, anchor: pb?.decisiveEvent ? {t: pb.decisiveEvent.t, type: pb.decisiveEvent.type, index: replay.events.indexOf(pb.decisiveEvent)} : null, caption: el.caption.classList.contains('on'), simMs: test.simMs, meta: replay && {...replay.meta, initial: undefined}, decisive: replay?.decisive, events: replay?.events.length}),
+    status: () => ({phase, frozen: test.frozen, t: pb?.t ?? 0, slow: pb ? pb.slowAmount(pb.t) : 0, anchor: pb?.decisiveEvent ? {t: pb.decisiveEvent.t, type: pb.decisiveEvent.type, index: replay.events.indexOf(pb.decisiveEvent)} : null, caption: el.caption.classList.contains('on'), captionText: el.captionText.textContent, captionLines: captionLines(), simMs: test.simMs, meta: replay && {...replay.meta, initial: undefined}, decisive: replay?.decisive, events: replay?.events.length}),
     freezeOn(types, delayMs = 60) { test.freezeOnType = types; test.freezeDelay = delayMs / 1000; test.pending = -1; },
     freeze() { test.frozen = true; },
     release() { test.frozen = false; test.freezeOnType = null; test.pending = -1; },
