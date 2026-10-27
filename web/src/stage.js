@@ -297,6 +297,77 @@ export class Stage {
   shake(amount) { this.cam.shake = Math.min(1.2, Math.max(this.cam.shake, amount)); }
   /** 0..1: push the camera toward a point (decisive slow motion). */
   setPush(amount, point) { this.cam.push = amount; if (point) this.cam.pushAt.copy(point); }
+  /**
+   * Replay cut: with the fighters posed at the hit, pick a side-on view of the contact that neither
+   * fighter blocks. Tries directions around the line between them (fighter 1 stays on top) and casts
+   * rays from each camera spot to the contact point and to the smaller fighter; prefers clear views,
+   * little tilt, and staying close to the current direction.
+   */
+  aimAtHit(point) {
+    const [a, b] = this.fighters;
+    if (!a || !b) return;
+    const c = this.cam;
+    const n = new THREE.Vector3().subVectors(b.center, a.center);
+    if (n.lengthSq() < 1e-8) return;
+    n.normalize();
+    this.scene.updateMatrixWorld(true);
+    const meshesOf = f => { const m = []; f.root.traverse(o => { if (o.isMesh) m.push(o); }); return m; };
+    const all = [...meshesOf(a), ...meshesOf(b)];
+    const [small, big] = a.radius <= b.radius ? [a, b] : [b, a];
+    const bigMeshes = meshesOf(big);
+    const cur = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quat);
+    const e1 = cur.clone().addScaledVector(n, -cur.dot(n));
+    if (e1.lengthSq() < 1e-6) e1.set(1, 0, 0).addScaledVector(n, -n.x);
+    if (e1.lengthSq() < 1e-6) e1.set(0, 1, 0).addScaledVector(n, -n.y);
+    e1.normalize();
+    const e2 = new THREE.Vector3().crossVectors(n, e1);
+    const ray = new THREE.Raycaster();
+    const D = 1.1;
+    const blocked = (target, meshes, fwd, margin) => {
+      const from = target.clone().addScaledVector(fwd, -D);
+      ray.set(from, fwd);
+      ray.near = 0;
+      ray.far = D - margin;
+      return ray.intersectObjects(meshes, false).length > 0;
+    };
+    // Points spread over the smaller fighter's model (plus its centre): how much of it the big one hides.
+    const samples = [small.center.clone()];
+    small.root.traverse(o => {
+      if (!o.isMesh) return;
+      const pos = o.geometry.attributes.position;
+      const step = Math.max(1, Math.floor(pos.count / 12));
+      for (let i = 0; i < pos.count; i += step) samples.push(new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld));
+    });
+    const scoreOf = (fwd, tilt) => {
+      const hidden = samples.filter(p => blocked(p, bigMeshes, fwd, 0.01)).length / samples.length;
+      // The contact point often sits a little inside the render meshes, hence the wider margin.
+      return hidden * 8 + (blocked(point, all, fwd, 0.08) ? 3 : 0) + Math.abs(tilt) * 0.8 + (1 - fwd.dot(cur)) * 0.5;
+    };
+    // The current view competes too (as if untilted): if it already shows the contact, there is no cut.
+    let best = cur, bestScore = Math.abs(cur.dot(n)) < 0.9 ? scoreOf(cur, 0) : Infinity;
+    for (const tilt of [0, 0.4, -0.4, 0.8, -0.8, 1.15, -1.15]) {
+      for (let k = 0; k < 24; k++) {
+        const ang = (k / 24) * Math.PI * 2;
+        const fwd = e1.clone().multiplyScalar(Math.cos(ang)).addScaledVector(e2, Math.sin(ang))
+          .multiplyScalar(Math.cos(tilt)).addScaledVector(n, Math.sin(tilt)).normalize();
+        const score = scoreOf(fwd, tilt);
+        if (score < bestScore) { bestScore = score; best = fwd; }
+      }
+    }
+    if (best !== cur) {
+      tmpM.lookAt(new THREE.Vector3(), best, n);
+      c.quat.setFromRotationMatrix(tmpM);
+    }
+    c.turning = false;
+    c.locked = true; // the decisive shot holds: no orbiting until the next match
+  }
+  /** Jump focus and distance to the current pose (after a cut); orientation is kept. */
+  snapFocus() {
+    const [a, b] = this.fighters;
+    if (!a || !b) return;
+    this.cam.focus.addVectors(a.center, b.center).multiplyScalar(0.5);
+    this.cam.dist = -1;
+  }
   clearFx() {
     this.particles.clear();
     this.rings.clear();
@@ -322,9 +393,10 @@ export class Stage {
       c.focus.copy(mid);
       c.ready = true;
       c.dist = -1;
+      c.locked = false;
     }
     const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quat);
-    if (d > 0.35) {
+    if (d > 0.35 && !c.locked) {
       // Only orbit when the two start lining up along the view (one hiding the other), and then by
       // the smallest rotation that brings their line back across the screen. No deliberate roll.
       const n = axis.clone().divideScalar(d);

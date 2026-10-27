@@ -97,7 +97,7 @@ async function main() {
 
   // ---------- match state ----------
   let phase = 'loading'; // loading | idle | play | finale | result | replay
-  let pb = null, replay = null, finish = 'contact', midFight = false, autoReplay = false, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
+  let pb = null, replay = null, finish = 'contact', midFight = false, liveCut = false, autoReplay = false, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
   const hpView = [0, 1].map(() => ({hp: 1, chip: 1, since: 0}));
   const def = id => ({parts: [{item: id, mount: 'core', rot: [0, 0, 0]}]});
 
@@ -278,6 +278,7 @@ async function main() {
     [0, 1].forEach(i => { $(`name${i}`).innerHTML = r.meta.initial[i].definition.parts.map(p => nameHtml(byId.get(p.item))).join('+'); });
     setCaption(false, r.decisive.caption);
     captionHold = 0;
+    liveCut = false;
     phase = 'play';
     overlay.showBanner('开打', '#ffffff', 0.9);
     history.replaceState(null, '', `?a=${s.a}&b=${s.b}&mode=${s.mode}&seed=${s.seed}`);
@@ -307,6 +308,16 @@ async function main() {
     stage.setBottomPanel(el.result.offsetHeight + 8);
     syncControls();
   }
+  /** Cut the camera to a clear side view of the decisive hit (aimed from the hit frame's pose). */
+  function aimCut() {
+    const t = pb.t;
+    pb.sample(pb.slowAt);
+    stage.pose(pb.state);
+    stage.aimAtHit(new THREE.Vector3().fromArray(pb.decisiveEvent.point));
+    pb.sample(t);
+    stage.pose(pb.state);
+    stage.snapFocus();
+  }
   function replaySlow() {
     if (!pb) return;
     el.result.hidden = true;
@@ -315,9 +326,16 @@ async function main() {
     pb.slowEnabled = true;
     el.captionTag.textContent = `${midFight ? '最大一击' : '决定性一击'} · 回放`;
     // Anchored on the decisive hit itself (see decisiveAnchor), not on decisive.t0/t1.
+    if (pb.decisiveEvent) {
+      // A replay is a cut: aim the camera from the hit frame's pose so the contact is not hidden.
+      pb.seek(pb.slowAt);
+      stage.pose(pb.state);
+      stage.aimAtHit(new THREE.Vector3().fromArray(pb.decisiveEvent.point));
+    }
     pb.seek(pb.replayFrom);
     replayEnd = 0;
     stage.pose(pb.state);
+    stage.snapFocus();
     for (const [i, f] of pb.state.fighters.entries()) Object.assign(hpView[i], {hp: f.hp / f.maxHp, chip: f.hp / f.maxHp, since: 9});
     phase = 'replay';
     syncControls();
@@ -426,6 +444,8 @@ async function main() {
       stage.pose(idleState());
     } else if (phase === 'play' || phase === 'replay') {
       simDt = pb.advance(dt, s.speed, onEvent);
+      // Live decisive slow motion: one cut to a clear view of the contact as the push-in starts.
+      if (phase === 'play' && pb.slowEnabled && pb.decisiveEvent && !liveCut && pb.t >= pb.replayFrom + 0.35) { liveCut = true; aimCut(); }
       stage.pose(pb.state);
       const slow = pb.slowAmount(pb.t);
       stage.setPush(pb.pushAmount(pb.t), pb.decisiveEvent && new THREE.Vector3().fromArray(pb.decisiveEvent.point));
