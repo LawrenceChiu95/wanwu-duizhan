@@ -3,12 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#070a12">
+<meta name="theme-color" content="#070912">
 <link rel="icon" href="data:,">
 <title>万物对战 · 战斗陀螺</title>
 <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
+<aside class="desk left" aria-hidden="true">
+  <div class="mark"><span class="w1">万物</span><span class="w2">对战</span></div>
+  <div class="sub">战斗陀螺</div>
+  <p class="pitch">两件东西装到一颗核心上，<br>转起来，撞到对面的核心碎掉为止。</p>
+</aside>
+
 <div id="app">
   <canvas id="view"></canvas>
   <div id="fx" aria-hidden="true"></div>
@@ -16,40 +22,43 @@
 
   <header id="hud" hidden>
     <div class="side s0">
-      <div class="who"><i class="dot"></i><b>你</b></div>
+      <div class="who"><b>你</b></div>
       <div class="core"><i class="ball"></i><div class="bar"><i class="chip"></i><i class="fill"></i></div></div>
       <div class="parts"></div>
     </div>
     <div class="mid"><span class="clock" id="clock">0</span><span class="slowtag" id="slowtag">慢放</span></div>
     <div class="side s1">
-      <div class="who"><b>对手</b><i class="dot"></i></div>
+      <div class="who"><b>对手</b></div>
       <div class="core"><div class="bar"><i class="chip"></i><i class="fill"></i></div><i class="ball"></i></div>
       <div class="parts"></div>
     </div>
   </header>
 
   <header id="foe">
-    <span class="label">对手</span><span id="foeParts"></span>
+    <span class="vs">VS</span><span class="label">对手</span><span id="foeParts"></span>
   </header>
 
   <div id="banner" aria-live="polite"></div>
-  <div id="caption" aria-live="polite"><p id="captionText"></p></div>
+  <div id="caption" aria-live="polite"><span class="tag">决胜</span><p id="captionText"></p></div>
 
   <section id="build">
+    <div class="bhead"><b>你的陀螺</b><span>两件装在核心两侧</span></div>
     <div class="slots">
       <div class="slot" data-slot="0">
-        <button type="button" class="item" data-pick="0"><b></b><i class="lux">Lux3D</i><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
-        <div class="seg orient" role="radiogroup">
+        <button type="button" class="item" data-pick="0"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
+        <div class="seg orient" role="radiogroup" aria-label="怎么装">
           <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
           <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
         </div>
+        <p class="hint"></p>
       </div>
       <div class="slot" data-slot="1">
-        <button type="button" class="item" data-pick="1"><b></b><i class="lux">Lux3D</i><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
-        <div class="seg orient" role="radiogroup">
+        <button type="button" class="item" data-pick="1"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
+        <div class="seg orient" role="radiogroup" aria-label="怎么装">
           <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
           <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
         </div>
+        <p class="hint"></p>
       </div>
     </div>
     <div class="row">
@@ -57,16 +66,17 @@
         <button type="button" data-spread="e180" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M15.5 12H22" /></svg>对面</button>
         <button type="button" data-spread="e90" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M12 15.5V22" /></svg>挨着</button>
       </div>
-      <button type="button" class="go" id="goBtn"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" /></svg><span>开打</span></button>
+      <button type="button" class="go" id="goBtn"><span>开打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>
 
   <section id="result" hidden>
+    <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
     <p class="why" id="whyLine"></p>
     <div class="actions">
-      <button type="button" id="replayBtn" class="ghost" aria-label="重看慢镜头"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
-      <button type="button" id="againBtn" class="primary"><svg viewBox="0 0 24 24"><path d="M14.5 4.5l5 5L9 20H4v-5z" /></svg>换个装法再打</button>
+      <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
+      <button type="button" id="againBtn" class="primary"><span>换个装法再打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>
 
@@ -89,6 +99,14 @@
   <div id="busy" hidden><i></i><span id="busyText">载入中</span></div>
   <div id="error" hidden></div>
 </div>
+
+<aside class="desk right" aria-hidden="true">
+  <ol class="how">
+    <li><b>挑两件</b><span>锅、台灯是拍照生成的 3D</span></li>
+    <li><b>伸出 · 贴着</b><span>伸出去抡人，贴着替核心挡</span></li>
+    <li><b>开打</b><span>谁的核心先碎谁输</span></li>
+  </ol>
+</aside>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

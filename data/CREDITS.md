@@ -27,3 +27,7 @@ Two generated variants and their generation receipts are in [lux3d/RECEIPT.md](l
 | 台灯（Lux3D） | “Art Deco Mica Table Lamp” — Artdecodude, CC BY; https://www.flickr.com/photos/62920259@N03/5771792573 |
 
 Both variants retain their existing counterpart's catalog attack/defense/material and legacy HP values; actual fighter HP is uniformly 140 for singles and assemblies. Geometry, volume and the surface weak point come from the supplied meshes; mass is the same category reference value as the counterpart. Different collision geometry can still produce different outcomes. The pan is centered and rotated with its long axis along Z at 0.38 m; the lamp stays Y-up at 0.45 m. These are consistent prototype scales, not dimensions measured from photographs.
+
+## Font
+
+Display type: [Smiley Sans 得意黑](https://github.com/atelier-anchor/smiley-sans) — © 2022–2024 atelierAnchor, [SIL Open Font License 1.1](https://scripts.sil.org/OFL). Subset to the characters this page uses; the license fields are kept in the font file.

@@ -3,10 +3,10 @@
 import {chromium} from 'playwright';
 import {mkdir, writeFile} from 'node:fs/promises';
 const [base = 'http://127.0.0.1:4377/', out = './shots-top', w = '390', query = ''] = process.argv.slice(2);
-const W = Number(w), H = Math.round(W * 844 / 390);
+const W = Number(w), desk = W >= 900, H = process.env.H ? Number(process.env.H) : desk ? 900 : Math.round(W * 844 / 390);
 await mkdir(out, {recursive: true});
 const browser = await chromium.launch({channel: 'chromium'});
-const ctx = await browser.newContext({viewport: {width: W, height: H}, deviceScaleFactor: 2, isMobile: true, hasTouch: true});
+const ctx = await browser.newContext(desk ? {viewport: {width: W, height: H}, deviceScaleFactor: 1} : {viewport: {width: W, height: H}, deviceScaleFactor: 2, isMobile: true, hasTouch: true});
 const page = await ctx.newPage();
 const logs = [];
 page.on('console', m => logs.push(`${m.type()}: ${m.text()}`));

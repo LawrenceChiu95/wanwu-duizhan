@@ -13,7 +13,7 @@ const el = {
   app: $('app'), canvas: $('view'), fx: $('fx'), flash: $('flash'), banner: $('banner'),
   caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
-  result: $('result'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
+  result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
   sheet: $('sheet'), sheetGrid: $('sheetGrid'), sheetTitle: $('sheetTitle'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error')
 };
@@ -42,6 +42,7 @@ const isLux = id => id.endsWith('-lux3d');
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.parts[0].orient}, {item: b.parts[1].item, mount: b.spread, orient: b.parts[1].orient}]});
+const HINT = {out: '伸出去，转起来抡人', hug: '贴着核心，替它挡'};
 const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 
 function renderCredits(items) {
@@ -72,6 +73,7 @@ async function main() {
   el.busy.hidden = false;
   const [items, rules] = await Promise.all([loadCatalog(), loadV3Rules()]);
   const byId = new Map(items.map(i => [i.id, i]));
+  const spec = id => { const it = byId.get(id); return `${Math.round(Math.max(...it.bounds.max.map((v, i) => v - it.bounds.min[i])) * 100)} cm · ${it.mass} kg`; };
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
   const stage = new Stage(el.canvas, {items, coreRadius: rules.core.radius, layout});
@@ -113,6 +115,8 @@ async function main() {
       const k = Number(slot.dataset.slot), part = mine.parts[k];
       slot.querySelector('.item b').textContent = NAMES[part.item];
       slot.querySelector('.lux').hidden = !isLux(part.item);
+      slot.querySelector('.spec').textContent = spec(part.item);
+      slot.querySelector('.hint').textContent = HINT[part.orient];
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
@@ -264,7 +268,9 @@ async function main() {
     }
     phase = 'result';
     const m = replay.meta;
-    el.winnerLine.innerHTML = m.winner === null ? '平局' : m.winner === 0 ? `<em style="color:${HEX[0]};font-style:normal">你赢了</em>` : '你输了';
+    el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
+    el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
+    el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;
     el.whyLine.textContent = reasonLine(replay);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false);
@@ -296,8 +302,7 @@ async function main() {
       b.type = 'button';
       b.className = id === mine.parts[k].item ? 'sel' : '';
       b.disabled = id === other;
-      const item = byId.get(id), size = Math.round(Math.max(...item.bounds.max.map((v, i) => v - item.bounds.min[i])) * 100);
-      b.innerHTML = `<b>${NAMES[id]}</b><small>${isLux(id) ? '<i class="lux">Lux3D</i> ' : ''}${size} cm · ${item.mass} kg</small>`;
+      b.innerHTML = `<b>${NAMES[id]}</b><small>${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${spec(id)}</small>${id === other ? '<span class="used">已装</span>' : ''}`;
       b.onclick = () => { mine.parts[k].item = id; el.sheet.hidden = true; rebuildMine(); };
       el.sheetGrid.append(b);
     }
