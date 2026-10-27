@@ -381,18 +381,30 @@ async function main() {
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action) {
     if (!live || live.done || phase !== 'play') return;
+    const c = live.match.control(0), left = action === 'dash' ? c.dashIn : c.blockIn;
+    // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes instead.
+    if (left > rules.dt + 1e-9) { replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); test.denied++; return; }
     live.match.press(0, action);
   }
-  for (const [btn, action] of [[el.dashBtn, 'dash'], [el.blockBtn, 'block']]) btn.addEventListener('pointerdown', ev => { ev.preventDefault(); press(action); });
+  // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).
+  function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
+  for (const [btn, action] of [[el.dashBtn, 'dash'], [el.blockBtn, 'block']]) {
+    btn.addEventListener('pointerdown', ev => { ev.preventDefault(); press(action); });
+    btn.addEventListener('animationend', ev => { if (ev.animationName === 'padDeny') btn.classList.remove('deny'); else if (ev.animationName === 'padPop') btn.classList.remove('pop'); });
+  }
   addEventListener('keydown', ev => { if (ev.repeat) return; if (ev.code === 'KeyJ' || ev.code === 'Space') { ev.preventDefault(); press('dash'); } else if (ev.code === 'KeyK' || ev.code === 'ShiftLeft' || ev.code === 'ShiftRight') press('block'); });
   function updatePad() {
     if (!live || el.pad.hidden) return;
     const c = live.match.control(0), M = rules.manual;
     for (const [btn, left, total, on] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield]]) {
-      btn.style.setProperty('--cd', on ? 0 : (left / total).toFixed(3));
-      btn.classList.toggle('on', on);
-      btn.classList.toggle('cooling', !on && left > 0);
-      btn.classList.toggle('ready', !on && left <= 0 && !live.done);
+      const state = on ? 'on' : left > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
+      btn.style.setProperty('--p', on ? 0 : (1 - left / total).toFixed(3));
+      btn.classList.toggle('on', state === 'on');
+      btn.classList.toggle('cooling', state === 'cooling');
+      btn.classList.toggle('ready', state === 'ready');
+      // Back from cooling: one pop so the thumb knows without looking twice.
+      if (state === 'ready' && btn.dataset.state === 'cooling') replay_(btn, 'pop');
+      btn.dataset.state = state;
     }
   }
   $('sheetClose').onclick = () => { el.sheet.hidden = true; };
@@ -420,7 +432,7 @@ async function main() {
 
   // ---------- test hooks (Playwright screenshots; no effect on normal play) ----------
   const test = {
-    frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, nth: 1, seen: 0, speed: 1, safe: null,
+    frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, denied: 0, nth: 1, seen: 0, speed: 1, safe: null,
     onEvent(e) {
       if (!this.freezeOn || this.pending >= 0) return;
       const ok = this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
@@ -432,7 +444,7 @@ async function main() {
     setControl(c) { control = c; syncBuild(); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, control, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },

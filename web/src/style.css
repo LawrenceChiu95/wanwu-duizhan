@@ -121,14 +121,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .num.t0 { color: var(--c0l); }
 .num.t1 { color: var(--c1l); }
 .num.block { font-size: 17px; color: #d9f6ff; letter-spacing: 0.08em; }
-.call { position: absolute; left: 0; top: 0; display: flex; align-items: baseline; gap: 5px; padding: 2px 9px 1px; white-space: nowrap; pointer-events: none; will-change: transform, opacity;
+.call { position: absolute; left: 0; top: 0; z-index: 3; display: flex; align-items: baseline; gap: 6px; padding: 3px 11px 2px; white-space: nowrap; pointer-events: none; will-change: transform, opacity;
   font-family: var(--display); line-height: 1.1; clip-path: var(--slant); }
-.call b { font-weight: 400; font-size: 19px; }
-.call em { font-style: normal; font-size: 14px; color: #1a1400; background: var(--hot); padding: 0 4px; }
+.call b { font-weight: 400; font-size: 23px; }
+.call em { font-style: normal; font-size: 16px; color: #1a1400; background: var(--hot); padding: 0 5px; }
 .call.t0 { background: linear-gradient(90deg, rgba(255, 94, 20, 0.95), rgba(255, 150, 80, 0.95)); color: #1a0900; }
 .call.t1 { background: linear-gradient(90deg, rgba(20, 119, 224, 0.95), rgba(80, 190, 255, 0.95)); color: #02101c; }
-.call.block { padding: 1px 7px 0; background: rgba(7, 9, 18, 0.85); color: #d9f6ff; }
-.call.block b { font-size: 14px; letter-spacing: 0.08em; }
+.call.block { padding: 2px 9px 1px; background: rgba(7, 9, 18, 0.88); color: #d9f6ff; }
+.call.block b { font-size: 17px; letter-spacing: 0.08em; }
+.callpin { position: absolute; left: 0; top: 0; z-index: 2; width: 2px; pointer-events: none; will-change: transform, opacity; }
+.callpin::after { content: ""; position: absolute; left: -2px; bottom: -3px; width: 6px; height: 6px; border-radius: 50%; background: inherit; }
+.callpin.t0 { background: linear-gradient(rgba(255, 150, 80, 0.95), rgba(255, 150, 80, 0.35)); }
+.callpin.t1 { background: linear-gradient(rgba(80, 190, 255, 0.95), rgba(80, 190, 255, 0.35)); }
 .num.broke { font-size: 22px; color: #fff; padding: 4px 12px 3px; background: rgba(7, 9, 18, 0.82); clip-path: var(--slant); text-shadow: none; }
 .num.broke.t0 { background: linear-gradient(90deg, rgba(255, 94, 20, 0.92), rgba(255, 138, 61, 0.92)); color: #1a0900; }
 .num.broke.t1 { background: linear-gradient(90deg, rgba(20, 119, 224, 0.92), rgba(61, 180, 255, 0.92)); color: #02101c; }
@@ -191,19 +195,29 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   filter: drop-shadow(0 0 16px rgba(255, 120, 40, 0.45)); }
 .pad.block { color: #04121f; background: linear-gradient(100deg, #effcff, #9fe6ff 50%, #3db4ff); clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%);
   filter: drop-shadow(0 0 16px rgba(120, 220, 255, 0.4)); }
-/* Cooldown: the button goes dark and its colour sweeps back in clockwise from the top; when the sweep closes, the button is lit again. */
-.pad .cd { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: conic-gradient(var(--sweep) calc((1 - var(--cd, 0)) * 1turn), transparent 0); }
-.pad.dash { --sweep: rgba(255, 128, 48, 0.5); }
-.pad.block { --sweep: rgba(90, 196, 255, 0.46); }
-.pad.cooling { color: rgba(226, 234, 248, 0.62); background: linear-gradient(100deg, #1c2333, #111622); filter: none; }
+/* Cooldown: the button goes dark and fills back up left to right in its own colour, a bright edge leading;
+   when it is full it pops once and is lit again. A tap while it is filling shakes it (nothing is sent). */
+.pad .cd { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p, 0) * 100%); pointer-events: none; opacity: 0; background: var(--fill); }
+.pad .cd::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #fff; box-shadow: 0 0 12px 3px rgba(255, 255, 255, 0.7); }
+.pad.dash { --fill: linear-gradient(100deg, #7a2a06, #ff7a2e); }
+.pad.block { --fill: linear-gradient(100deg, #0b4478, #36aef8); }
+.pad.cooling { color: #f4f7ff; background: #10141e; filter: none; }
 .pad.cooling .cd { opacity: 1; }
+.pad.cooling span { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.pad.cooling svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9)); }
 .pad.ready::after { content: ""; position: absolute; top: 0; bottom: 0; width: 34%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: shine 2.2s ease-in-out infinite; }
 .pad.on { animation: padOn 0.16s ease-in-out infinite alternate; }
 .pad:active { transform: translateY(2px) scale(0.985); }
+.pad.pop { animation: padPop 0.42s ease-out; }
+.pad.deny { animation: padDeny 0.26s linear; }
+.pad.deny::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: rgba(255, 255, 255, 0.22); animation: padDenyFlash 0.26s ease-out forwards; }
+@keyframes padPop { 0% { transform: scale(1); filter: brightness(2.1); } 35% { transform: scale(1.06); } 100% { transform: scale(1); filter: brightness(1); } }
+@keyframes padDeny { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 45% { transform: translateX(4px); } 70% { transform: translateX(-3px); } }
+@keyframes padDenyFlash { to { opacity: 0; } }
 @keyframes padOn { to { filter: brightness(1.35) drop-shadow(0 0 22px rgba(255, 255, 255, 0.6)); } }
 .call.dash em { background: #fff; color: #1a0900; }
 .call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
-.call.parry b { font-size: 24px; }
+.call.parry b { font-size: 28px; }
 
 /* ---------- Result card ---------- */
 #result { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 26px); padding: 16px 16px 14px; text-align: center; overflow: hidden;
@@ -258,6 +272,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .bhead span { display: none; }
   .pad { height: 66px; font-size: 30px; }
   .pad svg { width: 26px; height: 26px; }
+  .call b { font-size: 20px; }
+  .call em { font-size: 14px; }
+  .call.parry b { font-size: 24px; }
+  .call.block b { font-size: 15px; }
   .item b { font-size: 20px; }
   .item .spec { font-size: 9.5px; }
   .seg button { font-size: 14px; gap: 2px; }

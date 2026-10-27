@@ -38,8 +38,9 @@ export class Overlay {
     this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur, rise: 40, half: el.offsetWidth * 0.65, h: el.offsetHeight});
   }
   /**
-   * Who hit with what: a short plate at the contact point in the striker's colour (「锅」, 「锅 暴击」). Plates that
-   * would land on one another stack upward, so a quick exchange stays readable; each is gone within CALL_TIME.
+   * Who hit with what: a short plate in the striker's colour (「锅」, 「锅 暴击」), held up above the contact point on a
+   * thin pin so it does not sit on the tops (about half a metre up, in screen px). Plates that would land on one another
+   * stack upward, so a quick exchange stays readable; each is gone within CALL_TIME.
    */
   callout(point, side, name, {crit = false, dash = false, cls = ''} = {}) {
     const el = document.createElement('div');
@@ -51,6 +52,7 @@ export class Overlay {
     if (crit) { const em = document.createElement('em'); em.textContent = '暴击'; el.append(em); }
     this.layer.append(el);
     const at = new THREE.Vector3().copy(point), w = el.offsetWidth, h = el.offsetHeight, p = this.stage.project(at, {x: 0, y: 0});
+    const base = Math.max(18, Math.round(this.stage.screenRadius(at, 0.55)));
     // Lift above every live plate it would cover (screen px above its anchor), lowest free spot first.
     let lift = 0;
     for (let moved = Boolean(p); moved;) {
@@ -58,11 +60,14 @@ export class Overlay {
       for (const c of this.calls) {
         const q = this.stage.project(c.at, {x: 0, y: 0});
         if (!q || Math.abs(q.x - p.x) >= (w + c.w) / 2 + 4) continue;
-        const top = p.y - lift - h, bottom = p.y - lift, ctop = q.y - c.lift - c.h, cbottom = q.y - c.lift;
-        if (top < cbottom + 3 && bottom > ctop - 3) { lift = p.y - ctop + 3; moved = true; }
+        const bottom = p.y - base - lift, top = bottom - h, cbottom = q.y - c.base - c.lift, ctop = cbottom - c.h;
+        if (top < cbottom + 3 && bottom > ctop - 3) { lift = p.y - base - ctop + 3; moved = true; }
       }
     }
-    this.calls.push({el, at, age: 0, w, h, lift});
+    // The pin runs from the contact point up to the lowest plate only (a lifted plate would have it cross the others).
+    let pin = null;
+    if (lift === 0) { pin = document.createElement('i'); pin.className = `callpin t${side}`; pin.style.height = `${base}px`; this.layer.append(pin); }
+    this.calls.push({el, pin, at, age: 0, w, h, base, lift});
   }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
   showBanner(text, color, dur = 1.1) {
@@ -72,7 +77,7 @@ export class Overlay {
   }
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
   clear() {
-    for (const n of [...this.nums, ...this.calls]) n.el.remove();
+    for (const n of [...this.nums, ...this.calls]) { n.el.remove(); n.pin?.remove(); }
     this.nums = [];
     this.calls = [];
     this.flash = 0;
@@ -99,10 +104,11 @@ export class Overlay {
       const c = this.calls[k];
       c.age += dt;
       const t = c.age / CALL_TIME;
-      if (t >= 1 || !stage.project(c.at, p)) { c.el.remove(); this.calls.splice(k, 1); continue; }
-      const x = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, p.x)), y = p.y - 16 - c.lift;
-      c.el.style.opacity = t > 0.65 ? (1 - t) / 0.35 : 1;
+      if (t >= 1 || !stage.project(c.at, p)) { c.el.remove(); c.pin?.remove(); this.calls.splice(k, 1); continue; }
+      const x = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, p.x)), y = p.y - c.base - c.lift, fade = t > 0.65 ? (1 - t) / 0.35 : 1;
+      c.el.style.opacity = fade;
       c.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${t < 0.12 ? 0.7 + 2.5 * t : 1})`;
+      if (c.pin) { c.pin.style.opacity = fade; c.pin.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; }
     }
     this.flash *= Math.exp(-dt * 11);
     this.flashEl.style.opacity = this.flash > 0.01 ? this.flash.toFixed(3) : 0;

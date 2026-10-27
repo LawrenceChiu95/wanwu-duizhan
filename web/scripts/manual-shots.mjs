@@ -41,6 +41,8 @@ for (let guard = 0; s.phase === 'play' && guard < 3000; guard++) {
   } else if (s.me && s.foe) {
     if (s.foe.charging && s.me.blockIn === 0 && !s.me.shield) await tap('#blockBtn');
     else if (s.me.dashIn === 0 && !s.me.charging && !s.me.dashing) await tap('#dashBtn');
+    // Impatient taps while 冲 is still filling: the button shakes and nothing reaches the sim (the sha256 check below).
+    else if (s.me.dashIn > 1 && guard % 20 === 0) await tap('#dashBtn');
     // One frame with the buttons in both states (one cooling, one ready) for the fight shot.
     if (!pressedFight && s.t > 6 && (s.me.dashIn > 1.5) !== (s.me.blockIn > 1.5)) { await shot('m2-fight'); pressedFight = true; report.fightShotAt = s.t; }
   }
@@ -53,7 +55,7 @@ await page.waitForFunction(() => window.__top.status().phase === 'result', null,
 await page.waitForTimeout(1500);
 await shot('m5-result');
 s = await status();
-report.result = {winner: s.meta.winner, reason: s.meta.reason, duration: s.meta.duration, line: s.reason, presses: s.inputs.length};
+report.result = {winner: s.meta.winner, reason: s.meta.reason, duration: s.meta.duration, line: s.reason, presses: s.inputs.length, deniedTaps: s.denied};
 // Determinism: the replay the browser built live, against Node re-simulating only its recorded presses.
 const json = await page.evaluate(() => window.__top.replayJson()), browserReplay = JSON.parse(json);
 const again = await simulateV3({fighters: browserReplay.meta.initial.map(f => f.definition), mode: browserReplay.meta.mode, seed: browserReplay.meta.seed, manual: {sides: ['input', 'ai'], inputs: browserReplay.meta.manual.inputs}});
