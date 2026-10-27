@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {ConvexGeometry} from 'three/addons/geometries/ConvexGeometry.js';
 import {instantiate} from './models.js';
 
 export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
 const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
+const HULL_MAT = new THREE.MeshBasicMaterial();
 
 function radialTexture(inner, outer) {
   const c = document.createElement('canvas');
@@ -216,6 +218,7 @@ export class Stage {
     this.particles = new Particles(this.scene);
     this.rings = new Rings(this.scene);
     this.fighters = [];
+    this.hullGeo = new Map();
     this.time = 0;
 
     this.cam = {focus: new THREE.Vector3(), dist: 6, quat: new THREE.Quaternion(), shake: 0, push: 0, pushAt: new THREE.Vector3(), ready: false, turning: false};
@@ -246,6 +249,12 @@ export class Stage {
         root.add(obj);
         return obj;
       });
+      // Each part's collision hull, never drawn: aimAtHit casts its rays at these and samples their corners.
+      const hullPoints = def.parts.map(p => this.items.get(p.item).hull.map(v => new THREE.Vector3(...v)));
+      const hulls = def.parts.map((p, k) => {
+        if (!this.hullGeo.has(p.item)) this.hullGeo.set(p.item, new ConvexGeometry(hullPoints[k]));
+        return new THREE.Mesh(this.hullGeo.get(p.item), HULL_MAT);
+      });
       let base = null;
       if (def.parts.length > 1) {
         const he = this.rules.arena.base.halfExtents;
@@ -260,7 +269,7 @@ export class Stage {
       this.scene.add(root);
       const mounts = this.rules.arena.mounts;
       const radius = Math.max(...def.parts.map(p => Math.hypot(...mounts[p.mount]) + itemRadius(this.items.get(p.item))));
-      return {root, parts, base, halo, uniforms, radius, center: new THREE.Vector3(), flash: 0, danger: 0, dim: 0, dimTarget: 0};
+      return {root, parts, hulls, hullPoints, base, halo, uniforms, radius, center: new THREE.Vector3(), flash: 0, danger: 0, dim: 0, dimTarget: 0};
     });
     this.cam.ready = false;
   }
@@ -302,6 +311,8 @@ export class Stage {
    * fighter blocks. Tries directions around the line between them (fighter 1 stays on top) and casts
    * rays from each camera spot to the contact point and to the smaller fighter; prefers clear views,
    * little tilt, and staying close to the current direction.
+   * The rays test the collision hulls (plus an assembly's base), not the render meshes: a Lux3D model
+   * has ~40k triangles, which froze the page for 2–3 s here.
    */
   aimAtHit(point) {
     const [a, b] = this.fighters;
@@ -311,7 +322,8 @@ export class Stage {
     if (n.lengthSq() < 1e-8) return;
     n.normalize();
     this.scene.updateMatrixWorld(true);
-    const meshesOf = f => { const m = []; f.root.traverse(o => { if (o.isMesh) m.push(o); }); return m; };
+    for (const f of [a, b]) f.hulls.forEach((h, k) => h.matrixWorld.copy(f.parts[k].matrixWorld));
+    const meshesOf = f => (f.base ? [...f.hulls, f.base] : f.hulls);
     const all = [...meshesOf(a), ...meshesOf(b)];
     const [small, big] = a.radius <= b.radius ? [a, b] : [b, a];
     const bigMeshes = meshesOf(big);
@@ -330,17 +342,12 @@ export class Stage {
       ray.far = D - margin;
       return ray.intersectObjects(meshes, false).length > 0;
     };
-    // Points spread over the smaller fighter's model (plus its centre): how much of it the big one hides.
+    // The smaller fighter's hull corners (plus its centre): how much of it the big one hides.
     const samples = [small.center.clone()];
-    small.root.traverse(o => {
-      if (!o.isMesh) return;
-      const pos = o.geometry.attributes.position;
-      const step = Math.max(1, Math.floor(pos.count / 12));
-      for (let i = 0; i < pos.count; i += step) samples.push(new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld));
-    });
+    small.hulls.forEach((h, k) => { for (const v of small.hullPoints[k]) samples.push(v.clone().applyMatrix4(h.matrixWorld)); });
     const scoreOf = (fwd, tilt) => {
       const hidden = samples.filter(p => blocked(p, bigMeshes, fwd, 0.01)).length / samples.length;
-      // The contact point often sits a little inside the render meshes, hence the wider margin.
+      // The contact point sits on or a little inside the hulls, hence the wider margin.
       return hidden * 8 + (blocked(point, all, fwd, 0.08) ? 3 : 0) + Math.abs(tilt) * 0.8 + (1 - fwd.dot(cur)) * 0.5;
     };
     // The current view competes too (as if untilted): if it already shows the contact, there is no cut.
