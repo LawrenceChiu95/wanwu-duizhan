@@ -96,7 +96,7 @@ async function main() {
   el.busy.hidden = true;
 
   // ---------- match state ----------
-  let phase = 'idle'; // idle | play | finale | result | replay
+  let phase = 'loading'; // loading | idle | play | finale | result | replay
   let pb = null, replay = null, finish = 'contact', autoReplay = false, finaleAge = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
   const hpView = [0, 1].map(() => ({hp: 1, chip: 1, since: 0}));
   const def = id => ({parts: [{item: id, mount: 'core', rot: [0, 0, 0]}]});
@@ -226,7 +226,7 @@ async function main() {
   // ---------- run ----------
   let runId = 0;
   async function start() {
-    const raw = el.seed.value.trim();
+    const raw = el.seed.value.trim() || String(s.seed);
     const seed = /^\d+$/.test(raw) ? Number(raw) : NaN;
     if (!Number.isInteger(seed) || seed > MAX_SEED) {
       el.seed.parentElement.style.boxShadow = 'inset 0 0 0 2px #ff4d5e';
@@ -397,6 +397,7 @@ async function main() {
       if (test.pending < 0) { test.frozen = true; test.freezeOnType = null; }
     }
     if (test.frozen) dt = 0;
+    if (phase === 'loading') return; // fighters not built yet
     let simDt = dt;
     if (phase === 'idle') {
       idleSpin += dt;
@@ -439,6 +440,7 @@ async function main() {
     overlay.update(dt, true);
     updateHud(dt, phase === 'idle' ? idleState() : pb.state);
   }
+  syncControls();
   showIdle();
   requestAnimationFrame(frame);
   if (q.get('autoplay') === '1') start();
