@@ -97,7 +97,7 @@ async function main() {
 
   // ---------- match state ----------
   let phase = 'loading'; // loading | idle | play | finale | result | replay
-  let pb = null, replay = null, finish = 'contact', autoReplay = false, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
+  let pb = null, replay = null, finish = 'contact', midFight = false, autoReplay = false, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, idleSpin = 0;
   const hpView = [0, 1].map(() => ({hp: 1, chip: 1, since: 0}));
   const def = id => ({parts: [{item: id, mount: 'core', rot: [0, 0, 0]}]});
 
@@ -196,15 +196,21 @@ async function main() {
       stage.flashFighter(tgt, 0.55);
       stage.shake(0.3);
       overlay.number(numAt, `-${dmg}`, `t${tgt}`);
-    } else if (e.type === 'crit' || e.type === 'weak') {
-      const weak = e.type === 'weak';
-      overlay.screenFlash(weak ? 0.6 : 0.45);
-      stage.burst(point, weak ? [HOT, WHITE, HOT] : [WHITE, HOT, TEAM[att]], weak ? 40 : 30, 2.6, 0.026, 0.7);
-      stage.ring(point, weak ? HOT : WHITE, 0.05, weak ? 0.9 : 0.7, 0.45);
-      if (weak) stage.ring(point, HOT, 0.05, 0.45, 0.3);
+    } else if (e.type === 'weak' || e.weak === true) {
+      // The only real crit: a weak-point contact whose seeded roll succeeded (INTERFACE.md).
+      overlay.screenFlash(0.6);
+      stage.burst(point, [HOT, WHITE, HOT], 40, 2.6, 0.026, 0.7);
+      stage.ring(point, HOT, 0.05, 0.9, 0.45);
+      stage.ring(point, HOT, 0.05, 0.45, 0.3);
       stage.flashFighter(tgt, 1);
-      stage.shake(weak ? 0.9 : 0.7);
-      overlay.number(numAt, `-${dmg}`, weak ? 'weak' : 'big', weak ? '弱点 ×2' : '暴击');
+      stage.shake(0.9);
+      overlay.number(numAt, `-${dmg}`, 'weak', '暴击');
+    } else if (e.type === 'crit') {
+      // type=crit only means a big ordinary hit (>=20): heavier than a hit, no crit label or screen flash.
+      stage.burst(point, [WHITE, TEAM[att]], 20, 2.0, 0.022, 0.55);
+      stage.flashFighter(tgt, 0.8);
+      stage.shake(0.5);
+      overlay.number(numAt, `-${dmg}`, `t${tgt} big`);
     } else if (e.type === 'zone') {
       overlay.number(center.clone(), `-${dmg}`, 'zone');
     } else if (e.type === 'ko' && finish === 'zone') {
@@ -257,9 +263,11 @@ async function main() {
     replay = r;
     finish = finishOf(r);
     pb = new Playback(r);
-    // A zone death's biggest real hit happened mid-fight: show it as a replay after the end instead.
-    pb.slowEnabled = finish !== 'zone';
-    autoReplay = finish === 'zone' && pb.slowAt !== null;
+    // Zone deaths and timeouts: the hit to show happened mid-fight, so it is replayed after the end
+    // (then the result card) instead of slowing the fight down while it is still going.
+    midFight = pb.slowAt !== null && pb.slowAt < pb.end - 0.5;
+    pb.slowEnabled = !midFight;
+    autoReplay = midFight;
     el.captionTag.textContent = finish === 'ringout' ? '决定性一击 · 出界' : '决定性一击';
     stage.setFighters(r.meta.initial.map(f => f.definition));
     stage.clearFx();
@@ -282,7 +290,7 @@ async function main() {
       overlay.clear();
       pb.seek(pb.end);
       stage.pose(pb.state);
-      for (const e of replay.events) if (e.type === 'ko') stage.dimFighter(e.target);
+      for (const e of pb.events) if (e.type === 'ko') stage.dimFighter(e.target);
       for (const [i, f] of pb.state.fighters.entries()) Object.assign(hpView[i], {hp: f.hp / f.maxHp, chip: f.hp / f.maxHp, since: 9});
       for (const f of pb.state.fighters) f.vel.set(0, 0, 0);
     }
@@ -305,7 +313,7 @@ async function main() {
     stage.clearFx();
     overlay.clear();
     pb.slowEnabled = true;
-    el.captionTag.textContent = `${finish === 'zone' ? '最大一击' : '决定性一击'} · 回放`;
+    el.captionTag.textContent = `${midFight ? '最大一击' : '决定性一击'} · 回放`;
     // Anchored on the decisive hit itself (see decisiveAnchor), not on decisive.t0/t1.
     pb.seek(pb.replayFrom);
     replayEnd = 0;
@@ -396,7 +404,8 @@ async function main() {
     release() { test.frozen = false; test.freezeOnType = null; test.pending = -1; },
     start,
     stage,
-    seek(t) { if (phase === 'play') { pb.seek(t); stage.pose(pb.state); } }
+    seek(t) { if (phase === 'play') { pb.seek(t); stage.pose(pb.state); } },
+    events: () => replay?.events.map((e, i) => ({i, t: e.t, type: e.type, role: e.role, damage: e.damage, weak: e.weak === true})) ?? []
   };
 
   // ---------- loop ----------

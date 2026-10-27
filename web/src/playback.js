@@ -5,20 +5,28 @@ const SLOW = 0.25;
 // the hit last ~1 s on screen and the 0.3 s after it ~1.2 s, plus ramps. The camera push starts
 // earlier so it is already on the contact point when the hit lands.
 export const SLOW_BEFORE = 0.25, SLOW_AFTER = 0.3, RAMP = 0.1, PUSH_LEAD = 0.45;
-const HIT_STOP = {hit: 0.035, crit: 0.09, weak: 0.14, ko: 0.24, ringout: 0.2, zone: 0};
+const HIT_STOP = {hit: 0.035, crit: 0.05, weak: 0.16, ko: 0.24, ringout: 0.2, zone: 0};
 const DECISIVE_STOP = 0.3;
 const CONTACT = new Set(['hit', 'crit', 'weak']);
+
+/** Time of the first KO or ring-out. Nothing should come after it; anything that does is ignored. */
+export function stopTime(replay) {
+  const e = replay.events.find(e => e.type === 'ko' || e.type === 'ringout');
+  return e ? e.t : Infinity;
+}
 
 /**
  * The hit to slow down on: decisive.eventIndex (the hit the caption describes); if that is not a
  * contact, finishEventIndex when it is one; else the biggest attack. Ring-outs anchor on the exit.
+ * Timeouts too: the sim points decisive at the match's biggest hit and the page slows it down.
  */
 export function decisiveAnchor(replay) {
-  const {events, decisive} = replay;
-  const pick = i => (i === null || i === undefined ? null : events[i]);
+  const {decisive} = replay;
+  const stop = stopTime(replay);
+  const events = replay.events.filter(e => e.t <= stop);
+  const pick = i => (i === null || i === undefined || !(replay.events[i]?.t <= stop) ? null : replay.events[i]);
   const main = pick(decisive.eventIndex);
   if (main && (CONTACT.has(main.type) || main.type === 'ringout')) return main;
-  if (decisive.finishType === 'timeout') return null;
   const fin = pick(decisive.finishEventIndex);
   if (fin && CONTACT.has(fin.type)) return fin;
   return events.filter(e => CONTACT.has(e.type) && e.role !== 'recoil').sort((x, y) => y.damage - x.damage)[0] ?? null;
@@ -32,6 +40,10 @@ export class Playback {
   constructor(replay) {
     this.r = replay;
     this.end = replay.meta.duration;
+    // Events after the KO / ring-out are dropped, and HP stays at what the KO frame recorded.
+    this.stopT = stopTime(replay);
+    this.events = replay.events.filter(e => e.t <= this.stopT);
+    this.stopFrame = Number.isFinite(this.stopT) ? replay.frames.find(f => f.t >= this.stopT - 1e-6) ?? null : null;
     this.decisiveEvent = decisiveAnchor(replay);
     this.slowAt = this.decisiveEvent ? this.decisiveEvent.t : null;
     this.slowEnabled = true;
@@ -67,8 +79,8 @@ export class Playback {
 
   seek(t) {
     this.t = Math.max(0, Math.min(t, this.end));
-    this.cursor = this.r.events.findIndex(e => e.t > this.t);
-    if (this.cursor < 0) this.cursor = this.r.events.length;
+    this.cursor = this.events.findIndex(e => e.t > this.t);
+    if (this.cursor < 0) this.cursor = this.events.length;
     this.hold = 0;
     this.sample(this.t);
   }
@@ -85,7 +97,7 @@ export class Playback {
     const start = this.t;
     const dt = realDt * speed * this.slowFactor(this.t);
     let next = Math.min(this.end, this.t + dt);
-    const events = this.r.events;
+    const events = this.events;
     let stop = 0;
     while (this.cursor < events.length && events[this.cursor].t <= next) {
       const e = events[this.cursor++];
@@ -103,7 +115,7 @@ export class Playback {
     return this.t - start;
   }
 
-  get done() { return this.t >= this.end && this.cursor >= this.r.events.length && this.hold <= 0; }
+  get done() { return this.t >= this.end && this.cursor >= this.events.length && this.hold <= 0; }
 
   frameIndex(t) {
     const f = this.r.frames;
@@ -124,8 +136,9 @@ export class Playback {
     const k = span > 1e-9 ? Math.min(1, Math.max(0, (t - A.t) / span)) : 0;
     this.state.zoneRadius = A.zoneRadius + (B.zoneRadius - A.zoneRadius) * k;
     // HP changes only at events; show the value the next frame records once its event fired.
-    const lastFired = this.r.events[this.cursor - 1];
-    const hpFrame = t + 1e-6 >= B.t || (lastFired && lastFired.t > A.t) ? B : A;
+    const lastFired = this.events[this.cursor - 1];
+    let hpFrame = t + 1e-6 >= B.t || (lastFired && lastFired.t > A.t) ? B : A;
+    if (this.stopFrame && hpFrame.t > this.stopFrame.t) hpFrame = this.stopFrame;
     this.state.fighters.forEach((s, n) => {
       const a = A.fighters[n], b = B.fighters[n];
       s.pos.fromArray(a.pos).lerp(tmpV.fromArray(b.pos), k);

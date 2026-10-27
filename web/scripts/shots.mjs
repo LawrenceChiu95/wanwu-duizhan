@@ -53,13 +53,22 @@ for (const mode of ['A', 'B']) {
   await page.evaluate(() => window.__wanwu.freeze());
   await shot(`${mode}-1-start.png`);
   // Count requestAnimationFrame callbacks for 8 s of live play.
-  await page.evaluate(() => { window.__wanwu.release(); window.__wanwu.freezeOn(['crit', 'weak'], 70); });
+  await page.evaluate(() => window.__wanwu.release());
   const gpu = await page.evaluate(() => { const g = document.createElement('canvas').getContext('webgl2'); const e = g.getExtension('WEBGL_debug_renderer_info'); return g.getParameter(e.UNMASKED_RENDERER_WEBGL); });
   const fps = mode === 'A' ? await page.evaluate(() => new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 8000) requestAnimationFrame(f); else r(n / ((performance.now() - t0) / 1000)); }; requestAnimationFrame(f); })) : null;
-  // A crit or weak hit other than the decisive one (if there is one before it).
-  s = await until(s => s.frozen || s.phase === 'result' || (s.anchor && s.t >= s.anchor.t - 0.8));
-  if (s.frozen) await shot(`${mode}-2-crit.png`);
-  const critAt = s.frozen ? s.t : null;
+  // Shot 2: a real crit (type=weak: weak-point contact whose seeded roll succeeded) other than the
+  // decisive hit; if there is none, the biggest ordinary big hit (type=crit, >=20 damage).
+  const anchor = (await page.evaluate(() => window.__wanwu.status())).anchor;
+  const evs = await page.evaluate(() => window.__wanwu.events());
+  const weakEvents = evs.filter(e => e.type === 'weak').map(e => ({i: e.i, t: e.t, damage: e.damage}));
+  const cands = evs.filter(e => e.i !== anchor?.index && e.role !== 'recoil' && (e.type === 'weak' || e.type === 'crit') && (!anchor || Math.abs(e.t - anchor.t) > 0.8));
+  const pick = cands.find(e => e.type === 'weak') ?? cands.sort((x, y) => y.damage - x.damage)[0] ?? null;
+  let critAt = null, critType = null;
+  if (pick) {
+    await page.evaluate(([t, type]) => { const w = window.__wanwu; w.seek(t); w.freezeOn([type], 70); }, [Math.max(0, pick.t - 0.6), pick.type]);
+    s = await until(s => s.frozen || s.phase !== 'play');
+    if (s.frozen) { await shot(`${mode}-2-${pick.type === 'weak' ? 'crit' : 'bighit'}.png`); critAt = s.t; critType = pick.type; }
+  }
   // The decisive hit itself, frozen on its impact frame during the slow motion.
   await page.evaluate(() => { window.__wanwu.release(); window.__wanwu.freezeOn('decisive', 90); });
   s = await until(s => s.frozen || s.phase === 'result');
@@ -69,7 +78,7 @@ for (const mode of ['A', 'B']) {
   s = await until(s => s.phase === 'result');
   await page.waitForTimeout(600);
   await shot(`${mode}-4-result.png`);
-  report[mode] = {gpu, loadMs, simMs: Math.round(s.simMs), fps, critAt, slowAt, meta: s.meta, decisive: s.decisive};
+  report[mode] = {gpu, loadMs, simMs: Math.round(s.simMs), fps, critAt, critType, weakEvents, slowAt, meta: s.meta, decisive: s.decisive};
 }
 await writeFile(new URL(tag + 'shots.json', out), JSON.stringify({base, a, b, seed, report, logs}, null, 2));
 console.log(JSON.stringify({report, logs: logs.slice(0, 20)}, null, 1));

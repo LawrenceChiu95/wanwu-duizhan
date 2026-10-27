@@ -49,7 +49,7 @@ svg .f { fill: currentColor; stroke: none; }
 .num { position: absolute; left: 0; top: 0; font-weight: 900; font-size: 20px; white-space: nowrap; will-change: transform, opacity;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55), 0 0 6px rgba(0, 0, 0, 0.6); font-variant-numeric: tabular-nums; }
 .num small { display: block; font-size: 11px; font-weight: 800; text-align: center; letter-spacing: 0.06em; }
-.num.big { font-size: 34px; color: var(--hot); }
+.num.big { font-size: 30px; }
 .num.weak { font-size: 38px; color: #fff36b; }
 .num.recoil { font-size: 13px; color: #a7b2c9; font-weight: 700; }
 .num.zone { font-size: 14px; color: #ff5a6a; font-weight: 800; }
