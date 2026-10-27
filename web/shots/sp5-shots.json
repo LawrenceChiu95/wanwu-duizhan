@@ -6,9 +6,9 @@
   "report": {
     "A": {
       "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
-      "loadMs": 636,
-      "simMs": 111,
-      "fps": 60.06868560724321,
+      "loadMs": 654,
+      "simMs": 113,
+      "fps": 60.046189376443415,
       "critAt": 18.2,
       "critType": "weak",
       "weakEvents": [
@@ -65,8 +65,8 @@
     },
     "B": {
       "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
-      "loadMs": 542,
-      "simMs": 46,
+      "loadMs": 519,
+      "simMs": 102,
       "fps": null,
       "critAt": 18.2,
       "critType": "weak",

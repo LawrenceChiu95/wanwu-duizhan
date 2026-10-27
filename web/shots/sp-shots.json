@@ -6,10 +6,10 @@
   "report": {
     "A": {
       "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
-      "loadMs": 619,
-      "simMs": 109,
-      "fps": 60.07243661795929,
-      "critAt": 4.250033333333333,
+      "loadMs": 606,
+      "simMs": 103,
+      "fps": 60.08144095521794,
+      "critAt": 4.249933333333334,
       "critType": "crit",
       "weakEvents": [],
       "slowAt": {
@@ -59,10 +59,10 @@
     },
     "B": {
       "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
-      "loadMs": 484,
-      "simMs": 83,
+      "loadMs": 530,
+      "simMs": 125,
       "fps": null,
-      "critAt": 4.2500333333333336,
+      "critAt": 4.249933333333334,
       "critType": "crit",
       "weakEvents": [],
       "slowAt": {
