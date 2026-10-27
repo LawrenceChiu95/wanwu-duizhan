@@ -23,6 +23,7 @@ const OFFER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillo
 const FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
 const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
+const RESULT_SPIN = 1.2;
 const HEX = TEAM.map(c => '#' + c.getHexString());
 const WHITE = new THREE.Color('#ffffff'), HOT = new THREE.Color('#ffe14d'), SPARK = new THREE.Color('#ffd27a'), BLOCK = new THREE.Color('#b8f0ff');
 const ICON = {
@@ -269,6 +270,7 @@ async function main() {
     }
     phase = 'result';
     const m = replay.meta;
+    stage.setCameraMode('result', m.winner === null ? null : [m.winner]);
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;
@@ -284,6 +286,7 @@ async function main() {
     stage.clearFx();
     overlay.clear();
     pb.slowEnabled = true;
+    stage.setCameraMode('fight');
     pb.seek(pb.replayFrom);
     replayEnd = 0;
     stage.pose(pb.state);
@@ -335,7 +338,7 @@ async function main() {
 
   // ---------- test hooks (Playwright screenshots; no effect on normal play) ----------
   const test = {
-    frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, nth: 1, seen: 0,
+    frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, nth: 1, seen: 0, speed: 1, safe: null,
     onEvent(e) {
       if (!this.freezeOn || this.pending >= 0) return;
       const ok = this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
@@ -347,6 +350,9 @@ async function main() {
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
+    // Safe-area audit: worst overflow per phase over every rendered frame (px > 0 means something was cut off).
+    trackSafe(speed = 1) { test.speed = speed; test.safe = {}; },
+    safe: () => test.safe,
     setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
     stage,
     start,
@@ -364,6 +370,7 @@ async function main() {
       if (test.pending < 0) { test.frozen = true; test.freezeOn = null; }
     }
     if (test.frozen) dt = 0;
+    dt *= test.speed;
     if (phase === 'loading') return;
     let simDt = dt;
     if (phase === 'build' || phase === 'computing') {
@@ -394,7 +401,17 @@ async function main() {
       const drift = Math.exp(-finaleSim * 1.6);
       for (const f of pb.state.fighters) {
         f.pos.addScaledVector(f.vel, simDt * drift);
-        f.quat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0).applyQuaternion(f.quat), f.angularVelocity.length() * simDt * (f.hp > 0 ? 1 : drift)));
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(f.quat);
+        if (phase === 'result' && f.hp > 0) {
+          // On the result card the winner stands up straight and slows to a lazy turn, so from above its
+          // core and both pieces read as "this top" rather than a blur of whatever tilt the last hit left.
+          const k = 1 - Math.exp(-dt / 0.35);
+          f.quat.premultiply(new THREE.Quaternion().slerp(new THREE.Quaternion().setFromUnitVectors(up, new THREE.Vector3(0, 1, 0)), k));
+          const s = f.angularVelocity.dot(up), want = Math.sign(s || 1) * RESULT_SPIN;
+          f.angularVelocity.set(0, s + (want - s) * k, 0);
+          up.set(0, 1, 0).applyQuaternion(f.quat);
+        }
+        f.quat.premultiply(new THREE.Quaternion().setFromAxisAngle(up, f.angularVelocity.length() * simDt * (f.hp > 0 ? 1 : drift)));
       }
       stage.pose(pb.state);
       stage.setPush(phase === 'finale' ? pb.pushAmount(v) : 0);
@@ -402,6 +419,10 @@ async function main() {
       if (phase === 'finale' && finaleAge > 1.4 && pb.slowFactor(v) > 0.99) showResult();
     }
     stage.updateCamera(dt, false);
+    if (test.safe && dt > 0 && phase !== 'build' && phase !== 'computing') {
+      const o = stage.safeOverflow(), cur = test.safe[phase];
+      if (!cur || o.px > cur.px) test.safe[phase] = {...o, t: +(pb?.t ?? 0).toFixed(2), w: el.app.clientWidth};
+    }
     stage.render(dt, simDt);
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') updateHud(dt, pb.state);

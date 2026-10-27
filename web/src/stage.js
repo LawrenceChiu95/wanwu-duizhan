@@ -336,7 +336,19 @@ export class Stage {
       fan.frustumCulled = false;
       fan.renderOrder = 2;
       root.add(fan);
-      return {holder, obj, fan, uniforms, flash: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1};
+      // Framing extent: the model's own bounds about the spin axis (a model can reach past its collision hull).
+      root.updateMatrixWorld(true);
+      let reach = p.r1, y0 = p.y0, y1 = p.y1;
+      obj.traverse(o => {
+        if (!o.isMesh) return;
+        if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+        const bb = o.geometry.boundingBox;
+        for (let c = 0; c < 8; c++) {
+          const v = new THREE.Vector3(c & 1 ? bb.max.x : bb.min.x, c & 2 ? bb.max.y : bb.min.y, c & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld);
+          reach = Math.max(reach, Math.hypot(v.x, v.z)); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+        }
+      });
+      return {holder, obj, fan, uniforms, flash: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
     });
     this.scene.add(root);
     const sweep = Math.max(this.coreRadius, ...parts.map(p => p.r1));
@@ -428,13 +440,14 @@ export class Stage {
    * Camera from above the spin plane. fight: both tops framed, the player (0) near the bottom and the
    * opponent (1) at the top; the yaw follows the line between them slowly. build: closer on the player.
    */
-  setCameraMode(mode) { this.cam.mode = mode; }
+  /** build | fight | result (result frames only the given fighters, from higher up). */
+  setCameraMode(mode, only = null) { this.cam.mode = mode; this.cam.only = only; }
   updateCamera(dt, snap) {
     const [a, b] = this.fighters;
     if (!a || !b) return;
     const c = this.cam;
     const axis = tmp.subVectors(b.center, a.center).setY(0);
-    if (axis.lengthSq() > 1e-6) {
+    if (axis.lengthSq() > 1e-6 && c.mode !== 'result') {
       const want = Math.atan2(axis.x, axis.z);
       let d = want - c.yaw;
       d = Math.atan2(Math.sin(d), Math.cos(d));
@@ -442,40 +455,50 @@ export class Stage {
       // Follow only a clear turn of the line, and gently, so the view does not swim.
       else if (Math.abs(d) > 0.25) c.yaw += Math.sign(d) * Math.min(Math.abs(d) - 0.25, dt * 1.6);
     }
-    // In the decisive slow motion the view tips toward top-down, so the near top cannot loom over the hit.
-    const pitch = c.mode === 'build' ? 0.6 : 0.92 + c.push * 0.3;
-    c.pitch += (pitch - c.pitch) * (snap || !c.ready ? 1 : 1 - Math.exp(-dt / 0.5));
+    // In the decisive slow motion the view tips toward top-down, so the near top cannot loom over the hit;
+    // the result looks down on the winner so its core and both pieces read.
+    const pitch = c.mode === 'build' ? 0.6 : c.mode === 'result' ? 1.22 : 0.92 + c.push * 0.3;
+    c.pitch += (pitch - c.pitch) * (snap || !c.ready ? 1 : 1 - Math.exp(-dt / (c.mode === 'result' ? 0.3 : 0.5)));
     const fwd = new THREE.Vector3(Math.sin(c.yaw) * Math.cos(c.pitch), -Math.sin(c.pitch), Math.cos(c.yaw) * Math.cos(c.pitch));
     tmpM.lookAt(new THREE.Vector3(), fwd, UP);
     tmpQ.setFromRotationMatrix(tmpM);
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(tmpQ), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(tmpQ);
-
-    let focus;
-    if (c.mode === 'build') focus = tmp2.copy(a.center).lerp(b.center, 0.22);
-    else focus = tmp2.addVectors(a.center, b.center).multiplyScalar(0.5);
-    focus = focus.clone().lerp(c.pushAt, c.push * 0.3);
-    if (snap || !c.ready) c.focus.copy(focus);
-    else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
-
     const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)), tanH = tanV * this.camera.aspect;
     const freeV = tanV * (this.view.h - this.view.top - this.view.bottom) / this.view.h;
-    let need = 0.8;
-    const list = c.mode === 'build' ? [a] : [a, b];
-    for (const f of list) {
-      const rel = tmp.copy(f.center).sub(c.focus);
-      const depth = rel.dot(fwd);
-      // The sweep is a flat disc: on screen it is its radius wide and radius * sin(pitch) tall. In the
-      // fight a long blade may leave the frame for a moment: frame the cores and the near reach, so the
-      // cores stay big enough to read on a 390 px phone.
-      const reach = c.mode === 'build' ? f.sweep : Math.min(f.sweep, 0.32);
-      const rx = reach * 1.05, ry = reach * (Math.sin(c.pitch) * 0.9 + 0.2);
-      need = Math.max(need, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
+
+    if (c.mode === 'build') {
+      const focus = tmp2.copy(a.center).lerp(b.center, 0.22);
+      if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
+      const rel = tmp.copy(a.center).sub(c.focus), depth = rel.dot(fwd), rx = a.sweep * 1.05, ry = a.sweep * (Math.sin(c.pitch) * 0.9 + 0.2);
+      const need = Math.max(1.6, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
+      if (snap || !c.ready) c.dist = need; else c.dist += (need - c.dist) * (1 - Math.exp(-dt / 0.45));
+    } else {
+      // Keep every listed top whole in the safe area (below the HUD, above the caption or result card):
+      // each top's swept cylinder (its live pieces' reach and height), sampled around, is fitted with a margin.
+      const list = c.mode === 'result' && c.only ? c.only.map(i => this.fighters[i]).filter(Boolean) : [a, b];
+      const pts = [];
+      for (const f of list) {
+        let R = this.coreRadius, y0 = -this.coreRadius, y1 = this.coreRadius;
+        for (const p of f.parts) if (p.alive) { R = Math.max(R, p.reach); y0 = Math.min(y0, p.y0); y1 = Math.max(y1, p.y1); }
+        // About the top's own (possibly tilted) up axis; 12 samples, pushed out to circumscribe the circle.
+        R /= Math.cos(Math.PI / 12);
+        for (let k = 0; k < 12; k++) for (const y of [y0, y1]) pts.push(new THREE.Vector3(Math.cos(k * Math.PI / 6) * R, y, Math.sin(k * Math.PI / 6) * R).applyQuaternion(f.root.quaternion).add(f.center));
+      }
+      const base = new THREE.Vector3();
+      for (const f of list) base.add(f.center);
+      base.divideScalar(list.length);
+      let x0 = Infinity, x1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+      for (const p of pts) { const d = tmp.copy(p).sub(base), x = d.dot(right), y = d.dot(upv); x0 = Math.min(x0, x); x1 = Math.max(x1, x); v0 = Math.min(v0, y); v1 = Math.max(v1, y); }
+      const focus = base.addScaledVector(right, (x0 + x1) / 2).addScaledVector(upv, (v0 + v1) / 2);
+      if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.15));
+      // Distance from the focus actually used, so a lagging pan is covered too.
+      const m = c.mode === 'result' ? 0.62 : 0.88;
+      let need = 0.8;
+      for (const p of pts) { const d = tmp.copy(p).sub(c.focus), z = d.dot(fwd); need = Math.max(need, Math.abs(d.dot(right)) / (tanH * m) - z, Math.abs(d.dot(upv)) / (freeV * m) - z); }
+      // Zoom out at once when the tops fly apart; come back in gently.
+      if (snap || !c.ready) c.dist = need;
+      else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.06 : c.mode === 'result' ? 0.3 : 0.6)));
     }
-    if (c.mode === 'build') need = Math.max(need, 1.6);
-    // No zoom-in on the decisive hit: both tops stay whole in frame (the slow motion does the emphasis).
-    need *= 1 + c.push * 0.05;
-    if (snap || !c.ready) c.dist = need;
-    else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.45 : c.push > 0.05 ? 0.3 : 0.7)));
     c.ready = true;
 
     this.camera.quaternion.copy(tmpQ);
@@ -525,6 +548,39 @@ export class Stage {
     this.particles.update(simDt);
     this.rings.update(realDt);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * Test aid: how far (CSS px) any visible core or mounted piece reaches outside the safe area (below the HUD,
+   * above the caption or result card). Positive = cut off by that much; negative = the smallest margin left.
+   * Pieces use their mesh bounding boxes, so this errs on the side of reporting an overflow.
+   */
+  safeOverflow() {
+    const {w, h, top, bottom} = this.view;
+    this.scene.updateMatrixWorld();
+    this.camera.updateMatrixWorld();
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
+    let worst = {px: -Infinity, who: null};
+    const check = (q, who) => {
+      tmp.copy(q).project(this.camera);
+      const x = (tmp.x * 0.5 + 0.5) * w, y = (-tmp.y * 0.5 + 0.5) * h;
+      const o = Math.max(-x, x - w, top - y, y - (h - bottom));
+      if (o > worst.px) worst = {px: o, who};
+    };
+    this.fighters.forEach((f, i) => {
+      if (!f.core.visible) return;
+      for (const d of [right, upv]) for (const sgn of [1, -1]) check(tmp2.copy(f.center).addScaledVector(d, sgn * this.coreRadius), `${i}:core`);
+      f.parts.forEach((p, k) => {
+        if (!p.alive) return;
+        p.obj.traverse(o => {
+          if (!o.isMesh) return;
+          if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox;
+          for (let c = 0; c < 8; c++) check(new THREE.Vector3(c & 1 ? bb.max.x : bb.min.x, c & 2 ? bb.max.y : bb.min.y, c & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld), `${i}:${k}`);
+        });
+      });
+    });
+    return worst;
   }
 
   /** Screen position (CSS px) of a world point, or null when behind the camera. */

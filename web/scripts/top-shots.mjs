@@ -43,7 +43,7 @@ await page.evaluate(() => window.__top.release());
 s = await until(s => s.caption || s.phase === 'result');
 if (s.caption) { await page.waitForTimeout(350); await page.evaluate(() => window.__top.freeze()); await page.waitForTimeout(120); await shot('5-decisive'); report.decisive = {t: (await status()).t}; await page.evaluate(() => window.__top.release()); }
 s = await until(s => s.phase === 'result', 120000);
-await page.waitForTimeout(600);
+await page.waitForTimeout(1400);
 await shot('4-result');
 report.result = {reason: s.reason, decisive: s.decisive?.why};
 report.logs = logs.slice(0, 30);
