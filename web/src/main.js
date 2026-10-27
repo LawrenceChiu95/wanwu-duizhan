@@ -244,7 +244,7 @@ async function main() {
     } else if (e.type === 'parry') {
       // A lunge into a raised shield: it is bounced, and that should read at a glance.
       stage.parry(e.target, point);
-      overlay.callout(point, e.target, '挡住', {cls: 'parry'});
+      overlay.callout(point, e.target, '弹开', {cls: 'parry'});
       overlay.screenFlash(0.2);
     } else if (e.type === 'ko') {
       // Every core that broke goes (both, when they break in the same instant).
