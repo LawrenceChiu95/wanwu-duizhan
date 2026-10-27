@@ -1,7 +1,7 @@
 {
-  "weakContacts": 287,
-  "weakTriggered": 161,
-  "criticalOverNormalCap": 62,
+  "weakContacts": 150,
+  "weakTriggered": 83,
+  "criticalOverNormalCap": 61,
   "critical": {
     "left": "scissors",
     "right": "broom",
@@ -210,17 +210,45 @@
       "attacker": 0
     }
   },
+  "review": {
+    "timeout": {
+      "left": "scissors",
+      "right": "lamp",
+      "mode": "A",
+      "seed": 1
+    },
+    "simultaneous": {
+      "left": "broom",
+      "right": "pot",
+      "mode": "B",
+      "seed": 2
+    },
+    "speed": {
+      "left": "scissors",
+      "right": "lamp",
+      "mode": "A",
+      "seed": 1
+    },
+    "zone": {
+      "left": "scissors",
+      "right": "lamp",
+      "mode": "A",
+      "seed": 1
+    },
+    "skippedSlowContacts": 99
+  },
   "captions": {
     "maxCharacters": 14,
     "samples": {
       "contact": "台灯撞中剪刀后，自己也掉血了",
       "更重": "台灯更重，撞疼了剪刀",
-      "圈外": "剪刀在圈外，撑不住了",
+      "圈外": "剪刀在圈外掉血",
       "弱点": "台灯撞中剪刀弱点，暴击",
-      "更硬": "剪刀更硬，撞疼了台灯",
+      "冲得更快": "剪刀冲得更快，撞疼了台灯",
       "时间到": "时间到，台灯剩血多，赢了",
       "够得远": "台灯够得远，戳中了剪刀",
-      "克": "台灯克剪刀，撞得更疼"
+      "克": "台灯克剪刀，撞得更疼",
+      "更硬": "剪刀更硬，撞疼了拖鞋"
     }
   }
 }

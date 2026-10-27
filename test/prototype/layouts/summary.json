@@ -37,26 +37,26 @@
   },
   "layouts": 162,
   "rounds": 972,
-  "wallSeconds": 49.02258475,
+  "wallSeconds": 41.61380225,
   "modes": {
     "A": {
       "outcomes": {
         "rounds": 486,
         "finishes": {
-          "contact": 404,
-          "zone": 77,
-          "timeout": 5
+          "contact": 382,
+          "zone": 95,
+          "timeout": 9
         },
-        "draws": 1,
-        "simultaneousKOs": 4,
+        "draws": 2,
+        "simultaneousKOs": 5,
         "resolvedByAttacker": 3,
-        "timeouts": 5,
-        "under20": 13,
+        "timeouts": 9,
+        "under20": 11,
         "under8": 0,
         "min": 13.7,
-        "q1": 31.25,
-        "median": 39.63333333333333,
-        "q3": 46.63333333333333,
+        "q1": 33.18333333333333,
+        "median": 41.88333333333333,
+        "q3": 47.71666666666667,
         "max": 60
       },
       "goals": {
@@ -79,37 +79,37 @@
         "rate": 1
       },
       "worstLayout": {
-        "layout": "front:broom:forward|top:pot:horizontal|side:pillow:forward",
+        "layout": "front:broom:forward|top:pot:vertical|side:pillow:forward",
         "wins": 0,
         "rounds": 3,
         "rate": 0
       },
       "layoutWinRateSpread": 1,
-      "wins": 239,
-      "losses": 246,
-      "draws": 1,
-      "averageDuration": 38.66762688614539,
-      "timeouts": 5,
+      "wins": 251,
+      "losses": 233,
+      "draws": 2,
+      "averageDuration": 40.26954732510289,
+      "timeouts": 9,
       "maxContact": 0.35
     },
     "B": {
       "outcomes": {
         "rounds": 486,
         "finishes": {
-          "zone": 57,
-          "contact": 426,
-          "timeout": 3
+          "zone": 75,
+          "contact": 399,
+          "timeout": 12
         },
         "draws": 1,
         "simultaneousKOs": 4,
         "resolvedByAttacker": 3,
-        "timeouts": 3,
-        "under20": 10,
+        "timeouts": 12,
+        "under20": 7,
         "under8": 0,
-        "min": 16.066666666666666,
-        "q1": 30.816666666666666,
-        "median": 39.21666666666667,
-        "q3": 45.1,
+        "min": 17.966666666666665,
+        "q1": 34.4,
+        "median": 41.81666666666666,
+        "q3": 47.766666666666666,
         "max": 60
       },
       "goals": {
@@ -132,17 +132,17 @@
         "rate": 1
       },
       "worstLayout": {
-        "layout": "front:broom:forward|top:pot:horizontal|side:pillow:forward",
+        "layout": "front:broom:forward|top:pot:vertical|side:pillow:forward",
         "wins": 0,
         "rounds": 3,
         "rate": 0
       },
       "layoutWinRateSpread": 1,
-      "wins": 233,
-      "losses": 252,
+      "wins": 253,
+      "losses": 232,
       "draws": 1,
-      "averageDuration": 38.44207818930044,
-      "timeouts": 3,
+      "averageDuration": 40.73909465020579,
+      "timeouts": 12,
       "maxContact": 0.35
     }
   },
@@ -151,7 +151,7 @@
     "seed": 1,
     "win": {
       "layout": "front:broom:forward|top:pot:forward|side:pillow:horizontal",
-      "computeMs": 84.30066700000003,
+      "computeMs": 60.91945799999996,
       "mass": 5.773599624633789,
       "centerOfMass": [
         0.02421204186975956,
@@ -167,7 +167,7 @@
       "finishType": "contact",
       "duration": 36.95,
       "impacts": 4,
-      "crit": 4,
+      "crit": 1,
       "weak": 1,
       "zoneDamage": 0.8050291666666667,
       "decisive": "扫把撞中扫把弱点，暴击",
@@ -180,7 +180,7 @@
     },
     "loss": {
       "layout": "front:broom:forward|top:pot:forward|side:pillow:forward",
-      "computeMs": 264.63870799999995,
+      "computeMs": 178.339708,
       "mass": 5.773599624633789,
       "centerOfMass": [
         0.02510504424571991,
@@ -196,8 +196,8 @@
       "finishType": "contact",
       "duration": 46.81666666666666,
       "impacts": 4,
-      "crit": 5,
-      "weak": 2,
+      "crit": 1,
+      "weak": 1,
       "zoneDamage": 10.843332499999997,
       "decisive": "枕头撞中锅，锅掉血了",
       "decisiveEvent": "crit",

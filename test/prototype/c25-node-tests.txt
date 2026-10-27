@@ -1,0 +1,19 @@
+✔ six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass (8.508792ms)
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.147584ms)
+✔ real simulations: deterministic replay, A/B initial state, physical separation and HP accounting (217.581667ms)
+✔ 162 unique layouts, same-seed contact reversal and timeout percentage decision (128.438875ms)
+✔ compound COM follows layout; world part transforms and per-part hit identity (124.019125ms)
+✔ invalid input fails explicitly (0.490417ms)
+✔ attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker (0.130125ms)
+✔ weakpoint chance is gated by physical contact, with an exact deterministic threshold (0.039834ms)
+✔ recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker (185.945625ms)
+✔ near-static normal approach never chooses an attacker from seed parity (0.218667ms)
+✔ review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions (133.354333ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 900.520916

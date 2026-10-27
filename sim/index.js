@@ -46,11 +46,11 @@ function createFighter(world,def,index,rng,c){
  return {body,parts,shapes:Array.from({length:body.numColliders()},(_,i)=>body.collider(i)),maxHp,hp:maxHp,spin,definition:structuredClone(def),start,rotation,mass:body.mass(),com:arr(body.localCom())};
 }
 function contactVelocity(f,point){return add(f.beforeContact.velocity,cross(f.beforeContact.angular,sub(point,f.beforeContact.center)));}
-export function strikeRoles({normal,velocities,tipRatios,tipBonus,seed,masses=[1,1],massPower=1,matchupMultipliers=[1,1]}){
+export function strikeRoles({normal,velocities,tipRatios,tipBonus,seed,masses=[1,1],massPower=1,matchupMultipliers=[1,1],minimumSpeed=.01}){
  const normalSpeeds=[Math.max(0,dot(velocities[0],normal)),Math.max(0,-dot(velocities[1],normal))];
  const scores=normalSpeeds.map((v,i)=>v*masses[i]**massPower*matchupMultipliers[i]*(1+tipBonus*tipRatios[i]));
- const attacker=Math.abs(scores[0]-scores[1])>1e-8?(scores[0]>scores[1]?0:1):(seed&1);
- return {attacker,normalSpeeds,scores,tipRatios,masses,massPower,matchupMultipliers,tipMultiplier:1+tipBonus*tipRatios[attacker]};
+ const attacker=Math.max(...normalSpeeds)<minimumSpeed?null:Math.abs(scores[0]-scores[1])>1e-8?(scores[0]>scores[1]?0:1):(seed&1);
+ return {attacker,normalSpeeds,scores,tipRatios,masses,massPower,matchupMultipliers,tipMultiplier:attacker===null?1:1+tipBonus*tipRatios[attacker]};
 }
 export function weakCritical({contact,roll,chance}){return contact&&roll<chance;}
 export function simultaneousWinner({fallen,hp,lastStrike,t,deathCauses}){
@@ -75,17 +75,16 @@ function detailFor(e,c){
 
 const shortName=item=>item.name.replace(/（.*?）/g,'');
 function captionFor(e,c,labels){
- if(e.type==='zone')return `${labels[e.target]}在圈外，撑不住了`;
+ if(e.type==='zone')return `${labels[e.target]}在圈外掉血`;
  if(e.type==='ringout')return `${labels[e.target]}出了圈，落败了`;
  if(e.type==='ko')return `${labels[e.target]}倒下了`;
  const attacker=c.items.find(i=>i.id===e.item),target=c.items.find(i=>i.id===e.targetItem),a=shortName(attacker),b=shortName(target);
  if(e.role==='recoil')return `${b}撞中${a}后，自己也掉血了`;
+ if(e.weak)return `${a}撞中${b}弱点，暴击`;
  // Explain only an advantage that actually changed this impact. Compare capped
  // damage without each bonus; never credit weight or hardness from appearance.
- const capWithoutWeak=e.weak?c.arena.fighterHp*c.arena.maxHitFraction:e.damageCap;
  const without=(raw,cap=e.damageCap)=>Math.min(raw,cap)*e.roleMultiplier;
  const advantages=[];
- if(e.weak)advantages.push({kind:'weak',gain:e.damage-without(e.rawDamage/2,capWithoutWeak)});
  if(e.hardness>1)advantages.push({kind:'hard',gain:e.damage-without(e.rawDamage/e.hardness)});
  const other=1-e.strikeAttacker,roleGain=e.damage*(1-c.arena.recoilDamageFraction);
  if(e.masses[e.strikeAttacker]>e.masses[other]&&e.attackScores[e.strikeAttacker]/e.masses[e.strikeAttacker]**e.massPower<e.attackScores[other]/e.masses[other]**e.massPower)advantages.push({kind:'heavy',gain:roleGain});
@@ -95,12 +94,15 @@ function captionFor(e,c,labels){
  advantages.push({kind:'counter',gain:counterGain});
  const reach=Math.max(...attacker.bounds.max.map((v,i)=>v-attacker.bounds.min[i])),targetReach=Math.max(...target.bounds.max.map((v,i)=>v-target.bounds.min[i]));
  if(reach>targetReach&&e.tipMultiplier>1){const tipFlipped=e.attackScores[e.strikeAttacker]/e.tipMultiplier<e.attackScores[other];advantages.push({kind:'reach',gain:Math.max(tipFlipped?roleGain:0,e.damage-without(e.rawDamage/e.tipMultiplier))});}
+ const speed=e.normalSpeeds[e.strikeAttacker],otherSpeed=e.normalSpeeds[other];
+ const otherFactor=e.masses[other]**e.massPower*e.matchupMultipliers[other]*(1+c.arena.tipBonus*e.tipRatios[other]);
+ if(speed>otherSpeed+1e-8&&e.attackScores[e.strikeAttacker]/speed<=otherFactor+1e-8)advantages.push({kind:'speed',gain:roleGain});
  const best=advantages.filter(x=>x.gain>1e-8).sort((x,y)=>y.gain-x.gain)[0];
- if(best?.kind==='weak')return `${a}撞中${b}弱点，暴击`;
  if(best?.kind==='counter')return counterFlipped?`${a}克${b}，抢先撞中了`:`${a}克${b}，撞得更疼`;
  if(best?.kind==='heavy')return `${a}更重，撞疼了${b}`;
  if(best?.kind==='hard')return `${a}更硬，撞疼了${b}`;
  if(best?.kind==='reach')return `${a}够得远，戳中了${b}`;
+ if(best?.kind==='speed')return `${a}冲得更快，撞疼了${b}`;
  return `${a}撞中${b}，${b}掉血了`;
 }
 
@@ -129,7 +131,7 @@ export async function simulate({fighters:definitions,mode,seed}){
  try{
  const rng=random(seed),critRng=random(seed^0x9e3779b9),fighters=definitions.map((d,i)=>createFighter(world,d,i,rng,c));
  const initial=fighters.map(f=>({definition:f.definition,pos:f.start,quat:f.rotation,mass:f.mass,centerOfMass:f.com,maxHp:f.maxHp}));
- const frames=[],events=[],contacts=new Map();let lastBodyHit=-Infinity,lastStrike=null,simultaneousKo=false,resolvedByAttacker=false;let t=0,winner=null,reason='timeout',maxPenetration=0,contactFrames=0,longestContact=0,streak=0,maxGeometricPenetration=0,maxResidualPenetration=0,maxPositionCorrection=0,correctionSteps=0;
+ const frames=[],events=[],contacts=new Map();let lastBodyHit=-Infinity,lastStrike=null,simultaneousKo=false,resolvedByAttacker=false;let t=0,winner=null,reason='timeout',maxPenetration=0,contactFrames=0,longestContact=0,streak=0,maxGeometricPenetration=0,maxResidualPenetration=0,maxPositionCorrection=0,correctionSteps=0,skippedSlowContacts=0;
  const record=()=>frames.push({t,fighters:fighters.map(fighterFrame),zoneRadius:zoneRadius(t,a)});
  record();
  const labels=definitions.map((d,i)=>d.parts.length===1?shortName(c.items.find(item=>item.id===d.parts[0].item)):i===0?'左方':'右方');
@@ -167,10 +169,11 @@ export async function simulate({fighters:definitions,mode,seed}){
    if(t>=a.openingGrace&&t-lastBodyHit>=a.damageCooldown&&point&&impulse>.0001&&(!prior||!Number.isFinite(prior.lastHit)||t-prior.lastSeen>.10)&&(!prior||t-prior.lastHit>=a.contactCooldown)){
     const matchupMultipliers=[[left,right],[right,left]].map(([att,tgt])=>(c.matchups[att.item.tag]?.[tgt.item.tag]??1)>1?a.counterSpeedMultiplier:1);
     const roles=strikeRoles({normal,velocities:[contactVelocity(fighters[0],point),contactVelocity(fighters[1],rightPoint)],tipRatios:[tipRatio(left,point),tipRatio(right,rightPoint)],tipBonus:a.tipBonus,seed,masses:fighters.map(f=>f.mass),massPower:a.roleMassPower,matchupMultipliers});
+    if(roles.attacker===null){skippedSlowContacts++;contacts.set(key,{lastHit:prior?.lastHit??-Infinity,lastSeen:t});continue;}
     lastStrike={t,attacker:roles.attacker};
     for(const [attacker,target,attPart,tgtPart,targetPoint] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
-     const contact=weakContact(tgtPart,targetPoint),criticalRoll=contact.weak?critRng():null,weak=weakCritical({contact:contact.weak,roll:criticalRoll,chance:a.weakCritChance}),d=contactDamage({mode,impulse:impulse*a.impulseToDamage,attacker:attPart.item,target:tgtPart.item,materials:c.materials,matchups:c.matchups,weak});
      const role=attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:a.recoilDamageFraction;
+     const contact=weakContact(tgtPart,targetPoint),eligible=role==='attack'&&contact.weak,criticalRoll=eligible?critRng():null,weak=eligible&&weakCritical({contact:true,roll:criticalRoll,chance:a.weakCritChance}),d=contactDamage({mode,impulse:impulse*a.impulseToDamage,attacker:attPart.item,target:tgtPart.item,materials:c.materials,matchups:c.matchups,weak});
      const damageScale=mode==='B'?a.statDamageScale*d.hardness:1;const tipMultiplier=role==='attack'?roles.tipMultiplier:1;const rawDamage=d.damage*damageScale*tipMultiplier,damageCap=fighters[target].maxHp*(weak?a.weakCritMaxFraction:a.maxHitFraction);d.damage=Math.min(rawDamage,damageCap)*roleMultiplier;
      const e={t,type:weak?'weak':d.damage>=20?'crit':'hit',attacker,target,point:targetPoint,targetLocalPoint:contact.local,weakDistance:contact.distance,weakContact:contact.weak,criticalRoll,criticalChance:a.weakCritChance,item:attPart.item.id,targetItem:tgtPart.item.id,mount:attPart.mount,targetMount:tgtPart.mount,mode,impulse,hardness:d.hardness,matchup:d.matchup,weak,multiplier:d.multiplier,damageScale,role,roleMultiplier,tipMultiplier,strikeAttacker:roles.attacker,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:roles.masses,massPower:roles.massPower,tipRatios:roles.tipRatios,matchupMultipliers:roles.matchupMultipliers,rawDamage,damageCap,damage:d.damage};
      fighters[target].hp-=d.damage;emit(e);
@@ -186,20 +189,22 @@ export async function simulate({fighters:definitions,mode,seed}){
   const projection=correctOverlap(world,fighters);maxGeometricPenetration=Math.max(maxGeometricPenetration,projection.before);maxResidualPenetration=Math.max(maxResidualPenetration,projection.remaining);maxPositionCorrection=Math.max(maxPositionCorrection,projection.correction);if(projection.correction>0)correctionSteps++;
   if(touching){streak+=a.dt;contactFrames++;longestContact=Math.max(longestContact,streak);}else streak=0;
   const fallen=[];
+  const positions=fighters.map(f=>arr(f.body.worldCom())),radii=positions.map(length);
   fighters.forEach((f,i)=>{
-   const p=arr(f.body.worldCom()),r=length(p);
-   if(r>a.radius){emit({t,type:'ringout',attacker:1-i,target:i,point:p,item:null,damage:0});fallen.push([i,'ringout']);}
    // Zone damage integrated every fixed step; events grouped at 0.5 s for readable playback.
-   if(f.hp>0&&r>zoneRadius(t,a)){
+   if(f.hp>0&&radii[i]>zoneRadius(t,a)){
     const damage=zoneDamageRate(t,f.maxHp,a)*a.dt;f.hp-=damage;f.zonePending=(f.zonePending??0)+damage;
    }
-   if((step%30===0||f.hp<=0||r>a.radius)&&f.zonePending>0){emit({t,type:'zone',attacker:null,target:i,point:p,item:null,damage:f.zonePending});f.zonePending=0;}
-   if(f.hp<=0&&!fallen.some(([j])=>j===i)){emit({t,type:'ko',attacker:1-i,target:i,point:p,item:null,damage:0});fallen.push([i,'ko']);}
   });
+  // Settle both sides' pending zone damage before emitting terminal events.
+  const ending=fighters.some((f,i)=>f.hp<=0||radii[i]>a.radius);
+  fighters.forEach((f,i)=>{if((step%30===0||ending)&&f.zonePending>0){emit({t,type:'zone',attacker:null,target:i,point:positions[i],item:null,damage:f.zonePending});f.zonePending=0;}});
+  fighters.forEach((f,i)=>{if(radii[i]>a.radius){emit({t,type:'ringout',attacker:1-i,target:i,point:positions[i],item:null,damage:0});fallen.push([i,'ringout']);}});
+  fighters.forEach((f,i)=>{if(f.hp<=0&&!fallen.some(([j])=>j===i)){emit({t,type:'ko',attacker:1-i,target:i,point:positions[i],item:null,damage:0});fallen.push([i,'ko']);}});
   if(step%2===0||fallen.length)record();
   if(fallen.length){({winner,simultaneousKo,resolvedByAttacker}=simultaneousWinner({fallen,hp:fighters.map(f=>f.hp),lastStrike,t,deathCauses:fighters.map(f=>f.deathCause)}));reason=fallen.length===2?'double-ko':fallen[0][1];break;}
  }
- fighters.forEach((f,i)=>{if(f.zonePending>0){emit({t,type:'zone',attacker:null,target:i,point:arr(f.body.worldCom()),item:null,damage:f.zonePending});f.zonePending=0;}});
+ if(reason==='timeout')fighters.forEach((f,i)=>{if(f.zonePending>0){emit({t,type:'zone',attacker:null,target:i,point:arr(f.body.worldCom()),item:null,damage:f.zonePending});f.zonePending=0;}});
  if(frames.at(-1).t!==t)record();
  if(reason==='timeout'){
   const remaining=fighters.map(f=>Math.max(0,f.hp)/f.maxHp);
@@ -208,6 +213,7 @@ export async function simulate({fighters:definitions,mode,seed}){
  const decisiveEvent=events.findLast(e=>['ko','ringout'].includes(e.type))??events.filter(e=>e.type==='weak'||e.type==='crit').sort((x,y)=>y.damage-x.damage)[0]??events.filter(e=>e.type==='hit').sort((x,y)=>y.damage-x.damage)[0];
  // For KO, show the actual last damaging cause, not a fabricated range/weakness story.
  let cause=decisiveEvent;
+ if(reason==='timeout')cause=events.filter(e=>e.role==='attack').sort((x,y)=>(Number(y.attacker===winner)-Number(x.attacker===winner))||(Number(y.weak)-Number(x.weak))||y.damage-x.damage)[0]??null;
  if(cause?.type==='ko')cause=fighters[resolvedByAttacker?1-winner:cause.target].deathCause??cause;
  const finishType=reason==='timeout'?'timeout':reason==='ringout'?'ringout':cause?.type==='zone'?'zone':'contact';
  let caption=cause?.caption??'双方都还站着';
@@ -218,10 +224,10 @@ export async function simulate({fighters:definitions,mode,seed}){
   caption=`${labels[decisiveEvent.target]}在圈外撑不住，倒下了`;
  }
  if(reason==='timeout'){caption=winner===null?'时间到，双方平局':`时间到，${labels[winner]}剩血多，赢了`;detail=winner===null?'时间到，剩血比例相同，本局平局。':'时间到，按剩血百分比判胜。';}
- if(resolvedByAttacker)detail+='双方这一撞都归零，按本次攻方判胜。';
- const at=reason==='timeout'?t:cause?.t??t;
+ if(resolvedByAttacker){detail+='双方这一撞都归零，按本次攻方判胜。';caption=`同时倒下，${labels[winner]}先撞${cause?.weak?'中弱点':'的'}，判赢`;}
+ const at=cause?.t??t;
  const t0=Math.max(0,Math.min(t-2.5,at-1.5)),t1=Math.min(t,t0+2.5);
- const decisive={t0,t1,caption,detail,eventIndex:reason==='timeout'?null:cause?events.indexOf(cause):null,finishType,finishEventIndex:reason==='timeout'?null:events.indexOf(reason==='ringout'?decisiveEvent:decisiveEvent?.type==='ko'?fighters[resolvedByAttacker?1-winner:decisiveEvent.target].deathCause:cause)};
- return {meta:{seed,mode,duration:t,winner,reason,initial,arenaRadius:a.radius,engine:'rapier3d-compat@0.21.0',schemaVersion:1,simultaneousKo,resolvedByAttacker,diagnostics:{maxPenetration,maxGeometricPenetration,maxResidualPenetration,maxPositionCorrection,correctionSteps,contactFrames,longestContact}},frames,events,decisive};
+ const decisive={t0,t1,caption,detail,eventIndex:cause?events.indexOf(cause):null,finishType,finishEventIndex:reason==='timeout'?null:events.indexOf(reason==='ringout'?decisiveEvent:decisiveEvent?.type==='ko'?fighters[resolvedByAttacker?1-winner:decisiveEvent.target].deathCause:cause)};
+ return {meta:{seed,mode,duration:t,winner,reason,initial,arenaRadius:a.radius,engine:'rapier3d-compat@0.21.0',schemaVersion:1,simultaneousKo,resolvedByAttacker,diagnostics:{maxPenetration,maxGeometricPenetration,maxResidualPenetration,maxPositionCorrection,correctionSteps,contactFrames,longestContact,skippedSlowContacts}},frames,events,decisive};
  }finally{world.free();}
 }

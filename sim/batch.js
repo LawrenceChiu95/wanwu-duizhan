@@ -2,7 +2,7 @@ import {simulate,loadCatalog,loadRules} from './index.js';
 export const single=item=>({parts:[{item,mount:'core',rot:[0,0,0]}]});
 export function summarize(r,label={}){
  const hits=r.events.filter(e=>['hit','crit','weak'].includes(e.type));
- return {...label,seed:r.meta.seed,mode:r.meta.mode,winner:r.meta.winner,reason:r.meta.reason,simultaneousKo:r.meta.simultaneousKo,resolvedByAttacker:r.meta.resolvedByAttacker,finishType:r.decisive.finishType,duration:r.meta.duration,impacts:hits.length/2,crit:hits.filter(e=>e.type==='crit'||e.type==='weak').length,weak:hits.filter(e=>e.type==='weak').length,zoneDamage:r.events.filter(e=>e.type==='zone').reduce((s,e)=>s+e.damage,0),decisive:r.decisive.caption,decisiveEvent:r.events[r.decisive.eventIndex]?.type??null,maxPenetration:r.meta.diagnostics.maxPenetration,maxResidualPenetration:r.meta.diagnostics.maxResidualPenetration,maxPositionCorrection:r.meta.diagnostics.maxPositionCorrection,correctionSteps:r.meta.diagnostics.correctionSteps,longestContact:r.meta.diagnostics.longestContact};
+ return {...label,seed:r.meta.seed,mode:r.meta.mode,winner:r.meta.winner,reason:r.meta.reason,simultaneousKo:r.meta.simultaneousKo,resolvedByAttacker:r.meta.resolvedByAttacker,finishType:r.decisive.finishType,duration:r.meta.duration,impacts:hits.length/2,crit:hits.filter(e=>e.role==='attack'&&e.weak).length,weak:hits.filter(e=>e.role==='attack'&&e.weak).length,zoneDamage:r.events.filter(e=>e.type==='zone').reduce((s,e)=>s+e.damage,0),decisive:r.decisive.caption,decisiveEvent:r.events[r.decisive.eventIndex]?.type??null,maxPenetration:r.meta.diagnostics.maxPenetration,maxResidualPenetration:r.meta.diagnostics.maxResidualPenetration,maxPositionCorrection:r.meta.diagnostics.maxPositionCorrection,correctionSteps:r.meta.diagnostics.correctionSteps,longestContact:r.meta.diagnostics.longestContact};
 }
 export function outcomeStats(rows){
  const ds=rows.map(r=>r.duration).sort((a,b)=>a-b),n=rows.length;
@@ -59,16 +59,22 @@ export function counterOutcomes(rows,catalog){
 }
 if(typeof process!=='undefined'&&process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){
  const fs=await import('node:fs/promises');const out=process.argv[2]??'test/prototype/batch';await fs.mkdir(out,{recursive:true});const start=performance.now();let rowsCount=0;
- const mechanics={weakContacts:0,weakTriggered:0,criticalOverNormalCap:0,critical:null,missed:null,counterRoleChange:null,captions:{maxCharacters:0,samples:{}}};
+ const mechanics={weakContacts:0,weakTriggered:0,criticalOverNormalCap:0,critical:null,missed:null,counterRoleChange:null,review:{timeout:null,simultaneous:null,speed:null,zone:null,skippedSlowContacts:0},captions:{maxCharacters:0,samples:{}}};
  const rows=await runBatch({includeGenerated:true,onResult:async(row,replay)=>{
   if(row.seed===1&&[['broom','pot'],['scissors','pillow'],['lamp','slipper']].some(([a,b])=>row.left===a&&row.right===b))await fs.writeFile(`${out}/replay-${row.left}-${row.right}-${row.mode}.json`,JSON.stringify(replay));
   for(const e of [...replay.events,replay.decisive]){
    const size=[...e.caption].length;mechanics.captions.maxCharacters=Math.max(mechanics.captions.maxCharacters,size);
    if(size>20||/冲量|硬度修正|攻守判定|百分比|扣掉|[0-9]/.test(e.caption))throw Error('Caption is not player-readable: '+e.caption);
-   const kind=['更重','更硬','够得远','弱点','克','圈外','时间到'].find(k=>e.caption.includes(k))??'contact';mechanics.captions.samples[kind]??=e.caption;
+   const kind=['更重','更硬','够得远','冲得更快','弱点','克','圈外','时间到'].find(k=>e.caption.includes(k))??'contact';mechanics.captions.samples[kind]??=e.caption;
   }
+  const example={left:row.left,right:row.right,mode:row.mode,seed:row.seed};
+  if(row.reason==='timeout'&&replay.decisive.eventIndex!==null)mechanics.review.timeout??=example;
+  if(row.resolvedByAttacker)mechanics.review.simultaneous??=example;
+  if(replay.events.some(e=>e.caption.includes('冲得更快')))mechanics.review.speed??=example;
+  if(replay.events.some(e=>e.type==='zone'))mechanics.review.zone??=example;
+  mechanics.review.skippedSlowContacts+=replay.meta.diagnostics.skippedSlowContacts;
   for(const e of replay.events.filter(e=>e.item)){
-   if(e.weakContact)mechanics.weakContacts++;if(e.weak)mechanics.weakTriggered++;
+   if(e.role==='attack'&&e.weakContact)mechanics.weakContacts++;if(e.role==='attack'&&e.weak)mechanics.weakTriggered++;
    const receipt={left:row.left,right:row.right,mode:row.mode,seed:row.seed,event:e};
    if(e.role==='attack'&&e.weak&&e.damage>replay.meta.initial[e.target].maxHp*.3){mechanics.criticalOverNormalCap++;mechanics.critical??=receipt;}
    if(e.role==='attack'&&e.weakContact&&!e.weak)mechanics.missed??=receipt;

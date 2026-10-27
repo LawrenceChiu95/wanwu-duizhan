@@ -13,7 +13,8 @@
       "maxPositionCorrection": 0.03382260555624962,
       "correctionSteps": 15,
       "contactFrames": 23,
-      "longestContact": 0.05
+      "longestContact": 0.05,
+      "skippedSlowContacts": 0
     },
     "renderedFrameMaximum": 0.0001686801842879504,
     "at": 6.933333333333334,
@@ -29,16 +30,17 @@
     "diagnostics": {
       "maxPenetration": 0.000393594236811623,
       "maxGeometricPenetration": 0.043837666511535645,
-      "maxResidualPenetration": 0.00047974148765206337,
+      "maxResidualPenetration": 0.00048475642688572407,
       "maxPositionCorrection": 0.04690645296573639,
-      "correctionSteps": 17,
-      "contactFrames": 42,
-      "longestContact": 0.08333333333333333
+      "correctionSteps": 18,
+      "contactFrames": 45,
+      "longestContact": 0.08333333333333333,
+      "skippedSlowContacts": 1
     },
-    "renderedFrameMaximum": 0.0003935206914320588,
-    "at": 1.1666666666666667,
+    "renderedFrameMaximum": 0.00048475642688572407,
+    "at": 35.266666666666666,
     "over1mmFrames": 0,
-    "frames": 1058
+    "frames": 1255
   },
   {
     "type": "batch",
@@ -54,7 +56,8 @@
       "maxPositionCorrection": 0.011989711022377014,
       "correctionSteps": 15,
       "contactFrames": 31,
-      "longestContact": 0.06666666666666667
+      "longestContact": 0.06666666666666667,
+      "skippedSlowContacts": 0
     },
     "renderedFrameMaximum": 0.0002791132137645036,
     "at": 25.733333333333334,
@@ -75,12 +78,13 @@
       "maxPositionCorrection": 0.010797459802031516,
       "correctionSteps": 9,
       "contactFrames": 25,
-      "longestContact": 0.03333333333333333
+      "longestContact": 0.03333333333333333,
+      "skippedSlowContacts": 1
     },
     "renderedFrameMaximum": 0.0004993688780814409,
     "at": 15.733333333333333,
     "over1mmFrames": 0,
-    "frames": 1548
+    "frames": 1572
   },
   {
     "type": "batch",
@@ -96,7 +100,8 @@
       "maxPositionCorrection": 0.011989711022377014,
       "correctionSteps": 14,
       "contactFrames": 29,
-      "longestContact": 0.06666666666666667
+      "longestContact": 0.06666666666666667,
+      "skippedSlowContacts": 0
     },
     "renderedFrameMaximum": 0.0002791132137645036,
     "at": 25.733333333333334,
@@ -117,7 +122,8 @@
       "maxPositionCorrection": 0.010797459802031516,
       "correctionSteps": 9,
       "contactFrames": 23,
-      "longestContact": 0.03333333333333333
+      "longestContact": 0.03333333333333333,
+      "skippedSlowContacts": 1
     },
     "renderedFrameMaximum": 0.0004993688780814409,
     "at": 15.733333333333333,
@@ -128,21 +134,22 @@
     "type": "layouts",
     "source": "current worst maxPenetration",
     "mode": "A",
-    "seed": 1,
-    "layout": "front:broom:vertical|top:pillow:horizontal|side:pot:vertical",
+    "seed": 3,
+    "layout": "front:pillow:forward|top:broom:horizontal|side:pot:horizontal",
     "diagnostics": {
-      "maxPenetration": 0.002476062625646591,
-      "maxGeometricPenetration": 0.03749249875545502,
-      "maxResidualPenetration": 0.0028649165760725737,
-      "maxPositionCorrection": 0.042398774725571284,
-      "correctionSteps": 17,
-      "contactFrames": 45,
-      "longestContact": 0.13333333333333333
+      "maxPenetration": 0.0034149400889873505,
+      "maxGeometricPenetration": 0.013727864250540733,
+      "maxResidualPenetration": 0.0034149400889873505,
+      "maxPositionCorrection": 0.030017436909675597,
+      "correctionSteps": 18,
+      "contactFrames": 39,
+      "longestContact": 0.08333333333333333,
+      "skippedSlowContacts": 1
     },
-    "renderedFrameMaximum": 0.0028649165760725737,
-    "at": 30.3,
+    "renderedFrameMaximum": 0.0034149549901485443,
+    "at": 30.5,
     "over1mmFrames": 1,
-    "frames": 1126
+    "frames": 1713
   },
   {
     "type": "layouts",
@@ -157,7 +164,8 @@
       "maxPositionCorrection": 0.03292352536916733,
       "correctionSteps": 18,
       "contactFrames": 37,
-      "longestContact": 0.05
+      "longestContact": 0.05,
+      "skippedSlowContacts": 0
     },
     "renderedFrameMaximum": 0.00023464448167942464,
     "at": 8.933333333333334,
@@ -175,13 +183,14 @@
       "maxGeometricPenetration": 0.013727864250540733,
       "maxResidualPenetration": 0.0034149400889873505,
       "maxPositionCorrection": 0.030017436909675597,
-      "correctionSteps": 15,
-      "contactFrames": 31,
-      "longestContact": 0.08333333333333333
+      "correctionSteps": 18,
+      "contactFrames": 41,
+      "longestContact": 0.08333333333333333,
+      "skippedSlowContacts": 1
     },
     "renderedFrameMaximum": 0.0034149549901485443,
     "at": 30.5,
     "over1mmFrames": 1,
-    "frames": 1213
+    "frames": 1778
   }
 ]

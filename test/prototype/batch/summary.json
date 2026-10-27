@@ -1,30 +1,30 @@
 {
   "rounds": 280,
-  "wallSeconds": 6.55821325,
+  "wallSeconds": 6.343476709000001,
   "modes": {
     "A": {
-      "averageDuration": 48.04547619047619,
+      "averageDuration": 48.369166666666665,
       "goals": {
         "stats": {
           "rounds": 140,
           "finishes": {
-            "timeout": 34,
-            "contact": 78,
+            "timeout": 32,
+            "contact": 80,
             "zone": 28
           },
           "draws": 0,
           "simultaneousKOs": 0,
           "resolvedByAttacker": 0,
-          "timeouts": 34,
+          "timeouts": 32,
           "under20": 0,
           "under8": 0,
           "min": 22.716666666666665,
-          "q1": 39.78333333333333,
-          "median": 49.416666666666664,
-          "q3": 59.583333333333336,
+          "q1": 39.31666666666666,
+          "median": 50.28333333333333,
+          "q3": 59.46666666666667,
           "max": 60
         },
-        "favoredPairs": 21,
+        "favoredPairs": 22,
         "totalPairs": 28,
         "undefeatedAll": [],
         "records": [
@@ -83,9 +83,9 @@
           {
             "item": "lamp",
             "rounds": 35,
-            "wins": 20,
-            "losses": 15,
-            "rate": 0.5714285714285714,
+            "wins": 19,
+            "losses": 16,
+            "rate": 0.5428571428571428,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -101,9 +101,9 @@
               },
               {
                 "opponent": "pot",
-                "wins": 4,
+                "wins": 3,
                 "rounds": 5,
-                "rate": 0.8
+                "rate": 0.6
               },
               {
                 "opponent": "slipper",
@@ -135,9 +135,9 @@
           {
             "item": "broom",
             "rounds": 35,
-            "wins": 10,
-            "losses": 25,
-            "rate": 0.2857142857142857,
+            "wins": 9,
+            "losses": 26,
+            "rate": 0.2571428571428571,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -159,9 +159,9 @@
               },
               {
                 "opponent": "slipper",
-                "wins": 2,
+                "wins": 1,
                 "rounds": 5,
-                "rate": 0.4
+                "rate": 0.2
               },
               {
                 "opponent": "pillow",
@@ -199,9 +199,9 @@
               },
               {
                 "opponent": "lamp",
-                "wins": 1,
+                "wins": 2,
                 "rounds": 5,
-                "rate": 0.2
+                "rate": 0.4
               },
               {
                 "opponent": "broom",
@@ -229,9 +229,9 @@
               },
               {
                 "opponent": "lamp-lux3d",
-                "wins": 2,
+                "wins": 1,
                 "rounds": 5,
-                "rate": 0.4
+                "rate": 0.2
               }
             ],
             "hasWinnableOpponent": true
@@ -239,9 +239,9 @@
           {
             "item": "slipper",
             "rounds": 35,
-            "wins": 20,
-            "losses": 15,
-            "rate": 0.5714285714285714,
+            "wins": 22,
+            "losses": 13,
+            "rate": 0.6285714285714286,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -257,9 +257,9 @@
               },
               {
                 "opponent": "broom",
-                "wins": 3,
+                "wins": 4,
                 "rounds": 5,
-                "rate": 0.6
+                "rate": 0.8
               },
               {
                 "opponent": "pot",
@@ -275,9 +275,9 @@
               },
               {
                 "opponent": "pan-lux3d",
-                "wins": 3,
+                "wins": 4,
                 "rounds": 5,
-                "rate": 0.6
+                "rate": 0.8
               },
               {
                 "opponent": "lamp-lux3d",
@@ -343,9 +343,9 @@
           {
             "item": "pan-lux3d",
             "rounds": 35,
-            "wins": 22,
-            "losses": 13,
-            "rate": 0.6285714285714286,
+            "wins": 20,
+            "losses": 15,
+            "rate": 0.5714285714285714,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -373,9 +373,9 @@
               },
               {
                 "opponent": "slipper",
-                "wins": 2,
+                "wins": 1,
                 "rounds": 5,
-                "rate": 0.4
+                "rate": 0.2
               },
               {
                 "opponent": "pillow",
@@ -385,9 +385,9 @@
               },
               {
                 "opponent": "lamp-lux3d",
-                "wins": 4,
+                "wins": 3,
                 "rounds": 5,
-                "rate": 0.8
+                "rate": 0.6
               }
             ],
             "hasWinnableOpponent": true
@@ -395,9 +395,9 @@
           {
             "item": "lamp-lux3d",
             "rounds": 35,
-            "wins": 15,
-            "losses": 20,
-            "rate": 0.42857142857142855,
+            "wins": 17,
+            "losses": 18,
+            "rate": 0.4857142857142857,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -419,9 +419,9 @@
               },
               {
                 "opponent": "pot",
-                "wins": 3,
+                "wins": 4,
                 "rounds": 5,
-                "rate": 0.6
+                "rate": 0.8
               },
               {
                 "opponent": "slipper",
@@ -437,9 +437,9 @@
               },
               {
                 "opponent": "pan-lux3d",
-                "wins": 1,
+                "wins": 2,
                 "rounds": 5,
-                "rate": 0.2
+                "rate": 0.4
               }
             ],
             "hasWinnableOpponent": true
@@ -479,7 +479,7 @@
           "scissors": "5/5",
           "lamp": "—",
           "broom": "4/5",
-          "pot": "4/5",
+          "pot": "3/5",
           "slipper": "0/5",
           "pillow": "1/5",
           "pan-lux3d": "2/5",
@@ -491,7 +491,7 @@
           "lamp": "1/5",
           "broom": "—",
           "pot": "2/5",
-          "slipper": "2/5",
+          "slipper": "1/5",
           "pillow": "0/5",
           "pan-lux3d": "0/5",
           "lamp-lux3d": "0/5"
@@ -499,23 +499,23 @@
         {
           "item": "pot",
           "scissors": "5/5",
-          "lamp": "1/5",
+          "lamp": "2/5",
           "broom": "3/5",
           "pot": "—",
           "slipper": "2/5",
           "pillow": "0/5",
           "pan-lux3d": "2/5",
-          "lamp-lux3d": "2/5"
+          "lamp-lux3d": "1/5"
         },
         {
           "item": "slipper",
           "scissors": "0/5",
           "lamp": "5/5",
-          "broom": "3/5",
+          "broom": "4/5",
           "pot": "3/5",
           "slipper": "—",
           "pillow": "1/5",
-          "pan-lux3d": "3/5",
+          "pan-lux3d": "4/5",
           "lamp-lux3d": "5/5"
         },
         {
@@ -535,47 +535,47 @@
           "lamp": "3/5",
           "broom": "5/5",
           "pot": "3/5",
-          "slipper": "2/5",
+          "slipper": "1/5",
           "pillow": "1/5",
           "pan-lux3d": "—",
-          "lamp-lux3d": "4/5"
+          "lamp-lux3d": "3/5"
         },
         {
           "item": "lamp-lux3d",
           "scissors": "5/5",
           "lamp": "1/5",
           "broom": "5/5",
-          "pot": "3/5",
+          "pot": "4/5",
           "slipper": "0/5",
           "pillow": "0/5",
-          "pan-lux3d": "1/5",
+          "pan-lux3d": "2/5",
           "lamp-lux3d": "—"
         }
       ]
     },
     "B": {
-      "averageDuration": 38.671309523809505,
+      "averageDuration": 39.62833333333332,
       "goals": {
         "stats": {
           "rounds": 140,
           "finishes": {
-            "contact": 117,
+            "contact": 115,
             "zone": 22,
-            "timeout": 1
+            "timeout": 3
           },
           "draws": 0,
           "simultaneousKOs": 1,
           "resolvedByAttacker": 1,
-          "timeouts": 1,
-          "under20": 12,
+          "timeouts": 3,
+          "under20": 10,
           "under8": 0,
           "min": 13.466666666666667,
-          "q1": 30.583333333333332,
-          "median": 39.5,
-          "q3": 47.65,
+          "q1": 30.933333333333334,
+          "median": 40.28333333333333,
+          "q3": 48.85,
           "max": 60
         },
-        "favoredPairs": 24,
+        "favoredPairs": 25,
         "totalPairs": 28,
         "undefeatedAll": [],
         "records": [
@@ -634,9 +634,9 @@
           {
             "item": "lamp",
             "rounds": 35,
-            "wins": 16,
-            "losses": 19,
-            "rate": 0.45714285714285713,
+            "wins": 17,
+            "losses": 18,
+            "rate": 0.4857142857142857,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -646,9 +646,9 @@
               },
               {
                 "opponent": "broom",
-                "wins": 3,
+                "wins": 4,
                 "rounds": 5,
-                "rate": 0.6
+                "rate": 0.8
               },
               {
                 "opponent": "pot",
@@ -686,9 +686,9 @@
           {
             "item": "broom",
             "rounds": 35,
-            "wins": 10,
-            "losses": 25,
-            "rate": 0.2857142857142857,
+            "wins": 9,
+            "losses": 26,
+            "rate": 0.2571428571428571,
             "opponents": [
               {
                 "opponent": "scissors",
@@ -698,9 +698,9 @@
               },
               {
                 "opponent": "lamp",
-                "wins": 2,
+                "wins": 1,
                 "rounds": 5,
-                "rate": 0.4
+                "rate": 0.2
               },
               {
                 "opponent": "pot",
@@ -1029,7 +1029,7 @@
           "item": "lamp",
           "scissors": "5/5",
           "lamp": "—",
-          "broom": "3/5",
+          "broom": "4/5",
           "pot": "1/5",
           "slipper": "1/5",
           "pillow": "1/5",
@@ -1039,7 +1039,7 @@
         {
           "item": "broom",
           "scissors": "5/5",
-          "lamp": "2/5",
+          "lamp": "1/5",
           "broom": "—",
           "pot": "1/5",
           "slipper": "1/5",
@@ -1109,24 +1109,24 @@
     "rounds": 150,
     "modes": {
       "A": {
-        "averageDuration": 50.97444444444444,
+        "averageDuration": 51.143777777777764,
         "goals": {
           "stats": {
             "rounds": 75,
             "finishes": {
-              "timeout": 24,
-              "contact": 35,
+              "timeout": 23,
+              "contact": 36,
               "zone": 16
             },
             "draws": 0,
             "simultaneousKOs": 0,
             "resolvedByAttacker": 0,
-            "timeouts": 24,
+            "timeouts": 23,
             "under20": 0,
             "under8": 0,
             "min": 25.933333333333334,
             "q1": 45.88333333333333,
-            "median": 53.11666666666667,
+            "median": 53.56666666666666,
             "q3": 60,
             "max": 60
           },
@@ -1177,9 +1177,9 @@
             {
               "item": "lamp",
               "rounds": 25,
-              "wins": 14,
-              "losses": 11,
-              "rate": 0.56,
+              "wins": 13,
+              "losses": 12,
+              "rate": 0.52,
               "opponents": [
                 {
                   "opponent": "scissors",
@@ -1195,9 +1195,9 @@
                 },
                 {
                   "opponent": "pot",
-                  "wins": 4,
+                  "wins": 3,
                   "rounds": 5,
-                  "rate": 0.8
+                  "rate": 0.6
                 },
                 {
                   "opponent": "slipper",
@@ -1217,9 +1217,9 @@
             {
               "item": "broom",
               "rounds": 25,
-              "wins": 10,
-              "losses": 15,
-              "rate": 0.4,
+              "wins": 9,
+              "losses": 16,
+              "rate": 0.36,
               "opponents": [
                 {
                   "opponent": "scissors",
@@ -1241,9 +1241,9 @@
                 },
                 {
                   "opponent": "slipper",
-                  "wins": 2,
+                  "wins": 1,
                   "rounds": 5,
-                  "rate": 0.4
+                  "rate": 0.2
                 },
                 {
                   "opponent": "pillow",
@@ -1257,9 +1257,9 @@
             {
               "item": "pot",
               "rounds": 25,
-              "wins": 11,
-              "losses": 14,
-              "rate": 0.44,
+              "wins": 12,
+              "losses": 13,
+              "rate": 0.48,
               "opponents": [
                 {
                   "opponent": "scissors",
@@ -1269,9 +1269,9 @@
                 },
                 {
                   "opponent": "lamp",
-                  "wins": 1,
+                  "wins": 2,
                   "rounds": 5,
-                  "rate": 0.2
+                  "rate": 0.4
                 },
                 {
                   "opponent": "broom",
@@ -1297,9 +1297,9 @@
             {
               "item": "slipper",
               "rounds": 25,
-              "wins": 12,
-              "losses": 13,
-              "rate": 0.48,
+              "wins": 13,
+              "losses": 12,
+              "rate": 0.52,
               "opponents": [
                 {
                   "opponent": "scissors",
@@ -1315,9 +1315,9 @@
                 },
                 {
                   "opponent": "broom",
-                  "wins": 3,
+                  "wins": 4,
                   "rounds": 5,
-                  "rate": 0.6
+                  "rate": 0.8
                 },
                 {
                   "opponent": "pot",
@@ -1407,7 +1407,7 @@
             "scissors": "5/5",
             "lamp": "—",
             "broom": "4/5",
-            "pot": "4/5",
+            "pot": "3/5",
             "slipper": "0/5",
             "pillow": "1/5"
           },
@@ -1417,13 +1417,13 @@
             "lamp": "1/5",
             "broom": "—",
             "pot": "2/5",
-            "slipper": "2/5",
+            "slipper": "1/5",
             "pillow": "0/5"
           },
           {
             "item": "pot",
             "scissors": "5/5",
-            "lamp": "1/5",
+            "lamp": "2/5",
             "broom": "3/5",
             "pot": "—",
             "slipper": "2/5",
@@ -1433,7 +1433,7 @@
             "item": "slipper",
             "scissors": "0/5",
             "lamp": "5/5",
-            "broom": "3/5",
+            "broom": "4/5",
             "pot": "3/5",
             "slipper": "—",
             "pillow": "1/5"
@@ -1450,27 +1450,27 @@
         ]
       },
       "B": {
-        "averageDuration": 37.24177777777776,
+        "averageDuration": 38.69222222222221,
         "goals": {
           "stats": {
             "rounds": 75,
             "finishes": {
-              "contact": 65,
-              "zone": 10
+              "contact": 64,
+              "zone": 11
             },
             "draws": 0,
             "simultaneousKOs": 1,
             "resolvedByAttacker": 1,
             "timeouts": 0,
-            "under20": 8,
+            "under20": 7,
             "under8": 0,
             "min": 13.466666666666667,
-            "q1": 28,
-            "median": 37.766666666666666,
-            "q3": 46.5,
+            "q1": 30.466666666666665,
+            "median": 40.28333333333333,
+            "q3": 47.266666666666666,
             "max": 59.46666666666667
           },
-          "favoredPairs": 13,
+          "favoredPairs": 14,
           "totalPairs": 15,
           "undefeatedAll": [],
           "records": [
@@ -1517,9 +1517,9 @@
             {
               "item": "lamp",
               "rounds": 25,
-              "wins": 11,
-              "losses": 14,
-              "rate": 0.44,
+              "wins": 12,
+              "losses": 13,
+              "rate": 0.48,
               "opponents": [
                 {
                   "opponent": "scissors",
@@ -1529,9 +1529,9 @@
                 },
                 {
                   "opponent": "broom",
-                  "wins": 3,
+                  "wins": 4,
                   "rounds": 5,
-                  "rate": 0.6
+                  "rate": 0.8
                 },
                 {
                   "opponent": "pot",
@@ -1557,9 +1557,9 @@
             {
               "item": "broom",
               "rounds": 25,
-              "wins": 9,
-              "losses": 16,
-              "rate": 0.36,
+              "wins": 8,
+              "losses": 17,
+              "rate": 0.32,
               "opponents": [
                 {
                   "opponent": "scissors",
@@ -1569,9 +1569,9 @@
                 },
                 {
                   "opponent": "lamp",
-                  "wins": 2,
+                  "wins": 1,
                   "rounds": 5,
-                  "rate": 0.4
+                  "rate": 0.2
                 },
                 {
                   "opponent": "pot",
@@ -1722,7 +1722,7 @@
             "contact": true,
             "zone": true,
             "duration": true,
-            "short": false,
+            "short": true,
             "draws": true,
             "timeouts": true,
             "simultaneous": true,
@@ -1730,7 +1730,7 @@
             "noAllWinOrLoss": true,
             "noOver80": true
           },
-          "passed": false
+          "passed": true
         },
         "matrix": [
           {
@@ -1746,7 +1746,7 @@
             "item": "lamp",
             "scissors": "5/5",
             "lamp": "—",
-            "broom": "3/5",
+            "broom": "4/5",
             "pot": "1/5",
             "slipper": "1/5",
             "pillow": "1/5"
@@ -1754,7 +1754,7 @@
           {
             "item": "broom",
             "scissors": "5/5",
-            "lamp": "2/5",
+            "lamp": "1/5",
             "broom": "—",
             "pot": "1/5",
             "slipper": "1/5",
@@ -1958,9 +1958,9 @@
       "mode": "A",
       "favored": "slipper",
       "countered": "broom",
-      "wins": 2,
+      "wins": 1,
       "rounds": 5,
-      "rate": 0.4,
+      "rate": 0.2,
       "inTarget": true
     },
     {
@@ -2030,9 +2030,9 @@
       "mode": "A",
       "favored": "slipper",
       "countered": "pan-lux3d",
-      "wins": 2,
+      "wins": 1,
       "rounds": 5,
-      "rate": 0.4,
+      "rate": 0.2,
       "inTarget": true
     },
     {

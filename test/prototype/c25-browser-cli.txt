@@ -1,0 +1,116 @@
+### Result
+{
+  "items": 8,
+  "models": [
+    {
+      "id": "scissors",
+      "maxBoundsDrift": 6.938893903907228e-18,
+      "standardDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "lamp",
+      "maxBoundsDrift": 0,
+      "standardDrift": 5.551115123125783e-17,
+      "textures": []
+    },
+    {
+      "id": "broom",
+      "maxBoundsDrift": 1.3877787807814457e-17,
+      "standardDrift": 2.220446049250313e-16,
+      "textures": []
+    },
+    {
+      "id": "pot",
+      "maxBoundsDrift": 2.7755575615628914e-17,
+      "standardDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "slipper",
+      "maxBoundsDrift": 0,
+      "standardDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "pillow",
+      "maxBoundsDrift": 0,
+      "standardDrift": 0,
+      "textures": []
+    },
+    {
+      "id": "pan-lux3d",
+      "maxBoundsDrift": 0.0001035282253126768,
+      "standardDrift": 0.00010353358654996425,
+      "textures": [
+        {
+          "key": "map",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "metalnessMap",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "roughnessMap",
+          "width": 1024,
+          "height": 1024
+        }
+      ]
+    },
+    {
+      "id": "lamp-lux3d",
+      "maxBoundsDrift": 0.000639615817516051,
+      "standardDrift": 0.00039114451514093984,
+      "textures": [
+        {
+          "key": "map",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "metalnessMap",
+          "width": 1024,
+          "height": 1024
+        },
+        {
+          "key": "roughnessMap",
+          "width": 1024,
+          "height": 1024
+        }
+      ]
+    }
+  ],
+  "deterministic": true,
+  "sameInitial": true,
+  "sha256": "d4e4544c918fadc96344cbb007fdb2bbeafa3a6575c6984c8cbad62d043ecf16",
+  "rounds": [
+    {
+      "mode": "A",
+      "duration": 35.483333333333334,
+      "winner": 1,
+      "events": 15
+    },
+    {
+      "mode": "B",
+      "duration": 34.45,
+      "winner": 1,
+      "events": 13
+    }
+  ],
+  "computeMs": 243.30000001192093,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "critical": {
+    "left": "scissors",
+    "right": "broom",
+    "mode": "B",
+    "seed": 1,
+    "sha256": "5835f68ba12f4c615c5fe98c14f13c10af9c020fc5b8cc8267662e802972b712"
+  }
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => window.verification');
+```

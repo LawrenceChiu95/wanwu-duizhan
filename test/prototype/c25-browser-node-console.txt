@@ -1,0 +1,1 @@
+[{"left":"broom","right":"pot","mode":"A","seed":1,"sha256":"d4e4544c918fadc96344cbb007fdb2bbeafa3a6575c6984c8cbad62d043ecf16","equal":true,"frames":1066,"events":15},{"left":"scissors","right":"broom","mode":"B","seed":1,"sha256":"5835f68ba12f4c615c5fe98c14f13c10af9c020fc5b8cc8267662e802972b712","equal":true,"frames":412,"events":7}]

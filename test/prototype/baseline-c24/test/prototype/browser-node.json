@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "left": "broom",
+      "right": "pot",
+      "mode": "A",
+      "seed": 1,
+      "sha256": "ad9f3b430df647d8091c32729118b94025de08b4bdd20e4934f32a4c9151679d",
+      "equal": true,
+      "frames": 1066,
+      "events": 15
+    },
+    {
+      "left": "scissors",
+      "right": "broom",
+      "mode": "B",
+      "seed": 1,
+      "sha256": "14a5ea1f5f11726451b7fc0c0ab89765b360dcfa27a41e1dd7d1a00805bcd318",
+      "equal": true,
+      "frames": 412,
+      "events": 7
+    }
+  ],
+  "passed": true
+}

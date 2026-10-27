@@ -1,5 +1,5 @@
 {
-  "scope": "Sol sim/data only; numerical failures retained; Claude review, frontend playback, phone and 3-second comprehension pending",
+  "scope": "Sol review fixes25(1-7),27(11) only; original A numerical failures retained; frontend integration, phone, Safari and Claude re-review pending",
   "selected": {
     "selected": "丙：品类重量＋质量开根号",
     "reason": "三案均无全败物件；丙的 A/B 最高胜率都不超过80%，优先保住重量平衡；A旧节奏线仍失败。Elara 788041e8确认丙，只允许再试一两档统一A伤害系数。",
@@ -78,23 +78,23 @@
       "stats": {
         "rounds": 140,
         "finishes": {
-          "timeout": 34,
-          "contact": 78,
+          "timeout": 32,
+          "contact": 80,
           "zone": 28
         },
         "draws": 0,
         "simultaneousKOs": 0,
         "resolvedByAttacker": 0,
-        "timeouts": 34,
+        "timeouts": 32,
         "under20": 0,
         "under8": 0,
         "min": 22.716666666666665,
-        "q1": 39.78333333333333,
-        "median": 49.416666666666664,
-        "q3": 59.583333333333336,
+        "q1": 39.31666666666666,
+        "median": 50.28333333333333,
+        "q3": 59.46666666666667,
         "max": 60
       },
-      "favoredPairs": 21,
+      "favoredPairs": 22,
       "totalPairs": 28,
       "undefeatedAll": [],
       "records": [
@@ -153,9 +153,9 @@
         {
           "item": "lamp",
           "rounds": 35,
-          "wins": 20,
-          "losses": 15,
-          "rate": 0.5714285714285714,
+          "wins": 19,
+          "losses": 16,
+          "rate": 0.5428571428571428,
           "opponents": [
             {
               "opponent": "scissors",
@@ -171,9 +171,9 @@
             },
             {
               "opponent": "pot",
-              "wins": 4,
+              "wins": 3,
               "rounds": 5,
-              "rate": 0.8
+              "rate": 0.6
             },
             {
               "opponent": "slipper",
@@ -205,9 +205,9 @@
         {
           "item": "broom",
           "rounds": 35,
-          "wins": 10,
-          "losses": 25,
-          "rate": 0.2857142857142857,
+          "wins": 9,
+          "losses": 26,
+          "rate": 0.2571428571428571,
           "opponents": [
             {
               "opponent": "scissors",
@@ -229,9 +229,9 @@
             },
             {
               "opponent": "slipper",
-              "wins": 2,
+              "wins": 1,
               "rounds": 5,
-              "rate": 0.4
+              "rate": 0.2
             },
             {
               "opponent": "pillow",
@@ -269,9 +269,9 @@
             },
             {
               "opponent": "lamp",
-              "wins": 1,
+              "wins": 2,
               "rounds": 5,
-              "rate": 0.2
+              "rate": 0.4
             },
             {
               "opponent": "broom",
@@ -299,9 +299,9 @@
             },
             {
               "opponent": "lamp-lux3d",
-              "wins": 2,
+              "wins": 1,
               "rounds": 5,
-              "rate": 0.4
+              "rate": 0.2
             }
           ],
           "hasWinnableOpponent": true
@@ -309,9 +309,9 @@
         {
           "item": "slipper",
           "rounds": 35,
-          "wins": 20,
-          "losses": 15,
-          "rate": 0.5714285714285714,
+          "wins": 22,
+          "losses": 13,
+          "rate": 0.6285714285714286,
           "opponents": [
             {
               "opponent": "scissors",
@@ -327,9 +327,9 @@
             },
             {
               "opponent": "broom",
-              "wins": 3,
+              "wins": 4,
               "rounds": 5,
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "opponent": "pot",
@@ -345,9 +345,9 @@
             },
             {
               "opponent": "pan-lux3d",
-              "wins": 3,
+              "wins": 4,
               "rounds": 5,
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "opponent": "lamp-lux3d",
@@ -413,9 +413,9 @@
         {
           "item": "pan-lux3d",
           "rounds": 35,
-          "wins": 22,
-          "losses": 13,
-          "rate": 0.6285714285714286,
+          "wins": 20,
+          "losses": 15,
+          "rate": 0.5714285714285714,
           "opponents": [
             {
               "opponent": "scissors",
@@ -443,9 +443,9 @@
             },
             {
               "opponent": "slipper",
-              "wins": 2,
+              "wins": 1,
               "rounds": 5,
-              "rate": 0.4
+              "rate": 0.2
             },
             {
               "opponent": "pillow",
@@ -455,9 +455,9 @@
             },
             {
               "opponent": "lamp-lux3d",
-              "wins": 4,
+              "wins": 3,
               "rounds": 5,
-              "rate": 0.8
+              "rate": 0.6
             }
           ],
           "hasWinnableOpponent": true
@@ -465,9 +465,9 @@
         {
           "item": "lamp-lux3d",
           "rounds": 35,
-          "wins": 15,
-          "losses": 20,
-          "rate": 0.42857142857142855,
+          "wins": 17,
+          "losses": 18,
+          "rate": 0.4857142857142857,
           "opponents": [
             {
               "opponent": "scissors",
@@ -489,9 +489,9 @@
             },
             {
               "opponent": "pot",
-              "wins": 3,
+              "wins": 4,
               "rounds": 5,
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "opponent": "slipper",
@@ -507,9 +507,9 @@
             },
             {
               "opponent": "pan-lux3d",
-              "wins": 1,
+              "wins": 2,
               "rounds": 5,
-              "rate": 0.2
+              "rate": 0.4
             }
           ],
           "hasWinnableOpponent": true
@@ -536,23 +536,23 @@
       "stats": {
         "rounds": 140,
         "finishes": {
-          "contact": 117,
+          "contact": 115,
           "zone": 22,
-          "timeout": 1
+          "timeout": 3
         },
         "draws": 0,
         "simultaneousKOs": 1,
         "resolvedByAttacker": 1,
-        "timeouts": 1,
-        "under20": 12,
+        "timeouts": 3,
+        "under20": 10,
         "under8": 0,
         "min": 13.466666666666667,
-        "q1": 30.583333333333332,
-        "median": 39.5,
-        "q3": 47.65,
+        "q1": 30.933333333333334,
+        "median": 40.28333333333333,
+        "q3": 48.85,
         "max": 60
       },
-      "favoredPairs": 24,
+      "favoredPairs": 25,
       "totalPairs": 28,
       "undefeatedAll": [],
       "records": [
@@ -611,9 +611,9 @@
         {
           "item": "lamp",
           "rounds": 35,
-          "wins": 16,
-          "losses": 19,
-          "rate": 0.45714285714285713,
+          "wins": 17,
+          "losses": 18,
+          "rate": 0.4857142857142857,
           "opponents": [
             {
               "opponent": "scissors",
@@ -623,9 +623,9 @@
             },
             {
               "opponent": "broom",
-              "wins": 3,
+              "wins": 4,
               "rounds": 5,
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "opponent": "pot",
@@ -663,9 +663,9 @@
         {
           "item": "broom",
           "rounds": 35,
-          "wins": 10,
-          "losses": 25,
-          "rate": 0.2857142857142857,
+          "wins": 9,
+          "losses": 26,
+          "rate": 0.2571428571428571,
           "opponents": [
             {
               "opponent": "scissors",
@@ -675,9 +675,9 @@
             },
             {
               "opponent": "lamp",
-              "wins": 2,
+              "wins": 1,
               "rounds": 5,
-              "rate": 0.4
+              "rate": 0.2
             },
             {
               "opponent": "pot",
@@ -996,19 +996,19 @@
       "stats": {
         "rounds": 75,
         "finishes": {
-          "timeout": 24,
-          "contact": 35,
+          "timeout": 23,
+          "contact": 36,
           "zone": 16
         },
         "draws": 0,
         "simultaneousKOs": 0,
         "resolvedByAttacker": 0,
-        "timeouts": 24,
+        "timeouts": 23,
         "under20": 0,
         "under8": 0,
         "min": 25.933333333333334,
         "q1": 45.88333333333333,
-        "median": 53.11666666666667,
+        "median": 53.56666666666666,
         "q3": 60,
         "max": 60
       },
@@ -1059,9 +1059,9 @@
         {
           "item": "lamp",
           "rounds": 25,
-          "wins": 14,
-          "losses": 11,
-          "rate": 0.56,
+          "wins": 13,
+          "losses": 12,
+          "rate": 0.52,
           "opponents": [
             {
               "opponent": "scissors",
@@ -1077,9 +1077,9 @@
             },
             {
               "opponent": "pot",
-              "wins": 4,
+              "wins": 3,
               "rounds": 5,
-              "rate": 0.8
+              "rate": 0.6
             },
             {
               "opponent": "slipper",
@@ -1099,9 +1099,9 @@
         {
           "item": "broom",
           "rounds": 25,
-          "wins": 10,
-          "losses": 15,
-          "rate": 0.4,
+          "wins": 9,
+          "losses": 16,
+          "rate": 0.36,
           "opponents": [
             {
               "opponent": "scissors",
@@ -1123,9 +1123,9 @@
             },
             {
               "opponent": "slipper",
-              "wins": 2,
+              "wins": 1,
               "rounds": 5,
-              "rate": 0.4
+              "rate": 0.2
             },
             {
               "opponent": "pillow",
@@ -1139,9 +1139,9 @@
         {
           "item": "pot",
           "rounds": 25,
-          "wins": 11,
-          "losses": 14,
-          "rate": 0.44,
+          "wins": 12,
+          "losses": 13,
+          "rate": 0.48,
           "opponents": [
             {
               "opponent": "scissors",
@@ -1151,9 +1151,9 @@
             },
             {
               "opponent": "lamp",
-              "wins": 1,
+              "wins": 2,
               "rounds": 5,
-              "rate": 0.2
+              "rate": 0.4
             },
             {
               "opponent": "broom",
@@ -1179,9 +1179,9 @@
         {
           "item": "slipper",
           "rounds": 25,
-          "wins": 12,
-          "losses": 13,
-          "rate": 0.48,
+          "wins": 13,
+          "losses": 12,
+          "rate": 0.52,
           "opponents": [
             {
               "opponent": "scissors",
@@ -1197,9 +1197,9 @@
             },
             {
               "opponent": "broom",
-              "wins": 3,
+              "wins": 4,
               "rounds": 5,
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "opponent": "pot",
@@ -1278,22 +1278,22 @@
       "stats": {
         "rounds": 75,
         "finishes": {
-          "contact": 65,
-          "zone": 10
+          "contact": 64,
+          "zone": 11
         },
         "draws": 0,
         "simultaneousKOs": 1,
         "resolvedByAttacker": 1,
         "timeouts": 0,
-        "under20": 8,
+        "under20": 7,
         "under8": 0,
         "min": 13.466666666666667,
-        "q1": 28,
-        "median": 37.766666666666666,
-        "q3": 46.5,
+        "q1": 30.466666666666665,
+        "median": 40.28333333333333,
+        "q3": 47.266666666666666,
         "max": 59.46666666666667
       },
-      "favoredPairs": 13,
+      "favoredPairs": 14,
       "totalPairs": 15,
       "undefeatedAll": [],
       "records": [
@@ -1340,9 +1340,9 @@
         {
           "item": "lamp",
           "rounds": 25,
-          "wins": 11,
-          "losses": 14,
-          "rate": 0.44,
+          "wins": 12,
+          "losses": 13,
+          "rate": 0.48,
           "opponents": [
             {
               "opponent": "scissors",
@@ -1352,9 +1352,9 @@
             },
             {
               "opponent": "broom",
-              "wins": 3,
+              "wins": 4,
               "rounds": 5,
-              "rate": 0.6
+              "rate": 0.8
             },
             {
               "opponent": "pot",
@@ -1380,9 +1380,9 @@
         {
           "item": "broom",
           "rounds": 25,
-          "wins": 9,
-          "losses": 16,
-          "rate": 0.36,
+          "wins": 8,
+          "losses": 17,
+          "rate": 0.32,
           "opponents": [
             {
               "opponent": "scissors",
@@ -1392,9 +1392,9 @@
             },
             {
               "opponent": "lamp",
-              "wins": 2,
+              "wins": 1,
               "rounds": 5,
-              "rate": 0.4
+              "rate": 0.2
             },
             {
               "opponent": "pot",
@@ -1545,7 +1545,7 @@
         "contact": true,
         "zone": true,
         "duration": true,
-        "short": false,
+        "short": true,
         "draws": true,
         "timeouts": true,
         "simultaneous": true,
@@ -1553,7 +1553,7 @@
         "noAllWinOrLoss": true,
         "noOver80": true
       },
-      "passed": false
+      "passed": true
     }
   },
   "assemblyGoals": {
@@ -1584,71 +1584,53 @@
       "passed": true
     }
   },
-  "selectedTrialNumericRowsEqualCanonicalIgnoringComputeMs": true,
   "commands": [
     {
-      "command": [
-        "node",
-        "sim/batch.js"
-      ],
-      "output": "c14-batch-console.txt",
-      "exit": 0,
-      "wallSeconds": 10.229589917
+      "command": "nice -n 20 node sim/batch.js",
+      "output": "c25-batch-console.txt",
+      "exit": 0
     },
     {
-      "command": [
-        "node",
-        "sim/layouts.js",
-        "broom,pot,pillow"
-      ],
-      "output": "c14-layouts-console.txt",
-      "exit": 0,
-      "wallSeconds": 49.396139167
+      "command": "nice -n 20 node sim/layouts.js broom,pot,pillow",
+      "output": "c25-layouts-console.txt",
+      "completedOutputsVerified": true,
+      "wallSeconds": 41.61380225
     },
     {
-      "command": [
-        "node",
-        "--test",
-        "test/prototype/sim.test.mjs"
-      ],
-      "output": "c14-node-tests.txt",
-      "exit": 0,
-      "wallSeconds": 1.6266102080000024
+      "command": "nice -n 20 node --test test/prototype/sim.test.mjs",
+      "output": "c25-node-tests.txt",
+      "exit": 0
     },
     {
-      "command": [
-        "node",
-        "test/prototype/penetration-check.mjs"
-      ],
-      "output": "c14-penetration-console.txt",
-      "exit": 0,
-      "wallSeconds": 1.4287111249999995
+      "command": "nice -n 20 node test/prototype/penetration-check.mjs",
+      "output": "c25-penetration-console.txt",
+      "exit": 0
     },
     {
-      "command": [
-        "node",
-        "test/prototype/pot-diagnosis.mjs"
-      ],
-      "output": "c14-pot-console.txt",
-      "exit": 0,
-      "wallSeconds": 1.7922963339999924
+      "command": "nice -n 20 node test/prototype/pot-diagnosis.mjs",
+      "output": "c25-pot-console.txt",
+      "exit": 0
     },
     {
-      "command": [
-        "node",
-        "test/prototype/tune-c14.mjs",
-        "[{\"counterSpeedMultiplier\":1,\"disableMatchups\":true}]",
-        "final-counter-off"
-      ],
-      "output": "c14-counter-off-console.txt",
-      "exit": 0,
-      "wallSeconds": 11.866250791999988
+      "command": "nice -n 20 node test/prototype/browser-node.mjs",
+      "output": "c25-browser-node-console.txt",
+      "exit": 0
+    },
+    {
+      "command": "nice -n 20 node test/prototype/review-evidence.mjs",
+      "output": "review-evidence.json",
+      "exit": 0
+    },
+    {
+      "command": "nice -n 20 node test/prototype/tune-c14.mjs [{counterSpeedMultiplier:1,disableMatchups:true}] c25-counter-off",
+      "output": "c25-counter-off-console.txt",
+      "exit": 0
     }
   ],
   "nodeTests": {
-    "passed": 9,
+    "passed": 11,
     "failed": 0,
-    "output": "c14-node-tests.txt"
+    "output": "c25-node-tests.txt"
   },
   "browser": {
     "results": [
@@ -1657,7 +1639,7 @@
         "right": "pot",
         "mode": "A",
         "seed": 1,
-        "sha256": "ad9f3b430df647d8091c32729118b94025de08b4bdd20e4934f32a4c9151679d",
+        "sha256": "d4e4544c918fadc96344cbb007fdb2bbeafa3a6575c6984c8cbad62d043ecf16",
         "equal": true,
         "frames": 1066,
         "events": 15
@@ -1667,7 +1649,7 @@
         "right": "broom",
         "mode": "B",
         "seed": 1,
-        "sha256": "14a5ea1f5f11726451b7fc0c0ab89765b360dcfa27a41e1dd7d1a00805bcd318",
+        "sha256": "5835f68ba12f4c615c5fe98c14f13c10af9c020fc5b8cc8267662e802972b712",
         "equal": true,
         "frames": 412,
         "events": 7
@@ -1678,42 +1660,48 @@
   "maxResidualPenetrationMeters": 0.0034149400889873505,
   "independentMaxFramePenetrationMeters": 0.0034149549901485443,
   "sha256": {
-    "sim/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
-    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
-    "sim/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "data/CREDITS.md": "b3baf6b76d05743761d93651ad3138f667bdc47d306d139240dd0e585669e82a",
+    "data/catalog.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "data/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "data/models/lamp-lux3d-mobile.glb": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457",
+    "data/models/pan-lux3d-mobile.glb": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265",
+    "sim/batch.js": "be01cb6b680e62466d81f6c214af03de0f2188ed3a7d81dc2c67c2c5d6a1935f",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
     "sim/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
     "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
     "sim/prepare-assets.mjs": "a448fc512370c3acdada7e60ee9d9702aea2eb2aa41741137e8522b15828776e",
     "sim/prepare-mobile.py": "0a4ae7acbaeffd6f4ae55119d9f15494e4fec2a49403f86ec614708b79c8e34a",
-    "data/catalog.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
-    "data/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
-    "data/CREDITS.md": "b3baf6b76d05743761d93651ad3138f667bdc47d306d139240dd0e585669e82a",
-    "data/models/pan-lux3d-mobile.glb": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265",
-    "data/models/lamp-lux3d-mobile.glb": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457",
-    "test/prototype/sim.test.mjs": "d074a3b1a68cbbdaa7bd0865366d15152ea0b69f854dcc737b1d0850fbea3cbd",
-    "test/prototype/penetration-check.mjs": "6205c5e2430e2765a4684b413af940d80156cdb8793cc6595c6068f809a4f841",
-    "test/prototype/browser-check.html": "2a0804613ac18541521a0b4637d5bfd8b9a68b2133c80bfa002e6f18faa6db1a",
-    "test/prototype/browser-node.mjs": "8fd111c0ec123b523cf8c9dfdedd6862d9eca0d6adc547f54ab0aca3bd916fef",
-    "test/prototype/browser.json": "ab7051222a347723302f722d54c02beb1b849d0a72108415827a74b542f7e51d",
-    "test/prototype/browser-node.json": "d61cc9559b8dd15ae7d67c5f261bd62c5961016aaba2655cce509113a4b28208",
-    "test/prototype/c14-node-tests.txt": "8a4c069deba2b9f1cbf6aa9bb4a406e221abe1b8831d9cbff021ffe331d6b6e9",
-    "test/prototype/c14-commands.json": "a1d85e803c7407f45c75d474444013cf4bb0ca9f4306068e7315c4da840ca11d",
-    "test/prototype/selection.json": "f1f7e86fe0aa2f0522f1b2d15d2752c3514019b4b9b67a46ca98a563f9a50e34",
-    "test/prototype/batch/summary.json": "24ccc21507578e0ab0e12d7890084a5535b84f15309b369568b62affcf1ab14c",
-    "test/prototype/batch/rounds.json": "fac80b3cb1f43afd93e74f4cdbde2c4f86102f91301682e256654572364ca0f3",
-    "test/prototype/batch/lux3d-comparison.json": "e38f7497dbe36a6f2b3abf5ab23b5258e8a499e28aea366616bcc1a698e0f1fa",
-    "test/prototype/batch/mechanics-evidence.json": "814075987c6530f489e68aaa5f99fe5994c5775c698bb70245abd1d100dbdffe",
-    "test/prototype/layouts/summary.json": "e4521b0a2db158a19cbce37f56ab50844a66f3568a923473fdaf952387a4a018",
-    "test/prototype/layouts/rounds.json": "605e219759b9d80bddfdf691f048d2fe8a247e8a18888c5f40f8a380ae2650b2",
-    "test/prototype/penetration-check.json": "e90ea37ea884f4951d27e9970aa9a4e7a556f01605c4a61efb09bbf1e99d7122",
-    "test/prototype/pot-diagnosis.json": "c68af3b4489106ef7d70459e095e2372c1cee1a8e7762aa79533f87656e027d4",
-    "test/prototype/INTERFACE.md": "35ac4cc4a522b1f569d783b7db6b071c09b25997e10ef6d33395c3444cb561ff",
-    "test/prototype/RESULT.md": "0670396d8468606fd43950566afb558978961eab52b537f9051cf5f5be1106af",
-    "test/prototype/AUDIT.md": "226ed96f49357b300e844b6d841932230f45f35191200d08eb38162ed46fc428",
-    "test/prototype/SELECTION.md": "46a30c04f84d1f1dd41d9c9043ac0b7b9ea41dd5da6e21c7a26dd4f6ee63b70a",
-    "test/prototype/COUNTERS.md": "40271395a5246cf624f001ae21e34fbd4e5727b87afe5dda5293805317484121",
+    "test/prototype/AUDIT.md": "c803892b9dc1003330903689a5c045b94efedb1b6fafb4fc8ff6b59b3682510c",
+    "test/prototype/COUNTERS.md": "d608da14ac58178d11301850262013765eda5e7b7c1e5acdde20a71385c069cb",
+    "test/prototype/INTERFACE.md": "dc27447d69e0f4f1545d57d508bf8db7563fa517411ecca101f16d54a7adce68",
     "test/prototype/PLAN-c14.md": "e54e68f0eaf2efcf0708b5b28a333396270b0010d1c694a95e6f8e3043013f52",
-    "test/prototype/tune-c14.mjs": "b509de64cc7ff259265c53d4e76629e3940dd6edec4e1d44b5604921d4cc1b4e",
+    "test/prototype/PLAN-c25.md": "02e1c1907104b1276270c8f47704d81da322ff4bf2f2768e4857c7f83b944edb",
+    "test/prototype/RESULT.md": "58984ca9cfd6f6eaa80a3ff57cbcd95f8b702b1726b924a680c970c5391bac44",
+    "test/prototype/REVIEW-FIXES.md": "e7181bacc6f49ab0891340324e994f50543fd514b250f69f4a13dc57a69c1ff5",
+    "test/prototype/SELECTION.md": "4472b2acb2e4a348fe798473f434a4a6734fe6fb38e39db1dcb2286d0d3f2f7d",
+    "test/prototype/baseline-c24/sim/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "test/prototype/baseline-c24/sim/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
+    "test/prototype/baseline-c24/test/prototype/AUDIT.md": "226ed96f49357b300e844b6d841932230f45f35191200d08eb38162ed46fc428",
+    "test/prototype/baseline-c24/test/prototype/COUNTERS.md": "40271395a5246cf624f001ae21e34fbd4e5727b87afe5dda5293805317484121",
+    "test/prototype/baseline-c24/test/prototype/INTERFACE.md": "35ac4cc4a522b1f569d783b7db6b071c09b25997e10ef6d33395c3444cb561ff",
+    "test/prototype/baseline-c24/test/prototype/RESULT.md": "0670396d8468606fd43950566afb558978961eab52b537f9051cf5f5be1106af",
+    "test/prototype/baseline-c24/test/prototype/batch/lux3d-comparison.csv": "f020ca77285c733254dcde198d1481841a6e70c940c88a9236bfb96febe390cf",
+    "test/prototype/baseline-c24/test/prototype/batch/mechanics-evidence.json": "814075987c6530f489e68aaa5f99fe5994c5775c698bb70245abd1d100dbdffe",
+    "test/prototype/baseline-c24/test/prototype/batch/rounds.json": "fac80b3cb1f43afd93e74f4cdbde2c4f86102f91301682e256654572364ca0f3",
+    "test/prototype/baseline-c24/test/prototype/batch/summary.json": "24ccc21507578e0ab0e12d7890084a5535b84f15309b369568b62affcf1ab14c",
+    "test/prototype/baseline-c24/test/prototype/browser-node.json": "d61cc9559b8dd15ae7d67c5f261bd62c5961016aaba2655cce509113a4b28208",
+    "test/prototype/baseline-c24/test/prototype/layouts/rounds.json": "605e219759b9d80bddfdf691f048d2fe8a247e8a18888c5f40f8a380ae2650b2",
+    "test/prototype/baseline-c24/test/prototype/layouts/summary.json": "e4521b0a2db158a19cbce37f56ab50844a66f3568a923473fdaf952387a4a018",
+    "test/prototype/baseline-c24/test/prototype/verification.json": "8147e2f2118a7cdb1d145664a8e9c51e0415d730a858114a063ab4c8de4b3b20",
+    "test/prototype/batch/lux3d-comparison.json": "6b9539d15ada44f14dc5509fd2e39e9e6faeb1e5a7742ce94b5731a9326bb29f",
+    "test/prototype/batch/mechanics-evidence.json": "70394bd885937343a3a5ccdfb268a7836f7b5ecf313ffc04b7ee99f4cec4bc37",
+    "test/prototype/batch/rounds.json": "19e1332f1fafd8ed1b91e87b7516c9f9a7404c5c23cae5ef8e8903ea3ef36246",
+    "test/prototype/batch/summary.json": "59aaa383f10a7231f05c36e09ed52a649fda623f72e3a3589b1f19f69c8cbbd1",
+    "test/prototype/browser-check.html": "2a0804613ac18541521a0b4637d5bfd8b9a68b2133c80bfa002e6f18faa6db1a",
+    "test/prototype/browser-node.json": "7c7cd8c1ff75f5859fbe28fce452c676d6c496d028fe1f57c8fe8f83fa570cfe",
+    "test/prototype/browser-node.mjs": "8fd111c0ec123b523cf8c9dfdedd6862d9eca0d6adc547f54ab0aca3bd916fef",
+    "test/prototype/browser.json": "f1abb56c357572efa553bf5f481603e2c82520fd027259e47024e8d1f914b002",
     "test/prototype/c14-calibration/README.md": "decd99e0042421757aa51b5ce177f2ca26bbb1197cdb617828c0af7d55d3c8cf",
     "test/prototype/c14-calibration/all-counter-off-1.json": "1aaeddfd168982bc0020e0cfbce57e3d81c6e29eb8afaf6a361b900951738018",
     "test/prototype/c14-calibration/all-counter-off-console.txt": "d88995b37746a323a0ec366688607e22c08f72264c45597d1aea4bf164ba7551",
@@ -1727,6 +1715,7 @@
     "test/prototype/c14-calibration/before-momentum/test/prototype/layouts/summary.json": "da47746cac0b65ee205f7a2a07904e517e4d7416b569d3f8dc3cea849bdbcfe3",
     "test/prototype/c14-calibration/before-momentum/test/prototype/pot-diagnosis.json": "9dd08615b5ed891531097e4231a213959c08c599e4bcbfeb67674e948675780e",
     "test/prototype/c14-calibration/before-momentum/test/prototype/pot-diagnosis.mjs": "524dfd6016767aa86eaf49418a66e4bc95b3bba16dfe7246e26b26a5c5c29f70",
+    "test/prototype/c14-calibration/c25-counter-off-1.json": "b932d75e264b25e549aa851821842c46f062e5d53b8a842afa22c9eeaaedcf6b",
     "test/prototype/c14-calibration/candidate4/batch/lux3d-comparison.json": "e06a3f1c192f623fac3cdde277df2afea6c1233ef14c84cddd8650f6a38af1de",
     "test/prototype/c14-calibration/candidate4/batch/mechanics-evidence.json": "b127a0371bbc9e9db0683326592876be1da1067aa46575a72632910689965888",
     "test/prototype/c14-calibration/candidate4/batch/rounds.json": "93b759dbad36336810e8cc34e7d85c4379f6217cca06eebe089966e2092fa8ae",
@@ -1783,10 +1772,21 @@
     "test/prototype/c14-calibration/solid-momentum/test/prototype/pot-diagnosis.json": "51ff94e906c052de3ca5d1d4b4fa3740205ad5f4039fb0772bc56cbf8a0e3d79",
     "test/prototype/c14-calibration/sources/all-counter-off/batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
     "test/prototype/c14-calibration/sources/all-counter-off/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/all-counter-off/catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
     "test/prototype/c14-calibration/sources/all-counter-off/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
     "test/prototype/c14-calibration/sources/all-counter-off/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/all-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/c25-counter-off/batch.js": "be01cb6b680e62466d81f6c214af03de0f2188ed3a7d81dc2c67c2c5d6a1935f",
+    "test/prototype/c14-calibration/sources/c25-counter-off/catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "test/prototype/c14-calibration/sources/c25-counter-off/catalog-final-case.json": "4a1631b230ac93e44b5787ce95b3753a96710180d96cbaa65cd994ea72c43cdd",
+    "test/prototype/c14-calibration/sources/c25-counter-off/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "test/prototype/c14-calibration/sources/c25-counter-off/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "test/prototype/c14-calibration/sources/c25-counter-off/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "test/prototype/c14-calibration/sources/c25-counter-off/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/c25-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/category-A-damage/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
     "test/prototype/c14-calibration/sources/category-A-damage/catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "test/prototype/c14-calibration/sources/category-A-damage/catalog-final-case.json": "b92e92053343dca56bc71a6fd6b23f164910f7808e20370aed804d44b067c779",
     "test/prototype/c14-calibration/sources/category-A-damage/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
     "test/prototype/c14-calibration/sources/category-A-damage/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
     "test/prototype/c14-calibration/sources/category-A-damage/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
@@ -1794,14 +1794,19 @@
     "test/prototype/c14-calibration/sources/category-A-damage/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/cooldown/batch.js": "72e9b0aa2b461763162ab5414d7a1bb531d5b916c3b96b5ba5e6db01ece923d9",
     "test/prototype/c14-calibration/sources/cooldown/catalog-base.json": "392003d5c4dafc307370d29e3044dae6fc751509eb4597a0939c292202167863",
+    "test/prototype/c14-calibration/sources/cooldown/catalog-final-case.json": "35324f4c45d95fb8b1f76f40c3d23f3518643e454608fae893a8b08fcb731591",
     "test/prototype/c14-calibration/sources/cooldown/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
     "test/prototype/c14-calibration/sources/cooldown/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/cooldown/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/counter/batch.js": "28c8f85664893dc7df6e683994c713caf38d2434a68d973bbb0292229fd97d9a",
     "test/prototype/c14-calibration/sources/counter/catalog-base.json": "392003d5c4dafc307370d29e3044dae6fc751509eb4597a0939c292202167863",
+    "test/prototype/c14-calibration/sources/counter/catalog-final-case.json": "7c25facf558121f7e92792911fdf3a1010bfad9a7808a67f6be66e1dc79b2654",
     "test/prototype/c14-calibration/sources/counter/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
     "test/prototype/c14-calibration/sources/counter/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/counter/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/final-counter-off/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
     "test/prototype/c14-calibration/sources/final-counter-off/catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "test/prototype/c14-calibration/sources/final-counter-off/catalog-final-case.json": "4a1631b230ac93e44b5787ce95b3753a96710180d96cbaa65cd994ea72c43cdd",
     "test/prototype/c14-calibration/sources/final-counter-off/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
     "test/prototype/c14-calibration/sources/final-counter-off/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
     "test/prototype/c14-calibration/sources/final-counter-off/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
@@ -1809,6 +1814,7 @@
     "test/prototype/c14-calibration/sources/final-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/mass-options/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
     "test/prototype/c14-calibration/sources/mass-options/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/mass-options/catalog-final-case.json": "084500ba718937aaf6de5655b29a975eb1de2404908f70f57287575cc8948f2d",
     "test/prototype/c14-calibration/sources/mass-options/index.js": "d74d8072ed6efa9cd5182da350d3040ab243a06f386e762aee9d2be7a1baf0b3",
     "test/prototype/c14-calibration/sources/mass-options/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
     "test/prototype/c14-calibration/sources/mass-options/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
@@ -1816,33 +1822,55 @@
     "test/prototype/c14-calibration/sources/mass-options/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/momentum-counter-off/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
     "test/prototype/c14-calibration/sources/momentum-counter-off/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
     "test/prototype/c14-calibration/sources/momentum-counter-off/index.js": "e0020f91dcedb30d75381dffce939e936a6ab732c06dceed7368b74ab27dee98",
     "test/prototype/c14-calibration/sources/momentum-counter-off/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/momentum-thrust/batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
     "test/prototype/c14-calibration/sources/momentum-thrust/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/momentum-thrust/catalog-final-case.json": "7681858d02fdd87a30a6134f8f77df7fcce7ea8506b62146977259677fa37aa1",
     "test/prototype/c14-calibration/sources/momentum-thrust/index.js": "165432598f695b8a5c78acd7a92a5f4ae8f5b11ee0722e4b219bbf1fdcd49b05",
     "test/prototype/c14-calibration/sources/momentum-thrust/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/momentum-thrust/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-calibration/sources/softer/batch.js": "3c64a58a722fdcbddd2fe6a087997f2b71cb9dfd395f36638b39e917fde6142c",
     "test/prototype/c14-calibration/sources/softer/catalog-base.json": "50f66b2d621f1cb80362755ff3646970e13a500c7fb8cedd7de50bed87835049",
+    "test/prototype/c14-calibration/sources/softer/catalog-final-case.json": "a0403ea662f0f01d2b5f5c4fd6c97a7fb8174765fa3d2dd2e728020eb8ad13bc",
     "test/prototype/c14-calibration/sources/softer/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
     "test/prototype/c14-calibration/sources/softer/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
-    "test/prototype/c14-calibration/sources/all-counter-off/catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
-    "test/prototype/c14-calibration/sources/all-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
-    "test/prototype/c14-calibration/sources/category-A-damage/catalog-final-case.json": "b92e92053343dca56bc71a6fd6b23f164910f7808e20370aed804d44b067c779",
-    "test/prototype/c14-calibration/sources/cooldown/catalog-final-case.json": "35324f4c45d95fb8b1f76f40c3d23f3518643e454608fae893a8b08fcb731591",
-    "test/prototype/c14-calibration/sources/cooldown/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
-    "test/prototype/c14-calibration/sources/counter/catalog-final-case.json": "7c25facf558121f7e92792911fdf3a1010bfad9a7808a67f6be66e1dc79b2654",
-    "test/prototype/c14-calibration/sources/counter/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
-    "test/prototype/c14-calibration/sources/final-counter-off/catalog-final-case.json": "4a1631b230ac93e44b5787ce95b3753a96710180d96cbaa65cd994ea72c43cdd",
-    "test/prototype/c14-calibration/sources/mass-options/catalog-final-case.json": "084500ba718937aaf6de5655b29a975eb1de2404908f70f57287575cc8948f2d",
-    "test/prototype/c14-calibration/sources/momentum-counter-off/catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
-    "test/prototype/c14-calibration/sources/momentum-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
-    "test/prototype/c14-calibration/sources/momentum-thrust/catalog-final-case.json": "7681858d02fdd87a30a6134f8f77df7fcce7ea8506b62146977259677fa37aa1",
-    "test/prototype/c14-calibration/sources/momentum-thrust/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
-    "test/prototype/c14-calibration/sources/softer/catalog-final-case.json": "a0403ea662f0f01d2b5f5c4fd6c97a7fb8174765fa3d2dd2e728020eb8ad13bc",
     "test/prototype/c14-calibration/sources/softer/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
     "test/prototype/c14-cleanup.json": "1a91c5ab59d664c245c17a9fb29a3d8a1448a4f306aeea8ee2fd87a209b4f76a",
-    "test/prototype/node-tests.txt": "8a4c069deba2b9f1cbf6aa9bb4a406e221abe1b8831d9cbff021ffe331d6b6e9",
-    "test/prototype/penetration-check.txt": "e90ea37ea884f4951d27e9970aa9a4e7a556f01605c4a61efb09bbf1e99d7122"
+    "test/prototype/c14-commands.json": "a1d85e803c7407f45c75d474444013cf4bb0ca9f4306068e7315c4da840ca11d",
+    "test/prototype/c14-node-tests.txt": "8a4c069deba2b9f1cbf6aa9bb4a406e221abe1b8831d9cbff021ffe331d6b6e9",
+    "test/prototype/c25-batch-console.txt": "53b4dc5ce5ed3439258bca93ad7ef88a27f09a9c5ba7306a45e3c45c9be8e166",
+    "test/prototype/c25-browser-cli.txt": "7e5b93e827723ddad93099b1cd107f583c740e6b2aa6fc3a7c5f7e28142fec96",
+    "test/prototype/c25-browser-node-console.txt": "b2d34994a136bba773e69c3bb59cf9f3db44557140a3e3454c09ecdb84c22519",
+    "test/prototype/c25-counter-off-console.txt": "5190d018f3b764b85e1c809bdfdcb05c651b1642dc690cd5a0aa6c8664a7a4b2",
+    "test/prototype/c25-layouts-console.txt": "d3f3190fa3c7783d8fbb2f885e90c7848ab84a5789bb9f3d30efb2c88014dfb0",
+    "test/prototype/c25-node-tests.txt": "73a5798b443ab625f2ab23ddd6d1b893145c074068bb2286e6948ea927ed78a0",
+    "test/prototype/c25-penetration-console.txt": "bb00254725c490927c5cf7c12301927109d8d0b640958cc28d0a437ab4ab64bc",
+    "test/prototype/c25-pot-console.txt": "a3e394e79280338499015aa824b2a9b27833b0359be274400efe3aaadbe08936",
+    "test/prototype/layouts/rounds.json": "9f9f689039925264e0c798bcc9c8781270c70358c4496c715b2ea54797480791",
+    "test/prototype/layouts/summary.json": "6bd9a01345ef3fa3cafdaec302283fafcfa996788b52ee67d09b19f4042a4925",
+    "test/prototype/node-tests.txt": "73a5798b443ab625f2ab23ddd6d1b893145c074068bb2286e6948ea927ed78a0",
+    "test/prototype/penetration-check.json": "bb00254725c490927c5cf7c12301927109d8d0b640958cc28d0a437ab4ab64bc",
+    "test/prototype/penetration-check.mjs": "6205c5e2430e2765a4684b413af940d80156cdb8793cc6595c6068f809a4f841",
+    "test/prototype/penetration-check.txt": "bb00254725c490927c5cf7c12301927109d8d0b640958cc28d0a437ab4ab64bc",
+    "test/prototype/pot-diagnosis.json": "408e75c7dfb53e60d28d882d623aa63d14e1be614cec6c72433b07dcb8ee00f7",
+    "test/prototype/review-evidence.json": "839159b42ad7769d70eab2df56cf125f164b56d413878849945e1c802cd5d440",
+    "test/prototype/review-evidence.mjs": "fb4c66b2a5085ea94cd5d358e3bafd24fb4d94261629839e17ac386167ee5515",
+    "test/prototype/selection.json": "f1f7e86fe0aa2f0522f1b2d15d2752c3514019b4b9b67a46ca98a563f9a50e34",
+    "test/prototype/sim.test.mjs": "8221c6de488dbd360a0630a7c347a89acaf2aef3851a6b0e0e57b596af764f0c",
+    "test/prototype/tune-c14.mjs": "b509de64cc7ff259265c53d4e76629e3940dd6edec4e1d44b5604921d4cc1b4e"
+  },
+  "baselineCommit": "941afbe1b27b81862c40e773da9486363a3a0878",
+  "authority": "Elara a889399f; SPEC25,27",
+  "historicalSelectionTrials": "c14-calibration on pre-review941afbe, not current code",
+  "previouslyPassingNowFailing": [],
+  "cleanup": {
+    "counterOffCopy": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-eBkefC",
+    "sourcesArchived": "test/prototype/c14-calibration/sources/c25-counter-off",
+    "copyTrashed": true,
+    "ownChromeSessionClosed": "wanwu-sol-c25",
+    "ownHttpServer4488Closed": true
   }
 }

@@ -1,0 +1,1027 @@
+{
+  "authority": "Elara a889399f; SPEC decisions25 and27; frozen baseline941afbe",
+  "thresholdMetersPerSecond": 0.01,
+  "comparisons": [
+    {
+      "scope": "original6",
+      "mode": "A",
+      "before": {
+        "rounds": 75,
+        "finishes": {
+          "timeout": 24,
+          "contact": 35,
+          "zone": 16
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 24,
+        "under20": 0,
+        "under8": 0,
+        "min": 25.933333333333334,
+        "q1": 45.88333333333333,
+        "median": 53.11666666666667,
+        "q3": 60,
+        "max": 60
+      },
+      "after": {
+        "rounds": 75,
+        "finishes": {
+          "timeout": 23,
+          "contact": 36,
+          "zone": 16
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 23,
+        "under20": 0,
+        "under8": 0,
+        "min": 25.933333333333334,
+        "q1": 45.88333333333333,
+        "median": 53.56666666666666,
+        "q3": 60,
+        "max": 60
+      },
+      "previouslyPassingNowFailing": [],
+      "stillFailing": [
+        "contact",
+        "duration",
+        "timeouts"
+      ],
+      "newlyPassing": []
+    },
+    {
+      "scope": "original6",
+      "mode": "B",
+      "before": {
+        "rounds": 75,
+        "finishes": {
+          "contact": 65,
+          "zone": 10
+        },
+        "draws": 0,
+        "simultaneousKOs": 1,
+        "resolvedByAttacker": 1,
+        "timeouts": 0,
+        "under20": 8,
+        "under8": 0,
+        "min": 13.466666666666667,
+        "q1": 28,
+        "median": 37.766666666666666,
+        "q3": 46.5,
+        "max": 59.46666666666667
+      },
+      "after": {
+        "rounds": 75,
+        "finishes": {
+          "contact": 64,
+          "zone": 11
+        },
+        "draws": 0,
+        "simultaneousKOs": 1,
+        "resolvedByAttacker": 1,
+        "timeouts": 0,
+        "under20": 7,
+        "under8": 0,
+        "min": 13.466666666666667,
+        "q1": 30.466666666666665,
+        "median": 40.28333333333333,
+        "q3": 47.266666666666666,
+        "max": 59.46666666666667
+      },
+      "previouslyPassingNowFailing": [],
+      "stillFailing": [],
+      "newlyPassing": [
+        "short"
+      ]
+    },
+    {
+      "scope": "all8",
+      "mode": "A",
+      "before": {
+        "rounds": 140,
+        "finishes": {
+          "timeout": 34,
+          "contact": 78,
+          "zone": 28
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 34,
+        "under20": 0,
+        "under8": 0,
+        "min": 22.716666666666665,
+        "q1": 39.78333333333333,
+        "median": 49.416666666666664,
+        "q3": 59.583333333333336,
+        "max": 60
+      },
+      "after": {
+        "rounds": 140,
+        "finishes": {
+          "timeout": 32,
+          "contact": 80,
+          "zone": 28
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 32,
+        "under20": 0,
+        "under8": 0,
+        "min": 22.716666666666665,
+        "q1": 39.31666666666666,
+        "median": 50.28333333333333,
+        "q3": 59.46666666666667,
+        "max": 60
+      },
+      "previouslyPassingNowFailing": [],
+      "stillFailing": [
+        "contact",
+        "duration",
+        "timeouts"
+      ],
+      "newlyPassing": []
+    },
+    {
+      "scope": "all8",
+      "mode": "B",
+      "before": {
+        "rounds": 140,
+        "finishes": {
+          "contact": 117,
+          "zone": 22,
+          "timeout": 1
+        },
+        "draws": 0,
+        "simultaneousKOs": 1,
+        "resolvedByAttacker": 1,
+        "timeouts": 1,
+        "under20": 12,
+        "under8": 0,
+        "min": 13.466666666666667,
+        "q1": 30.583333333333332,
+        "median": 39.5,
+        "q3": 47.65,
+        "max": 60
+      },
+      "after": {
+        "rounds": 140,
+        "finishes": {
+          "contact": 115,
+          "zone": 22,
+          "timeout": 3
+        },
+        "draws": 0,
+        "simultaneousKOs": 1,
+        "resolvedByAttacker": 1,
+        "timeouts": 3,
+        "under20": 10,
+        "under8": 0,
+        "min": 13.466666666666667,
+        "q1": 30.933333333333334,
+        "median": 40.28333333333333,
+        "q3": 48.85,
+        "max": 60
+      },
+      "previouslyPassingNowFailing": [],
+      "stillFailing": [],
+      "newlyPassing": []
+    },
+    {
+      "scope": "assembly",
+      "mode": "A",
+      "before": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 404,
+          "zone": 77,
+          "timeout": 5
+        },
+        "draws": 1,
+        "simultaneousKOs": 4,
+        "resolvedByAttacker": 3,
+        "timeouts": 5,
+        "under20": 13,
+        "under8": 0,
+        "min": 13.7,
+        "q1": 31.25,
+        "median": 39.63333333333333,
+        "q3": 46.63333333333333,
+        "max": 60
+      },
+      "after": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 382,
+          "zone": 95,
+          "timeout": 9
+        },
+        "draws": 2,
+        "simultaneousKOs": 5,
+        "resolvedByAttacker": 3,
+        "timeouts": 9,
+        "under20": 11,
+        "under8": 0,
+        "min": 13.7,
+        "q1": 33.18333333333333,
+        "median": 41.88333333333333,
+        "q3": 47.71666666666667,
+        "max": 60
+      },
+      "previouslyPassingNowFailing": [],
+      "stillFailing": [],
+      "newlyPassing": []
+    },
+    {
+      "scope": "assembly",
+      "mode": "B",
+      "before": {
+        "rounds": 486,
+        "finishes": {
+          "zone": 57,
+          "contact": 426,
+          "timeout": 3
+        },
+        "draws": 1,
+        "simultaneousKOs": 4,
+        "resolvedByAttacker": 3,
+        "timeouts": 3,
+        "under20": 10,
+        "under8": 0,
+        "min": 16.066666666666666,
+        "q1": 30.816666666666666,
+        "median": 39.21666666666667,
+        "q3": 45.1,
+        "max": 60
+      },
+      "after": {
+        "rounds": 486,
+        "finishes": {
+          "zone": 75,
+          "contact": 399,
+          "timeout": 12
+        },
+        "draws": 1,
+        "simultaneousKOs": 4,
+        "resolvedByAttacker": 3,
+        "timeouts": 12,
+        "under20": 7,
+        "under8": 0,
+        "min": 17.966666666666665,
+        "q1": 34.4,
+        "median": 41.81666666666666,
+        "q3": 47.766666666666666,
+        "max": 60
+      },
+      "previouslyPassingNowFailing": [],
+      "stillFailing": [],
+      "newlyPassing": []
+    }
+  ],
+  "examples": {
+    "timeout": {
+      "input": {
+        "left": "scissors",
+        "right": "lamp",
+        "mode": "A",
+        "seed": 1
+      },
+      "meta": {
+        "winner": 1,
+        "reason": "timeout",
+        "duration": 60,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "skippedSlowContacts": 0
+      },
+      "decisive": {
+        "t0": 51.983333333333334,
+        "t1": 54.483333333333334,
+        "caption": "时间到，台灯剩血多，赢了",
+        "detail": "时间到，按剩血百分比判胜。",
+        "eventIndex": 90,
+        "finishType": "timeout",
+        "finishEventIndex": null
+      },
+      "highlight": {
+        "t": 53.483333333333334,
+        "type": "weak",
+        "attacker": 1,
+        "target": 0,
+        "point": [
+          0.1873205905627678,
+          0.045892638024562823,
+          1.1502284249874066
+        ],
+        "targetLocalPoint": [
+          0.05318380562193881,
+          0.0031780992957006577,
+          -0.09069473801865831
+        ],
+        "weakDistance": 0.02308004666361465,
+        "weakContact": true,
+        "criticalRoll": 0.18967728852294385,
+        "criticalChance": 0.5,
+        "item": "lamp",
+        "targetItem": "scissors",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "A",
+        "impulse": 0.035683877766132355,
+        "hardness": 0.816496580927726,
+        "matchup": 1.5,
+        "weak": true,
+        "multiplier": 2,
+        "damageScale": 1,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1,
+        "strikeAttacker": 1,
+        "normalSpeeds": [
+          0,
+          0.472793177550642
+        ],
+        "attackScores": [
+          0,
+          1.1581020388681633
+        ],
+        "masses": [
+          0.15000000596046448,
+          1.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0.7054824860417511,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          2
+        ],
+        "rawDamage": 5.8271528380579936,
+        "damageCap": 56,
+        "damage": 5.8271528380579936,
+        "detail": "台灯属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍，扣掉 5.8 点血。",
+        "caption": "台灯撞中剪刀弱点，暴击"
+      },
+      "mainCriticals": 1,
+      "recoilCriticals": 0,
+      "weakCaptionsWithoutWeakpoint": 0,
+      "eventsAfterFirstKo": [],
+      "zoneTail": [
+        {
+          "t": 60,
+          "type": "zone",
+          "attacker": null,
+          "target": 0,
+          "point": [
+            -0.037183672189712524,
+            -1.060183048248291,
+            -0.1833256483078003
+          ],
+          "item": null,
+          "damage": 0.9740791666666665,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "剪刀在圈外掉血"
+        },
+        {
+          "t": 60,
+          "type": "zone",
+          "attacker": null,
+          "target": 1,
+          "point": [
+            0.10308369249105453,
+            0.4449761211872101,
+            0.718505859375
+          ],
+          "item": null,
+          "damage": 0.9740791666666665,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "台灯在圈外掉血"
+        }
+      ],
+      "speedExample": {
+        "t": 59.13333333333333,
+        "type": "crit",
+        "attacker": 0,
+        "target": 1,
+        "point": [
+          -0.0019099455822023728,
+          0.3659395474247954,
+          0.20699074169632334
+        ],
+        "targetLocalPoint": [
+          0.0004848421108692401,
+          -0.023893054677604955,
+          0.09723014307139798
+        ],
+        "weakDistance": 0.1432037278314428,
+        "weakContact": false,
+        "criticalRoll": null,
+        "criticalChance": 0.5,
+        "item": "scissors",
+        "targetItem": "lamp",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "A",
+        "impulse": 0.17667579650878906,
+        "hardness": 1.224744871391589,
+        "matchup": 1,
+        "weak": false,
+        "multiplier": 1,
+        "damageScale": 1,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1.1234466917299342,
+        "strikeAttacker": 0,
+        "normalSpeeds": [
+          3.20373815632322,
+          0.3715251927032989
+        ],
+        "attackScores": [
+          1.393975438052831,
+          0.9100471487122743
+        ],
+        "masses": [
+          0.15000000596046448,
+          1.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0.4114889724331136,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          2
+        ],
+        "rawDamage": 24.30945134773559,
+        "damageCap": 42,
+        "damage": 24.30945134773559,
+        "detail": "剪刀沿撞击方向冲得更快，远端接触加成：撞击冲量 0.2，硬度修正 1.22，扣掉 24.3 点血。",
+        "caption": "剪刀冲得更快，撞疼了台灯"
+      }
+    },
+    "simultaneous": {
+      "input": {
+        "left": "broom",
+        "right": "pot",
+        "mode": "B",
+        "seed": 2
+      },
+      "meta": {
+        "winner": 1,
+        "reason": "double-ko",
+        "duration": 59.46666666666667,
+        "simultaneousKo": true,
+        "resolvedByAttacker": true,
+        "skippedSlowContacts": 0
+      },
+      "decisive": {
+        "t0": 56.96666666666667,
+        "t1": 59.46666666666667,
+        "caption": "同时倒下，锅先撞的，判赢",
+        "detail": "锅质量开根号乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。双方这一撞都归零，按本次攻方判胜。",
+        "eventIndex": 91,
+        "finishType": "contact",
+        "finishEventIndex": 91
+      },
+      "highlight": {
+        "t": 59.46666666666667,
+        "type": "crit",
+        "attacker": 1,
+        "target": 0,
+        "point": [
+          0.10872547060271076,
+          0.11397846699841103,
+          -0.2516946030353766
+        ],
+        "targetLocalPoint": [
+          -0.14584733325090282,
+          0.00009639677242107014,
+          -0.18710598176059057
+        ],
+        "weakDistance": 0.5024594957470698,
+        "weakContact": false,
+        "criticalRoll": null,
+        "criticalChance": 0.5,
+        "item": "pot",
+        "targetItem": "broom",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "B",
+        "impulse": 0.2427229881286621,
+        "hardness": 1.1547005383792515,
+        "matchup": 1,
+        "weak": false,
+        "multiplier": 1,
+        "damageScale": 5.196152422706632,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1,
+        "strikeAttacker": 1,
+        "normalSpeeds": [
+          0,
+          0.63849037638033
+        ],
+        "attackScores": [
+          0,
+          1.009541926730009
+        ],
+        "masses": [
+          0.6000000238418579,
+          2.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          1
+        ],
+        "rawDamage": 46.76537180435969,
+        "damageCap": 42,
+        "damage": 42,
+        "detail": "锅质量开根号乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "caption": "锅更硬，撞疼了扫把"
+      },
+      "mainCriticals": 0,
+      "recoilCriticals": 0,
+      "weakCaptionsWithoutWeakpoint": 0,
+      "eventsAfterFirstKo": [
+        {
+          "t": 59.46666666666667,
+          "type": "ko"
+        }
+      ],
+      "zoneTail": [
+        {
+          "t": 59,
+          "type": "zone",
+          "attacker": null,
+          "target": 1,
+          "point": [
+            -0.06331631541252136,
+            0.016434501856565475,
+            0.1603463590145111
+          ],
+          "item": null,
+          "damage": 0.726915,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "锅在圈外掉血"
+        },
+        {
+          "t": 59.46666666666667,
+          "type": "zone",
+          "attacker": null,
+          "target": 0,
+          "point": [
+            0.11288740485906601,
+            0.21445299685001373,
+            -0.3614129424095154
+          ],
+          "item": null,
+          "damage": 0.8650950000000002,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "扫把在圈外掉血"
+        }
+      ],
+      "speedExample": {
+        "t": 18.28333333333333,
+        "type": "crit",
+        "attacker": 0,
+        "target": 1,
+        "point": [
+          -0.5563343918022735,
+          0.007543944303422784,
+          0.34538968044455787
+        ],
+        "targetLocalPoint": [
+          0.16675119996474,
+          0.037958184500269374,
+          -0.03132312424450606
+        ],
+        "weakDistance": 0.04092294453363813,
+        "weakContact": true,
+        "criticalRoll": 0.5213967126328498,
+        "criticalChance": 0.5,
+        "item": "broom",
+        "targetItem": "pot",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "B",
+        "impulse": 0.0597870871424675,
+        "hardness": 0.8660254037844386,
+        "matchup": 1,
+        "weak": false,
+        "multiplier": 1,
+        "damageScale": 3.8971143170299736,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1,
+        "strikeAttacker": 0,
+        "normalSpeeds": [
+          2.146995920834927,
+          0.5582524591752035
+        ],
+        "attackScores": [
+          1.6630559221957375,
+          0.8962217968104715
+        ],
+        "masses": [
+          0.6000000238418579,
+          2.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0,
+          0.05115949487202208
+        ],
+        "matchupMultipliers": [
+          1,
+          1
+        ],
+        "rawDamage": 27.279800219209815,
+        "damageCap": 42,
+        "damage": 27.279800219209815,
+        "detail": "扫把沿撞击方向冲得更快：碰到弱点但未触发暴击；接触后按攻击和防御扣血，扣掉 27.3 点血。",
+        "caption": "扫把冲得更快，撞疼了锅"
+      }
+    },
+    "speed": {
+      "input": {
+        "left": "scissors",
+        "right": "lamp",
+        "mode": "A",
+        "seed": 1
+      },
+      "meta": {
+        "winner": 1,
+        "reason": "timeout",
+        "duration": 60,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "skippedSlowContacts": 0
+      },
+      "decisive": {
+        "t0": 51.983333333333334,
+        "t1": 54.483333333333334,
+        "caption": "时间到，台灯剩血多，赢了",
+        "detail": "时间到，按剩血百分比判胜。",
+        "eventIndex": 90,
+        "finishType": "timeout",
+        "finishEventIndex": null
+      },
+      "highlight": {
+        "t": 53.483333333333334,
+        "type": "weak",
+        "attacker": 1,
+        "target": 0,
+        "point": [
+          0.1873205905627678,
+          0.045892638024562823,
+          1.1502284249874066
+        ],
+        "targetLocalPoint": [
+          0.05318380562193881,
+          0.0031780992957006577,
+          -0.09069473801865831
+        ],
+        "weakDistance": 0.02308004666361465,
+        "weakContact": true,
+        "criticalRoll": 0.18967728852294385,
+        "criticalChance": 0.5,
+        "item": "lamp",
+        "targetItem": "scissors",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "A",
+        "impulse": 0.035683877766132355,
+        "hardness": 0.816496580927726,
+        "matchup": 1.5,
+        "weak": true,
+        "multiplier": 2,
+        "damageScale": 1,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1,
+        "strikeAttacker": 1,
+        "normalSpeeds": [
+          0,
+          0.472793177550642
+        ],
+        "attackScores": [
+          0,
+          1.1581020388681633
+        ],
+        "masses": [
+          0.15000000596046448,
+          1.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0.7054824860417511,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          2
+        ],
+        "rawDamage": 5.8271528380579936,
+        "damageCap": 56,
+        "damage": 5.8271528380579936,
+        "detail": "台灯属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍，扣掉 5.8 点血。",
+        "caption": "台灯撞中剪刀弱点，暴击"
+      },
+      "mainCriticals": 1,
+      "recoilCriticals": 0,
+      "weakCaptionsWithoutWeakpoint": 0,
+      "eventsAfterFirstKo": [],
+      "zoneTail": [
+        {
+          "t": 60,
+          "type": "zone",
+          "attacker": null,
+          "target": 0,
+          "point": [
+            -0.037183672189712524,
+            -1.060183048248291,
+            -0.1833256483078003
+          ],
+          "item": null,
+          "damage": 0.9740791666666665,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "剪刀在圈外掉血"
+        },
+        {
+          "t": 60,
+          "type": "zone",
+          "attacker": null,
+          "target": 1,
+          "point": [
+            0.10308369249105453,
+            0.4449761211872101,
+            0.718505859375
+          ],
+          "item": null,
+          "damage": 0.9740791666666665,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "台灯在圈外掉血"
+        }
+      ],
+      "speedExample": {
+        "t": 59.13333333333333,
+        "type": "crit",
+        "attacker": 0,
+        "target": 1,
+        "point": [
+          -0.0019099455822023728,
+          0.3659395474247954,
+          0.20699074169632334
+        ],
+        "targetLocalPoint": [
+          0.0004848421108692401,
+          -0.023893054677604955,
+          0.09723014307139798
+        ],
+        "weakDistance": 0.1432037278314428,
+        "weakContact": false,
+        "criticalRoll": null,
+        "criticalChance": 0.5,
+        "item": "scissors",
+        "targetItem": "lamp",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "A",
+        "impulse": 0.17667579650878906,
+        "hardness": 1.224744871391589,
+        "matchup": 1,
+        "weak": false,
+        "multiplier": 1,
+        "damageScale": 1,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1.1234466917299342,
+        "strikeAttacker": 0,
+        "normalSpeeds": [
+          3.20373815632322,
+          0.3715251927032989
+        ],
+        "attackScores": [
+          1.393975438052831,
+          0.9100471487122743
+        ],
+        "masses": [
+          0.15000000596046448,
+          1.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0.4114889724331136,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          2
+        ],
+        "rawDamage": 24.30945134773559,
+        "damageCap": 42,
+        "damage": 24.30945134773559,
+        "detail": "剪刀沿撞击方向冲得更快，远端接触加成：撞击冲量 0.2，硬度修正 1.22，扣掉 24.3 点血。",
+        "caption": "剪刀冲得更快，撞疼了台灯"
+      }
+    },
+    "zone": {
+      "input": {
+        "left": "scissors",
+        "right": "lamp",
+        "mode": "A",
+        "seed": 1
+      },
+      "meta": {
+        "winner": 1,
+        "reason": "timeout",
+        "duration": 60,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "skippedSlowContacts": 0
+      },
+      "decisive": {
+        "t0": 51.983333333333334,
+        "t1": 54.483333333333334,
+        "caption": "时间到，台灯剩血多，赢了",
+        "detail": "时间到，按剩血百分比判胜。",
+        "eventIndex": 90,
+        "finishType": "timeout",
+        "finishEventIndex": null
+      },
+      "highlight": {
+        "t": 53.483333333333334,
+        "type": "weak",
+        "attacker": 1,
+        "target": 0,
+        "point": [
+          0.1873205905627678,
+          0.045892638024562823,
+          1.1502284249874066
+        ],
+        "targetLocalPoint": [
+          0.05318380562193881,
+          0.0031780992957006577,
+          -0.09069473801865831
+        ],
+        "weakDistance": 0.02308004666361465,
+        "weakContact": true,
+        "criticalRoll": 0.18967728852294385,
+        "criticalChance": 0.5,
+        "item": "lamp",
+        "targetItem": "scissors",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "A",
+        "impulse": 0.035683877766132355,
+        "hardness": 0.816496580927726,
+        "matchup": 1.5,
+        "weak": true,
+        "multiplier": 2,
+        "damageScale": 1,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1,
+        "strikeAttacker": 1,
+        "normalSpeeds": [
+          0,
+          0.472793177550642
+        ],
+        "attackScores": [
+          0,
+          1.1581020388681633
+        ],
+        "masses": [
+          0.15000000596046448,
+          1.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0.7054824860417511,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          2
+        ],
+        "rawDamage": 5.8271528380579936,
+        "damageCap": 56,
+        "damage": 5.8271528380579936,
+        "detail": "台灯属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍，扣掉 5.8 点血。",
+        "caption": "台灯撞中剪刀弱点，暴击"
+      },
+      "mainCriticals": 1,
+      "recoilCriticals": 0,
+      "weakCaptionsWithoutWeakpoint": 0,
+      "eventsAfterFirstKo": [],
+      "zoneTail": [
+        {
+          "t": 60,
+          "type": "zone",
+          "attacker": null,
+          "target": 0,
+          "point": [
+            -0.037183672189712524,
+            -1.060183048248291,
+            -0.1833256483078003
+          ],
+          "item": null,
+          "damage": 0.9740791666666665,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "剪刀在圈外掉血"
+        },
+        {
+          "t": 60,
+          "type": "zone",
+          "attacker": null,
+          "target": 1,
+          "point": [
+            0.10308369249105453,
+            0.4449761211872101,
+            0.718505859375
+          ],
+          "item": null,
+          "damage": 0.9740791666666665,
+          "detail": "留在缩小的安全球外，持续失血。",
+          "caption": "台灯在圈外掉血"
+        }
+      ],
+      "speedExample": {
+        "t": 59.13333333333333,
+        "type": "crit",
+        "attacker": 0,
+        "target": 1,
+        "point": [
+          -0.0019099455822023728,
+          0.3659395474247954,
+          0.20699074169632334
+        ],
+        "targetLocalPoint": [
+          0.0004848421108692401,
+          -0.023893054677604955,
+          0.09723014307139798
+        ],
+        "weakDistance": 0.1432037278314428,
+        "weakContact": false,
+        "criticalRoll": null,
+        "criticalChance": 0.5,
+        "item": "scissors",
+        "targetItem": "lamp",
+        "mount": "core",
+        "targetMount": "core",
+        "mode": "A",
+        "impulse": 0.17667579650878906,
+        "hardness": 1.224744871391589,
+        "matchup": 1,
+        "weak": false,
+        "multiplier": 1,
+        "damageScale": 1,
+        "role": "attack",
+        "roleMultiplier": 1,
+        "tipMultiplier": 1.1234466917299342,
+        "strikeAttacker": 0,
+        "normalSpeeds": [
+          3.20373815632322,
+          0.3715251927032989
+        ],
+        "attackScores": [
+          1.393975438052831,
+          0.9100471487122743
+        ],
+        "masses": [
+          0.15000000596046448,
+          1.5
+        ],
+        "massPower": 0.5,
+        "tipRatios": [
+          0.4114889724331136,
+          0
+        ],
+        "matchupMultipliers": [
+          1,
+          2
+        ],
+        "rawDamage": 24.30945134773559,
+        "damageCap": 42,
+        "damage": 24.30945134773559,
+        "detail": "剪刀沿撞击方向冲得更快，远端接触加成：撞击冲量 0.2，硬度修正 1.22，扣掉 24.3 点血。",
+        "caption": "剪刀冲得更快，撞疼了台灯"
+      }
+    }
+  },
+  "mainWeakContacts": 150,
+  "mainWeakTriggered": 83,
+  "criticalOverOrdinaryCap": 61,
+  "ignoredSlowContactsIn280": 99
+}

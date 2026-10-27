@@ -4,6 +4,8 @@ import {readFile} from 'node:fs/promises';
 import crypto from 'node:crypto';
 import {simulate,loadCatalog,loadRules,contactDamage,zoneRadius,zoneDamageRate,strikeRoles,simultaneousWinner,weakCritical} from '../../sim/index.js';
 import {enumerateLayouts,findReversal} from '../../sim/layouts.js';
+import {summarize} from '../../sim/batch.js';
+import {random} from '../../sim/math.js';
 const f=item=>({parts:[{item,mount:'core',rot:[0,0,0]}]});
 const digest=r=>crypto.createHash('sha256').update(JSON.stringify(r)).digest('hex');
 const c=await loadRules();
@@ -32,7 +34,7 @@ test('real simulations: deterministic replay, A/B initial state, physical separa
   assert.equal(r.frames[0].t,0);assert.equal(r.frames.at(-1).t,r.meta.duration);assert.ok(r.decisive.t1-r.decisive.t0<=2.500001);
   assert.ok(r.frames.every(fr=>fr.fighters.every(v=>[...v.pos,...v.quat,v.hp,...v.parts.flatMap(p=>[...p.pos,...p.quat])].every(Number.isFinite))));
   for(let i=0;i<2;i++){const total=r.events.filter(e=>e.target===i).reduce((s,e)=>s+e.damage,0);assert.ok(Math.abs(Math.max(0,r.meta.initial[i].maxHp-total)-r.frames.at(-1).fighters[i].hp)<.13);}
-  for(const e of r.events.filter(e=>e.item)){assert.ok(e.impulse>0);assert.equal(e.multiplier,e.weak?2:1);const target=c.items.find(x=>x.id===e.targetItem);const distance=Math.hypot(...e.targetLocalPoint.map((v,k)=>v-target.weakPoint.pos[k]));assert.ok(Math.abs(distance-e.weakDistance)<1e-9);assert.equal(e.weakContact,distance<=target.weakPoint.radius);assert.equal(e.weak,e.weakContact&&e.criticalRoll<e.criticalChance);assert.equal(e.criticalRoll===null,!e.weakContact);const raw=r.meta.mode==='A'?e.impulse*c.arena.impulseToDamage*e.hardness*e.multiplier:Math.max(0,c.items.find(x=>x.id===e.item).stats.attack*e.matchup-target.stats.defense)*e.multiplier*c.arena.statDamageScale*e.hardness;assert.ok(Math.abs(e.rawDamage-raw*e.tipMultiplier)<1e-8);assert.equal(e.damageCap,r.meta.initial[e.target].maxHp*(e.weak?c.arena.weakCritMaxFraction:c.arena.maxHitFraction));assert.ok(Math.abs(e.damage-Math.min(raw*e.tipMultiplier,e.damageCap)*e.roleMultiplier)<1e-8);assert.equal(e.role,e.attacker===e.strikeAttacker?'attack':'recoil');assert.equal(e.roleMultiplier,e.role==='attack'?1:c.arena.recoilDamageFraction);assert.ok(e.damage<=r.meta.initial[e.target].maxHp*.4);assert.ok(e.t>=3);for(let k=0;k<2;k++)assert.ok(Math.abs(e.attackScores[k]-e.normalSpeeds[k]*e.masses[k]**e.massPower*e.matchupMultipliers[k]*(1+c.arena.tipBonus*e.tipRatios[k]))<1e-8);}
+  for(const e of r.events.filter(e=>e.item)){assert.ok(e.impulse>0);assert.equal(e.multiplier,e.weak?2:1);const target=c.items.find(x=>x.id===e.targetItem);const distance=Math.hypot(...e.targetLocalPoint.map((v,k)=>v-target.weakPoint.pos[k]));assert.ok(Math.abs(distance-e.weakDistance)<1e-9);assert.equal(e.weakContact,distance<=target.weakPoint.radius);assert.equal(e.weak,e.role==='attack'&&e.weakContact&&e.criticalRoll<e.criticalChance);assert.equal(e.criticalRoll===null,!(e.role==='attack'&&e.weakContact));const raw=r.meta.mode==='A'?e.impulse*c.arena.impulseToDamage*e.hardness*e.multiplier:Math.max(0,c.items.find(x=>x.id===e.item).stats.attack*e.matchup-target.stats.defense)*e.multiplier*c.arena.statDamageScale*e.hardness;assert.ok(Math.abs(e.rawDamage-raw*e.tipMultiplier)<1e-8);assert.equal(e.damageCap,r.meta.initial[e.target].maxHp*(e.weak?c.arena.weakCritMaxFraction:c.arena.maxHitFraction));assert.ok(Math.abs(e.damage-Math.min(raw*e.tipMultiplier,e.damageCap)*e.roleMultiplier)<1e-8);assert.equal(e.role,e.attacker===e.strikeAttacker?'attack':'recoil');assert.equal(e.roleMultiplier,e.role==='attack'?1:c.arena.recoilDamageFraction);assert.ok(e.damage<=r.meta.initial[e.target].maxHp*.4);assert.ok(e.t>=3);for(let k=0;k<2;k++)assert.ok(Math.abs(e.attackScores[k]-e.normalSpeeds[k]*e.masses[k]**e.massPower*e.matchupMultipliers[k]*(1+c.arena.tipBonus*e.tipRatios[k]))<1e-8);}
   const end=r.events[r.decisive.finishEventIndex];if(r.meta.reason==='ko'){assert.ok(end.damage>0);assert.equal(r.decisive.finishType,end.type==='zone'?'zone':'contact');}assert.ok(r.events.filter(e=>e.t<=20&&e.type==='zone').every(e=>e.damage===0));
  }
 });
@@ -82,5 +84,48 @@ test('recorded real impacts: critical exceeds ordinary cap, missed weakpoint sta
   if(kind==='critical'){assert.ok(event.damage>c.arena.maxHitFraction*c.arena.fighterHp);assert.ok(event.damage<=.4*c.arena.fighterHp);assert.equal(event.type,'weak');}
   if(kind==='missed'){assert.equal(event.weakContact,true);assert.equal(event.weak,false);assert.ok(event.criticalRoll>=event.criticalChance);assert.ok(event.damage<=c.arena.maxHitFraction*c.arena.fighterHp);}
   if(kind==='counter')assert.notEqual(event.strikeAttacker,example.withoutCounter.attacker);
+ }
+});
+
+
+test('near-static normal approach never chooses an attacker from seed parity',()=>{
+ for(const seed of [0,1,2,3]){
+  const base={normal:[1,0,0],tipRatios:[0,0],tipBonus:.3,seed};
+  assert.equal(strikeRoles({...base,velocities:[[0,20,0],[0,-20,0]]}).attacker,null);
+  assert.equal(strikeRoles({...base,velocities:[[.009,0,0],[-.009,0,0]],masses:[100,1]}).attacker,null);
+  assert.equal(strikeRoles({...base,velocities:[[.01,0,0],[0,0,0]]}).attacker,0);
+ }
+});
+
+test('review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions',async()=>{
+ const proof=JSON.parse(await readFile(new URL('./batch/mechanics-evidence.json',import.meta.url)));
+ for(const key of ['timeout','simultaneous','speed','zone']){
+  const example=proof.review[key];assert.ok(example,'missing actual '+key+' example');
+  const r=await simulate({fighters:[f(example.left),f(example.right)],mode:example.mode,seed:example.seed});
+  const hits=r.events.filter(e=>e.item),main=hits.filter(e=>e.role==='attack'),criticalRng=random(example.seed^0x9e3779b9);
+  assert.equal(summarize(r).crit,main.filter(e=>e.weak).length);
+  for(const e of hits){
+   if(e.role==='attack'&&e.weakContact)assert.equal(e.criticalRoll,criticalRng(),'only eligible main attacks consume RNG');
+   else assert.equal(e.criticalRoll,null);
+   assert.ok(Math.max(...e.normalSpeeds)>=.01);
+   if(e.role==='recoil'){assert.equal(e.weak,false);assert.equal(e.criticalRoll,null);assert.notEqual(e.type,'weak');}
+   if(e.weak){assert.equal(e.role,'attack');assert.match(e.caption,/弱点/);}
+   if(e.caption.includes('冲得更快')){
+    const a=e.strikeAttacker,b=1-a;assert.ok(e.normalSpeeds[a]>e.normalSpeeds[b]);
+    const factor=i=>e.masses[i]**e.massPower*e.matchupMultipliers[i]*(1+c.arena.tipBonus*e.tipRatios[i]);
+    assert.ok(factor(a)<=factor(b)+1e-8);
+   }
+  }
+  const koIndex=r.events.findIndex(e=>e.type==='ko');
+  if(koIndex>=0)assert.ok(r.events.slice(koIndex).every(e=>e.type==='ko'),'events after KO must be terminal only');
+  for(const e of r.events.filter(e=>e.type==='zone'))assert.match(e.caption,/在圈外掉血/);
+  if(key==='timeout'){
+   assert.equal(r.meta.reason,'timeout');assert.match(r.decisive.caption,/时间到/);assert.equal(r.decisive.finishEventIndex,null);
+   const chosen=r.events[r.decisive.eventIndex];assert.equal(chosen.role,'attack');
+   const winners=main.filter(e=>e.attacker===r.meta.winner),preferred=winners.length?winners:main,criticals=preferred.filter(e=>e.weak),eligible=criticals.length?criticals:preferred;
+   assert.ok(eligible.includes(chosen));assert.equal(chosen.damage,Math.max(...eligible.map(e=>e.damage)));
+   assert.ok(chosen.t>=r.decisive.t0&&chosen.t<=r.decisive.t1);
+  }
+  if(key==='simultaneous'){assert.equal(r.meta.resolvedByAttacker,true);assert.match(r.decisive.caption,/同时倒下/);assert.match(r.decisive.caption,/先撞.*判赢/);}
  }
 });

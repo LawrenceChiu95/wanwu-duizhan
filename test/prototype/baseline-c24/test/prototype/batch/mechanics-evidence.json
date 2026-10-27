@@ -1,0 +1,226 @@
+{
+  "weakContacts": 287,
+  "weakTriggered": 161,
+  "criticalOverNormalCap": 62,
+  "critical": {
+    "left": "scissors",
+    "right": "broom",
+    "mode": "B",
+    "seed": 1,
+    "event": {
+      "t": 4.35,
+      "type": "weak",
+      "attacker": 1,
+      "target": 0,
+      "point": [
+        -0.18950958813056834,
+        0.13606791612910696,
+        0.3837965674403341
+      ],
+      "targetLocalPoint": [
+        0.061110508756594475,
+        -0.004300099260476824,
+        -0.06901970237528376
+      ],
+      "weakDistance": 0.00769909926048217,
+      "weakContact": true,
+      "criticalRoll": 0.18967728852294385,
+      "criticalChance": 0.5,
+      "item": "broom",
+      "targetItem": "scissors",
+      "mount": "core",
+      "targetMount": "core",
+      "mode": "B",
+      "impulse": 0.16144806146621704,
+      "hardness": 0.8660254037844386,
+      "matchup": 1.5,
+      "weak": true,
+      "multiplier": 2,
+      "damageScale": 3.8971143170299736,
+      "role": "attack",
+      "roleMultiplier": 1,
+      "tipMultiplier": 1,
+      "strikeAttacker": 1,
+      "normalSpeeds": [
+        1.3344842502506602,
+        0.7465197940200963
+      ],
+      "attackScores": [
+        0.5774997174134067,
+        1.1565035149192693
+      ],
+      "masses": [
+        0.15000000596046448,
+        0.6000000238418579
+      ],
+      "massPower": 0.5,
+      "tipRatios": [
+        0.39119627114090405,
+        0
+      ],
+      "matchupMultipliers": [
+        1,
+        2
+      ],
+      "rawDamage": 128.6047724619891,
+      "damageCap": 56,
+      "damage": 56,
+      "detail": "扫把属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。",
+      "caption": "扫把撞中剪刀弱点，暴击"
+    }
+  },
+  "missed": {
+    "left": "scissors",
+    "right": "lamp",
+    "mode": "A",
+    "seed": 2,
+    "event": {
+      "t": 53.56666666666666,
+      "type": "hit",
+      "attacker": 1,
+      "target": 0,
+      "point": [
+        0.008215645636892116,
+        -0.7460881563321113,
+        -0.20646304616557482
+      ],
+      "targetLocalPoint": [
+        0.05889015850215734,
+        -0.004226815588867508,
+        -0.06366948021115068
+      ],
+      "weakDistance": 0.009576420602263236,
+      "weakContact": true,
+      "criticalRoll": 0.5213967126328498,
+      "criticalChance": 0.5,
+      "item": "lamp",
+      "targetItem": "scissors",
+      "mount": "core",
+      "targetMount": "core",
+      "mode": "A",
+      "impulse": 0.17384666111320257,
+      "hardness": 0.816496580927726,
+      "matchup": 1.5,
+      "weak": false,
+      "multiplier": 1,
+      "damageScale": 1,
+      "role": "attack",
+      "roleMultiplier": 1,
+      "tipMultiplier": 1,
+      "strikeAttacker": 1,
+      "normalSpeeds": [
+        1.004259999261361,
+        1.18524535240028
+      ],
+      "attackScores": [
+        0.41908915297658983,
+        2.9032463333859186
+      ],
+      "masses": [
+        0.15000000596046448,
+        1.5
+      ],
+      "massPower": 0.5,
+      "tipRatios": [
+        0.2583113248665603,
+        0
+      ],
+      "matchupMultipliers": [
+        1,
+        2
+      ],
+      "rawDamage": 14.194520440463096,
+      "damageCap": 42,
+      "damage": 14.194520440463096,
+      "detail": "台灯属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：碰到弱点但未触发暴击；撞击冲量 0.2，硬度修正 0.82，扣掉 14.2 点血。",
+      "caption": "台灯撞中剪刀，剪刀掉血了"
+    }
+  },
+  "counterRoleChange": {
+    "left": "scissors",
+    "right": "lamp",
+    "mode": "A",
+    "seed": 1,
+    "event": {
+      "t": 4.2,
+      "type": "hit",
+      "attacker": 0,
+      "target": 1,
+      "point": [
+        -0.73657778126042,
+        -0.2733195535687351,
+        0.5216532400687917
+      ],
+      "targetLocalPoint": [
+        -0.02712104593442574,
+        0.14535960287055774,
+        0.10646480285645736
+      ],
+      "weakDistance": 0.09842787205637635,
+      "weakContact": false,
+      "criticalRoll": null,
+      "criticalChance": 0.5,
+      "item": "scissors",
+      "targetItem": "lamp",
+      "mount": "core",
+      "targetMount": "core",
+      "mode": "A",
+      "impulse": 0.1616680964721504,
+      "hardness": 1.224744871391589,
+      "matchup": 1,
+      "weak": false,
+      "multiplier": 1,
+      "damageScale": 1,
+      "role": "recoil",
+      "roleMultiplier": 0.03,
+      "tipMultiplier": 1,
+      "strikeAttacker": 1,
+      "normalSpeeds": [
+        1.379919510778666,
+        0.43362990827246267
+      ],
+      "attackScores": [
+        0.6513192099910072,
+        1.0639216459813867
+      ],
+      "masses": [
+        0.15000000596046448,
+        1.5
+      ],
+      "massPower": 0.5,
+      "tipRatios": [
+        0.7289783265340621,
+        0.005490741246634607
+      ],
+      "matchupMultipliers": [
+        1,
+        2
+      ],
+      "rawDamage": 19.800217202190684,
+      "damageCap": 42,
+      "damage": 0.5940065160657205,
+      "detail": "台灯承受反震，扣掉 0.6 点血。",
+      "caption": "台灯撞中剪刀后，自己也掉血了"
+    },
+    "withoutCounter": {
+      "rawScores": [
+        0.6513192099910072,
+        0.5319608229906934
+      ],
+      "attacker": 0
+    }
+  },
+  "captions": {
+    "maxCharacters": 14,
+    "samples": {
+      "contact": "台灯撞中剪刀后，自己也掉血了",
+      "更重": "台灯更重，撞疼了剪刀",
+      "圈外": "剪刀在圈外，撑不住了",
+      "弱点": "台灯撞中剪刀弱点，暴击",
+      "更硬": "剪刀更硬，撞疼了台灯",
+      "时间到": "时间到，台灯剩血多，赢了",
+      "够得远": "台灯够得远，戳中了剪刀",
+      "克": "台灯克剪刀，撞得更疼"
+    }
+  }
+}
