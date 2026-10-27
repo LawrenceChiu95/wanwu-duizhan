@@ -6,34 +6,34 @@
     "mode": "B",
     "seed": 1,
     "file": "ordinary.json",
-    "sha256": "25d61b77a2c6333c0e7ad2e7d75acdceb3b91d6682fe1661b0cc5064f8e337c4",
-    "duration": 38.85,
+    "sha256": "b4d62922c58f85437bc891bca5dd2a997fb492358eca34212c0ff4eac6728741",
+    "duration": 28.599999999999998,
     "winner": 0,
     "reason": "ko",
     "first": 0.375,
-    "medianGap": 1.7583333333333364,
-    "longestGap": 1.9499999999999993,
+    "medianGap": 1.75,
+    "longestGap": 1.9333333333333336,
     "tail": 0,
-    "hits": 23,
+    "hits": 19,
     "contactFirst": 0.375,
-    "contactMedianGap": 0.875,
-    "contactMaxGap": 0.9833333333333343,
+    "contactMedianGap": 0.8833333333333346,
+    "contactMaxGap": 1,
     "breaks": 2,
     "hp": [
-      26.518624999999997,
+      138.07283199999998,
       0
     ],
     "partsHp": [
       [
-        0,
-        37.510000000000005
+        47.68200000000004,
+        77.393229
       ],
       [
         0,
-        35.530000000000015
+        0
       ]
     ],
-    "residual": 0.01826426386833191,
+    "residual": 0.015181228518486023,
     "scrapeCount": 0,
     "scrapeDuration": 0,
     "maxScrapeDuration": 0,
@@ -47,34 +47,34 @@
     "mode": "A",
     "seed": 3,
     "file": "breaks.json",
-    "sha256": "5b065c250012d1946401a7ec6af4ddc0ef0dc1a542df267910ba4b87b7f0aa36",
-    "duration": 18.566666666666666,
+    "sha256": "07ef99482675b616ee93c13c6c8feb1cc15a43df509d04f88a782eff25d56419",
+    "duration": 23.90833333333333,
     "winner": 1,
     "reason": "ko",
     "first": 0.325,
-    "medianGap": 1.5750000000000002,
-    "longestGap": 1.75,
+    "medianGap": 1.5666666666666664,
+    "longestGap": 1.7250000000000005,
     "tail": 0,
-    "hits": 13,
+    "hits": 16,
     "contactFirst": 0.325,
-    "contactMedianGap": 0.7833333333333332,
-    "contactMaxGap": 0.8916666666666666,
+    "contactMedianGap": 0.7916666666666665,
+    "contactMaxGap": 0.9083333333333341,
     "breaks": 0,
     "hp": [
       0,
-      122.319868
+      111.01306639999999
     ],
     "partsHp": [
       [
-        32.620000000000005,
-        21.505000000000003
+        64.860132,
+        46.250516
       ],
       [
-        36.52599200000001,
-        54.505
+        6.4037333333333315,
+        21.996000000000002
       ]
     ],
-    "residual": 0.011001020669937134,
+    "residual": 0.022416330873966217,
     "scrapeCount": 0,
     "scrapeDuration": 0,
     "maxScrapeDuration": 0,
@@ -88,34 +88,34 @@
     "mode": "A",
     "seed": 1,
     "file": "weak.json",
-    "sha256": "d0d08be87afc39be930ec710db1b32a08c334781b287e4f31d550f644549cb9d",
-    "duration": 21.391666666666666,
-    "winner": 0,
+    "sha256": "84b903c528405722e3ac9eeb9b71c81c31e32225374aa5c7e81e22ac77b6c556",
+    "duration": 22.966666666666665,
+    "winner": 1,
     "reason": "ko",
     "first": 0.325,
-    "medianGap": 1.6416666666666675,
-    "longestGap": 1.7833333333333332,
+    "medianGap": 1.6416666666666693,
+    "longestGap": 1.8499999999999979,
     "tail": 0,
-    "hits": 14,
+    "hits": 15,
     "contactFirst": 0.325,
-    "contactMedianGap": 0.8333333333333339,
-    "contactMaxGap": 0.9333333333333336,
-    "breaks": 0,
+    "contactMedianGap": 0.8166666666666664,
+    "contactMaxGap": 0.93333333333333,
+    "breaks": 1,
     "hp": [
-      66.87909866666665,
-      0
+      0,
+      113.43442813333331
     ],
     "partsHp": [
       [
-        5.1400000000000015,
-        55
+        0,
+        37.934000000000005
       ],
       [
-        55,
-        54.505
+        82.49302933333333,
+        54.389149333333336
       ]
     ],
-    "residual": 0.012127825058996677,
+    "residual": 0.030836261808872223,
     "scrapeCount": 0,
     "scrapeDuration": 0,
     "maxScrapeDuration": 0,

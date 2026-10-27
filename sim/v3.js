@@ -1,6 +1,14 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import {loadRules as loadCatalogRules, strikeRoles, weakCritical} from './index.js';
-import {add,sub,scale,length,vec,arr,quat,qarr,rotate,inverseRotate,random} from './math.js';
+import {add,sub,scale,vec,arr,quat,qarr,rotate,inverseRotate,random} from './math.js';
+// Portable math only: replays must be byte-identical across JS engines. Chrome 156 and Node 18/25 disagree in the
+// last bit of Math.exp (and earlier Math.pow) for some inputs, so this file uses + - * / and Math.sqrt (IEEE exact)
+// and no exp/log/pow/sin/cos/hypot.
+const hyp=(...a)=>{let s=0;for(const x of a)s+=x*x;return Math.sqrt(s);};
+const length=a=>hyp(...a);
+const S2=Math.SQRT1_2;
+/** Unit direction in the equator plane for a slot angle in degrees; multiples of 45° only (exact constants). */
+function slotDirection(deg){const k=((deg%360)+360)%360,table={0:[0,1],45:[S2,S2],90:[1,0],135:[S2,-S2],180:[0,-1],225:[-S2,-S2],270:[-1,0],315:[-S2,S2]}[k];if(!table)throw Error(`Slot angle ${deg} must be a multiple of 45 degrees`);return [table[0],0,table[1]];}
 let initialized, rulesPromise;
 const ready=()=>initialized??=RAPIER.init();
 const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
@@ -23,7 +31,7 @@ function basisQuat(cx,cy,cz){
  else if(m00>m11&&m00>m22){const s=Math.sqrt(1+m00-m11-m22)*2;q=[s/4,(m01+m10)/s,(m02+m20)/s,(m21-m12)/s];}
  else if(m11>m22){const s=Math.sqrt(1+m11-m00-m22)*2;q=[(m01+m10)/s,s/4,(m12+m21)/s,(m02-m20)/s];}
  else{const s=Math.sqrt(1+m22-m00-m11)*2;q=[(m02+m20)/s,(m12+m21)/s,s/4,(m10-m01)/s];}
- const n=Math.hypot(...q);return q.map(v=>v/n);
+ const n=hyp(...q);return q.map(v=>v/n);
 }
 /** Item axes by extent: long, middle, thin (indices into x, y, z). */
 export function itemAxes(item){const ext=item.bounds.max.map((v,i)=>v-item.bounds.min[i]),order=[0,1,2].sort((a,b)=>ext[b]-ext[a]||a-b);return {long:order[0],mid:order[1],thin:order[2],ext};}
@@ -34,7 +42,7 @@ export function itemAxes(item){const ext=item.bounds.max.map((v,i)=>v-item.bound
  * The inner end sinks `embed` into the core so it reads as stuck on. No non-uniform scale.
  */
 export function mountTransform(item,mount,orient,r){
- const angle=r.top.slots[mount]*Math.PI/180,d=[Math.sin(angle),0,Math.cos(angle)],{long,thin}=itemAxes(item),cols=[null,null,null];
+ const d=slotDirection(r.top.slots[mount]),{long,thin}=itemAxes(item),cols=[null,null,null];
  if(orient==='out'){cols[long]=scale(d,r.top.outEnd[item.id]??1);cols[thin]=UP;}else{cols[long]=UP;cols[thin]=d;}
  const m=3-long-thin;cols[m]=cross(cols[(m+1)%3],cols[(m+2)%3]);
  const q=basisQuat(...cols),nearest=Math.min(...item.hull.map(v=>dot(rotate(q,v),d)));
@@ -42,7 +50,7 @@ export function mountTransform(item,mount,orient,r){
 }
 /** Body-frame extents of a mounted part (for drawing): slot angle, radial and height range of its hull. */
 export function mountExtents(item,mount,orient,r){
- const {offset,quat:q}=mountTransform(item,mount,orient,r),pts=item.hull.map(v=>add(offset,rotate(q,v))),rad=pts.map(p=>Math.hypot(p[0],p[2])),ys=pts.map(p=>p[1]);
+ const {offset,quat:q}=mountTransform(item,mount,orient,r),pts=item.hull.map(v=>add(offset,rotate(q,v))),rad=pts.map(p=>hyp(p[0],p[2])),ys=pts.map(p=>p[1]);
  return {offset,quat:q,theta:r.top.slots[mount]*Math.PI/180,r0:Math.min(...rad),r1:Math.max(...rad),y0:Math.min(...ys),y1:Math.max(...ys)};
 }
 const bodyPointVelocity=(body,point)=>add(arr(body.linvel()),cross(arr(body.angvel()),sub(point,arr(body.worldCom()))));
@@ -66,10 +74,11 @@ function buildFighter(world,def,index,rng,c,r){
  const q=quatFromRotationVector(tilt);body.setRotation(quat(q),true);body.setAngvel(vec(scale(rotate(q,UP),spin)),true);
  return {body,core,parts,spin,mass:body.mass(),inertia:spinInertia(body),definition:structuredClone(def)};
 }
-function quatFromRotationVector(v){const a=length(v);if(a<1e-12)return [0,0,0,1];const s=Math.sin(a/2)/a;return [v[0]*s,v[1]*s,v[2]*s,Math.cos(a/2)];}
+// Small tilt only: [v/2, 1] normalized is the rotation about v by ~|v| (exact axis), without sin/cos.
+function quatFromRotationVector(v){const q=[v[0]/2,v[1]/2,v[2]/2,1],n=hyp(...q);return q.map(x=>x/n);}
 const active=f=>[f.core,...f.parts.filter(p=>p.alive)];
 /** Radius the spinning top sweeps in its equator plane (core included). */
-function sweepRadius(f,r){let extent=r.core.radius;for(const p of f.parts)for(const v of p.item.hull){const w=add(p.offset,rotate(p.localQuat,v));extent=Math.max(extent,Math.hypot(w[0],w[2]));}return extent;}
+function sweepRadius(f,r){let extent=r.core.radius;for(const p of f.parts)for(const v of p.item.hull){const w=add(p.offset,rotate(p.localQuat,v));extent=Math.max(extent,hyp(w[0],w[2]));}return extent;}
 /** Removing a part preserves velocity at every surviving material point. */
 export function detachPart(world,f,p){
  const pose={pos:arr(p.collider.translation()),quat:qarr(p.collider.rotation())},velocity=bodyPointVelocity(f.body,pose.pos),angularVelocity=arr(f.body.angvel()),oldCenter=arr(f.body.worldCom()),oldVelocity=arr(f.body.linvel()),massBefore=f.body.mass();
@@ -78,11 +87,10 @@ export function detachPart(world,f,p){
  f.body.setLinvel(vec(newVelocity),true);f.body.setAngvel(vec(angularVelocity),true);
  return {pose,velocity,angularVelocity,massBefore,massAfter:f.mass,oldCenter,newCenter,oldVelocity,newVelocity};
 }
-// mass^p for the strike-role score. Math.pow/** with exponents other than 0.5 and integers is not
-// bit-identical across V8 versions (Node 22 vs Chrome 156 differ); exp and log are, so replays stay byte-identical.
-const massWeight=(m,p)=>p===.5?Math.sqrt(m):Math.exp(p*Math.log(m));
+// mass^p for the strike-role score, built from sqrt only (see the portable-math note at the top).
+const massWeight=(m,p)=>{const r=Math.sqrt(m),q=Math.sqrt(r);if(p===1)return m;if(p===.75)return r*q;if(p===.5)return r;if(p===.25)return q;throw Error('roleMassPower must be 0.25, 0.5, 0.75 or 1 (portable math)');};
 function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.angular,sub(point,f.before.center)));}
-function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=Math.hypot(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
+function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
 export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,rules:r}){
  const hardness=Math.sqrt(materials[attacker.material].hardness/materials[target.material].hardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
@@ -128,7 +136,7 @@ function correctOverlap(world,fs,r){
 function driveSpin(f,r){
  const u=rotate(qarr(f.body.rotation()),UP),w=arr(f.body.angvel()),s=dot(w,u),perp=sub(w,scale(u,s));
  const step=r.top.spinTorque/f.inertia*r.dt,spin=s+Math.max(-step,Math.min(step,f.spin-s));
- const k=1-Math.exp(-r.dt/r.top.uprightTau),want=scale(cross(u,UP),r.top.uprightRate);
+ const k=r.dt/(r.top.uprightTau+r.dt),want=scale(cross(u,UP),r.top.uprightRate);
  f.body.setAngvel(vec(add(scale(u,spin),add(perp,scale(sub(want,perp),k)))),true);
 }
 const name=p=>p.mount==='core'?'核心':p.item.name.replace(/（.*?）/g,'');

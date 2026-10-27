@@ -5,39 +5,39 @@
       "right": "pot",
       "mode": "B",
       "seed": 1,
-      "sha256": "7d8fb36140fb8d64cc08431047721112f5bee6409f9c043ee59b8c7c6cf74145",
-      "duration": 38.85,
+      "sha256": "b4d62922c58f85437bc891bca5dd2a997fb492358eca34212c0ff4eac6728741",
+      "duration": 28.599999999999998,
       "breaks": 2,
       "schema": 3,
       "equal": true,
-      "frames": 1167,
-      "events": 142
+      "frames": 859,
+      "events": 109
     },
     {
       "left": "scissors",
       "right": "lamp-lux3d",
       "mode": "A",
       "seed": 3,
-      "sha256": "5b065c250012d1946401a7ec6af4ddc0ef0dc1a542df267910ba4b87b7f0aa36",
-      "duration": 18.566666666666666,
+      "sha256": "07ef99482675b616ee93c13c6c8feb1cc15a43df509d04f88a782eff25d56419",
+      "duration": 23.90833333333333,
       "breaks": 0,
       "schema": 3,
       "equal": true,
-      "frames": 558,
-      "events": 77
+      "frames": 719,
+      "events": 95
     },
     {
       "left": "lamp",
       "right": "scissors",
       "mode": "A",
       "seed": 1,
-      "sha256": "d0d08be87afc39be930ec710db1b32a08c334781b287e4f31d550f644549cb9d",
-      "duration": 21.391666666666666,
-      "breaks": 0,
+      "sha256": "84b903c528405722e3ac9eeb9b71c81c31e32225374aa5c7e81e22ac77b6c556",
+      "duration": 22.966666666666665,
+      "breaks": 1,
       "schema": 3,
       "equal": true,
-      "frames": 643,
-      "events": 84
+      "frames": 690,
+      "events": 90
     }
   ],
   "passed": true

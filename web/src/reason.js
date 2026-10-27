@@ -8,7 +8,7 @@ export function reasonLine(replay) {
   const W = why.attacker === 0 ? '你' : '对手', L = why.target === 0 ? '你' : '对手';
   const att = why.attackerItem ? NAMES[why.attackerItem] : null;
   const broken = why.loserBroken.map(b => NAMES[b.item]);
-  if (why.loserPartsLeft === 0 && broken.length) return `${L}两件都碎了，核心被${att ?? (W === '你' ? '你的核心' : '对手核心')}撞碎`;
+  if (why.loserPartsLeft === 0 && broken.length) return `${L}两件都碎了，核心被${att ?? (W === '你' ? '你' : '对手')}撞碎`;
   if (broken.length) return `${L}的${broken[0]}先碎了，核心没了遮挡`;
   if (!att) return `两颗核心硬碰，${W}撞赢了`;
   if (why.attackerOrient === 'out') return `${W}的${att}伸得远，直接打中核心`;

@@ -1,0 +1,421 @@
+{
+  "mode": "A",
+  "seeds": 4,
+  "pairs": [
+    [
+      "broom",
+      "pan-lux3d"
+    ],
+    [
+      "scissors",
+      "pillow"
+    ],
+    [
+      "lamp-lux3d",
+      "slipper"
+    ],
+    [
+      "pot",
+      "broom"
+    ],
+    [
+      "pillow",
+      "lamp"
+    ],
+    [
+      "slipper",
+      "scissors"
+    ]
+  ],
+  "guard": "out item at e0, pillow (or pan-lux3d) hugging at e180",
+  "summary": {
+    "v1": {
+      "hits": 149,
+      "closing": {
+        "p25": 0.7497301046682558,
+        "median": 1.8037652805828377,
+        "p75": 2.345978954053419
+      },
+      "separation": {
+        "p25": 1.210036497578948,
+        "median": 1.7555545024677948,
+        "p75": 2.3156291360257177
+      }
+    },
+    "top": {
+      "hits": 549,
+      "closing": {
+        "p25": 4.187772183720119,
+        "median": 5.827816461399269,
+        "p75": 7.092940520102056
+      },
+      "separation": {
+        "p25": 2.268405683168968,
+        "median": 3.348684888080367,
+        "p75": 4.387904341103572
+      }
+    }
+  },
+  "rows": [
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 1,
+      "v1": {
+        "hits": 4,
+        "closingMedian": 2.418636809889514,
+        "separationMedian": 1.1713372630400145
+      },
+      "top": {
+        "hits": 21,
+        "closingMedian": 6.541738151281655,
+        "separationMedian": 4.3804934202732495
+      }
+    },
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 2,
+      "v1": {
+        "hits": 4,
+        "closingMedian": 2.4283140717918457,
+        "separationMedian": 0.8853770547678821
+      },
+      "top": {
+        "hits": 20,
+        "closingMedian": 6.197153321845729,
+        "separationMedian": 4.392812739252328
+      }
+    },
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 3,
+      "v1": {
+        "hits": 4,
+        "closingMedian": 2.4864212621407384,
+        "separationMedian": 0.968532007222976
+      },
+      "top": {
+        "hits": 26,
+        "closingMedian": 6.186038471374008,
+        "separationMedian": 3.515450869335848
+      }
+    },
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 4,
+      "v1": {
+        "hits": 4,
+        "closingMedian": 2.323128406752608,
+        "separationMedian": 0.7413448181881912
+      },
+      "top": {
+        "hits": 22,
+        "closingMedian": 5.758179858279485,
+        "separationMedian": 3.8883601747976937
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 1,
+      "v1": {
+        "hits": 8,
+        "closingMedian": 2.216924879564459,
+        "separationMedian": 2.0692036014563002
+      },
+      "top": {
+        "hits": 25,
+        "closingMedian": 5.355629889718587,
+        "separationMedian": 3.021825253895664
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 2,
+      "v1": {
+        "hits": 8,
+        "closingMedian": 1.9587421868046537,
+        "separationMedian": 1.6275653756628883
+      },
+      "top": {
+        "hits": 23,
+        "closingMedian": 4.976253651845884,
+        "separationMedian": 3.6256105804847714
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 3,
+      "v1": {
+        "hits": 8,
+        "closingMedian": 2.3999919075647314,
+        "separationMedian": 2.3156291360257177
+      },
+      "top": {
+        "hits": 22,
+        "closingMedian": 5.560917952500175,
+        "separationMedian": 2.6758912599548745
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 4,
+      "v1": {
+        "hits": 9,
+        "closingMedian": 1.5046517256395562,
+        "separationMedian": 1.591821008659371
+      },
+      "top": {
+        "hits": 22,
+        "closingMedian": 5.397490750852287,
+        "separationMedian": 2.7332465976218328
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 1,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 2.2539653850783026,
+        "separationMedian": 1.854113859407942
+      },
+      "top": {
+        "hits": 25,
+        "closingMedian": 5.557828223916831,
+        "separationMedian": 3.324073580159994
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 2,
+      "v1": {
+        "hits": 5,
+        "closingMedian": 0.6023866070050743,
+        "separationMedian": 1.9348991135255322
+      },
+      "top": {
+        "hits": 22,
+        "closingMedian": 5.737430332778756,
+        "separationMedian": 3.547727699767694
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 3,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 1.6114384880550974,
+        "separationMedian": 2.372643099338154
+      },
+      "top": {
+        "hits": 24,
+        "closingMedian": 6.106432828190254,
+        "separationMedian": 3.904354294246549
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 4,
+      "v1": {
+        "hits": 8,
+        "closingMedian": 2.1852884258705103,
+        "separationMedian": 1.9143254860377636
+      },
+      "top": {
+        "hits": 18,
+        "closingMedian": 6.73779026314171,
+        "separationMedian": 4.172656512772603
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 1,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 2.704439989299648,
+        "separationMedian": 2.5082392057426737
+      },
+      "top": {
+        "hits": 25,
+        "closingMedian": 6.9081984467758515,
+        "separationMedian": 3.407905316071649
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 2,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 2.287666640580081,
+        "separationMedian": 1.6296079052482764
+      },
+      "top": {
+        "hits": 23,
+        "closingMedian": 5.795133889867522,
+        "separationMedian": 4.387904341103572
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 3,
+      "v1": {
+        "hits": 4,
+        "closingMedian": 1.8989522316448262,
+        "separationMedian": 2.0718113821635584
+      },
+      "top": {
+        "hits": 25,
+        "closingMedian": 6.758748021086605,
+        "separationMedian": 4.135556978433444
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 4,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 1.7341889212192103,
+        "separationMedian": 1.7555545024677948
+      },
+      "top": {
+        "hits": 21,
+        "closingMedian": 6.628994536938674,
+        "separationMedian": 3.5876384401046257
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 1,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 2.296561836172775,
+        "separationMedian": 1.602169111782386
+      },
+      "top": {
+        "hits": 26,
+        "closingMedian": 5.667914576398281,
+        "separationMedian": 3.15110030517622
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 2,
+      "v1": {
+        "hits": 6,
+        "closingMedian": 1.4396505083270976,
+        "separationMedian": 1.6976528277186556
+      },
+      "top": {
+        "hits": 20,
+        "closingMedian": 5.780321452033295,
+        "separationMedian": 3.1456767655508004
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 3,
+      "v1": {
+        "hits": 4,
+        "closingMedian": 0.23046847883717725,
+        "separationMedian": 1.8674473725946328
+      },
+      "top": {
+        "hits": 25,
+        "closingMedian": 6.227666672050738,
+        "separationMedian": 2.6635848005062184
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 4,
+      "v1": {
+        "hits": 3,
+        "closingMedian": 1.8150115606992878,
+        "separationMedian": 1.210036497578948
+      },
+      "top": {
+        "hits": 28,
+        "closingMedian": 5.463641649224373,
+        "separationMedian": 3.0760708078798302
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 1,
+      "v1": {
+        "hits": 10,
+        "closingMedian": 2.084440519617808,
+        "separationMedian": 2.2169189075770177
+      },
+      "top": {
+        "hits": 22,
+        "closingMedian": 6.437690448642635,
+        "separationMedian": 3.655138215386658
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 2,
+      "v1": {
+        "hits": 9,
+        "closingMedian": 2.0349998295911433,
+        "separationMedian": 1.8682331529207652
+      },
+      "top": {
+        "hits": 21,
+        "closingMedian": 5.310880822957818,
+        "separationMedian": 3.3006177294631
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 3,
+      "v1": {
+        "hits": 8,
+        "closingMedian": 1.9699002389039497,
+        "separationMedian": 1.712484697645969
+      },
+      "top": {
+        "hits": 20,
+        "closingMedian": 6.197707394516794,
+        "separationMedian": 2.660107549063917
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 4,
+      "v1": {
+        "hits": 7,
+        "closingMedian": 1.3909768832820182,
+        "separationMedian": 1.8930513691506785
+      },
+      "top": {
+        "hits": 23,
+        "closingMedian": 5.141909817872282,
+        "separationMedian": 3.2793345763679027
+      }
+    }
+  ]
+}
