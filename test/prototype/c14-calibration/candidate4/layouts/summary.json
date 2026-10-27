@@ -1,0 +1,211 @@
+{
+  "items": [
+    "broom",
+    "pot",
+    "pillow"
+  ],
+  "opponent": {
+    "parts": [
+      {
+        "item": "broom",
+        "mount": "front",
+        "rot": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "item": "pot",
+        "mount": "top",
+        "rot": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "item": "pillow",
+        "mount": "side",
+        "rot": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "layouts": 162,
+  "rounds": 972,
+  "wallSeconds": 87.121646,
+  "modes": {
+    "A": {
+      "outcomes": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 402,
+          "zone": 80,
+          "timeout": 4
+        },
+        "draws": 2,
+        "simultaneousKOs": 8,
+        "resolvedByAttacker": 6,
+        "timeouts": 4,
+        "under20": 16,
+        "under8": 0,
+        "min": 13.333333333333334,
+        "q1": 32.06666666666666,
+        "median": 39.43333333333333,
+        "q3": 47.18333333333333,
+        "max": 60
+      },
+      "goals": {
+        "checks": {
+          "contact": true,
+          "zone": true,
+          "duration": true,
+          "short": true,
+          "draws": true,
+          "timeouts": true,
+          "simultaneous": true,
+          "layoutDifference": true
+        },
+        "passed": true
+      },
+      "bestLayout": {
+        "layout": "front:pillow:horizontal|top:pot:forward|side:broom:forward",
+        "wins": 3,
+        "rounds": 3,
+        "rate": 1
+      },
+      "worstLayout": {
+        "layout": "front:broom:forward|top:pot:vertical|side:pillow:horizontal",
+        "wins": 0,
+        "rounds": 3,
+        "rate": 0
+      },
+      "layoutWinRateSpread": 1,
+      "wins": 227,
+      "losses": 257,
+      "draws": 2,
+      "averageDuration": 38.48281893004114,
+      "timeouts": 4,
+      "maxContact": 0.6000000000000002
+    },
+    "B": {
+      "outcomes": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 425,
+          "zone": 57,
+          "timeout": 4
+        },
+        "draws": 0,
+        "simultaneousKOs": 3,
+        "resolvedByAttacker": 3,
+        "timeouts": 4,
+        "under20": 14,
+        "under8": 0,
+        "min": 13.333333333333334,
+        "q1": 32.36666666666667,
+        "median": 39.31666666666666,
+        "q3": 46.88333333333333,
+        "max": 60
+      },
+      "goals": {
+        "checks": {
+          "contact": true,
+          "zone": true,
+          "duration": true,
+          "short": true,
+          "draws": true,
+          "timeouts": true,
+          "simultaneous": true,
+          "layoutDifference": true
+        },
+        "passed": true
+      },
+      "bestLayout": {
+        "layout": "front:pillow:vertical|top:broom:vertical|side:pot:forward",
+        "wins": 3,
+        "rounds": 3,
+        "rate": 1
+      },
+      "worstLayout": {
+        "layout": "front:broom:forward|top:pot:vertical|side:pillow:forward",
+        "wins": 0,
+        "rounds": 3,
+        "rate": 0
+      },
+      "layoutWinRateSpread": 1,
+      "wins": 221,
+      "losses": 265,
+      "draws": 0,
+      "averageDuration": 38.80685871056237,
+      "timeouts": 4,
+      "maxContact": 0.6000000000000002
+    }
+  },
+  "reversal": {
+    "mode": "A",
+    "seed": 1,
+    "win": {
+      "layout": "front:broom:forward|top:pot:forward|side:pillow:vertical",
+      "computeMs": 71.279042,
+      "mass": 45.13890075683594,
+      "centerOfMass": [
+        0.006873848848044872,
+        0.11980496346950531,
+        0.0013938151532784104
+      ],
+      "seed": 1,
+      "mode": "A",
+      "winner": 0,
+      "reason": "ko",
+      "simultaneousKo": false,
+      "resolvedByAttacker": false,
+      "finishType": "contact",
+      "duration": 32.06666666666666,
+      "impacts": 5,
+      "crit": 5,
+      "weak": 0,
+      "zoneDamage": 0,
+      "decisive": "侧装的枕头沿撞击方向冲得更快，远端接触加成：撞击冲量 8.6，硬度修正 1.00（扣血受单击上限限制），扣掉 42.0 点血。",
+      "decisiveEvent": "crit",
+      "maxPenetration": 0.0003995985316578299,
+      "maxResidualPenetration": 0.00040227174758911133,
+      "maxPositionCorrection": 0.014123476280272006,
+      "correctionSteps": 16,
+      "longestContact": 0.05
+    },
+    "loss": {
+      "layout": "front:broom:forward|top:pot:forward|side:pillow:forward",
+      "computeMs": 264.414667,
+      "mass": 45.13890075683594,
+      "centerOfMass": [
+        0.006873848848044872,
+        0.1198594719171524,
+        0.0014448418514803052
+      ],
+      "seed": 1,
+      "mode": "A",
+      "winner": 1,
+      "reason": "ko",
+      "simultaneousKo": false,
+      "resolvedByAttacker": false,
+      "finishType": "contact",
+      "duration": 40.25,
+      "impacts": 5,
+      "crit": 6,
+      "weak": 1,
+      "zoneDamage": 7.419171666666669,
+      "decisive": "前装的扫把沿撞击方向冲得更快：撞击冲量 80.9，硬度修正 1.00（扣血受单击上限限制），扣掉 42.0 点血。",
+      "decisiveEvent": "crit",
+      "maxPenetration": 0.00018691434524953365,
+      "maxResidualPenetration": 0.00024802429834380746,
+      "maxPositionCorrection": 0.018625693735480307,
+      "correctionSteps": 7,
+      "longestContact": 0.03333333333333333
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import {simulate,loadCatalog} from './index.js';
+import {simulate,loadCatalog,loadRules} from './index.js';
 export const single=item=>({parts:[{item,mount:'core',rot:[0,0,0]}]});
 export function summarize(r,label={}){
  const hits=r.events.filter(e=>['hit','crit','weak'].includes(e.type));
@@ -15,11 +15,12 @@ export function singleGoals(rows){
  const favoredPairs=[...pairs.values()].filter(rs=>Math.max(...[0,1].map(side=>rs.filter(r=>r.winner===side).length))/rs.length>=.65).length;
  const ids=[...new Set(rows.flatMap(r=>[r.left,r.right]))],records=ids.map(id=>{const rs=rows.filter(r=>r.left===id||r.right===id);return {item:id,rounds:rs.length,wins:rs.filter(r=>r.winner===(r.left===id?0:1)).length,losses:rs.filter(r=>r.winner!==null&&r.winner!==(r.left===id?0:1)).length};});
  const undefeatedAll=records.filter(r=>r.wins===r.rounds||r.losses===r.rounds).map(r=>r.item);
- const checks={...combatGoals(stats),matchupDifference:favoredPairs>=pairs.size/3,noAllWinOrLoss:undefeatedAll.length===0};
- return {stats,favoredPairs,totalPairs:pairs.size,undefeatedAll,checks,passed:Object.values(checks).every(Boolean)};
+ const matchups=records.map(record=>{const opponents=ids.filter(id=>id!==record.item).map(opponent=>{const rs=rows.filter(r=>(r.left===record.item&&r.right===opponent)||(r.right===record.item&&r.left===opponent));const wins=rs.filter(r=>r.winner===(r.left===record.item?0:1)).length;return {opponent,wins,rounds:rs.length,rate:wins/rs.length};});return {...record,rate:record.wins/record.rounds,opponents,hasWinnableOpponent:opponents.some(p=>p.rate>=.5)};});
+ const checks={...combatGoals(stats),matchupDifference:favoredPairs>=pairs.size/3,noAllWinOrLoss:undefeatedAll.length===0,noOver80:matchups.every(r=>r.rate<=.8)};
+ return {stats,favoredPairs,totalPairs:pairs.size,undefeatedAll,records:matchups,reported:{eachHasWinnableOpponent:matchups.every(r=>r.hasWinnableOpponent)},checks,passed:Object.values(checks).every(Boolean)};
 }
-export async function runBatch({seeds=[1,2,3,4,5],onResult=()=>{}}={}){
- const items=(await loadCatalog()).filter(i=>!i.comparisonBase),rows=[];
+export async function runBatch({seeds=[1,2,3,4,5],includeGenerated=false,onResult=()=>{}}={}){
+ const items=(await loadCatalog()).filter(i=>includeGenerated||!i.comparisonBase),rows=[];
  for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)for(const mode of ['A','B'])for(const seed of seeds){const start=performance.now();const replay=await simulate({fighters:[single(items[i].id),single(items[j].id)],mode,seed});const row=summarize(replay,{left:items[i].id,right:items[j].id,computeMs:performance.now()-start});rows.push(row);await onResult(row,replay);}
  return rows;
 }
@@ -45,12 +46,44 @@ export async function runGeneratedComparison(baseline){
  return {rows,summary};
 }
 export function winMatrix(rows,ids,mode){return ids.map(left=>({item:left,...Object.fromEntries(ids.map(right=>{if(left===right)return[right,'—'];const rs=rows.filter(r=>r.mode===mode&&((r.left===left&&r.right===right)||(r.left===right&&r.right===left)));return[right,`${rs.filter(r=>r.winner===(r.left===left?0:1)).length}/${rs.length}`];}))}));}
+export function counterOutcomes(rows,catalog){
+ const result=[];
+ for(let i=0;i<catalog.items.length;i++)for(const b of catalog.items.slice(i+1)){
+  const a=catalog.items[i],forward=(catalog.matchups[a.tag]?.[b.tag]??1)>1,reverse=(catalog.matchups[b.tag]?.[a.tag]??1)>1;if(!forward&&!reverse)continue;
+  const favored=forward?a:b,countered=forward?b:a;
+  for(const mode of ['A','B']){const rs=rows.filter(r=>r.mode===mode&&((r.left===a.id&&r.right===b.id)||(r.left===b.id&&r.right===a.id)));if(!rs.length)continue;
+   const wins=rs.filter(r=>r.winner===(r.left===countered.id?0:1)).length;result.push({mode,favored:favored.id,countered:countered.id,wins,rounds:rs.length,rate:wins/rs.length,inTarget:wins/rs.length>=.1&&wins/rs.length<=.4});
+  }
+ }
+ return result;
+}
 if(typeof process!=='undefined'&&process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){
  const fs=await import('node:fs/promises');const out=process.argv[2]??'test/prototype/batch';await fs.mkdir(out,{recursive:true});const start=performance.now();let rowsCount=0;
- const rows=await runBatch({onResult:async(row,replay)=>{if(row.seed===1&&[['broom','pot'],['scissors','pillow'],['lamp','slipper']].some(([a,b])=>row.left===a&&row.right===b))await fs.writeFile(`${out}/replay-${row.left}-${row.right}-${row.mode}.json`,JSON.stringify(replay));if(rowsCount++%10===0)console.log('completed',rowsCount,row.left,row.right,row.mode);}});
- const ids=(await loadCatalog()).filter(i=>!i.comparisonBase).map(i=>i.id),summary={rounds:rows.length,wallSeconds:(performance.now()-start)/1000,modes:Object.fromEntries(['A','B'].map(mode=>{const rs=rows.filter(r=>r.mode===mode);return[mode,{averageDuration:rs.reduce((s,r)=>s+r.duration,0)/rs.length,under20:rs.filter(r=>r.duration<20).length,timeouts:rs.filter(r=>r.reason==='timeout').length,ringouts:rs.filter(r=>r.reason==='ringout').length,goals:singleGoals(rs),matrix:winMatrix(rows,ids,mode),records:ids.map(item=>{const all=rs.filter(r=>r.left===item||r.right===item);return {item,wins:all.filter(r=>r.winner===(r.left===item?0:1)).length,losses:all.filter(r=>r.winner!==null&&r.winner!==(r.left===item?0:1)).length,draws:all.filter(r=>r.winner===null).length};})}];}))};
+ const mechanics={weakContacts:0,weakTriggered:0,criticalOverNormalCap:0,critical:null,missed:null,counterRoleChange:null,captions:{maxCharacters:0,samples:{}}};
+ const rows=await runBatch({includeGenerated:true,onResult:async(row,replay)=>{
+  if(row.seed===1&&[['broom','pot'],['scissors','pillow'],['lamp','slipper']].some(([a,b])=>row.left===a&&row.right===b))await fs.writeFile(`${out}/replay-${row.left}-${row.right}-${row.mode}.json`,JSON.stringify(replay));
+  for(const e of [...replay.events,replay.decisive]){
+   const size=[...e.caption].length;mechanics.captions.maxCharacters=Math.max(mechanics.captions.maxCharacters,size);
+   if(size>20||/冲量|硬度修正|攻守判定|百分比|扣掉|[0-9]/.test(e.caption))throw Error('Caption is not player-readable: '+e.caption);
+   const kind=['更重','更硬','够得远','弱点','克','圈外','时间到'].find(k=>e.caption.includes(k))??'contact';mechanics.captions.samples[kind]??=e.caption;
+  }
+  for(const e of replay.events.filter(e=>e.item)){
+   if(e.weakContact)mechanics.weakContacts++;if(e.weak)mechanics.weakTriggered++;
+   const receipt={left:row.left,right:row.right,mode:row.mode,seed:row.seed,event:e};
+   if(e.role==='attack'&&e.weak&&e.damage>replay.meta.initial[e.target].maxHp*.3){mechanics.criticalOverNormalCap++;mechanics.critical??=receipt;}
+   if(e.role==='attack'&&e.weakContact&&!e.weak)mechanics.missed??=receipt;
+   const rawScores=e.attackScores.map((v,i)=>v/e.matchupMultipliers[i]);
+   const originalAttacker=Math.abs(rawScores[0]-rawScores[1])>1e-8?(rawScores[0]>rawScores[1]?0:1):(row.seed&1);
+   if(originalAttacker!==e.strikeAttacker)mechanics.counterRoleChange??={...receipt,withoutCounter:{rawScores,attacker:originalAttacker}};
+  }
+  if(rowsCount++%10===0)console.log('completed',rowsCount,row.left,row.right,row.mode);
+ }});
+ const items=await loadCatalog(),ids=items.map(i=>i.id),originalIds=items.filter(i=>!i.comparisonBase).map(i=>i.id),originals=rows.filter(r=>originalIds.includes(r.left)&&originalIds.includes(r.right));
+ const summarizeModes=(data,list)=>Object.fromEntries(['A','B'].map(mode=>{const rs=data.filter(r=>r.mode===mode);return[mode,{averageDuration:rs.reduce((s,r)=>s+r.duration,0)/rs.length,goals:singleGoals(rs),matrix:winMatrix(data,list,mode)}];}));
+ const summary={rounds:rows.length,wallSeconds:(performance.now()-start)/1000,modes:summarizeModes(rows,ids),originals:{rounds:originals.length,modes:summarizeModes(originals,originalIds)},counterOutcomes:counterOutcomes(rows,await loadRules())};
  await fs.writeFile(`${out}/rounds.json`,JSON.stringify(rows,null,2)+'\n');await fs.writeFile(`${out}/summary.json`,JSON.stringify(summary,null,2)+'\n');
+ await fs.writeFile(`${out}/mechanics-evidence.json`,JSON.stringify(mechanics,null,2)+'\n');
  const keys=Object.keys(rows[0]),csv=v=>`"${String(v??'').replaceAll('"','""')}"`;await fs.writeFile(`${out}/rounds.csv`,[keys.join(','),...rows.map(r=>keys.map(k=>csv(r[k])).join(','))].join('\n')+'\n');console.log(JSON.stringify(summary,null,2));
- const comparison=await runGeneratedComparison(rows);await fs.writeFile(`${out}/lux3d-comparison.json`,JSON.stringify(comparison,null,2)+'\n');
+ const comparison=await runGeneratedComparison(originals);await fs.writeFile(`${out}/lux3d-comparison.json`,JSON.stringify(comparison,null,2)+'\n');
  const ck=Object.keys(comparison.summary[0]);await fs.writeFile(`${out}/lux3d-comparison.csv`,[ck.join(','),...comparison.summary.map(r=>ck.map(k=>csv(r[k])).join(','))].join('\n')+'\n');
 }

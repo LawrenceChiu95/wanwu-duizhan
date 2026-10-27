@@ -1,0 +1,10 @@
+{
+  "name": "wanwu-simulation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ../test/prototype/sim.test.mjs",
+    "batch": "node batch.js"
+  },
+  "dependencies": {"@dimforge/rapier3d-compat": "0.21.0"}
+}

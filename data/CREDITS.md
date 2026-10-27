@@ -13,7 +13,7 @@ Downloaded 2026-10-26 from the following model pages. License links on all six p
 
 Changes: centered each model and rescaled to meters; rotated the long implements to point along Z; kept only the right slipper. Original downloads in source-models/ preserve the authors' assets. Normalization and support-point convex approximation are reproducible with `node sim/prepare-assets.mjs`. Hashes, original bounds, final transforms and source vertex counts are in catalog.json.
 
-The convex hull treats hollow objects as solid; density and dimensions are prototype estimates, not measured real object masses. In particular, the solid pot and broad broom hull are much heavier than their real counterparts. Material damage values are game tuning, not engineering measurements.
+Convex hulls remain solid collision envelopes, but the current fighter mass uses Elara’s category reference values in item-standards.json (pot 2.5 kg, lamp 1.5, pillow/broom 0.6, slipper 0.25, scissors 0.15), rather than solid hull volume times density. These are nominal prototype values, not measured objects. Generated variants use the same mass as their category. Rapier derives inertia from that mass and collision shape; material hardness/restitution remain game tuning, not engineering measurements.
 
 Physics: [Rapier](https://github.com/dimforge/rapier.js), Apache-2.0; package license retained by npm. [Official contact manifold documentation](https://rapier.rs/docs/user_guides/javascript/advanced_collision_detection_js/) describes contact-space/impulse APIs used here.
 
@@ -26,4 +26,4 @@ Wren supplied two generated variants and their generation receipts in [lux3d/REC
 | 锅（Lux3D） | “Frying pan” — kevin dooley, CC BY; https://www.flickr.com/photos/12836528@N00/4565041679 |
 | 台灯（Lux3D） | “Art Deco Mica Table Lamp” — Artdecodude, CC BY; https://www.flickr.com/photos/62920259@N03/5771792573 |
 
-Both variants retain their existing counterpart's catalog attack/defense/material and legacy HP values; actual fighter HP is uniformly 140 for singles and assemblies. Geometry, volume, mass and the surface weak point are recomputed from the supplied meshes; this is why identical game stats can still produce different outcomes. The pan is centered and rotated with its long axis along Z at 0.38 m; the lamp stays Y-up at 0.45 m. These are consistent prototype scales, not dimensions measured from photographs.
+Both variants retain their existing counterpart's catalog attack/defense/material and legacy HP values; actual fighter HP is uniformly 140 for singles and assemblies. Geometry, volume and the surface weak point come from the supplied meshes; mass is the same category reference value as the counterpart. Different collision geometry can still produce different outcomes. The pan is centered and rotated with its long axis along Z at 0.38 m; the lamp stays Y-up at 0.45 m. These are consistent prototype scales, not dimensions measured from photographs.

@@ -1,0 +1,6389 @@
+{
+  "massModel": "category",
+  "items": [
+    {
+      "id": "scissors",
+      "material": "metal",
+      "mass": 0.15,
+      "volume": 0.00009555724682286382,
+      "hardness": 1.2,
+      "bounds": {
+        "min": [
+          -0.0611105275055374,
+          -0.004354271799762579,
+          -0.1
+        ],
+        "max": [
+          0.0611105275055374,
+          0.004354271799762578,
+          0.1
+        ]
+      }
+    },
+    {
+      "id": "pot",
+      "material": "metal",
+      "mass": 2.5,
+      "volume": 0.011439520865678787,
+      "hardness": 1.2,
+      "bounds": {
+        "min": [
+          -0.18999999999999997,
+          -0.0845413460469967,
+          -0.1565677446206484
+        ],
+        "max": [
+          0.18999999999999997,
+          0.0845413460469967,
+          0.15656774462064837
+        ]
+      }
+    },
+    {
+      "id": "pillow",
+      "material": "cloth",
+      "mass": 0.6,
+      "volume": 0.020540330559015274,
+      "hardness": 0.5,
+      "bounds": {
+        "min": [
+          -0.3,
+          -0.10038298315349574,
+          -0.24370087529247686
+        ],
+        "max": [
+          0.3,
+          0.10038298315349574,
+          0.24370087529247686
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "rounds": 5,
+      "potWins": 0,
+      "potAttacks": 8,
+      "opponentAttacks": 27,
+      "potDamage": 316.85829555097405,
+      "opponentDamage": 741.9133441604079,
+      "potCapped": 5,
+      "opponentCapped": 7
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "rounds": 5,
+      "potWins": 0,
+      "potAttacks": 7,
+      "opponentAttacks": 23,
+      "potDamage": 323.82000000000005,
+      "opponentDamage": 782.2993462606549,
+      "potCapped": 7,
+      "opponentCapped": 1
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 40,
+      "opponentAttacks": 5,
+      "potDamage": 683.1467974843729,
+      "opponentDamage": 151.066858802312,
+      "potCapped": 2,
+      "opponentCapped": 1
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 19,
+      "opponentAttacks": 4,
+      "potDamage": 831.46,
+      "opponentDamage": 180.73502527858483,
+      "potCapped": 19,
+      "opponentCapped": 2
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "rounds": 5,
+      "potWins": 1,
+      "potAttacks": 15,
+      "opponentAttacks": 16,
+      "potDamage": 525.627441977006,
+      "opponentDamage": 714.4563362914349,
+      "potCapped": 11,
+      "opponentCapped": 16
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "rounds": 5,
+      "potWins": 4,
+      "potAttacks": 14,
+      "opponentAttacks": 19,
+      "potDamage": 611.9399999999999,
+      "opponentDamage": 489.9674031838655,
+      "potCapped": 14,
+      "opponentCapped": 0
+    }
+  ],
+  "rows": [
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 1,
+      "winner": 1,
+      "potWon": false,
+      "duration": 56.5,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 2,
+      "opponentAttacks": 5,
+      "potContactDamage": 89.62265797844228,
+      "opponentContactDamage": 156.9144565704889,
+      "potCapped": 2,
+      "opponentCapped": 2,
+      "finish": {
+        "t0": 54,
+        "t1": 56.5,
+        "caption": "枕头克锅，抢先撞中了",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：撞击冲量 0.6，硬度修正 0.65，扣掉 41.5 点血。",
+        "eventIndex": 85,
+        "finishType": "contact",
+        "finishEventIndex": 85
+      },
+      "impacts": [
+        {
+          "t": 12.616666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 175.79536178786836,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.357889155598954,
+            0.8187529089522333
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            2.1470112708677385,
+            1.2684065776133246
+          ]
+        },
+        {
+          "t": 15.65,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 71.46090532996615,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.7773558854517923,
+            2.2081816355255737
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.241895106152819,
+            3.4209003478838227
+          ]
+        },
+        {
+          "t": 18.666666666666668,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 87.5737003693587,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.0548232593499722,
+            1.8134928849548078
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.6776726842105802,
+            3.2538008158822707
+          ]
+        },
+        {
+          "t": 26.233333333333334,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 16.034089839942325,
+          "damage": 16.034089839942325,
+          "weak": false,
+          "normalSpeeds": [
+            0.2914630593630633,
+            1.2378641583891388
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.46799727042837125,
+            2.1384345912722003
+          ]
+        },
+        {
+          "t": 32.96666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 131.00723850692967,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.1923727671412847,
+            0.7386824722287729
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.885306882062019,
+            1.1443619879673734
+          ]
+        },
+        {
+          "t": 46.5,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 12.90094718304848,
+          "damage": 12.90094718304848,
+          "weak": false,
+          "normalSpeeds": [
+            0.4489676279074299,
+            1.8601389112142515
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7210511000068501,
+            3.3153569473533078
+          ]
+        },
+        {
+          "t": 56.5,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 41.45941954749811,
+          "damage": 41.45941954749811,
+          "weak": false,
+          "normalSpeeds": [
+            1.1100259102256371,
+            1.952876126584043
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.8852202888445233,
+            3.2451368958878666
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 2,
+      "winner": 1,
+      "potWon": false,
+      "duration": 47.21666666666667,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 7,
+      "potContactDamage": 107.48564316961833,
+      "opponentContactDamage": 165.03852065361184,
+      "potCapped": 2,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 44.71666666666667,
+        "t1": 47.21666666666667,
+        "caption": "枕头够得远，戳中了锅",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.5，硬度修正 0.65，扣掉 35.4 点血。",
+        "eventIndex": 62,
+        "finishType": "contact",
+        "finishEventIndex": 62
+      },
+      "impacts": [
+        {
+          "t": 3.716666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 8.75492576976126,
+          "damage": 8.75492576976126,
+          "weak": false,
+          "normalSpeeds": [
+            0.6528040399470467,
+            0.7845851547139163
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.032173815996106,
+            1.2154741193047274
+          ]
+        },
+        {
+          "t": 8.65,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 91.52226831746572,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 13.233333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 9.78006294420913,
+          "damage": 9.78006294420913,
+          "weak": false,
+          "normalSpeeds": [
+            0.28906167553114215,
+            0.3751946108635165
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.45704663947148577,
+            0.6748303463842277
+          ]
+        },
+        {
+          "t": 16.316666666666666,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 32.49176722307018,
+          "damage": 32.49176722307018,
+          "weak": false,
+          "normalSpeeds": [
+            0.5248378859207605,
+            2.1211064484459037
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8386283534400488,
+            3.5474914031315152
+          ]
+        },
+        {
+          "t": 20.35,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 58.3820301697859,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.9736412834724258,
+            0.4988512562031138
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.5658494876833513,
+            0.7728170583582187
+          ]
+        },
+        {
+          "t": 27.2,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 17.176325639410116,
+          "damage": 17.176325639410116,
+          "weak": false,
+          "normalSpeeds": [
+            0.5586827454241561,
+            0.7819801449118386
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8833549824881733,
+            1.2280623822106682
+          ]
+        },
+        {
+          "t": 33.03333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 17.419972873658963,
+          "damage": 17.419972873658963,
+          "weak": false,
+          "normalSpeeds": [
+            0.8880883638880179,
+            2.4808383254729796
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.5082911977787348,
+            3.8432982840354524
+          ]
+        },
+        {
+          "t": 37.36666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 15.994580507798647,
+          "damage": 15.994580507798647,
+          "weak": false,
+          "normalSpeeds": [
+            0.41681445669511846,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6590415224210968,
+            0
+          ]
+        },
+        {
+          "t": 44.166666666666664,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 44.07435449104312,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.3433790363785306,
+            0.8841687244809637
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5429299278549864,
+            1.369748325275344
+          ]
+        },
+        {
+          "t": 47.21666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 35.35402827525167,
+          "damage": 35.35402827525167,
+          "weak": false,
+          "normalSpeeds": [
+            0.21772242715773374,
+            2.6116876407310134
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.36161863968435304,
+            4.208159953768832
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 3,
+      "winner": 1,
+      "potWon": false,
+      "duration": 53,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 1,
+      "opponentAttacks": 5,
+      "potContactDamage": 43.719378028738234,
+      "opponentContactDamage": 124.70577329236046,
+      "potCapped": 0,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 43.233333333333334,
+        "t1": 45.733333333333334,
+        "caption": "锅在圈外撑不住，倒下了",
+        "detail": "最大撞击：枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：撞击冲量 0.7，硬度修正 0.65（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 40,
+        "finishType": "zone",
+        "finishEventIndex": 75
+      },
+      "impacts": [
+        {
+          "t": 11.283333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 25.585025095235437,
+          "damage": 25.585025095235437,
+          "weak": false,
+          "normalSpeeds": [
+            0.5449683617608214,
+            1.5000017708051665
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8616706379474026,
+            2.323792797213631
+          ]
+        },
+        {
+          "t": 29.95,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 37.86563857626226,
+          "damage": 37.86563857626226,
+          "weak": false,
+          "normalSpeeds": [
+            0.11328607975348132,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.17912101960624366,
+            0
+          ]
+        },
+        {
+          "t": 35.36666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 22.916944172853942,
+          "damage": 22.916944172853942,
+          "weak": false,
+          "normalSpeeds": [
+            0.3508553285838059,
+            1.3342815194706017
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5547509837658029,
+            2.2325756622043023
+          ]
+        },
+        {
+          "t": 40.75,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 22.42854670212368,
+          "damage": 22.42854670212368,
+          "weak": false,
+          "normalSpeeds": [
+            0.2382325344201659,
+            1.4425977706705386
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.38313531750829405,
+            2.234862900835912
+          ]
+        },
+        {
+          "t": 44.733333333333334,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 50.210872426910925,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.36769987122716813,
+            1.302948405676371
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5813845442142318,
+            2.2358052528317884
+          ]
+        },
+        {
+          "t": 49.63333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 11.301936839944123,
+          "damage": 11.301936839944123,
+          "weak": false,
+          "normalSpeeds": [
+            0.0229820608427415,
+            1.370151363293872
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.03633782879381597,
+            2.122629406901078
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 4,
+      "winner": 1,
+      "potWon": false,
+      "duration": 35.833333333333336,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 1,
+      "opponentAttacks": 5,
+      "potContactDamage": 49.13999999999999,
+      "opponentContactDamage": 155.15219709182256,
+      "potCapped": 1,
+      "opponentCapped": 2,
+      "finish": {
+        "t0": 33.333333333333336,
+        "t1": 35.833333333333336,
+        "caption": "枕头够得远，戳中了锅",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：撞击冲量 0.4，硬度修正 0.65，扣掉 28.7 点血。",
+        "eventIndex": 22,
+        "finishType": "contact",
+        "finishEventIndex": 22
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 20.816725591693864,
+          "damage": 20.816725591693864,
+          "weak": false,
+          "normalSpeeds": [
+            0.6555093042489641,
+            0.8916505472558491
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.0364512144295084,
+            1.6693923736686271
+          ]
+        },
+        {
+          "t": 13.75,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 173.91718411496103,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 18.75,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 20.41175922328504,
+          "damage": 20.41175922328504,
+          "weak": false,
+          "normalSpeeds": [
+            0.6987953843488132,
+            1.9608472553480074
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.104892516477514,
+            3.083145992193552
+          ]
+        },
+        {
+          "t": 25.366666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 45.73643622041112,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.8327237880517107,
+            1.304394295306145
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.3166519160233565,
+            2.4944126358610936
+          ]
+        },
+        {
+          "t": 30.266666666666666,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 58.2976407825328,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5960408264626333,
+            1.5567415613253022
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9424232950355417,
+            2.4116937044607787
+          ]
+        },
+        {
+          "t": 35.833333333333336,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 28.663712276843665,
+          "damage": 28.663712276843665,
+          "weak": false,
+          "normalSpeeds": [
+            0.4503482442336396,
+            0.9130905929449387
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7208673335979418,
+            1.6513614993127692
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 5,
+      "winner": 1,
+      "potWon": false,
+      "duration": 49.3,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 1,
+      "opponentAttacks": 5,
+      "potContactDamage": 26.89061637417521,
+      "opponentContactDamage": 140.10239655212408,
+      "potCapped": 0,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 46.8,
+        "t1": 49.3,
+        "caption": "枕头克锅，抢先撞中了",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.3，硬度修正 0.65，扣掉 16.9 点血。",
+        "eventIndex": 60,
+        "finishType": "contact",
+        "finishEventIndex": 60
+      },
+      "impacts": [
+        {
+          "t": 13.299999999999999,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 21.196038412941437,
+          "damage": 21.196038412941437,
+          "weak": false,
+          "normalSpeeds": [
+            0.3957261426916753,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.636422822983511,
+            0
+          ]
+        },
+        {
+          "t": 21.05,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 35.52196510441793,
+          "damage": 35.52196510441793,
+          "weak": false,
+          "normalSpeeds": [
+            0.3897929677770961,
+            1.6726625625150116
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.616316797046122,
+            2.8451247058951723
+          ]
+        },
+        {
+          "t": 27.716666666666665,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 9.8161531666682,
+          "damage": 9.8161531666682,
+          "weak": false,
+          "normalSpeeds": [
+            0.35736814245792187,
+            1.9720443271938213
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5738199731700651,
+            3.0986951431258745
+          ]
+        },
+        {
+          "t": 33.083333333333336,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 59.05260183771318,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0.7666162672770047,
+            1.3502843800866242
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.282785921051882,
+            2.2159587707562864
+          ]
+        },
+        {
+          "t": 40.28333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 21.590413378305733,
+          "damage": 21.590413378305733,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            1.71331712789823
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            2.6542595339841046
+          ]
+        },
+        {
+          "t": 49.3,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 16.913379307814015,
+          "damage": 16.913379307814015,
+          "weak": false,
+          "normalSpeeds": [
+            1.05462189241321,
+            1.4238267705699479
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.70481848771884,
+            2.205782991945648
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 1,
+      "winner": 1,
+      "potWon": false,
+      "duration": 46.5,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 2,
+      "opponentAttacks": 4,
+      "potContactDamage": 89.04,
+      "opponentContactDamage": 136.75329029614937,
+      "potCapped": 2,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 44,
+        "t1": 46.5,
+        "caption": "枕头克锅，撞得更疼",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：属性克制，攻击放大了 1.5 倍，扣掉 35.1 点血。",
+        "eventIndex": 45,
+        "finishType": "contact",
+        "finishEventIndex": 45
+      },
+      "impacts": [
+        {
+          "t": 12.616666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.357889155598954,
+            0.8187529089522333
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            2.1470112708677385,
+            1.2684065776133246
+          ]
+        },
+        {
+          "t": 15.65,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.7773558854517923,
+            2.2081816355255737
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.241895106152819,
+            3.4209003478838227
+          ]
+        },
+        {
+          "t": 18.666666666666668,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 35.32365790976708,
+          "damage": 35.32365790976708,
+          "weak": false,
+          "normalSpeeds": [
+            1.0548232593499722,
+            1.8134928849548078
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.6776726842105802,
+            3.2538008158822707
+          ]
+        },
+        {
+          "t": 26.233333333333334,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 34.01054137797908,
+          "damage": 34.01054137797908,
+          "weak": false,
+          "normalSpeeds": [
+            0.2914630593630633,
+            1.2378641583891388
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.46799727042837125,
+            2.1384345912722003
+          ]
+        },
+        {
+          "t": 32.96666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.1923727671412847,
+            0.7386824722287729
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.885306882062019,
+            1.1443619879673734
+          ]
+        },
+        {
+          "t": 46.5,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 35.0893625259368,
+          "damage": 35.0893625259368,
+          "weak": false,
+          "normalSpeeds": [
+            0.4489676279074299,
+            1.8601389112142515
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7210511000068501,
+            3.3153569473533078
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 2,
+      "winner": 1,
+      "potWon": false,
+      "duration": 33.03333333333333,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 2,
+      "opponentAttacks": 5,
+      "potContactDamage": 90.30000000000001,
+      "opponentContactDamage": 162.08475814363453,
+      "potCapped": 2,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 30.53333333333333,
+        "t1": 33.03333333333333,
+        "caption": "枕头克锅，撞得更疼",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：碰到弱点但未触发暴击；属性克制，攻击放大了 1.5 倍，扣掉 30.5 点血。",
+        "eventIndex": 19,
+        "finishType": "contact",
+        "finishEventIndex": 19
+      },
+      "impacts": [
+        {
+          "t": 3.716666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.6528040399470467,
+            0.7845851547139163
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.032173815996106,
+            1.2154741193047274
+          ]
+        },
+        {
+          "t": 8.65,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 13.233333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 35.41021591407881,
+          "damage": 35.41021591407881,
+          "weak": false,
+          "normalSpeeds": [
+            0.28906167553114215,
+            0.3751946108635165
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.45704663947148577,
+            0.6748303463842277
+          ]
+        },
+        {
+          "t": 16.316666666666666,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 32.92679425056788,
+          "damage": 32.92679425056788,
+          "weak": false,
+          "normalSpeeds": [
+            0.5248378859207605,
+            2.1211064484459037
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8386283534400488,
+            3.5474914031315152
+          ]
+        },
+        {
+          "t": 20.35,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 70.90864143782291,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.9736412834724258,
+            0.4988512562031138
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.5658494876833513,
+            0.7728170583582187
+          ]
+        },
+        {
+          "t": 27.2,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.918275645138035,
+          "damage": 30.918275645138035,
+          "weak": false,
+          "normalSpeeds": [
+            0.5586827454241561,
+            0.7819801449118386
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8833549824881733,
+            1.2280623822106682
+          ]
+        },
+        {
+          "t": 33.03333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.8880883638880179,
+            2.4808383254729796
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.5082911977787348,
+            3.8432982840354524
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 3,
+      "winner": 1,
+      "potWon": false,
+      "duration": 49.63333333333333,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 1,
+      "opponentAttacks": 5,
+      "potContactDamage": 48.29999999999999,
+      "opponentContactDamage": 159.139102101133,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 47.13333333333333,
+        "t1": 49.63333333333333,
+        "caption": "枕头克锅，撞得更疼",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍，扣掉 30.5 点血。",
+        "eventIndex": 62,
+        "finishType": "contact",
+        "finishEventIndex": 62
+      },
+      "impacts": [
+        {
+          "t": 11.283333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.5449683617608214,
+            1.5000017708051665
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8616706379474026,
+            2.323792797213631
+          ]
+        },
+        {
+          "t": 29.95,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.11328607975348132,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.17912101960624366,
+            0
+          ]
+        },
+        {
+          "t": 35.36666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 32.94194803342733,
+          "damage": 32.94194803342733,
+          "weak": false,
+          "normalSpeeds": [
+            0.3508553285838059,
+            1.3342815194706017
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5547509837658029,
+            2.2325756622043023
+          ]
+        },
+        {
+          "t": 40.75,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.2382325344201659,
+            1.4425977706705386
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.38313531750829405,
+            2.234862900835912
+          ]
+        },
+        {
+          "t": 44.733333333333334,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 33.78293019801393,
+          "damage": 33.78293019801393,
+          "weak": false,
+          "normalSpeeds": [
+            0.36769987122716813,
+            1.302948405676371
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5813845442142318,
+            2.2358052528317884
+          ]
+        },
+        {
+          "t": 49.63333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.0229820608427415,
+            1.370151363293872
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.03633782879381597,
+            2.122629406901078
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 4,
+      "winner": 1,
+      "potWon": false,
+      "duration": 35.833333333333336,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 1,
+      "opponentAttacks": 5,
+      "potContactDamage": 49.13999999999999,
+      "opponentContactDamage": 172.4847107053831,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 33.333333333333336,
+        "t1": 35.833333333333336,
+        "caption": "枕头克锅，撞得更疼",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定，远端接触加成：属性克制，攻击放大了 1.5 倍，扣掉 35.6 点血。",
+        "eventIndex": 22,
+        "finishType": "contact",
+        "finishEventIndex": 22
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 36.859913118158566,
+          "damage": 36.859913118158566,
+          "weak": false,
+          "normalSpeeds": [
+            0.6555093042489641,
+            0.8916505472558491
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.0364512144295084,
+            1.6693923736686271
+          ]
+        },
+        {
+          "t": 13.75,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 18.75,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.95571842721034,
+          "damage": 30.95571842721034,
+          "weak": false,
+          "normalSpeeds": [
+            0.6987953843488132,
+            1.9608472553480074
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.104892516477514,
+            3.083145992193552
+          ]
+        },
+        {
+          "t": 25.366666666666667,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 37.648698686838536,
+          "damage": 37.648698686838536,
+          "weak": false,
+          "normalSpeeds": [
+            0.8327237880517107,
+            1.304394295306145
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.3166519160233565,
+            2.4944126358610936
+          ]
+        },
+        {
+          "t": 30.266666666666666,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0.5960408264626333,
+            1.5567415613253022
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9424232950355417,
+            2.4116937044607787
+          ]
+        },
+        {
+          "t": 35.833333333333336,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 35.60564430625073,
+          "damage": 35.60564430625073,
+          "weak": false,
+          "normalSpeeds": [
+            0.4503482442336396,
+            0.9130905929449387
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7208673335979418,
+            1.6513614993127692
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 5,
+      "winner": 1,
+      "potWon": false,
+      "duration": 40.28333333333333,
+      "initial": [
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 0.6000000238418579,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 1,
+      "opponentAttacks": 4,
+      "potContactDamage": 47.03999999999999,
+      "opponentContactDamage": 151.8374850143549,
+      "potCapped": 1,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 37.78333333333333,
+        "t1": 40.28333333333333,
+        "caption": "枕头克锅，撞得更疼",
+        "detail": "枕头属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍，扣掉 30.5 点血。",
+        "eventIndex": 23,
+        "finishType": "contact",
+        "finishEventIndex": 23
+      },
+      "impacts": [
+        {
+          "t": 13.299999999999999,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 70.90863644898218,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.3957261426916753,
+            0
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.636422822983511,
+            0
+          ]
+        },
+        {
+          "t": 21.05,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 33.487562159700346,
+          "damage": 33.487562159700346,
+          "weak": false,
+          "normalSpeeds": [
+            0.3897929677770961,
+            1.6726625625150116
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.616316797046122,
+            2.8451247058951723
+          ]
+        },
+        {
+          "t": 27.716666666666665,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.93518668772966,
+          "damage": 30.93518668772966,
+          "weak": false,
+          "normalSpeeds": [
+            0.35736814245792187,
+            1.9720443271938213
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5738199731700651,
+            3.0986951431258745
+          ]
+        },
+        {
+          "t": 33.083333333333336,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 64.61851751507518,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0.7666162672770047,
+            1.3502843800866242
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.282785921051882,
+            2.2159587707562864
+          ]
+        },
+        {
+          "t": 40.28333333333333,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 30.499743851383407,
+          "damage": 30.499743851383407,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            1.71331712789823
+          ],
+          "masses": [
+            2.5,
+            0.6000000238418579
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            2.6542595339841046
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 1,
+      "winner": 1,
+      "potWon": true,
+      "duration": 60,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 8,
+      "opponentAttacks": 1,
+      "potContactDamage": 96.71747223120956,
+      "opponentContactDamage": 20.88792811801012,
+      "potCapped": 0,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 57.5,
+        "t1": 60,
+        "caption": "时间到，锅剩血多，赢了",
+        "detail": "时间到，按剩血百分比判胜。",
+        "eventIndex": null,
+        "finishType": "timeout",
+        "finishEventIndex": null
+      },
+      "impacts": [
+        {
+          "t": 3.85,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 18.007322399889187,
+          "damage": 18.007322399889187,
+          "weak": false,
+          "normalSpeeds": [
+            3.0676709678727088,
+            0.4128170997058897
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.392706267154356,
+            1.3054422921354376
+          ]
+        },
+        {
+          "t": 11.35,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 3.353867679834366,
+          "damage": 3.353867679834366,
+          "weak": false,
+          "normalSpeeds": [
+            0.34416439917119246,
+            0.45128470752767075
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.13329430128307077,
+            1.427087548990374
+          ]
+        },
+        {
+          "t": 16.183333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 3.282574772549132,
+          "damage": 3.282574772549132,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.564614997101662
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.806660816988845
+          ]
+        },
+        {
+          "t": 28.05,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 6.492442637681961,
+          "damage": 6.492442637681961,
+          "weak": false,
+          "normalSpeeds": [
+            1.370314242357074,
+            0.8105511628402773
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5307204345164456,
+            2.563187834673311
+          ]
+        },
+        {
+          "t": 32.766666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 12.94812171022874,
+          "damage": 12.94812171022874,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.5322086104809005
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.70911659735813
+          ]
+        },
+        {
+          "t": 38.28333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 31.17038905620575,
+          "damage": 31.17038905620575,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.04864740903083581
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.15383661480328556
+          ]
+        },
+        {
+          "t": 41.28333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 10.282617807388306,
+          "damage": 10.282617807388306,
+          "weak": false,
+          "normalSpeeds": [
+            2.740132482557266,
+            0.5782721795255263
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.2509923859898835,
+            1.8286571948104506
+          ]
+        },
+        {
+          "t": 46.516666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 0.7212677970528603,
+          "damage": 0.7212677970528603,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.25303873783819725
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.8001787478229344
+          ]
+        },
+        {
+          "t": 52.35,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 28.005334734916687,
+          "damage": 28.005334734916687,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.2886831468339767
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.9128962661001927
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 2,
+      "winner": 1,
+      "potWon": true,
+      "duration": 45.88333333333333,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 8,
+      "opponentAttacks": 1,
+      "potContactDamage": 131.8739919369404,
+      "opponentContactDamage": 5.652474349006079,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 43.38333333333333,
+        "t1": 45.88333333333333,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.1，硬度修正 1.00，扣掉 7.5 点血。",
+        "eventIndex": 64,
+        "finishType": "contact",
+        "finishEventIndex": 64
+      },
+      "impacts": [
+        {
+          "t": 4.216666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 2.8796229511499405,
+          "damage": 2.8796229511499405,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.4020458332320341
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.2713805567934433
+          ]
+        },
+        {
+          "t": 10.15,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 9.07549262046814,
+          "damage": 9.07549262046814,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.9446342367674647
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            2.9871957439599615
+          ]
+        },
+        {
+          "t": 15.95,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 1.697866478934884,
+          "damage": 1.697866478934884,
+          "weak": false,
+          "normalSpeeds": [
+            0.68742687452207,
+            0
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.26623928896563853,
+            0
+          ]
+        },
+        {
+          "t": 18.966666666666665,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 6.925557646900415,
+          "damage": 6.925557646900415,
+          "weak": false,
+          "normalSpeeds": [
+            1.4820993299760725,
+            0.637851150809837
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6765841983139397,
+            2.0170624447186394
+          ]
+        },
+        {
+          "t": 28,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 19.26349066197872,
+          "damage": 19.26349066197872,
+          "weak": false,
+          "normalSpeeds": [
+            2.555344857705982,
+            0.3556421338165049
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9896808274343938,
+            1.1246391747825468
+          ]
+        },
+        {
+          "t": 31,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 29.519623517990112,
+          "damage": 29.519623517990112,
+          "weak": false,
+          "normalSpeeds": [
+            0.9259318057663742,
+            0.4423256056639149
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.4345101039768098,
+            1.398756381311446
+          ]
+        },
+        {
+          "t": 34.11666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 60.68759262561798,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.2497035704930515,
+            0.7480471279900287
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.567242864024914,
+            2.3655327215959843
+          ]
+        },
+        {
+          "t": 37.31666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 14.637351233977824,
+          "damage": 14.637351233977824,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.675540602106192
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            2.1362469545771074
+          ]
+        },
+        {
+          "t": 45.88333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 7.521917310107191,
+          "damage": 7.521917310107191,
+          "weak": false,
+          "normalSpeeds": [
+            1.8135707045901295,
+            0.34437351881998424
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7023929275600155,
+            1.0894092871154955
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 53.25,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 8,
+      "opponentAttacks": 2,
+      "potContactDamage": 145.22621981090538,
+      "opponentContactDamage": 75.04263208021544,
+      "potCapped": 1,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 50.75,
+        "t1": 53.25,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.6，硬度修正 1.00（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 95,
+        "finishType": "contact",
+        "finishEventIndex": 95
+      },
+      "impacts": [
+        {
+          "t": 3.533333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 37.113979039850165,
+          "damage": 37.113979039850165,
+          "weak": false,
+          "normalSpeeds": [
+            1.6432059693407843,
+            0.4872991165714809
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7754463252831335,
+            1.540975110153781
+          ]
+        },
+        {
+          "t": 9.266666666666666,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 29.0231235295786,
+          "damage": 29.0231235295786,
+          "weak": false,
+          "normalSpeeds": [
+            1.775060747578683,
+            0.17822725575890094
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7679707935730989,
+            0.5636040693194886
+          ]
+        },
+        {
+          "t": 15.733333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 20.087788999080658,
+          "damage": 20.087788999080658,
+          "weak": false,
+          "normalSpeeds": [
+            1.3420344511929563,
+            0.6932728908944354
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5197677182775494,
+            2.1923213752758235
+          ]
+        },
+        {
+          "t": 20.983333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 4.626121371984482,
+          "damage": 4.626121371984482,
+          "weak": false,
+          "normalSpeeds": [
+            1.47201632243147,
+            0.8455518344121481
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6720410239340655,
+            2.673869676475929
+          ]
+        },
+        {
+          "t": 25.266666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 4.761132225394249,
+          "damage": 4.761132225394249,
+          "weak": true,
+          "normalSpeeds": [
+            0,
+            0.2851696785074832
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.901785703701613
+          ]
+        },
+        {
+          "t": 28.28333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 3.5620126873254776,
+          "damage": 3.5620126873254776,
+          "weak": false,
+          "normalSpeeds": [
+            1.4869258349415029,
+            0.8752619683577356
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6254170714176929,
+            2.7678213693326703
+          ]
+        },
+        {
+          "t": 33.13333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 13.645201921463013,
+          "damage": 13.645201921463013,
+          "weak": true,
+          "normalSpeeds": [
+            0.45976711834510303,
+            0.1305111040974273
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.19896474948067097,
+            0.41271234889120423
+          ]
+        },
+        {
+          "t": 44.63333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 17.390549182891846,
+          "damage": 17.390549182891846,
+          "weak": false,
+          "normalSpeeds": [
+            1.355759321138076,
+            0.9969472895269651
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5250833376557925,
+            3.1526241420365393
+          ]
+        },
+        {
+          "t": 50.15,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 51.86726532212062,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.9575723277419765,
+            0.2791026473782011
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8936395131875594,
+            0.8826000666979381
+          ]
+        },
+        {
+          "t": 53.25,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 56.69952630996704,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.082289360258293,
+            0.7626095319906685
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9453485505687677,
+            2.411583086445554
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 48.333333333333336,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 9,
+      "opponentAttacks": 0,
+      "potContactDamage": 154.59737641871257,
+      "opponentContactDamage": 4.830531515821349,
+      "potCapped": 0,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 45.833333333333336,
+        "t1": 48.333333333333336,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.3，硬度修正 1.00，扣掉 28.8 点血。",
+        "eventIndex": 59,
+        "finishType": "contact",
+        "finishEventIndex": 59
+      },
+      "impacts": [
+        {
+          "t": 4.35,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 16.966439866049132,
+          "damage": 16.966439866049132,
+          "weak": true,
+          "normalSpeeds": [
+            1.1794665508003535,
+            0.9208604308807672
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5359383475920306,
+            2.9423127342680226
+          ]
+        },
+        {
+          "t": 11.366666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 6.627938896417618,
+          "damage": 6.627938896417618,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.08021802302039513
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.2536716621402683
+          ]
+        },
+        {
+          "t": 18.416666666666668,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 16.946018480724003,
+          "damage": 16.946018480724003,
+          "weak": false,
+          "normalSpeeds": [
+            1.8972713686548848,
+            0.7341969047683281
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7348100560030159,
+            2.35266896531935
+          ]
+        },
+        {
+          "t": 23.683333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 18.038201332092285,
+          "damage": 18.038201332092285,
+          "weak": false,
+          "normalSpeeds": [
+            1.7252300723749356,
+            0.30574958843825395
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.721560572383765,
+            0.9668650931239667
+          ]
+        },
+        {
+          "t": 26.766666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 9.13214422762394,
+          "damage": 9.13214422762394,
+          "weak": false,
+          "normalSpeeds": [
+            2.142011612597204,
+            0.6688989815283064
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9190809622013101,
+            2.115244306196345
+          ]
+        },
+        {
+          "t": 32.45,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 9.163556862049019,
+          "damage": 9.163556862049019,
+          "weak": false,
+          "normalSpeeds": [
+            2.257721975538195,
+            0.8567534214813779
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.8744119785355985,
+            2.895824869635404
+          ]
+        },
+        {
+          "t": 36.916666666666664,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 17.55610983862595,
+          "damage": 17.55610983862595,
+          "weak": false,
+          "normalSpeeds": [
+            1.6142380984634128,
+            0.48498207812405225
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6251917396376762,
+            1.6141972206339172
+          ]
+        },
+        {
+          "t": 42.65,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 31.38207197189331,
+          "damage": 31.38207197189331,
+          "weak": false,
+          "normalSpeeds": [
+            1.6113840879108399,
+            0.5190359506406081
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6240863860817132,
+            1.6413357915350528
+          ]
+        },
+        {
+          "t": 48.333333333333336,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 28.784894943237305,
+          "damage": 28.784894943237305,
+          "weak": false,
+          "normalSpeeds": [
+            1.525514816428684,
+            0.46309663198742046
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6964654121517316,
+            1.464440133833037
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 39.9,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 7,
+      "opponentAttacks": 1,
+      "potContactDamage": 154.73173708660505,
+      "opponentContactDamage": 44.65329273925901,
+      "potCapped": 0,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 37.4,
+        "t1": 39.9,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.4，硬度修正 1.00，扣掉 35.8 点血。",
+        "eventIndex": 38,
+        "finishType": "contact",
+        "finishEventIndex": 38
+      },
+      "impacts": [
+        {
+          "t": 4.166666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 12.148917466402054,
+          "damage": 12.148917466402054,
+          "weak": false,
+          "normalSpeeds": [
+            1.4786995694388694,
+            0.8201009020856409
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6979426538619076,
+            2.593386761749358
+          ]
+        },
+        {
+          "t": 9.266666666666666,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 40.06174062666086,
+          "damage": 40.06174062666086,
+          "weak": false,
+          "normalSpeeds": [
+            2.0178594924605284,
+            0
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9470943600274989,
+            0
+          ]
+        },
+        {
+          "t": 15.383333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 14.52934443950653,
+          "damage": 14.52934443950653,
+          "weak": false,
+          "normalSpeeds": [
+            2.465884882666945,
+            0.6121347220635713
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.0316098950134431,
+            1.9357399565950117
+          ]
+        },
+        {
+          "t": 18.4,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 21.685453747920747,
+          "damage": 21.685453747920747,
+          "weak": false,
+          "normalSpeeds": [
+            3.0060399721098157,
+            0.691063883065935
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.164234298132769,
+            2.1853358791686195
+          ]
+        },
+        {
+          "t": 22.933333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 7.5880855321884155,
+          "damage": 7.5880855321884155,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.1977437615294646
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.6253206795222893
+          ]
+        },
+        {
+          "t": 31.25,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 36.42018437385559,
+          "damage": 36.42018437385559,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.4803085541892238
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.518869010900356
+          ]
+        },
+        {
+          "t": 34.35,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 24.835249036550522,
+          "damage": 24.835249036550522,
+          "weak": false,
+          "normalSpeeds": [
+            2.457648049541945,
+            0.3918294786112582
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.1600043077388904,
+            1.2390736068078056
+          ]
+        },
+        {
+          "t": 39.9,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 35.844502490181185,
+          "damage": 35.844502490181185,
+          "weak": false,
+          "normalSpeeds": [
+            1.2495475915266012,
+            0.6994034382382718
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5671722341565821,
+            2.211707868185842
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 1,
+      "winner": 1,
+      "potWon": true,
+      "duration": 32.766666666666666,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 169.26,
+      "opponentContactDamage": 46.31999999999999,
+      "potCapped": 4,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 30.266666666666666,
+        "t1": 32.766666666666666,
+        "caption": "锅克剪刀，撞得更疼",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 13,
+        "finishType": "contact",
+        "finishEventIndex": 13
+      },
+      "impacts": [
+        {
+          "t": 3.85,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 42.19953022213651,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            3.0676709678727088,
+            0.4128170997058897
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.392706267154356,
+            1.3054422921354376
+          ]
+        },
+        {
+          "t": 11.35,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.34416439917119246,
+            0.45128470752767075
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.13329430128307077,
+            1.427087548990374
+          ]
+        },
+        {
+          "t": 16.183333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 68.30114573674292,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.564614997101662
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.806660816988845
+          ]
+        },
+        {
+          "t": 28.05,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.370314242357074,
+            0.8105511628402773
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5307204345164456,
+            2.563187834673311
+          ]
+        },
+        {
+          "t": 32.766666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 68.5478074087592,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.5322086104809005
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.70911659735813
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 2,
+      "winner": 1,
+      "potWon": true,
+      "duration": 28,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 169.26,
+      "opponentContactDamage": 40.31999999999999,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 25.5,
+        "t1": 28,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 15,
+        "finishType": "contact",
+        "finishEventIndex": 15
+      },
+      "impacts": [
+        {
+          "t": 4.216666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.4020458332320341
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            1.2713805567934433
+          ]
+        },
+        {
+          "t": 10.15,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.9446342367674647
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            2.9871957439599615
+          ]
+        },
+        {
+          "t": 15.95,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 36,
+          "damage": 36,
+          "weak": false,
+          "normalSpeeds": [
+            0.68742687452207,
+            0
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.26623928896563853,
+            0
+          ]
+        },
+        {
+          "t": 18.966666666666665,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.4820993299760725,
+            0.637851150809837
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6765841983139397,
+            2.0170624447186394
+          ]
+        },
+        {
+          "t": 28,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.555344857705982,
+            0.3556421338165049
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9896808274343938,
+            1.1246391747825468
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 25.266666666666666,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 183.26,
+      "opponentContactDamage": 44.53502527858485,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 22.766666666666666,
+        "t1": 25.266666666666666,
+        "caption": "锅撞中剪刀弱点，暴击",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。",
+        "eventIndex": 9,
+        "finishType": "contact",
+        "finishEventIndex": 9
+      },
+      "impacts": [
+        {
+          "t": 3.533333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.6432059693407843,
+            0.4872991165714809
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7754463252831335,
+            1.540975110153781
+          ]
+        },
+        {
+          "t": 9.266666666666666,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 40.215025278584854,
+          "damage": 40.215025278584854,
+          "weak": false,
+          "normalSpeeds": [
+            1.775060747578683,
+            0.17822725575890094
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7679707935730989,
+            0.5636040693194886
+          ]
+        },
+        {
+          "t": 15.733333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3420344511929563,
+            0.6932728908944354
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5197677182775494,
+            2.1923213752758235
+          ]
+        },
+        {
+          "t": 20.983333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.47201632243147,
+            0.8455518344121481
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6720410239340655,
+            2.673869676475929
+          ]
+        },
+        {
+          "t": 25.266666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 135,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0,
+            0.2851696785074832
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.901785703701613
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 18.416666666666668,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 0,
+      "potContactDamage": 140,
+      "opponentContactDamage": 3.24,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 15.916666666666668,
+        "t1": 18.416666666666668,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 5,
+        "finishType": "contact",
+        "finishEventIndex": 5
+      },
+      "impacts": [
+        {
+          "t": 4.35,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 136.40452828310032,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            1.1794665508003535,
+            0.9208604308807672
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5359383475920306,
+            2.9423127342680226
+          ]
+        },
+        {
+          "t": 11.366666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.08021802302039513
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.2536716621402683
+          ]
+        },
+        {
+          "t": 18.416666666666668,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 68.39936142709816,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.8972713686548848,
+            0.7341969047683281
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7348100560030159,
+            2.35266896531935
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 22.933333333333334,
+      "initial": [
+        {
+          "mass": 0.15000000596046448,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 169.68,
+      "opponentContactDamage": 46.31999999999999,
+      "potCapped": 4,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 20.433333333333334,
+        "t1": 22.933333333333334,
+        "caption": "锅克剪刀，撞得更疼",
+        "detail": "锅属性克制，质量开根号乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 9,
+        "finishType": "contact",
+        "finishEventIndex": 9
+      },
+      "impacts": [
+        {
+          "t": 4.166666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.4786995694388694,
+            0.8201009020856409
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6979426538619076,
+            2.593386761749358
+          ]
+        },
+        {
+          "t": 9.266666666666666,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 43.62738584525518,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.0178594924605284,
+            0
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.9470943600274989,
+            0
+          ]
+        },
+        {
+          "t": 15.383333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.465884882666945,
+            0.6121347220635713
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.0316098950134431,
+            1.9357399565950117
+          ]
+        },
+        {
+          "t": 18.4,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            3.0060399721098157,
+            0.691063883065935
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            1.164234298132769,
+            2.1853358791686195
+          ]
+        },
+        {
+          "t": 22.933333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.1977437615294646
+          ],
+          "masses": [
+            0.15000000596046448,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            0.6253206795222893
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 1,
+      "winner": 0,
+      "potWon": false,
+      "duration": 25.933333333333334,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 2,
+      "opponentAttacks": 3,
+      "potContactDamage": 87.78000000000002,
+      "opponentContactDamage": 142.52,
+      "potCapped": 2,
+      "opponentCapped": 3,
+      "finish": {
+        "t0": 23.433333333333334,
+        "t1": 25.933333333333334,
+        "caption": "台灯撞中锅弱点，暴击",
+        "detail": "台灯沿撞击方向冲得更快：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。",
+        "eventIndex": 10,
+        "finishType": "contact",
+        "finishEventIndex": 10
+      },
+      "impacts": [
+        {
+          "t": 6.433333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 198.68591098377783,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 11.6,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 173.32257827174107,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5196814968660165,
+            0.748151676680046
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0.6364772480437578,
+            1.182931666791413
+          ]
+        },
+        {
+          "t": 17.15,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 229.22718741040592,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3828663382303232,
+            0.9104153550399137
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.7107080077058971,
+            1.4394930693584913
+          ]
+        },
+        {
+          "t": 20.2,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 157.18229168811484,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.8416101992196292,
+            1.1811264314032979
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.532885073580852,
+            1.8675248639305244
+          ]
+        },
+        {
+          "t": 25.933333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 448.44862652184065,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            2.0368169616332468,
+            1.29242901315216
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.4945811277237175,
+            2.1497624708351624
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 2,
+      "winner": 0,
+      "potWon": false,
+      "duration": 40.75,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 4,
+      "potContactDamage": 61.57246047961924,
+      "opponentContactDamage": 169.55055546392873,
+      "potCapped": 1,
+      "opponentCapped": 4,
+      "finish": {
+        "t0": 38.25,
+        "t1": 40.75,
+        "caption": "台灯撞中锅，锅掉血了",
+        "detail": "台灯沿撞击方向冲得更快：撞击冲量 1.0，硬度修正 0.82（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 26,
+        "finishType": "contact",
+        "finishEventIndex": 26
+      },
+      "impacts": [
+        {
+          "t": 4.133333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 129.27488488712353,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.2461679691379626,
+            0.8830841828076827
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.78257185010544,
+            1.4068026804080467
+          ]
+        },
+        {
+          "t": 11.566666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 129.98772136329342,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.4970241241848092,
+            0.8912368338643419
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.8334726184448302,
+            1.409169164824203
+          ]
+        },
+        {
+          "t": 16.333333333333332,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 10.903218914965239,
+          "damage": 10.903218914965239,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.18558055046432378
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.29342861444754087
+          ]
+        },
+        {
+          "t": 21.733333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 3.629241564654007,
+          "damage": 3.629241564654007,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.10172829459506795
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.1610545638950737
+          ]
+        },
+        {
+          "t": 27.5,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 465.6426246614161,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.5484865067299882,
+            1.4263739245664386
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.8965009075366301,
+            2.255295198351573
+          ]
+        },
+        {
+          "t": 32.983333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 114.81593346716929,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.491388379560323,
+            0.4944649965991048
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.8265702691195183,
+            0.7818178062402914
+          ]
+        },
+        {
+          "t": 40.75,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 83.75236400509819,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3321268162177993,
+            0.7526965092040545
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.6315154862059553,
+            1.222108250073597
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 3,
+      "winner": 0,
+      "potWon": false,
+      "duration": 51.21666666666667,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 3,
+      "potContactDamage": 116.71498149738677,
+      "opponentContactDamage": 128.77107376777406,
+      "potCapped": 2,
+      "opponentCapped": 3,
+      "finish": {
+        "t0": 2.466666666666667,
+        "t1": 4.966666666666667,
+        "caption": "锅在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量开根号乘迎击速度占优：撞击冲量 0.4，硬度修正 1.22（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 66
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 48.03935984965647,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.46207938388294184
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.7509787462511712
+          ]
+        },
+        {
+          "t": 11.333333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 59.80814718078488,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3228495057205918,
+            0.6105850924598077
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.6201531477541933,
+            0.9662072725362625
+          ]
+        },
+        {
+          "t": 15.883333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 68.90922026622121,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.6581666842298879,
+            0.2711098243213399
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.3377589921934168,
+            0.4286622704517736
+          ]
+        },
+        {
+          "t": 25.78333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 153.35558667803147,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.890966958608231,
+            0.7019938724349257
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.657603448980898,
+            1.1099497701880283
+          ]
+        },
+        {
+          "t": 37.083333333333336,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 231.43308085187505,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 42.21666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 23.867900294373257,
+          "damage": 23.867900294373257,
+          "weak": false,
+          "normalSpeeds": [
+            0.8640086214068045,
+            1.1351632802807121
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.0581901279061008,
+            1.7948507409375765
+          ]
+        },
+        {
+          "t": 49.6,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 5.067081203013521,
+          "damage": 5.067081203013521,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.1793066496817221
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.29025606810652665
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 49.416666666666664,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 2,
+      "potContactDamage": 128.51999999999998,
+      "opponentContactDamage": 101.83470705973221,
+      "potCapped": 3,
+      "opponentCapped": 2,
+      "finish": {
+        "t0": 46.916666666666664,
+        "t1": 49.416666666666664,
+        "caption": "锅撞中台灯，台灯掉血了",
+        "detail": "锅质量开根号乘迎击速度占优：撞击冲量 1.3，硬度修正 1.22（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 58,
+        "finishType": "contact",
+        "finishEventIndex": 58
+      },
+      "impacts": [
+        {
+          "t": 4.066666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 323.80944839050795,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.179796848236994,
+            0.8735144716294823
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.4449501391622193,
+            1.483539988506451
+          ]
+        },
+        {
+          "t": 18.016666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 158.38981279888856,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            1.4300093464339398,
+            0.7429381828956172
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.9021068394625276,
+            1.2562724415786144
+          ]
+        },
+        {
+          "t": 23.5,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 45.20077558997795,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.01891205940103563,
+            0.21113846064807645
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0.023162447758871472,
+            0.33731245196766674
+          ]
+        },
+        {
+          "t": 38.35,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 90.41220862751916,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3803863499097426,
+            0.41243522368426627
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.6906211025909126,
+            0.6521173470616519
+          ]
+        },
+        {
+          "t": 49.416666666666664,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 159.26896438582637,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.7275092437123455,
+            1.0310625855052318
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.036201073844441,
+            1.630253090189322
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 5,
+      "winner": 0,
+      "potWon": false,
+      "duration": 37.916666666666664,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 4,
+      "potContactDamage": 131.04,
+      "opponentContactDamage": 171.77999999999997,
+      "potCapped": 3,
+      "opponentCapped": 4,
+      "finish": {
+        "t0": 35.416666666666664,
+        "t1": 37.916666666666664,
+        "caption": "台灯撞中锅，锅掉血了",
+        "detail": "台灯沿撞击方向冲得更快：撞击冲量 1.4，硬度修正 0.82（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 21,
+        "finishType": "contact",
+        "finishEventIndex": 21
+      },
+      "impacts": [
+        {
+          "t": 4.066666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 272.46925523150065,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.8977644655181896,
+            0.7782503764192709
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.3242772962526024,
+            1.2305218896841463
+          ]
+        },
+        {
+          "t": 9.866666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 85.7180796443758,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 12.95,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 188.58771523682773,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7555969111534493,
+            1.3131147567535688
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.150158313166102,
+            2.076216730259623
+          ]
+        },
+        {
+          "t": 18.766666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 225.48843867916995,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7992588662336262,
+            1.5535769090774143
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.2036330687254786,
+            2.4564207764644745
+          ]
+        },
+        {
+          "t": 26.666666666666668,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 101.16175279243063,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.9688134911961298,
+            0.5597179787590341
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.1865493546774404,
+            0.8849918301121464
+          ]
+        },
+        {
+          "t": 29.8,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 364.5486640525896,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7381106617395292,
+            1.4406979057321698
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.1287421188765294,
+            2.290015595285364
+          ]
+        },
+        {
+          "t": 37.916666666666664,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 113.02314283448167,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.4337527580345986,
+            0.49009168055567
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.7623313983591375,
+            0.7749029864277865
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 1,
+      "winner": 0,
+      "potWon": false,
+      "duration": 43.61666666666667,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 2,
+      "opponentAttacks": 5,
+      "potContactDamage": 90.30000000000003,
+      "opponentContactDamage": 136.52824627567685,
+      "potCapped": 2,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 24.433333333333334,
+        "t1": 26.933333333333334,
+        "caption": "锅在圈外撑不住，倒下了",
+        "detail": "最大撞击：台灯沿撞击方向冲得更快：撞中弱点且触发暴击，原始伤害翻倍，扣掉 44.1 点血。最后是在圈外掉血输的。",
+        "eventIndex": 10,
+        "finishType": "zone",
+        "finishEventIndex": 40
+      },
+      "impacts": [
+        {
+          "t": 6.433333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 11.6,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5196814968660165,
+            0.748151676680046
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0.6364772480437578,
+            1.182931666791413
+          ]
+        },
+        {
+          "t": 17.15,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.26733219792748,
+          "damage": 22.26733219792748,
+          "weak": false,
+          "normalSpeeds": [
+            1.3828663382303232,
+            0.9104153550399137
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.7107080077058971,
+            1.4394930693584913
+          ]
+        },
+        {
+          "t": 20.2,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 24.756558876452047,
+          "damage": 24.756558876452047,
+          "weak": false,
+          "normalSpeeds": [
+            1.8416101992196292,
+            1.1811264314032979
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.532885073580852,
+            1.8675248639305244
+          ]
+        },
+        {
+          "t": 25.933333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 44.090815370097204,
+          "damage": 44.090815370097204,
+          "weak": true,
+          "normalSpeeds": [
+            2.0368169616332468,
+            1.29242901315216
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.4945811277237175,
+            2.1497624708351624
+          ]
+        },
+        {
+          "t": 36.18333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.2352873395441346,
+            0.7897824050367007
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.5129118338016392,
+            1.2487556279208067
+          ]
+        },
+        {
+          "t": 42.05,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.9035736184594465,
+            0.7474291780872518
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.3313920265245365,
+            1.181789296211665
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 2,
+      "winner": 1,
+      "potWon": true,
+      "duration": 45.083333333333336,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 5,
+      "potContactDamage": 132.29999999999998,
+      "opponentContactDamage": 115.91368568053812,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 14.833333333333332,
+        "t1": 17.333333333333332,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量开根号乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 5,
+        "finishType": "zone",
+        "finishEventIndex": 46
+      },
+      "impacts": [
+        {
+          "t": 4.133333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 25.747968248689325,
+          "damage": 25.747968248689325,
+          "weak": false,
+          "normalSpeeds": [
+            1.2461679691379626,
+            0.8830841828076827
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.78257185010544,
+            1.4068026804080467
+          ]
+        },
+        {
+          "t": 11.566666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.4970241241848092,
+            0.8912368338643419
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.8334726184448302,
+            1.409169164824203
+          ]
+        },
+        {
+          "t": 16.333333333333332,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.18558055046432378
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.29342861444754087
+          ]
+        },
+        {
+          "t": 21.733333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.14783372915438,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.10172829459506795
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.1610545638950737
+          ]
+        },
+        {
+          "t": 27.5,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.5484865067299882,
+            1.4263739245664386
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.8965009075366301,
+            2.255295198351573
+          ]
+        },
+        {
+          "t": 32.983333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.491388379560323,
+            0.4944649965991048
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.8265702691195183,
+            0.7818178062402914
+          ]
+        },
+        {
+          "t": 40.75,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.3321268162177993,
+            0.7526965092040545
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.6315154862059553,
+            1.222108250073597
+          ]
+        },
+        {
+          "t": 43.75,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.6497400859266924,
+            1.1923652146299255
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.020510709367836,
+            1.8852949404930441
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 47.36666666666667,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 3,
+      "potContactDamage": 129.78,
+      "opponentContactDamage": 74.70428139014858,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 2.466666666666667,
+        "t1": 4.966666666666667,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量开根号乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 48
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 45.31992469053315,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.46207938388294184
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0.7509787462511712
+          ]
+        },
+        {
+          "t": 11.333333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.3228495057205918,
+            0.6105850924598077
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.6201531477541933,
+            0.9662072725362625
+          ]
+        },
+        {
+          "t": 15.883333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 25.377220673701334,
+          "damage": 25.377220673701334,
+          "weak": false,
+          "normalSpeeds": [
+            1.6581666842298879,
+            0.2711098243213399
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.3377589921934168,
+            0.4286622704517736
+          ]
+        },
+        {
+          "t": 25.78333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 25.297566339744264,
+          "damage": 25.297566339744264,
+          "weak": false,
+          "normalSpeeds": [
+            1.890966958608231,
+            0.7019938724349257
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.657603448980898,
+            1.1099497701880283
+          ]
+        },
+        {
+          "t": 37.083333333333336,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 42.21666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.8640086214068045,
+            1.1351632802807121
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.0581901279061008,
+            1.7948507409375765
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 49.416666666666664,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 2,
+      "potContactDamage": 128.51999999999998,
+      "opponentContactDamage": 72.57575078043688,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 46.916666666666664,
+        "t1": 49.416666666666664,
+        "caption": "锅更硬，撞疼了台灯",
+        "detail": "锅质量开根号乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 58,
+        "finishType": "contact",
+        "finishEventIndex": 58
+      },
+      "impacts": [
+        {
+          "t": 4.066666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 47.359518542422926,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.179796848236994,
+            0.8735144716294823
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.4449501391622193,
+            1.483539988506451
+          ]
+        },
+        {
+          "t": 18.016666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 47.88489417318244,
+          "damage": 47.88489417318244,
+          "weak": true,
+          "normalSpeeds": [
+            1.4300093464339398,
+            0.7429381828956172
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.9021068394625276,
+            1.2562724415786144
+          ]
+        },
+        {
+          "t": 23.5,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.54953226186487,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.01891205940103563,
+            0.21113846064807645
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0.023162447758871472,
+            0.33731245196766674
+          ]
+        },
+        {
+          "t": 38.35,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.3803863499097426,
+            0.41243522368426627
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.6906211025909126,
+            0.6521173470616519
+          ]
+        },
+        {
+          "t": 49.416666666666664,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.7275092437123455,
+            1.0310625855052318
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.036201073844441,
+            1.630253090189322
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 47.36666666666667,
+      "initial": [
+        {
+          "mass": 1.5,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 2.5,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 4,
+      "potContactDamage": 131.04,
+      "opponentContactDamage": 90.24543905706511,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 8.366666666666667,
+        "t1": 10.866666666666667,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量开根号乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 3,
+        "finishType": "zone",
+        "finishEventIndex": 43
+      },
+      "impacts": [
+        {
+          "t": 4.066666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.8977644655181896,
+            0.7782503764192709
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.3242772962526024,
+            1.2305218896841463
+          ]
+        },
+        {
+          "t": 9.866666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 12.95,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.7555969111534493,
+            1.3131147567535688
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.150158313166102,
+            2.076216730259623
+          ]
+        },
+        {
+          "t": 18.766666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7992588662336262,
+            1.5535769090774143
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.2036330687254786,
+            2.4564207764644745
+          ]
+        },
+        {
+          "t": 26.666666666666668,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            0.9688134911961298,
+            0.5597179787590341
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.1865493546774404,
+            0.8849918301121464
+          ]
+        },
+        {
+          "t": 29.8,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.32447915708908,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7381106617395292,
+            1.4406979057321698
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            2.1287421188765294,
+            2.290015595285364
+          ]
+        },
+        {
+          "t": 37.916666666666664,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.125129310264928,
+          "damage": 22.125129310264928,
+          "weak": false,
+          "normalSpeeds": [
+            1.4337527580345986,
+            0.49009168055567
+          ],
+          "masses": [
+            1.5,
+            2.5
+          ],
+          "massPower": 0.5,
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            1.7623313983591375,
+            0.7749029864277865
+          ]
+        }
+      ]
+    }
+  ]
+}

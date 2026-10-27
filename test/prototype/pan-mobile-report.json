@@ -1,7 +1,7 @@
 {
 	"generator": "gltfpack 1.3",
 	"scene": {
-		"nodeCount": 3,
+		"nodeCount": 4,
 		"meshCount": 1,
 		"materialCount": 1,
 		"textureCount": 2,
@@ -13,7 +13,7 @@
 		"triangleCount": 41280
 	},
 	"data": {
-		"json": 1928,
+		"json": 1993,
 		"binary": 1462568,
 		"buffers": {
 			"vertex": 667664,

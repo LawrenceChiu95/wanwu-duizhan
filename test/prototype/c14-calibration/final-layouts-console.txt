@@ -1,0 +1,230 @@
+completed 50
+completed 100
+completed 150
+completed 200
+completed 250
+completed 300
+completed 350
+completed 400
+completed 450
+completed 500
+completed 550
+completed 600
+completed 650
+completed 700
+completed 750
+completed 800
+completed 850
+completed 900
+completed 950
+{
+  "items": [
+    "broom",
+    "pot",
+    "pillow"
+  ],
+  "opponent": {
+    "parts": [
+      {
+        "item": "broom",
+        "mount": "front",
+        "rot": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "item": "pot",
+        "mount": "top",
+        "rot": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "item": "pillow",
+        "mount": "side",
+        "rot": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "layouts": 162,
+  "rounds": 972,
+  "wallSeconds": 46.7727595,
+  "modes": {
+    "A": {
+      "outcomes": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 406,
+          "zone": 76,
+          "timeout": 4
+        },
+        "draws": 1,
+        "simultaneousKOs": 10,
+        "resolvedByAttacker": 9,
+        "timeouts": 4,
+        "under20": 13,
+        "under8": 0,
+        "min": 13.333333333333334,
+        "q1": 32.266666666666666,
+        "median": 39.61666666666667,
+        "q3": 47.18333333333333,
+        "max": 60
+      },
+      "goals": {
+        "checks": {
+          "contact": true,
+          "zone": true,
+          "duration": true,
+          "short": true,
+          "draws": true,
+          "timeouts": true,
+          "simultaneous": true,
+          "layoutDifference": true
+        },
+        "passed": true
+      },
+      "bestLayout": {
+        "layout": "front:pillow:horizontal|top:pot:forward|side:broom:forward",
+        "wins": 3,
+        "rounds": 3,
+        "rate": 1
+      },
+      "worstLayout": {
+        "layout": "front:broom:forward|top:pot:vertical|side:pillow:horizontal",
+        "wins": 0,
+        "rounds": 3,
+        "rate": 0
+      },
+      "layoutWinRateSpread": 1,
+      "wins": 220,
+      "losses": 265,
+      "draws": 1,
+      "averageDuration": 38.825582990397805,
+      "timeouts": 4,
+      "maxContact": 0.6000000000000002
+    },
+    "B": {
+      "outcomes": {
+        "rounds": 486,
+        "finishes": {
+          "contact": 420,
+          "zone": 62,
+          "timeout": 4
+        },
+        "draws": 0,
+        "simultaneousKOs": 4,
+        "resolvedByAttacker": 4,
+        "timeouts": 4,
+        "under20": 11,
+        "under8": 0,
+        "min": 13.333333333333334,
+        "q1": 32.483333333333334,
+        "median": 39.6,
+        "q3": 47.06666666666666,
+        "max": 60
+      },
+      "goals": {
+        "checks": {
+          "contact": true,
+          "zone": true,
+          "duration": true,
+          "short": true,
+          "draws": true,
+          "timeouts": true,
+          "simultaneous": true,
+          "layoutDifference": true
+        },
+        "passed": true
+      },
+      "bestLayout": {
+        "layout": "front:pillow:forward|top:pot:vertical|side:broom:vertical",
+        "wins": 3,
+        "rounds": 3,
+        "rate": 1
+      },
+      "worstLayout": {
+        "layout": "front:broom:forward|top:pot:vertical|side:pillow:forward",
+        "wins": 0,
+        "rounds": 3,
+        "rate": 0
+      },
+      "layoutWinRateSpread": 1,
+      "wins": 214,
+      "losses": 272,
+      "draws": 0,
+      "averageDuration": 39.21145404663918,
+      "timeouts": 4,
+      "maxContact": 0.6000000000000002
+    }
+  },
+  "reversal": {
+    "mode": "A",
+    "seed": 1,
+    "win": {
+      "layout": "front:broom:forward|top:pot:forward|side:pillow:vertical",
+      "computeMs": 57.578958,
+      "mass": 45.13890075683594,
+      "centerOfMass": [
+        0.006873848848044872,
+        0.11980496346950531,
+        0.0013938151532784104
+      ],
+      "seed": 1,
+      "mode": "A",
+      "winner": 0,
+      "reason": "ko",
+      "simultaneousKo": false,
+      "resolvedByAttacker": false,
+      "finishType": "contact",
+      "duration": 32.06666666666666,
+      "impacts": 5,
+      "crit": 5,
+      "weak": 0,
+      "zoneDamage": 0,
+      "decisive": "枕头撞中枕头，枕头掉血了",
+      "decisiveEvent": "crit",
+      "maxPenetration": 0.0003995985316578299,
+      "maxResidualPenetration": 0.00040227174758911133,
+      "maxPositionCorrection": 0.014123476280272006,
+      "correctionSteps": 16,
+      "longestContact": 0.05
+    },
+    "loss": {
+      "layout": "front:broom:forward|top:pot:forward|side:pillow:forward",
+      "computeMs": 203.85750000000002,
+      "mass": 45.13890075683594,
+      "centerOfMass": [
+        0.006873848848044872,
+        0.1198594719171524,
+        0.0014448418514803052
+      ],
+      "seed": 1,
+      "mode": "A",
+      "winner": 1,
+      "reason": "ko",
+      "simultaneousKo": false,
+      "resolvedByAttacker": false,
+      "finishType": "contact",
+      "duration": 40.25,
+      "impacts": 5,
+      "crit": 6,
+      "weak": 1,
+      "zoneDamage": 7.419171666666669,
+      "decisive": "扫把撞中扫把，扫把掉血了",
+      "decisiveEvent": "crit",
+      "maxPenetration": 0.00018691434524953365,
+      "maxResidualPenetration": 0.00024802429834380746,
+      "maxPositionCorrection": 0.018625693735480307,
+      "correctionSteps": 7,
+      "longestContact": 0.03333333333333333
+    }
+  }
+}

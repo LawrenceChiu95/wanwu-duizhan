@@ -1,0 +1,119 @@
+{
+  "verifiedBeforeTrash": [
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-LzjWDY",
+      "archive": "test/prototype/c14-calibration/sources/all-counter-off",
+      "sourceSha256": {
+        "batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
+        "index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+        "catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-Ujesnt",
+      "archive": "test/prototype/c14-calibration/sources/softer",
+      "sourceSha256": {
+        "batch.js": "3c64a58a722fdcbddd2fe6a087997f2b71cb9dfd395f36638b39e917fde6142c",
+        "index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+        "catalog-final-case.json": "a0403ea662f0f01d2b5f5c4fd6c97a7fb8174765fa3d2dd2e728020eb8ad13bc",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "50f66b2d621f1cb80362755ff3646970e13a500c7fb8cedd7de50bed87835049"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-X6pkWN",
+      "archive": "test/prototype/c14-calibration/sources/momentum-thrust",
+      "sourceSha256": {
+        "batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
+        "index.js": "165432598f695b8a5c78acd7a92a5f4ae8f5b11ee0722e4b219bbf1fdcd49b05",
+        "catalog-final-case.json": "7681858d02fdd87a30a6134f8f77df7fcce7ea8506b62146977259677fa37aa1",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-cAqELi",
+      "archive": "test/prototype/c14-calibration/sources/mass-options",
+      "sourceSha256": {
+        "batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+        "item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+        "index.js": "d74d8072ed6efa9cd5182da350d3040ab243a06f386e762aee9d2be7a1baf0b3",
+        "catalog-final-case.json": "084500ba718937aaf6de5655b29a975eb1de2404908f70f57287575cc8948f2d",
+        "layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-dYRNoH",
+      "archive": "test/prototype/c14-calibration/sources/cooldown",
+      "sourceSha256": {
+        "batch.js": "72e9b0aa2b461763162ab5414d7a1bb531d5b916c3b96b5ba5e6db01ece923d9",
+        "index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+        "catalog-final-case.json": "35324f4c45d95fb8b1f76f40c3d23f3518643e454608fae893a8b08fcb731591",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "392003d5c4dafc307370d29e3044dae6fc751509eb4597a0939c292202167863"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-g8cBqc",
+      "archive": "test/prototype/c14-calibration/sources/momentum-counter-off",
+      "sourceSha256": {
+        "batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+        "index.js": "e0020f91dcedb30d75381dffce939e936a6ab732c06dceed7368b74ab27dee98",
+        "catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-lPzqT3",
+      "archive": "test/prototype/c14-calibration/sources/counter",
+      "sourceSha256": {
+        "batch.js": "28c8f85664893dc7df6e683994c713caf38d2434a68d973bbb0292229fd97d9a",
+        "index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+        "catalog-final-case.json": "7c25facf558121f7e92792911fdf3a1010bfad9a7808a67f6be66e1dc79b2654",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "392003d5c4dafc307370d29e3044dae6fc751509eb4597a0939c292202167863"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-qzm8JK",
+      "archive": "test/prototype/c14-calibration/sources/category-A-damage",
+      "sourceSha256": {
+        "batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+        "item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+        "index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
+        "catalog-final-case.json": "b92e92053343dca56bc71a6fd6b23f164910f7808e20370aed804d44b067c779",
+        "layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b"
+      }
+    },
+    {
+      "directory": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-c14-zfot1C",
+      "archive": "test/prototype/c14-calibration/sources/final-counter-off",
+      "sourceSha256": {
+        "batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+        "item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+        "index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
+        "catalog-final-case.json": "4a1631b230ac93e44b5787ce95b3753a96710180d96cbaa65cd994ea72c43cdd",
+        "layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+        "package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+        "math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+        "catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b"
+      }
+    }
+  ],
+  "action": "nine verified private calibration directories moved to Trash; own Chrome closed and HTTP 4488 stopped"
+}

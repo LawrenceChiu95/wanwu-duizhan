@@ -1,0 +1,26 @@
+{
+  "scissors": {
+    "longSideMeters": 0.2,
+    "massKg": 0.15
+  },
+  "lamp": {
+    "longSideMeters": 0.45,
+    "massKg": 1.5
+  },
+  "broom": {
+    "longSideMeters": 1.2,
+    "massKg": 0.6
+  },
+  "pot": {
+    "longSideMeters": 0.38,
+    "massKg": 2.5
+  },
+  "slipper": {
+    "longSideMeters": 0.28,
+    "massKg": 0.25
+  },
+  "pillow": {
+    "longSideMeters": 0.6,
+    "massKg": 0.6
+  }
+}

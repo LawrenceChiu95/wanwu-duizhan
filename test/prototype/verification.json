@@ -1,5 +1,15 @@
 {
-  "scope": "Sol sim/data verification; full UI, phone and independent review pending",
+  "scope": "Sol sim/data only; numerical failures retained; Claude review, frontend playback, phone and 3-second comprehension pending",
+  "selected": {
+    "selected": "丙：品类重量＋质量开根号",
+    "reason": "三案均无全败物件；丙的 A/B 最高胜率都不超过80%，优先保住重量平衡；A旧节奏线仍失败。Elara 788041e8确认丙，只允许再试一两档统一A伤害系数。",
+    "finalAImpulseToDamage": 100,
+    "AAdjustment": "Elara 788041e8只准两档统一A伤害系数；150仍超局长/到时，200使八件最高82.9%且原六件到时12%，因此按止损条件保留100。",
+    "authority": [
+      "abe9275b",
+      "788041e8"
+    ]
+  },
   "rules": {
     "radius": 4.2,
     "zoneStartRadius": 2.7,
@@ -17,8 +27,15 @@
     "spinTorque": 0.004,
     "contactCooldown": 0.55,
     "openingGrace": 3,
+    "fighterHp": 140,
+    "tipBonus": 0.3,
+    "recoilDamageFraction": 0.03,
     "maxHitFraction": 0.3,
-    "damageCooldown": 2.5,
+    "counterSpeedMultiplier": 2,
+    "roleMassPower": 0.5,
+    "weakCritChance": 0.5,
+    "weakCritMaxFraction": 0.4,
+    "damageCooldown": 3,
     "impulseToDamage": 100,
     "statDamageScale": 4.5,
     "maxDuration": 60,
@@ -52,46 +69,1780 @@
         0,
         0
       ]
-    },
-    "fighterHp": 140,
-    "tipBonus": 0.3,
-    "recoilDamageFraction": 0.03
+    }
   },
-  "rounds": 1222,
+  "massBasis": "Elara category reference kg; Rapier inertia from shape and assigned mass",
+  "rounds": 1352,
   "singleGoals": {
-    "A": true,
-    "B": true
+    "A": {
+      "stats": {
+        "rounds": 140,
+        "finishes": {
+          "timeout": 34,
+          "contact": 78,
+          "zone": 28
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 34,
+        "under20": 0,
+        "under8": 0,
+        "min": 22.716666666666665,
+        "q1": 39.78333333333333,
+        "median": 49.416666666666664,
+        "q3": 59.583333333333336,
+        "max": 60
+      },
+      "favoredPairs": 21,
+      "totalPairs": 28,
+      "undefeatedAll": [],
+      "records": [
+        {
+          "item": "scissors",
+          "rounds": 35,
+          "wins": 11,
+          "losses": 24,
+          "rate": 0.3142857142857143,
+          "opponents": [
+            {
+              "opponent": "lamp",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "broom",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pot",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "slipper",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pillow",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "lamp",
+          "rounds": 35,
+          "wins": 20,
+          "losses": 15,
+          "rate": 0.5714285714285714,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pot",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "slipper",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "broom",
+          "rounds": 35,
+          "wins": 10,
+          "losses": 25,
+          "rate": 0.2857142857142857,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pot",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pot",
+          "rounds": 35,
+          "wins": 15,
+          "losses": 20,
+          "rate": 0.42857142857142855,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "broom",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "slipper",
+          "rounds": 35,
+          "wins": 20,
+          "losses": 15,
+          "rate": 0.5714285714285714,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "broom",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pillow",
+          "rounds": 35,
+          "wins": 27,
+          "losses": 8,
+          "rate": 0.7714285714285715,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "slipper",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pan-lux3d",
+          "rounds": 35,
+          "wins": 22,
+          "losses": 13,
+          "rate": 0.6285714285714286,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "lamp",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "lamp-lux3d",
+          "rounds": 35,
+          "wins": 15,
+          "losses": 20,
+          "rate": 0.42857142857142855,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "slipper",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            }
+          ],
+          "hasWinnableOpponent": true
+        }
+      ],
+      "reported": {
+        "eachHasWinnableOpponent": true
+      },
+      "checks": {
+        "contact": false,
+        "zone": true,
+        "duration": false,
+        "short": true,
+        "draws": true,
+        "timeouts": false,
+        "simultaneous": true,
+        "matchupDifference": true,
+        "noAllWinOrLoss": true,
+        "noOver80": true
+      },
+      "passed": false
+    },
+    "B": {
+      "stats": {
+        "rounds": 140,
+        "finishes": {
+          "contact": 117,
+          "zone": 22,
+          "timeout": 1
+        },
+        "draws": 0,
+        "simultaneousKOs": 1,
+        "resolvedByAttacker": 1,
+        "timeouts": 1,
+        "under20": 12,
+        "under8": 0,
+        "min": 13.466666666666667,
+        "q1": 30.583333333333332,
+        "median": 39.5,
+        "q3": 47.65,
+        "max": 60
+      },
+      "favoredPairs": 24,
+      "totalPairs": 28,
+      "undefeatedAll": [],
+      "records": [
+        {
+          "item": "scissors",
+          "rounds": 35,
+          "wins": 10,
+          "losses": 25,
+          "rate": 0.2857142857142857,
+          "opponents": [
+            {
+              "opponent": "lamp",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "broom",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pot",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "slipper",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pillow",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "lamp",
+          "rounds": 35,
+          "wins": 16,
+          "losses": 19,
+          "rate": 0.45714285714285713,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "broom",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pot",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "slipper",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "broom",
+          "rounds": 35,
+          "wins": 10,
+          "losses": 25,
+          "rate": 0.2857142857142857,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pot",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "slipper",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pot",
+          "rounds": 35,
+          "wins": 20,
+          "losses": 15,
+          "rate": 0.5714285714285714,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "slipper",
+          "rounds": 35,
+          "wins": 21,
+          "losses": 14,
+          "rate": 0.6,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pillow",
+          "rounds": 35,
+          "wins": 27,
+          "losses": 8,
+          "rate": 0.7714285714285715,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "slipper",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pan-lux3d",
+          "rounds": 35,
+          "wins": 23,
+          "losses": 12,
+          "rate": 0.6571428571428571,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "slipper",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp-lux3d",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "lamp-lux3d",
+          "rounds": 35,
+          "wins": 13,
+          "losses": 22,
+          "rate": 0.37142857142857144,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pot",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "slipper",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pan-lux3d",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        }
+      ],
+      "reported": {
+        "eachHasWinnableOpponent": true
+      },
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true,
+        "matchupDifference": true,
+        "noAllWinOrLoss": true,
+        "noOver80": true
+      },
+      "passed": true
+    }
+  },
+  "originalSingleGoals": {
+    "A": {
+      "stats": {
+        "rounds": 75,
+        "finishes": {
+          "timeout": 24,
+          "contact": 35,
+          "zone": 16
+        },
+        "draws": 0,
+        "simultaneousKOs": 0,
+        "resolvedByAttacker": 0,
+        "timeouts": 24,
+        "under20": 0,
+        "under8": 0,
+        "min": 25.933333333333334,
+        "q1": 45.88333333333333,
+        "median": 53.11666666666667,
+        "q3": 60,
+        "max": 60
+      },
+      "favoredPairs": 12,
+      "totalPairs": 15,
+      "undefeatedAll": [],
+      "records": [
+        {
+          "item": "scissors",
+          "rounds": 25,
+          "wins": 10,
+          "losses": 15,
+          "rate": 0.4,
+          "opponents": [
+            {
+              "opponent": "lamp",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "broom",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pot",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "slipper",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pillow",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "lamp",
+          "rounds": 25,
+          "wins": 14,
+          "losses": 11,
+          "rate": 0.56,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pot",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "slipper",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "broom",
+          "rounds": 25,
+          "wins": 10,
+          "losses": 15,
+          "rate": 0.4,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pot",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pot",
+          "rounds": 25,
+          "wins": 11,
+          "losses": 14,
+          "rate": 0.44,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "broom",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "slipper",
+          "rounds": 25,
+          "wins": 12,
+          "losses": 13,
+          "rate": 0.48,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "broom",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pillow",
+          "rounds": 25,
+          "wins": 18,
+          "losses": 7,
+          "rate": 0.72,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "slipper",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            }
+          ],
+          "hasWinnableOpponent": true
+        }
+      ],
+      "reported": {
+        "eachHasWinnableOpponent": true
+      },
+      "checks": {
+        "contact": false,
+        "zone": true,
+        "duration": false,
+        "short": true,
+        "draws": true,
+        "timeouts": false,
+        "simultaneous": true,
+        "matchupDifference": true,
+        "noAllWinOrLoss": true,
+        "noOver80": true
+      },
+      "passed": false
+    },
+    "B": {
+      "stats": {
+        "rounds": 75,
+        "finishes": {
+          "contact": 65,
+          "zone": 10
+        },
+        "draws": 0,
+        "simultaneousKOs": 1,
+        "resolvedByAttacker": 1,
+        "timeouts": 0,
+        "under20": 8,
+        "under8": 0,
+        "min": 13.466666666666667,
+        "q1": 28,
+        "median": 37.766666666666666,
+        "q3": 46.5,
+        "max": 59.46666666666667
+      },
+      "favoredPairs": 13,
+      "totalPairs": 15,
+      "undefeatedAll": [],
+      "records": [
+        {
+          "item": "scissors",
+          "rounds": 25,
+          "wins": 10,
+          "losses": 15,
+          "rate": 0.4,
+          "opponents": [
+            {
+              "opponent": "lamp",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "broom",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "pot",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "slipper",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pillow",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "lamp",
+          "rounds": 25,
+          "wins": 11,
+          "losses": 14,
+          "rate": 0.44,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "broom",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pot",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "slipper",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "broom",
+          "rounds": 25,
+          "wins": 9,
+          "losses": 16,
+          "rate": 0.36,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pot",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "slipper",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pot",
+          "rounds": 25,
+          "wins": 15,
+          "losses": 10,
+          "rate": 0.6,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "slipper",
+              "wins": 2,
+              "rounds": 5,
+              "rate": 0.4
+            },
+            {
+              "opponent": "pillow",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "slipper",
+          "rounds": 25,
+          "wins": 12,
+          "losses": 13,
+          "rate": 0.48,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "pot",
+              "wins": 3,
+              "rounds": 5,
+              "rate": 0.6
+            },
+            {
+              "opponent": "pillow",
+              "wins": 1,
+              "rounds": 5,
+              "rate": 0.2
+            }
+          ],
+          "hasWinnableOpponent": true
+        },
+        {
+          "item": "pillow",
+          "rounds": 25,
+          "wins": 18,
+          "losses": 7,
+          "rate": 0.72,
+          "opponents": [
+            {
+              "opponent": "scissors",
+              "wins": 0,
+              "rounds": 5,
+              "rate": 0
+            },
+            {
+              "opponent": "lamp",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            },
+            {
+              "opponent": "broom",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "pot",
+              "wins": 5,
+              "rounds": 5,
+              "rate": 1
+            },
+            {
+              "opponent": "slipper",
+              "wins": 4,
+              "rounds": 5,
+              "rate": 0.8
+            }
+          ],
+          "hasWinnableOpponent": true
+        }
+      ],
+      "reported": {
+        "eachHasWinnableOpponent": true
+      },
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": false,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true,
+        "matchupDifference": true,
+        "noAllWinOrLoss": true,
+        "noOver80": true
+      },
+      "passed": false
+    }
   },
   "assemblyGoals": {
-    "A": true,
-    "B": true
+    "A": {
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true,
+        "layoutDifference": true
+      },
+      "passed": true
+    },
+    "B": {
+      "checks": {
+        "contact": true,
+        "zone": true,
+        "duration": true,
+        "short": true,
+        "draws": true,
+        "timeouts": true,
+        "simultaneous": true,
+        "layoutDifference": true
+      },
+      "passed": true
+    }
   },
-  "maxResidualPenetrationMeters": 0.0033178089652210474,
-  "independentMaxFramePenetrationMeters": 0.002829747973009944,
-  "nodeChromeReplaySha256": "b49f4a675f5b57c8a8910589a95bbce3b0ea7f7c384b5610a8ab8fca01445c2c",
+  "selectedTrialNumericRowsEqualCanonicalIgnoringComputeMs": true,
+  "commands": [
+    {
+      "command": [
+        "node",
+        "sim/batch.js"
+      ],
+      "output": "c14-batch-console.txt",
+      "exit": 0,
+      "wallSeconds": 10.229589917
+    },
+    {
+      "command": [
+        "node",
+        "sim/layouts.js",
+        "broom,pot,pillow"
+      ],
+      "output": "c14-layouts-console.txt",
+      "exit": 0,
+      "wallSeconds": 49.396139167
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "test/prototype/sim.test.mjs"
+      ],
+      "output": "c14-node-tests.txt",
+      "exit": 0,
+      "wallSeconds": 1.6266102080000024
+    },
+    {
+      "command": [
+        "node",
+        "test/prototype/penetration-check.mjs"
+      ],
+      "output": "c14-penetration-console.txt",
+      "exit": 0,
+      "wallSeconds": 1.4287111249999995
+    },
+    {
+      "command": [
+        "node",
+        "test/prototype/pot-diagnosis.mjs"
+      ],
+      "output": "c14-pot-console.txt",
+      "exit": 0,
+      "wallSeconds": 1.7922963339999924
+    },
+    {
+      "command": [
+        "node",
+        "test/prototype/tune-c14.mjs",
+        "[{\"counterSpeedMultiplier\":1,\"disableMatchups\":true}]",
+        "final-counter-off"
+      ],
+      "output": "c14-counter-off-console.txt",
+      "exit": 0,
+      "wallSeconds": 11.866250791999988
+    }
+  ],
+  "nodeTests": {
+    "passed": 9,
+    "failed": 0,
+    "output": "c14-node-tests.txt"
+  },
+  "browser": {
+    "results": [
+      {
+        "left": "broom",
+        "right": "pot",
+        "mode": "A",
+        "seed": 1,
+        "sha256": "ad9f3b430df647d8091c32729118b94025de08b4bdd20e4934f32a4c9151679d",
+        "equal": true,
+        "frames": 1066,
+        "events": 15
+      },
+      {
+        "left": "scissors",
+        "right": "broom",
+        "mode": "B",
+        "seed": 1,
+        "sha256": "14a5ea1f5f11726451b7fc0c0ab89765b360dcfa27a41e1dd7d1a00805bcd318",
+        "equal": true,
+        "frames": 412,
+        "events": 7
+      }
+    ],
+    "passed": true
+  },
+  "maxResidualPenetrationMeters": 0.0034149400889873505,
+  "independentMaxFramePenetrationMeters": 0.0034149549901485443,
   "sha256": {
-    "sim/index.js": "72e76f152fd4bc2b0adc96099d6a3c06cbb67fb564e5123e7fc7a43d7beb7d49",
+    "sim/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
     "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
-    "sim/batch.js": "ded168e77939b185a5716f29306a4f9556b018259aefa3b9d7b5d6fda03364e9",
+    "sim/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
     "sim/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
     "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
-    "sim/prepare-assets.mjs": "695240ddce92138f21a24385a07769092d219e26f588e9fc1e2acee5ae6a32da",
-    "sim/prepare-mobile.py": "9e579116ed074e5999a1220f49b184c0bac045f8c808e7f08bf32444d05a3b7f",
-    "data/catalog.json": "d6a46ec61cf5be9afc64bd78f9851284b58457ed73840da302497ccf07f5b275",
-    "data/models/pan-lux3d-mobile.glb": "92764b4fd73974920f5b0f2489cba857d1b8465020e719b683dfa2a505dcc809",
-    "data/models/lamp-lux3d-mobile.glb": "eea981b69d12bf9b47ba5b79d82b4a083c5852dac66b8fb45105190b0d2f17ae",
-    "test/prototype/sim.test.mjs": "f37a5865fd94341c9ccdebcd7b52a366459a9893ed91646b1714e27893730bb3",
+    "sim/prepare-assets.mjs": "a448fc512370c3acdada7e60ee9d9702aea2eb2aa41741137e8522b15828776e",
+    "sim/prepare-mobile.py": "0a4ae7acbaeffd6f4ae55119d9f15494e4fec2a49403f86ec614708b79c8e34a",
+    "data/catalog.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "data/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "data/CREDITS.md": "b3baf6b76d05743761d93651ad3138f667bdc47d306d139240dd0e585669e82a",
+    "data/models/pan-lux3d-mobile.glb": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265",
+    "data/models/lamp-lux3d-mobile.glb": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457",
+    "test/prototype/sim.test.mjs": "d074a3b1a68cbbdaa7bd0865366d15152ea0b69f854dcc737b1d0850fbea3cbd",
     "test/prototype/penetration-check.mjs": "6205c5e2430e2765a4684b413af940d80156cdb8793cc6595c6068f809a4f841",
-    "test/prototype/browser-check.html": "259029038ad5d1a9224b26a8134c949e429d5309746d062c24a88b06fc30e953",
-    "test/prototype/batch/summary.json": "7879c62a052f5eb4a9b07f1664dd12b9c362b0970f772ded03a30433117beeb7",
-    "test/prototype/batch/rounds.json": "e61118693c2eb897baf6fb5eec8fd82efefaa60e018454b3df71366109207118",
-    "test/prototype/batch/lux3d-comparison.json": "dd22522ed39fd1783ff0db2499b8606812a81dcbeab10783465559c5eb464753",
-    "test/prototype/layouts/summary.json": "dcf6b230f3324fbc751df005eb766f191b21b228032a4a36260b1ac83adeaf2a",
-    "test/prototype/layouts/rounds.json": "f2492af8277682aa1b3aedb1ebb6f9f74e2400ee00d8e0e21a54c77594ceb60f",
-    "test/prototype/penetration-check.json": "9386c7caf9d118e61399fe32913d1cf20881190e1fd326ae84b766e448dc1ff8",
-    "test/prototype/browser.json": "c762d4d2d426fd2c65271205f006c0dc82de5295c3eb32e342365d05024d208f",
-    "test/prototype/node-tests.txt": "3c06f58a3f9ab96e2c437325dd147d6ee0789b82e3835d655476d9fa374ff5f4",
-    "data/CREDITS.md": "8d06bf84337c86b487585d7001559069990a39f7b711282cca4579b5dbca30bc",
-    "test/prototype/INTERFACE.md": "e8fb203f37b30e0014b5688c38afc12eba3ef619e2462a9c7ba41c9bd3bcd4d6"
+    "test/prototype/browser-check.html": "2a0804613ac18541521a0b4637d5bfd8b9a68b2133c80bfa002e6f18faa6db1a",
+    "test/prototype/browser-node.mjs": "8fd111c0ec123b523cf8c9dfdedd6862d9eca0d6adc547f54ab0aca3bd916fef",
+    "test/prototype/browser.json": "ab7051222a347723302f722d54c02beb1b849d0a72108415827a74b542f7e51d",
+    "test/prototype/browser-node.json": "d61cc9559b8dd15ae7d67c5f261bd62c5961016aaba2655cce509113a4b28208",
+    "test/prototype/c14-node-tests.txt": "8a4c069deba2b9f1cbf6aa9bb4a406e221abe1b8831d9cbff021ffe331d6b6e9",
+    "test/prototype/c14-commands.json": "a1d85e803c7407f45c75d474444013cf4bb0ca9f4306068e7315c4da840ca11d",
+    "test/prototype/selection.json": "f1f7e86fe0aa2f0522f1b2d15d2752c3514019b4b9b67a46ca98a563f9a50e34",
+    "test/prototype/batch/summary.json": "24ccc21507578e0ab0e12d7890084a5535b84f15309b369568b62affcf1ab14c",
+    "test/prototype/batch/rounds.json": "fac80b3cb1f43afd93e74f4cdbde2c4f86102f91301682e256654572364ca0f3",
+    "test/prototype/batch/lux3d-comparison.json": "e38f7497dbe36a6f2b3abf5ab23b5258e8a499e28aea366616bcc1a698e0f1fa",
+    "test/prototype/batch/mechanics-evidence.json": "814075987c6530f489e68aaa5f99fe5994c5775c698bb70245abd1d100dbdffe",
+    "test/prototype/layouts/summary.json": "e4521b0a2db158a19cbce37f56ab50844a66f3568a923473fdaf952387a4a018",
+    "test/prototype/layouts/rounds.json": "605e219759b9d80bddfdf691f048d2fe8a247e8a18888c5f40f8a380ae2650b2",
+    "test/prototype/penetration-check.json": "e90ea37ea884f4951d27e9970aa9a4e7a556f01605c4a61efb09bbf1e99d7122",
+    "test/prototype/pot-diagnosis.json": "c68af3b4489106ef7d70459e095e2372c1cee1a8e7762aa79533f87656e027d4",
+    "test/prototype/INTERFACE.md": "35ac4cc4a522b1f569d783b7db6b071c09b25997e10ef6d33395c3444cb561ff",
+    "test/prototype/RESULT.md": "0670396d8468606fd43950566afb558978961eab52b537f9051cf5f5be1106af",
+    "test/prototype/AUDIT.md": "226ed96f49357b300e844b6d841932230f45f35191200d08eb38162ed46fc428",
+    "test/prototype/SELECTION.md": "46a30c04f84d1f1dd41d9c9043ac0b7b9ea41dd5da6e21c7a26dd4f6ee63b70a",
+    "test/prototype/COUNTERS.md": "40271395a5246cf624f001ae21e34fbd4e5727b87afe5dda5293805317484121",
+    "test/prototype/PLAN-c14.md": "e54e68f0eaf2efcf0708b5b28a333396270b0010d1c694a95e6f8e3043013f52",
+    "test/prototype/tune-c14.mjs": "b509de64cc7ff259265c53d4e76629e3940dd6edec4e1d44b5604921d4cc1b4e",
+    "test/prototype/c14-calibration/README.md": "decd99e0042421757aa51b5ce177f2ca26bbb1197cdb617828c0af7d55d3c8cf",
+    "test/prototype/c14-calibration/all-counter-off-1.json": "1aaeddfd168982bc0020e0cfbce57e3d81c6e29eb8afaf6a361b900951738018",
+    "test/prototype/c14-calibration/all-counter-off-console.txt": "d88995b37746a323a0ec366688607e22c08f72264c45597d1aea4bf164ba7551",
+    "test/prototype/c14-calibration/before-momentum/data/catalog.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/before-momentum/sim/batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
+    "test/prototype/c14-calibration/before-momentum/sim/index.js": "cd638343199f9795ec55784fa800231201063d209393c398552660ddc59c8094",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/batch/rounds.json": "067c2e700264cb443ffb5319b94cbe21ed62d6c38ca2e08c4ad6db891ca0837b",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/batch/summary.json": "afae72d965423a05aece669a7994f4b4933d1bab4a4fc9e4d9dc3225da9eec91",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/c14-pot-console.txt": "cc2d762b38dd10e570928551a85df5dd16abcc5dc050c3f62b968d59939e110b",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/layouts/rounds.json": "8b25dd98883b1621378fc9ec782dd85e1dc731c43ff9dee8a1606ca852b65165",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/layouts/summary.json": "da47746cac0b65ee205f7a2a07904e517e4d7416b569d3f8dc3cea849bdbcfe3",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/pot-diagnosis.json": "9dd08615b5ed891531097e4231a213959c08c599e4bcbfeb67674e948675780e",
+    "test/prototype/c14-calibration/before-momentum/test/prototype/pot-diagnosis.mjs": "524dfd6016767aa86eaf49418a66e4bc95b3bba16dfe7246e26b26a5c5c29f70",
+    "test/prototype/c14-calibration/candidate4/batch/lux3d-comparison.json": "e06a3f1c192f623fac3cdde277df2afea6c1233ef14c84cddd8650f6a38af1de",
+    "test/prototype/c14-calibration/candidate4/batch/mechanics-evidence.json": "b127a0371bbc9e9db0683326592876be1da1067aa46575a72632910689965888",
+    "test/prototype/c14-calibration/candidate4/batch/rounds.json": "93b759dbad36336810e8cc34e7d85c4379f6217cca06eebe089966e2092fa8ae",
+    "test/prototype/c14-calibration/candidate4/batch/summary.json": "051e7c89985bdc1926331125f1c2fd7b519ece8145a485b8d4891be2c1f62561",
+    "test/prototype/c14-calibration/candidate4/layouts/rounds.json": "5c28e8f4650a10ec69b26a13c381c55bcdb5d4ea93c9d810774d808e56c1f6ce",
+    "test/prototype/c14-calibration/candidate4/layouts/summary.json": "95447f46ad00687bf65a4db4a55a124a14272ce8adb9b7b7d2f31a2015a56e3a",
+    "test/prototype/c14-calibration/category-A-damage-1.json": "28371d7d712de83307b04f03ea4f26388c767c43dbe470c1e25d9a5d65f1a802",
+    "test/prototype/c14-calibration/category-A-damage-2.json": "f9f773de672932e15586c88f7799818d847753bb95338325fafb88c8772ec68a",
+    "test/prototype/c14-calibration/category-A-damage-console.txt": "432ea1852001423920137dfcd86ffab79f44ca65f2f49a5ff69fccd8c7d64af5",
+    "test/prototype/c14-calibration/cooldown-1.json": "7327dd8a720dd9bb36adfedbff66fce8bee9e98020c3b45622ddd3c5be9e7ae2",
+    "test/prototype/c14-calibration/cooldown-2.json": "10707584a005cad396ce4d8aa37d0966594275c91f59965ff4ecdffd89ac0155",
+    "test/prototype/c14-calibration/cooldown-3.json": "2d7cb9fbaa45213ea189c58810d96e12b6ae77ddcafd97756e2fe80729ec0469",
+    "test/prototype/c14-calibration/cooldown-4.json": "e30ef1cff00f83cb6ce759b4c73b764391fe01a9cf021bf51feb293ac3ed9f8f",
+    "test/prototype/c14-calibration/cooldown-console.txt": "f8100b4184dae72c0ec30dd1c8ee29b9d2d11f1d408e78fe02c961edb095ed6b",
+    "test/prototype/c14-calibration/counter-1.json": "52ce57bf09982182558a53d63fa5d88f6696e3768e3e67eb9a4fc66b32f7ebcc",
+    "test/prototype/c14-calibration/counter-2.json": "b836d4f0a4b5bfa9d4fa79a9334b65eedf141772ed6926b7cf6a33e2c7372a17",
+    "test/prototype/c14-calibration/counter-3.json": "493b72bfd035c38021e7b119f49b5312ae4b2e0a909359c3e20ae64eea702429",
+    "test/prototype/c14-calibration/counter-4.json": "75fd41e3bc118eceb819d53604a98e0a880e3c9da0dc7f981169f449d03c8bd8",
+    "test/prototype/c14-calibration/counter-console.txt": "b1f7ca88b5e1f8a86647a807d12d132a0de9cbea94905bed4e5272b2400211b8",
+    "test/prototype/c14-calibration/final-batch-console.txt": "175f62ab8441ec7866adbdecbba3e9b0a1201c0cac62031b2acb32e608077db8",
+    "test/prototype/c14-calibration/final-counter-off-1.json": "f1b87c4e707b26ac4e57583db6cc013c706e30974cd166f7c4e6b95bb543341d",
+    "test/prototype/c14-calibration/final-layouts-console.txt": "f10619ababd5b7445a70e3ead6278c0e846409099ca03f71dfca7eee40a01308",
+    "test/prototype/c14-calibration/initial-1.5.json": "50b7dbd07dd5eceae8fe8c302fed582d383192099e058d4950137045c104d579",
+    "test/prototype/c14-calibration/mass-options-1.json": "0f2dbcc0e6ec623b31dfbc15c9457b44b2cff06198cd62f8cc410d9649defe77",
+    "test/prototype/c14-calibration/mass-options-2.json": "5ddfc8e4ffe0ae898539009927149ffd9f4e9bd7e901c1c549151fdbc626f4bc",
+    "test/prototype/c14-calibration/mass-options-3.json": "e663c1c053012f600b021588a376128fe8d2721c8d9136b6c97f118f3fdcbdaf",
+    "test/prototype/c14-calibration/mass-options-console.txt": "4127c67699174bf04be93ad5dd3f2dc4606146da31b09b609e665c311f0d2e2d",
+    "test/prototype/c14-calibration/mobile-console.txt": "cffe15145d427ae936c105656ab955c5feff40dc6f6b5b1c97adc2b24afd87a5",
+    "test/prototype/c14-calibration/momentum-batch-console.txt": "d1e8d217b3e2aebe2ec0e058ffc627140bf7a9c77beb87a8311efe2a369f534f",
+    "test/prototype/c14-calibration/momentum-counter-off-1.json": "3159d247475d7dfc281ce920b7087321b23e792ded1f139f8e881c849dba54f7",
+    "test/prototype/c14-calibration/momentum-counter-off-console.txt": "be30f5603bbc8d2f30e381e6d5d7db7c6b2d2597e6ddc9bfd91aa96352c4e269",
+    "test/prototype/c14-calibration/momentum-layouts-console.txt": "ce56c2b76e72007ccd3c9bccd64d73fd1bbb364473c191a8ebcea73d16fd0d82",
+    "test/prototype/c14-calibration/momentum-thrust-1.json": "7a30a10ecf181ce2042cb7d119b82cbef7654b154af99ea799ea3ec9042806d1",
+    "test/prototype/c14-calibration/momentum-thrust-2.json": "687e2bce39bd017d6dd212d707114bae62d9485b241bb8c301f7b3ea178010fe",
+    "test/prototype/c14-calibration/momentum-thrust-3.json": "baaea0ad2e417c84aea5f799be632b767b9c0a9f3f579d48a74c3644609f16e1",
+    "test/prototype/c14-calibration/momentum-thrust-4.json": "f0df3cfb7d87e3e534dec8d601fe879cee90cd1d3dcffd5ae7d037e0f19e4240",
+    "test/prototype/c14-calibration/momentum-thrust-5.json": "b76bdf1767f7c735e7505b5c841b6ca432c0cf3f4dcd37b5d875bc9e3d6e784a",
+    "test/prototype/c14-calibration/momentum-thrust-6.json": "c235c0df8dee9d1952a3c51058bf002ca7a97da501d1ada12d4c149542149ae8",
+    "test/prototype/c14-calibration/momentum-thrust-7.json": "97e46c1f4e90decadf8d7336a493e8bf0c8ac632e6d89c39c0c1a7052bea5152",
+    "test/prototype/c14-calibration/momentum-thrust-console.txt": "374f50902a0b8c3d6ddd0436d92edc927d2c2bf4d09a4089f2a240f9e44f2090",
+    "test/prototype/c14-calibration/softer-1.json": "f02097269133d8f003163ee90cf9e1c0c3f27ed46b5a6cb9e1509590d7173a17",
+    "test/prototype/c14-calibration/softer-2.json": "f6c5394c4e8bda245a5aa9c8873de0c45d3ea43a5b8ee1cb98d6c123ebf57146",
+    "test/prototype/c14-calibration/softer-3.json": "2917261e9286efeafb1bc52b9af0a265cc79a388b9c69f682e9db8ce6124aadc",
+    "test/prototype/c14-calibration/softer-4.json": "26fea82679cc072483c0cd1fda682003dacc9638721069b1e2e28bd0dcc42bfe",
+    "test/prototype/c14-calibration/softer-5.json": "3318130f78617804f86ea4bea038a7b16d7931dab1329768705bd5e8de42bfa6",
+    "test/prototype/c14-calibration/softer-console.txt": "97f3c864dcac4c81f30be1c2a9508078eb1375f4211cce6dfb5ea0c0011214e8",
+    "test/prototype/c14-calibration/solid-momentum/data/catalog.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/solid-momentum/sim/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "test/prototype/c14-calibration/solid-momentum/sim/index.js": "e0020f91dcedb30d75381dffce939e936a6ab732c06dceed7368b74ab27dee98",
+    "test/prototype/c14-calibration/solid-momentum/test/prototype/batch/rounds.json": "6cb20f18a30467b625d6852ba85c9545421c247a11978bbcbad98b26b28546fb",
+    "test/prototype/c14-calibration/solid-momentum/test/prototype/batch/summary.json": "5032e385c4f64000319ad22331d29ba99e1c73a44754b9903908204452c02312",
+    "test/prototype/c14-calibration/solid-momentum/test/prototype/layouts/rounds.json": "94af8845d19736e58390d421c670e0d9b63bd184a9e218df33eb65a0466a5bf1",
+    "test/prototype/c14-calibration/solid-momentum/test/prototype/layouts/summary.json": "7fccc6207e1a48ecd84291a561eb97f67c09a59fd15eb708f7592b30e0a39d41",
+    "test/prototype/c14-calibration/solid-momentum/test/prototype/pot-diagnosis.json": "51ff94e906c052de3ca5d1d4b4fa3740205ad5f4039fb0772bc56cbf8a0e3d79",
+    "test/prototype/c14-calibration/sources/all-counter-off/batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
+    "test/prototype/c14-calibration/sources/all-counter-off/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/all-counter-off/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+    "test/prototype/c14-calibration/sources/all-counter-off/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/category-A-damage/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "test/prototype/c14-calibration/sources/category-A-damage/catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "test/prototype/c14-calibration/sources/category-A-damage/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
+    "test/prototype/c14-calibration/sources/category-A-damage/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "test/prototype/c14-calibration/sources/category-A-damage/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "test/prototype/c14-calibration/sources/category-A-damage/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/category-A-damage/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/cooldown/batch.js": "72e9b0aa2b461763162ab5414d7a1bb531d5b916c3b96b5ba5e6db01ece923d9",
+    "test/prototype/c14-calibration/sources/cooldown/catalog-base.json": "392003d5c4dafc307370d29e3044dae6fc751509eb4597a0939c292202167863",
+    "test/prototype/c14-calibration/sources/cooldown/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+    "test/prototype/c14-calibration/sources/cooldown/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/counter/batch.js": "28c8f85664893dc7df6e683994c713caf38d2434a68d973bbb0292229fd97d9a",
+    "test/prototype/c14-calibration/sources/counter/catalog-base.json": "392003d5c4dafc307370d29e3044dae6fc751509eb4597a0939c292202167863",
+    "test/prototype/c14-calibration/sources/counter/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+    "test/prototype/c14-calibration/sources/counter/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/final-counter-off/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "test/prototype/c14-calibration/sources/final-counter-off/catalog-base.json": "e0fe762deef39c478297278540ef0132ccb29dd9096c59971a520046e92caf1b",
+    "test/prototype/c14-calibration/sources/final-counter-off/index.js": "008c6ee72ae2de44618792460d48601bc2a6db9e7aaaff7f9c81e4f90800040a",
+    "test/prototype/c14-calibration/sources/final-counter-off/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "test/prototype/c14-calibration/sources/final-counter-off/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "test/prototype/c14-calibration/sources/final-counter-off/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/final-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/mass-options/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "test/prototype/c14-calibration/sources/mass-options/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/mass-options/index.js": "d74d8072ed6efa9cd5182da350d3040ab243a06f386e762aee9d2be7a1baf0b3",
+    "test/prototype/c14-calibration/sources/mass-options/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "test/prototype/c14-calibration/sources/mass-options/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "test/prototype/c14-calibration/sources/mass-options/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/mass-options/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/batch.js": "14142cf89f57b6941a96eb2e4e49bc0bef4e79337edda16ec9a21ffaae997023",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/index.js": "e0020f91dcedb30d75381dffce939e936a6ab732c06dceed7368b74ab27dee98",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/momentum-thrust/batch.js": "d9ac862787f1246fb51c4917b3966a45464359755225cc19bc3573b2bedf9489",
+    "test/prototype/c14-calibration/sources/momentum-thrust/catalog-base.json": "d9da3a4033d91575ad2905b9cc13859e493169753d2f8b1a6579d4504fd97a95",
+    "test/prototype/c14-calibration/sources/momentum-thrust/index.js": "165432598f695b8a5c78acd7a92a5f4ae8f5b11ee0722e4b219bbf1fdcd49b05",
+    "test/prototype/c14-calibration/sources/momentum-thrust/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/softer/batch.js": "3c64a58a722fdcbddd2fe6a087997f2b71cb9dfd395f36638b39e917fde6142c",
+    "test/prototype/c14-calibration/sources/softer/catalog-base.json": "50f66b2d621f1cb80362755ff3646970e13a500c7fb8cedd7de50bed87835049",
+    "test/prototype/c14-calibration/sources/softer/index.js": "d773b52366f996a7636f2d077270b77488e1cb3b0bdc2dc31dfc28efb61de8ec",
+    "test/prototype/c14-calibration/sources/softer/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "test/prototype/c14-calibration/sources/all-counter-off/catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
+    "test/prototype/c14-calibration/sources/all-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/category-A-damage/catalog-final-case.json": "b92e92053343dca56bc71a6fd6b23f164910f7808e20370aed804d44b067c779",
+    "test/prototype/c14-calibration/sources/cooldown/catalog-final-case.json": "35324f4c45d95fb8b1f76f40c3d23f3518643e454608fae893a8b08fcb731591",
+    "test/prototype/c14-calibration/sources/cooldown/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/counter/catalog-final-case.json": "7c25facf558121f7e92792911fdf3a1010bfad9a7808a67f6be66e1dc79b2654",
+    "test/prototype/c14-calibration/sources/counter/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/final-counter-off/catalog-final-case.json": "4a1631b230ac93e44b5787ce95b3753a96710180d96cbaa65cd994ea72c43cdd",
+    "test/prototype/c14-calibration/sources/mass-options/catalog-final-case.json": "084500ba718937aaf6de5655b29a975eb1de2404908f70f57287575cc8948f2d",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/catalog-final-case.json": "b2c90e7057039eace9e57bdd3c64862e57d389e520aa2e2a07fa5193541cba3d",
+    "test/prototype/c14-calibration/sources/momentum-counter-off/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/momentum-thrust/catalog-final-case.json": "7681858d02fdd87a30a6134f8f77df7fcce7ea8506b62146977259677fa37aa1",
+    "test/prototype/c14-calibration/sources/momentum-thrust/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-calibration/sources/softer/catalog-final-case.json": "a0403ea662f0f01d2b5f5c4fd6c97a7fb8174765fa3d2dd2e728020eb8ad13bc",
+    "test/prototype/c14-calibration/sources/softer/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "test/prototype/c14-cleanup.json": "1a91c5ab59d664c245c17a9fb29a3d8a1448a4f306aeea8ee2fd87a209b4f76a",
+    "test/prototype/node-tests.txt": "8a4c069deba2b9f1cbf6aa9bb4a406e221abe1b8831d9cbff021ffe331d6b6e9",
+    "test/prototype/penetration-check.txt": "e90ea37ea884f4951d27e9970aa9a4e7a556f01605c4a61efb09bbf1e99d7122"
   }
 }

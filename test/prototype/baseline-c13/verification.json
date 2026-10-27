@@ -1,0 +1,97 @@
+{
+  "scope": "Sol sim/data verification; full UI, phone and independent review pending",
+  "rules": {
+    "radius": 4.2,
+    "zoneStartRadius": 2.7,
+    "zoneEndRadius": 0.25,
+    "zoneShrinkStart": 16,
+    "zoneShrinkEnd": 44,
+    "zoneDamageStart": 20,
+    "zoneDamageMaxFraction": 0.014,
+    "attraction": 0.65,
+    "thrust": 0.75,
+    "recoilSpeed": 0.85,
+    "speedLimit": 2.4,
+    "linearDamping": 0.12,
+    "angularDamping": 0.25,
+    "spinTorque": 0.004,
+    "contactCooldown": 0.55,
+    "openingGrace": 3,
+    "maxHitFraction": 0.3,
+    "damageCooldown": 2.5,
+    "impulseToDamage": 100,
+    "statDamageScale": 4.5,
+    "maxDuration": 60,
+    "dt": 0.016666666666666666,
+    "base": {
+      "halfExtents": [
+        0.12,
+        0.06,
+        0.12
+      ],
+      "density": 300
+    },
+    "mounts": {
+      "core": [
+        0,
+        0,
+        0
+      ],
+      "front": [
+        0,
+        0,
+        0.23
+      ],
+      "top": [
+        0,
+        0.17,
+        0
+      ],
+      "side": [
+        0.23,
+        0,
+        0
+      ]
+    },
+    "fighterHp": 140,
+    "tipBonus": 0.3,
+    "recoilDamageFraction": 0.03
+  },
+  "rounds": 1222,
+  "singleGoals": {
+    "A": true,
+    "B": true
+  },
+  "assemblyGoals": {
+    "A": true,
+    "B": true
+  },
+  "maxResidualPenetrationMeters": 0.0033178089652210474,
+  "independentMaxFramePenetrationMeters": 0.002829747973009944,
+  "nodeChromeReplaySha256": "b49f4a675f5b57c8a8910589a95bbce3b0ea7f7c384b5610a8ab8fca01445c2c",
+  "sha256": {
+    "sim/index.js": "72e76f152fd4bc2b0adc96099d6a3c06cbb67fb564e5123e7fc7a43d7beb7d49",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/batch.js": "ded168e77939b185a5716f29306a4f9556b018259aefa3b9d7b5d6fda03364e9",
+    "sim/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+    "sim/prepare-assets.mjs": "695240ddce92138f21a24385a07769092d219e26f588e9fc1e2acee5ae6a32da",
+    "sim/prepare-mobile.py": "9e579116ed074e5999a1220f49b184c0bac045f8c808e7f08bf32444d05a3b7f",
+    "data/catalog.json": "d6a46ec61cf5be9afc64bd78f9851284b58457ed73840da302497ccf07f5b275",
+    "data/models/pan-lux3d-mobile.glb": "92764b4fd73974920f5b0f2489cba857d1b8465020e719b683dfa2a505dcc809",
+    "data/models/lamp-lux3d-mobile.glb": "eea981b69d12bf9b47ba5b79d82b4a083c5852dac66b8fb45105190b0d2f17ae",
+    "test/prototype/sim.test.mjs": "f37a5865fd94341c9ccdebcd7b52a366459a9893ed91646b1714e27893730bb3",
+    "test/prototype/penetration-check.mjs": "6205c5e2430e2765a4684b413af940d80156cdb8793cc6595c6068f809a4f841",
+    "test/prototype/browser-check.html": "259029038ad5d1a9224b26a8134c949e429d5309746d062c24a88b06fc30e953",
+    "test/prototype/batch/summary.json": "7879c62a052f5eb4a9b07f1664dd12b9c362b0970f772ded03a30433117beeb7",
+    "test/prototype/batch/rounds.json": "e61118693c2eb897baf6fb5eec8fd82efefaa60e018454b3df71366109207118",
+    "test/prototype/batch/lux3d-comparison.json": "dd22522ed39fd1783ff0db2499b8606812a81dcbeab10783465559c5eb464753",
+    "test/prototype/layouts/summary.json": "dcf6b230f3324fbc751df005eb766f191b21b228032a4a36260b1ac83adeaf2a",
+    "test/prototype/layouts/rounds.json": "f2492af8277682aa1b3aedb1ebb6f9f74e2400ee00d8e0e21a54c77594ceb60f",
+    "test/prototype/penetration-check.json": "9386c7caf9d118e61399fe32913d1cf20881190e1fd326ae84b766e448dc1ff8",
+    "test/prototype/browser.json": "c762d4d2d426fd2c65271205f006c0dc82de5295c3eb32e342365d05024d208f",
+    "test/prototype/node-tests.txt": "3c06f58a3f9ab96e2c437325dd147d6ee0789b82e3835d655476d9fa374ff5f4",
+    "data/CREDITS.md": "8d06bf84337c86b487585d7001559069990a39f7b711282cca4579b5dbca30bc",
+    "test/prototype/INTERFACE.md": "e8fb203f37b30e0014b5688c38afc12eba3ef619e2462a9c7ba41c9bd3bcd4d6"
+  }
+}

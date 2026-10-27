@@ -1,0 +1,195 @@
+{
+  "weakContacts": 280,
+  "weakTriggered": 171,
+  "criticalOverNormalCap": 68,
+  "critical": {
+    "left": "scissors",
+    "right": "lamp",
+    "mode": "A",
+    "seed": 1,
+    "event": {
+      "t": 49.31666666666666,
+      "type": "weak",
+      "attacker": 1,
+      "target": 0,
+      "point": [
+        -1.231347045526947,
+        0.14115119634973736,
+        0.027256601436106268
+      ],
+      "targetLocalPoint": [
+        0.05230575589374152,
+        0.003159651991296888,
+        -0.038962109347449946
+      ],
+      "weakDistance": 0.031321551080401945,
+      "weakContact": true,
+      "criticalRoll": 0.18967728852294385,
+      "criticalChance": 0.5,
+      "item": "lamp",
+      "targetItem": "scissors",
+      "mount": "core",
+      "targetMount": "core",
+      "mode": "A",
+      "impulse": 0.6729431305768685,
+      "hardness": 0.816496580927726,
+      "matchup": 1.5,
+      "weak": true,
+      "multiplier": 2,
+      "damageScale": 1,
+      "role": "attack",
+      "roleMultiplier": 1,
+      "tipMultiplier": 1,
+      "strikeAttacker": 1,
+      "normalSpeeds": [
+        1.3636502682568603,
+        1.0270082098959188
+      ],
+      "attackScores": [
+        1.3636502682568603,
+        4.108032839583675
+      ],
+      "tipRatios": [
+        0,
+        0
+      ],
+      "matchupMultipliers": [
+        1,
+        4
+      ],
+      "rawDamage": 109.89115305496269,
+      "damageCap": 56,
+      "damage": 56,
+      "caption": "台灯属性克制，迎击速度按 4 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。"
+    }
+  },
+  "missed": {
+    "left": "scissors",
+    "right": "lamp",
+    "mode": "A",
+    "seed": 2,
+    "event": {
+      "t": 12.383333333333333,
+      "type": "hit",
+      "attacker": 1,
+      "target": 0,
+      "point": [
+        -0.5560891262278428,
+        0.12444454418098612,
+        -0.1926546358454247
+      ],
+      "targetLocalPoint": [
+        0.05318378009663885,
+        -0.004079194004215796,
+        -0.09069471174973899
+      ],
+      "weakDistance": 0.024260305198870725,
+      "weakContact": true,
+      "criticalRoll": 0.5213967126328498,
+      "criticalChance": 0.5,
+      "item": "lamp",
+      "targetItem": "scissors",
+      "mount": "core",
+      "targetMount": "core",
+      "mode": "A",
+      "impulse": 0.20831450819969177,
+      "hardness": 0.816496580927726,
+      "matchup": 1.5,
+      "weak": false,
+      "multiplier": 1,
+      "damageScale": 1,
+      "role": "attack",
+      "roleMultiplier": 1,
+      "tipMultiplier": 1,
+      "strikeAttacker": 1,
+      "normalSpeeds": [
+        0.5502112667124359,
+        0.8022447630793643
+      ],
+      "attackScores": [
+        0.66678543554915,
+        3.2089790523174573
+      ],
+      "tipRatios": [
+        0.7062388327866356,
+        0
+      ],
+      "matchupMultipliers": [
+        1,
+        4
+      ],
+      "rawDamage": 17.00880837026891,
+      "damageCap": 42,
+      "damage": 17.00880837026891,
+      "caption": "台灯属性克制，迎击速度按 4 倍参与攻守判定：碰到弱点但未触发暴击；撞击冲量 0.2，硬度修正 0.82，扣掉 17.0 点血。"
+    }
+  },
+  "counterRoleChange": {
+    "left": "scissors",
+    "right": "lamp",
+    "mode": "A",
+    "seed": 1,
+    "event": {
+      "t": 23,
+      "type": "hit",
+      "attacker": 0,
+      "target": 1,
+      "point": [
+        0.7548971374004251,
+        0.45599452541219976,
+        -0.2868123903218663
+      ],
+      "targetLocalPoint": [
+        -0.013012171282068205,
+        0.18197016749673217,
+        0.005025114935483438
+      ],
+      "weakDistance": 0.14214399436886782,
+      "weakContact": false,
+      "criticalRoll": null,
+      "criticalChance": 0.5,
+      "item": "scissors",
+      "targetItem": "lamp",
+      "mount": "core",
+      "targetMount": "core",
+      "mode": "A",
+      "impulse": 0.11867538094520569,
+      "hardness": 1.224744871391589,
+      "matchup": 1,
+      "weak": false,
+      "multiplier": 1,
+      "damageScale": 1,
+      "role": "recoil",
+      "roleMultiplier": 0.03,
+      "tipMultiplier": 1,
+      "strikeAttacker": 1,
+      "normalSpeeds": [
+        1.7812807294061277,
+        0.5644422483687803
+      ],
+      "attackScores": [
+        1.7812807294061277,
+        2.2635382468839653
+      ],
+      "tipRatios": [
+        0,
+        0.008517631676103121
+      ],
+      "matchupMultipliers": [
+        1,
+        4
+      ],
+      "rawDamage": 14.534706417308376,
+      "damageCap": 42,
+      "damage": 0.4360411925192513,
+      "caption": "台灯承受反震，扣掉 0.4 点血。"
+    },
+    "withoutCounter": {
+      "rawScores": [
+        1.7812807294061277,
+        0.5658845617209913
+      ],
+      "attacker": 0
+    }
+  }
+}

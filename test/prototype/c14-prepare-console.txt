@@ -1,0 +1,6 @@
+scissors dimensions 0.122x0.009x0.200 hull 16 mass 0.150
+lamp dimensions 0.125x0.450x0.307 hull 26 mass 1.500
+broom dimensions 0.411x0.109x1.200 hull 23 mass 0.600
+pot dimensions 0.380x0.169x0.313 hull 25 mass 2.500
+slipper dimensions 0.280x0.041x0.161 hull 18 mass 0.250
+pillow dimensions 0.600x0.201x0.487 hull 8 mass 0.600

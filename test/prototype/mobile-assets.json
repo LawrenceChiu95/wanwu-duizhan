@@ -1,11 +1,14 @@
 [
   {
     "item": "pan",
+    "category": "pot",
+    "standardLongSide": 0.38,
+    "uniformScale": 1.0,
     "input": "data/lux3d/pan-lux3d-pbr.glb",
     "inputSha256": "8a73df24413a4f6d394c08b87658fabf03f2a058564155d6d6a0d19db611ff34",
     "output": "data/models/pan-lux3d-mobile.glb",
-    "sha256": "92764b4fd73974920f5b0f2489cba857d1b8465020e719b683dfa2a505dcc809",
-    "bytes": 1464560,
+    "sha256": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265",
+    "bytes": 1464628,
     "images": [
       {
         "sourceSize": [
@@ -36,11 +39,14 @@
   },
   {
     "item": "lamp",
+    "category": "lamp",
+    "standardLongSide": 0.45,
+    "uniformScale": 1.0000000000000002,
     "input": "data/lux3d/lamp-lux3d-pbr.glb",
     "inputSha256": "0ecd18e7d38661e95b21848b292acadf500ab4bb709d16742b239dede4517b4a",
     "output": "data/models/lamp-lux3d-mobile.glb",
-    "sha256": "eea981b69d12bf9b47ba5b79d82b4a083c5852dac66b8fb45105190b0d2f17ae",
-    "bytes": 1359552,
+    "sha256": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457",
+    "bytes": 1359620,
     "images": [
       {
         "sourceSize": [

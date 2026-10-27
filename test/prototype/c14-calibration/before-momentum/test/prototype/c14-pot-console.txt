@@ -1,0 +1,80 @@
+[
+  {
+    "left": "pot",
+    "right": "pillow",
+    "mode": "A",
+    "rounds": 5,
+    "potWins": 0,
+    "potAttacks": 2,
+    "opponentAttacks": 20,
+    "potDamage": 69.15936322809866,
+    "opponentDamage": 816.7131514117261,
+    "potCapped": 0,
+    "opponentCapped": 17
+  },
+  {
+    "left": "pot",
+    "right": "pillow",
+    "mode": "B",
+    "rounds": 5,
+    "potWins": 0,
+    "potAttacks": 2,
+    "opponentAttacks": 22,
+    "potDamage": 112.55999999999999,
+    "opponentDamage": 725.435655768678,
+    "potCapped": 2,
+    "opponentCapped": 0
+  },
+  {
+    "left": "scissors",
+    "right": "pot",
+    "mode": "A",
+    "rounds": 5,
+    "potWins": 1,
+    "potAttacks": 11,
+    "opponentAttacks": 22,
+    "potDamage": 290.34947578449567,
+    "opponentDamage": 634.2931287870181,
+    "potCapped": 3,
+    "opponentCapped": 6
+  },
+  {
+    "left": "scissors",
+    "right": "pot",
+    "mode": "B",
+    "rounds": 5,
+    "potWins": 2,
+    "potAttacks": 9,
+    "opponentAttacks": 16,
+    "potDamage": 399.41999999999996,
+    "opponentDamage": 633.8102889320246,
+    "potCapped": 9,
+    "opponentCapped": 4
+  },
+  {
+    "left": "lamp",
+    "right": "pot",
+    "mode": "A",
+    "rounds": 5,
+    "potWins": 1,
+    "potAttacks": 7,
+    "opponentAttacks": 16,
+    "potDamage": 289.14748797087145,
+    "opponentDamage": 693.6310652203485,
+    "potCapped": 6,
+    "opponentCapped": 16
+  },
+  {
+    "left": "lamp",
+    "right": "pot",
+    "mode": "B",
+    "rounds": 5,
+    "potWins": 1,
+    "potAttacks": 8,
+    "opponentAttacks": 21,
+    "potDamage": 362.88,
+    "opponentDamage": 501.52217859954425,
+    "potCapped": 8,
+    "opponentCapped": 0
+  }
+]

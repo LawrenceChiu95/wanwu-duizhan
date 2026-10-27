@@ -8,11 +8,21 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'data/models'
 REPORT = ROOT / 'test/prototype/mobile-assets.json'
 receipts = []
+standards = json.loads((ROOT / 'data/item-standards.json').read_text())
+entries = json.loads((ROOT / 'data/lux3d/catalog-entries.json').read_text())
 for name in ('pan', 'lamp'):
     source = ROOT / f'data/lux3d/{name}-lux3d-pbr.glb'
     data = source.read_bytes()
     size = struct.unpack_from('<I', data, 12)[0]
     doc = json.loads(data[20:20+size])
+    entry = next(i for i in entries if i['id'] == f'{name}-lux3d')
+    category = 'pot' if name == 'pan' else 'lamp'
+    long_side = standards[category]['longSideMeters']
+    uniform_scale = long_side / max(b-a for a,b in zip(entry['bounds']['min'],entry['bounds']['max']))
+    scene = doc['scenes'][doc.get('scene',0)]
+    wrapper = len(doc['nodes'])
+    doc['nodes'].append({'name':'category_standard_size','scale':[uniform_scale]*3,'children':scene['nodes']})
+    scene['nodes'] = [wrapper]
     if any(m.get('alphaMode','OPAQUE') != 'OPAQUE' for m in doc['materials']):
         raise RuntimeError('This JPEG recipe requires opaque source materials')
     binary = bytearray(data[28+size:])
@@ -41,6 +51,6 @@ for name in ('pan', 'lamp'):
     subprocess.run(['trash',str(temp)],check=True)
     result = output.read_bytes()
     if len(result)>3_000_000: raise RuntimeError(f'{name} exceeds 3 MB: {len(result)}')
-    receipts.append({'item':name,'input':str(source.relative_to(ROOT)),'inputSha256':hashlib.sha256(data).hexdigest(),'output':str(output.relative_to(ROOT)),'sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),'images':images,'triangleRatio':0.14,'gltfpack':'1.3.0','textureJpegQuality':92})
+    receipts.append({'item':name,'category':category,'standardLongSide':long_side,'uniformScale':uniform_scale,'input':str(source.relative_to(ROOT)),'inputSha256':hashlib.sha256(data).hexdigest(),'output':str(output.relative_to(ROOT)),'sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),'images':images,'triangleRatio':0.14,'gltfpack':'1.3.0','textureJpegQuality':92})
 REPORT.write_text(json.dumps(receipts,ensure_ascii=False,indent=2)+'\n')
 print(REPORT.read_text())

@@ -1,0 +1,4204 @@
+{
+  "massModel": "convex volume times material density, no fill factor",
+  "items": [
+    {
+      "id": "scissors",
+      "material": "metal",
+      "mass": 0.2580045759677887,
+      "volume": 0.00009555724682286382,
+      "hardness": 1.2,
+      "bounds": {
+        "min": [
+          -0.0611105275055374,
+          -0.004354271799762579,
+          -0.1
+        ],
+        "max": [
+          0.0611105275055374,
+          0.004354271799762578,
+          0.1
+        ]
+      }
+    },
+    {
+      "id": "pot",
+      "material": "metal",
+      "mass": 30.88670539855957,
+      "volume": 0.011439520865678787,
+      "hardness": 1.2,
+      "bounds": {
+        "min": [
+          -0.18999999999999997,
+          -0.0845413460469967,
+          -0.1565677446206484
+        ],
+        "max": [
+          0.18999999999999997,
+          0.0845413460469967,
+          0.15656774462064837
+        ]
+      }
+    },
+    {
+      "id": "pillow",
+      "material": "cloth",
+      "mass": 1.2324198484420776,
+      "volume": 0.020540330559015274,
+      "hardness": 0.5,
+      "bounds": {
+        "min": [
+          -0.3,
+          -0.10038298315349574,
+          -0.24370087529247686
+        ],
+        "max": [
+          0.3,
+          0.10038298315349574,
+          0.24370087529247686
+        ]
+      }
+    }
+  ],
+  "summary": [
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 20,
+      "opponentAttacks": 1,
+      "potDamage": 828.3793632280986,
+      "opponentDamage": 64.24461663535848,
+      "potCapped": 18,
+      "opponentCapped": 1
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 19,
+      "opponentAttacks": 1,
+      "potDamage": 827.26,
+      "opponentDamage": 50.06847930926105,
+      "potCapped": 19,
+      "opponentCapped": 0
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 25,
+      "opponentAttacks": 2,
+      "potDamage": 732.9572155370131,
+      "opponentDamage": 40.44856078559424,
+      "potCapped": 6,
+      "opponentCapped": 0
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 18,
+      "opponentAttacks": 2,
+      "potDamage": 786.52,
+      "opponentDamage": 94.31608889310559,
+      "potCapped": 18,
+      "opponentCapped": 0
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "rounds": 5,
+      "potWins": 4,
+      "potAttacks": 16,
+      "opponentAttacks": 8,
+      "potDamage": 657.0674879708714,
+      "opponentDamage": 354.9710652203486,
+      "potCapped": 15,
+      "opponentCapped": 8
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "rounds": 5,
+      "potWins": 5,
+      "potAttacks": 17,
+      "opponentAttacks": 8,
+      "potDamage": 724.0799999999999,
+      "opponentDamage": 191.42863223093306,
+      "potCapped": 17,
+      "opponentCapped": 0
+    }
+  ],
+  "rows": [
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 1,
+      "winner": 0,
+      "potWon": true,
+      "duration": 27.683333333333334,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 182,
+      "opponentContactDamage": 5.04,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 25.183333333333334,
+        "t1": 27.683333333333334,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。",
+        "eventIndex": 13,
+        "finishType": "contact",
+        "finishEventIndex": 13
+      },
+      "impacts": [
+        {
+          "t": 3.7333333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 103.02256999057393,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.3713953236929364,
+            1.5016626014164054
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            11.471177949306398,
+            4.141600943590803
+          ]
+        },
+        {
+          "t": 13.833333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 105.58710877181318,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.943608457531563,
+            0.7081333959909547
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            29.144956439366595,
+            2.2210255695797856
+          ]
+        },
+        {
+          "t": 22.883333333333333,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 234.27625570726104,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.0343377436944892,
+            1.307092474332731
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            31.947285172102504,
+            3.498095430037728
+          ]
+        },
+        {
+          "t": 27.683333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 541.6225611558176,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0.7610968091951168,
+            0.9555396589129388
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            23.507772925393276,
+            2.997004086965772
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 2,
+      "winner": 0,
+      "potWon": true,
+      "duration": 34.61666666666667,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 5,
+      "opponentAttacks": 0,
+      "potContactDamage": 176.28732324832063,
+      "opponentContactDamage": 5.143115079344658,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 32.11666666666667,
+        "t1": 34.61666666666667,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：撞击冲量 2.7，硬度修正 1.55（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 25,
+        "finishType": "contact",
+        "finishEventIndex": 25
+      },
+      "impacts": [
+        {
+          "t": 5.95,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 135.19231786952025,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.1591831219267702,
+            0.16544886965349298
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            4.973196403986405,
+            0.40780494172654175
+          ]
+        },
+        {
+          "t": 13.583333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 313.2475242324287,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.8164437816947221,
+            1.1062026536376708
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            25.217258559690766,
+            2.726612213484725
+          ]
+        },
+        {
+          "t": 18.716666666666665,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 8.28732324832064,
+          "damage": 8.28732324832064,
+          "weak": false,
+          "normalSpeeds": [
+            0.7784922299306412,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            24.156164566985733,
+            0
+          ]
+        },
+        {
+          "t": 29.683333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 191.97849410484588,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.6741610478124653,
+            0.8787655992894773
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            20.82261367496785,
+            2.567741711051109
+          ]
+        },
+        {
+          "t": 34.61666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 415.1744064653163,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.6328684275307461,
+            1.1288583228749103
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            19.547220677191802,
+            3.5006931860808437
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 3,
+      "winner": 0,
+      "potWon": true,
+      "duration": 42.2,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 162.092039979778,
+      "opponentContactDamage": 45.95414329044668,
+      "potCapped": 3,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 39.7,
+        "t1": 42.2,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：撞击冲量 1.3，硬度修正 1.55（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 47,
+        "finishType": "contact",
+        "finishEventIndex": 47
+      },
+      "impacts": [
+        {
+          "t": 9.45,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 163.15988503510036,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.7613626425406741,
+            1.2080103598146699
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            23.51598364162262,
+            2.9775518891185104
+          ]
+        },
+        {
+          "t": 18.016666666666666,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 81.03143649180957,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.20726769111932553,
+            1.490415266613362
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            6.492516901300524,
+            4.242022857269598
+          ]
+        },
+        {
+          "t": 32.85,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 76.63720248373527,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.17762767585846312,
+            2.8351113122985563
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            5.486333694871182,
+            7.488465369829218
+          ]
+        },
+        {
+          "t": 37.35,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 34.83203997977801,
+          "damage": 34.83203997977801,
+          "weak": false,
+          "normalSpeeds": [
+            0.4779325598938163,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            14.76176217781973,
+            0
+          ]
+        },
+        {
+          "t": 42.2,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 194.7909128104789,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.8378901872580485,
+            0.7581179324227406
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            25.879667370183256,
+            1.8686391747553104
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 4,
+      "winner": 0,
+      "potWon": true,
+      "duration": 23.5,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 0,
+      "potContactDamage": 140,
+      "opponentContactDamage": 3.319115278085687,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 21,
+        "t1": 23.5,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：撞击冲量 1.0，硬度修正 1.55（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 6,
+        "finishType": "contact",
+        "finishEventIndex": 6
+      },
+      "impacts": [
+        {
+          "t": 6.016666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 188.72493584343877,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5424862437253607,
+            1.241477612177785
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            17.997794696938108,
+            3.0600433012887565
+          ]
+        },
+        {
+          "t": 17.7,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 127.85844449370985,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0.42126634108703953,
+            0.9003144060319458
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            13.011529371484501,
+            2.509635514431044
+          ]
+        },
+        {
+          "t": 23.5,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 155.09785964491664,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.25257662832530625,
+            1.6112057943768041
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            7.986923514170955,
+            3.9713640018297163
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "A",
+      "seed": 5,
+      "winner": 0,
+      "potWon": true,
+      "duration": 18.6,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 4.78824298748146,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 16.1,
+        "t1": 18.6,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：撞击冲量 1.4，硬度修正 1.55（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 6,
+        "finishType": "contact",
+        "finishEventIndex": 6
+      },
+      "impacts": [
+        {
+          "t": 3.9833333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 212.66225891542462,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5328795949691529,
+            1.1526746250530922
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            17.719263319031587,
+            3.289780357692422
+          ]
+        },
+        {
+          "t": 8.883333333333333,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 233.85455495448397,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.3362642745461791,
+            1.566320679267235
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            10.386095583968187,
+            3.8607293883084357
+          ]
+        },
+        {
+          "t": 13.75,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 80.65943899851676,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.1166625327069413,
+            0.17369162767956337
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            3.603321278769116,
+            0.42812201892101054
+          ]
+        },
+        {
+          "t": 18.6,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 212.0275698336266,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.6674071070971466,
+            1.4733782719529835
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            20.614006697814464,
+            3.6316412532362925
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 1,
+      "winner": 0,
+      "potWon": true,
+      "duration": 27.683333333333334,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 182,
+      "opponentContactDamage": 3.6599692621660087,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 25.183333333333334,
+        "t1": 27.683333333333334,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。",
+        "eventIndex": 13,
+        "finishType": "contact",
+        "finishEventIndex": 13
+      },
+      "impacts": [
+        {
+          "t": 3.7333333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.3713953236929364,
+            1.5016626014164054
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            11.471177949306398,
+            4.141600943590803
+          ]
+        },
+        {
+          "t": 13.833333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.943608457531563,
+            0.7081333959909547
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            29.144956439366595,
+            2.2210255695797856
+          ]
+        },
+        {
+          "t": 22.883333333333333,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.0343377436944892,
+            1.307092474332731
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            31.947285172102504,
+            3.498095430037728
+          ]
+        },
+        {
+          "t": 27.683333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 139.42740046346702,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0.7610968091951168,
+            0.9555396589129388
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            23.507772925393276,
+            2.997004086965772
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 2,
+      "winner": 0,
+      "potWon": true,
+      "duration": 29.683333333333334,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 3.6599692621660087,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 27.183333333333334,
+        "t1": 29.683333333333334,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 15,
+        "finishType": "contact",
+        "finishEventIndex": 15
+      },
+      "impacts": [
+        {
+          "t": 5.95,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 70.51558966589646,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.1591831219267702,
+            0.16544886965349298
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            4.973196403986405,
+            0.40780494172654175
+          ]
+        },
+        {
+          "t": 13.583333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.8164437816947221,
+            1.1062026536376708
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            25.217258559690766,
+            2.726612213484725
+          ]
+        },
+        {
+          "t": 18.716666666666665,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 70.03582457685786,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.7784922299306412,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            24.156164566985733,
+            0
+          ]
+        },
+        {
+          "t": 29.683333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.6741610478124653,
+            0.8787655992894773
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            20.82261367496785,
+            2.567741711051109
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 3,
+      "winner": 0,
+      "potWon": true,
+      "duration": 42.2,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 169.26,
+      "opponentContactDamage": 36.34359457613852,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 39.7,
+        "t1": 42.2,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 47,
+        "finishType": "contact",
+        "finishEventIndex": 47
+      },
+      "impacts": [
+        {
+          "t": 9.45,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.7613626425406741,
+            1.2080103598146699
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            23.51598364162262,
+            2.9775518891185104
+          ]
+        },
+        {
+          "t": 18.016666666666666,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 70.70140237233323,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.20726769111932553,
+            1.490415266613362
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            6.492516901300524,
+            4.242022857269598
+          ]
+        },
+        {
+          "t": 32.85,
+          "item": "pillow",
+          "targetItem": "pot",
+          "rawDamage": 32.683625313972506,
+          "damage": 32.683625313972506,
+          "weak": false,
+          "normalSpeeds": [
+            0.17762767585846312,
+            2.8351113122985563
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            5.486333694871182,
+            7.488465369829218
+          ]
+        },
+        {
+          "t": 37.35,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.4779325598938163,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            14.76176217781973,
+            0
+          ]
+        },
+        {
+          "t": 42.2,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.8378901872580485,
+            0.7581179324227406
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            25.879667370183256,
+            1.8686391747553104
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 4,
+      "winner": 0,
+      "potWon": true,
+      "duration": 23.5,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 0,
+      "potContactDamage": 140,
+      "opponentContactDamage": 2.7449769466245066,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 21,
+        "t1": 23.5,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 6,
+        "finishType": "contact",
+        "finishEventIndex": 6
+      },
+      "impacts": [
+        {
+          "t": 6.016666666666667,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 74.88194432853189,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5424862437253607,
+            1.241477612177785
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            17.997794696938108,
+            3.0600433012887565
+          ]
+        },
+        {
+          "t": 17.7,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 139.42740046346702,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            0.42126634108703953,
+            0.9003144060319458
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            13.011529371484501,
+            2.509635514431044
+          ]
+        },
+        {
+          "t": 23.5,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 71.37282927239632,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.25257662832530625,
+            1.6112057943768041
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            7.986923514170955,
+            3.9713640018297163
+          ]
+        }
+      ]
+    },
+    {
+      "left": "pot",
+      "right": "pillow",
+      "mode": "B",
+      "seed": 5,
+      "winner": 0,
+      "potWon": true,
+      "duration": 18.6,
+      "initial": [
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        },
+        {
+          "mass": 1.2324198484420776,
+          "centerOfMass": [
+            0.008529181592166424,
+            0.0019327827030792832,
+            -0.0000638687051832676
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 3.6599692621660087,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 16.1,
+        "t1": 18.6,
+        "caption": "锅更重，撞疼了枕头",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 6,
+        "finishType": "contact",
+        "finishEventIndex": 6
+      },
+      "impacts": [
+        {
+          "t": 3.9833333333333334,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 75.05214697846671,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.5328795949691529,
+            1.1526746250530922
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            17.719263319031587,
+            3.289780357692422
+          ]
+        },
+        {
+          "t": 8.883333333333333,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.3362642745461791,
+            1.566320679267235
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            10.386095583968187,
+            3.8607293883084357
+          ]
+        },
+        {
+          "t": 13.75,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.1166625327069413,
+            0.17369162767956337
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            3.603321278769116,
+            0.42812201892101054
+          ]
+        },
+        {
+          "t": 18.6,
+          "item": "pot",
+          "targetItem": "pillow",
+          "rawDamage": 69.71370023173351,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.6674071070971466,
+            1.4733782719529835
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            20.614006697814464,
+            3.6316412532362925
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 1,
+      "winner": 1,
+      "potWon": true,
+      "duration": 22.45,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 144.81856948137283,
+      "opponentContactDamage": 3.438417161107063,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 19.95,
+        "t1": 22.45,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：撞中弱点且触发暴击，原始伤害翻倍（扣血受单击上限限制），扣掉 56.0 点血。",
+        "eventIndex": 7,
+        "finishType": "contact",
+        "finishEventIndex": 7
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 28.500305861234665,
+          "damage": 28.500305861234665,
+          "weak": false,
+          "normalSpeeds": [
+            2.5522214945391224,
+            0.34137983939419564
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6584848244744422,
+            21.088197056752204
+          ]
+        },
+        {
+          "t": 11.366666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 32.40932822227478,
+          "damage": 32.40932822227478,
+          "weak": true,
+          "normalSpeeds": [
+            1.646585226392707,
+            0.2774934103111871
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5148350918772792,
+            17.141714428646498
+          ]
+        },
+        {
+          "t": 19.416666666666668,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 27.908935397863388,
+          "damage": 27.908935397863388,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.6794025283114515
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            41.969011477984665
+          ]
+        },
+        {
+          "t": 22.45,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 163.37802410125732,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            2.191506578495051,
+            0.545035057397139
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6317758163575365,
+            33.668674499424874
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 2,
+      "winner": 1,
+      "potWon": true,
+      "duration": 31.883333333333333,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 6,
+      "opponentAttacks": 0,
+      "potContactDamage": 164.209782049232,
+      "opponentContactDamage": 4.8663987649977205,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 29.383333333333333,
+        "t1": 31.883333333333333,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.5，硬度修正 1.00（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 16,
+        "finishType": "contact",
+        "finishEventIndex": 16
+      },
+      "impacts": [
+        {
+          "t": 4.316666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 10.681218556027533,
+          "damage": 10.681218556027533,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.32434911457503796
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            20.705112837363686
+          ]
+        },
+        {
+          "t": 9.083333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 29.90487813949585,
+          "damage": 29.90487813949585,
+          "weak": false,
+          "normalSpeeds": [
+            1.9452421398412683,
+            0.6626410853926266
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5018813734444203,
+            40.933599979007624
+          ]
+        },
+        {
+          "t": 13.916666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 22.5500962955625,
+          "damage": 22.5500962955625,
+          "weak": false,
+          "normalSpeeds": [
+            1.3729000497643518,
+            0.33687088869364473
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.40361472207277554,
+            21.972410493370475
+          ]
+        },
+        {
+          "t": 18.3,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 29.10614423453808,
+          "damage": 29.10614423453808,
+          "weak": false,
+          "normalSpeeds": [
+            2.553337103539136,
+            0.8486566272353597
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7505744847801725,
+            52.42441445990748
+          ]
+        },
+        {
+          "t": 26.016666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 29.967444823608048,
+          "damage": 29.967444823608048,
+          "weak": false,
+          "normalSpeeds": [
+            0.6451912857206259,
+            0.22577599309001095
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.16646230409046248,
+            14.163451406865267
+          ]
+        },
+        {
+          "t": 31.883333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 49.04622137546539,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.1023140779758425,
+            0.25178264371021225
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6393282158964677,
+            15.553472681495627
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 35.21666666666667,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 6,
+      "opponentAttacks": 0,
+      "potContactDamage": 151.9480792674185,
+      "opponentContactDamage": 3.891812057473544,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 32.71666666666667,
+        "t1": 35.21666666666667,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.2，硬度修正 1.00，扣掉 18.0 点血。",
+        "eventIndex": 27,
+        "finishType": "contact",
+        "finishEventIndex": 27
+      },
+      "impacts": [
+        {
+          "t": 3.4166666666666665,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 35.82816123962402,
+          "damage": 35.82816123962402,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.31439206654314944
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            19.421070277925185
+          ]
+        },
+        {
+          "t": 14.883333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.72370591243218,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            1.3995188696056702,
+            0.6066474007090957
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.36749170766731915,
+            37.56660867482108
+          ]
+        },
+        {
+          "t": 20.85,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 8.399441093206406,
+          "damage": 8.399441093206406,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            1.0529498255219498
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            65.04430212072234
+          ]
+        },
+        {
+          "t": 26.15,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 24.740585684776306,
+          "damage": 24.740585684776306,
+          "weak": false,
+          "normalSpeeds": [
+            2.5326771862487645,
+            0.5059127962775997
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7445012605742097,
+            31.25195899197541
+          ]
+        },
+        {
+          "t": 32.18333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 9.01225283741951,
+          "damage": 9.01225283741951,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.6404260377607138
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            39.56130071576391
+          ]
+        },
+        {
+          "t": 35.21666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 17.96763841239226,
+          "damage": 17.96763841239226,
+          "weak": false,
+          "normalSpeeds": [
+            2.8609991260861394,
+            0.4202280970849192
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7381508663700684,
+            25.95892286971838
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 40.6,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 5,
+      "opponentAttacks": 2,
+      "potContactDamage": 147.74648424479568,
+      "opponentContactDamage": 24.52490378719009,
+      "potCapped": 1,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 38.1,
+        "t1": 40.6,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.2，硬度修正 1.00，扣掉 24.5 点血。",
+        "eventIndex": 48,
+        "finishType": "contact",
+        "finishEventIndex": 48
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 12.472609131030733,
+          "damage": 12.472609131030733,
+          "weak": false,
+          "normalSpeeds": [
+            1.3965114924091908,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.3890917195158637,
+            0
+          ]
+        },
+        {
+          "t": 8.7,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 41.70590043067932,
+          "damage": 41.70590043067932,
+          "weak": false,
+          "normalSpeeds": [
+            1.3709767037256027,
+            0.48314715251660245
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.4309943439631862,
+            29.845647527866458
+          ]
+        },
+        {
+          "t": 18.2,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 12.811806797981262,
+          "damage": 12.811806797981262,
+          "weak": false,
+          "normalSpeeds": [
+            1.0257728735880964,
+            0.6718876879103456
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.31023004980886787,
+            41.50479415481236
+          ]
+        },
+        {
+          "t": 26.133333333333333,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 7.63716846704483,
+          "damage": 7.63716846704483,
+          "weak": false,
+          "normalSpeeds": [
+            0.6686574055755634,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.17251667039324495,
+            0
+          ]
+        },
+        {
+          "t": 29.15,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 26.171603961847723,
+          "damage": 26.171603961847723,
+          "weak": false,
+          "normalSpeeds": [
+            1.3779324479225847,
+            0.2640152866917676
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.36831269735302485,
+            16.30912476152974
+          ]
+        },
+        {
+          "t": 35.016666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 63.64749819753261,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.7852356473410826,
+            0.7051168114223326
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7186035421626055,
+            43.69509845106991
+          ]
+        },
+        {
+          "t": 40.6,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 24.48156177997589,
+          "damage": 24.48156177997589,
+          "weak": false,
+          "normalSpeeds": [
+            1.4929095899399492,
+            0.04923244876562368
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.46932649106153623,
+            3.0412562821469926
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "A",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 48.63333333333333,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 124.23430049419403,
+      "opponentContactDamage": 3.7270290148258205,
+      "potCapped": 2,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 2.4499999999999997,
+        "t1": 4.949999999999999,
+        "caption": "剪刀在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：撞击冲量 0.5，硬度修正 1.00（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 63
+      },
+      "impacts": [
+        {
+          "t": 3.9499999999999997,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 49.77753162384033,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.4958374300315598,
+            0.7786731169816575
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.454894483841868,
+            48.10129433198114
+          ]
+        },
+        {
+          "t": 19.616666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 15.558496117591858,
+          "damage": 15.558496117591858,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.2653095985572423
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            16.389078820095296
+          ]
+        },
+        {
+          "t": 25.28333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 24.675804376602173,
+          "damage": 24.675804376602173,
+          "weak": false,
+          "normalSpeeds": [
+            0.13090633351911307,
+            1.1032107739828183
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.041160668118947454,
+            68.14909233704839
+          ]
+        },
+        {
+          "t": 42.916666666666664,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 94.50291395187378,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.7088387368986122
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            43.787386483349025
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 1,
+      "winner": 1,
+      "potWon": true,
+      "duration": 19.416666666666668,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 0,
+      "potContactDamage": 140,
+      "opponentContactDamage": 3.24,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 16.916666666666668,
+        "t1": 19.416666666666668,
+        "caption": "锅克剪刀，撞得更疼",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 5,
+        "finishType": "contact",
+        "finishEventIndex": 5
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.5522214945391224,
+            0.34137983939419564
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.6584848244744422,
+            21.088197056752204
+          ]
+        },
+        {
+          "t": 11.366666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 135,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            1.646585226392707,
+            0.2774934103111871
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5148350918772792,
+            17.141714428646498
+          ]
+        },
+        {
+          "t": 19.416666666666668,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.6794025283114515
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            41.969011477984665
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 2,
+      "winner": 1,
+      "potWon": true,
+      "duration": 18.3,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 4.32,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 15.8,
+        "t1": 18.3,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 7,
+        "finishType": "contact",
+        "finishEventIndex": 7
+      },
+      "impacts": [
+        {
+          "t": 4.316666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 69.75367223989173,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.32434911457503796
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            20.705112837363686
+          ]
+        },
+        {
+          "t": 9.083333333333334,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.9452421398412683,
+            0.6626410853926266
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.5018813734444203,
+            40.933599979007624
+          ]
+        },
+        {
+          "t": 13.916666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 71.27158434972719,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3729000497643518,
+            0.33687088869364473
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.40361472207277554,
+            21.972410493370475
+          ]
+        },
+        {
+          "t": 18.3,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.553337103539136,
+            0.8486566272353597
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7505744847801725,
+            52.42441445990748
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 20.85,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 0,
+      "potContactDamage": 140,
+      "opponentContactDamage": 3.24,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 18.35,
+        "t1": 20.85,
+        "caption": "锅克剪刀，撞得更疼",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 5,
+        "finishType": "contact",
+        "finishEventIndex": 5
+      },
+      "impacts": [
+        {
+          "t": 3.4166666666666665,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.31439206654314944
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            19.421070277925185
+          ]
+        },
+        {
+          "t": 14.883333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 135.331170108596,
+          "damage": 56,
+          "weak": true,
+          "normalSpeeds": [
+            1.3995188696056702,
+            0.6066474007090957
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.36749170766731915,
+            37.56660867482108
+          ]
+        },
+        {
+          "t": 20.85,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            1.0529498255219498
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            65.04430212072234
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 35.016666666666666,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 2,
+      "potContactDamage": 170.51999999999998,
+      "opponentContactDamage": 79.1960888931056,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 32.516666666666666,
+        "t1": 35.016666666666666,
+        "caption": "锅更重，撞疼了剪刀",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 28,
+        "finishType": "contact",
+        "finishEventIndex": 28
+      },
+      "impacts": [
+        {
+          "t": 3.966666666666667,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 38.8760888931056,
+          "damage": 38.8760888931056,
+          "weak": false,
+          "normalSpeeds": [
+            1.3965114924091908,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.3890917195158637,
+            0
+          ]
+        },
+        {
+          "t": 8.7,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3709767037256027,
+            0.48314715251660245
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.4309943439631862,
+            29.845647527866458
+          ]
+        },
+        {
+          "t": 18.2,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.0257728735880964,
+            0.6718876879103456
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.31023004980886787,
+            41.50479415481236
+          ]
+        },
+        {
+          "t": 26.133333333333333,
+          "item": "scissors",
+          "targetItem": "pot",
+          "rawDamage": 36,
+          "damage": 36,
+          "weak": false,
+          "normalSpeeds": [
+            0.6686574055755634,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.17251667039324495,
+            0
+          ]
+        },
+        {
+          "t": 29.15,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3779324479225847,
+            0.2640152866917676
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.36831269735302485,
+            16.30912476152974
+          ]
+        },
+        {
+          "t": 35.016666666666666,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.71327891276597,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.7852356473410826,
+            0.7051168114223326
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.7186035421626055,
+            43.69509845106991
+          ]
+        }
+      ]
+    },
+    {
+      "left": "scissors",
+      "right": "pot",
+      "mode": "B",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 42.916666666666664,
+      "initial": [
+        {
+          "mass": 0.2580045759677887,
+          "centerOfMass": [
+            0.0014220986049622297,
+            -0.000014161829312797636,
+            -0.027339376509189606
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 4.32,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 40.416666666666664,
+        "t1": 42.916666666666664,
+        "caption": "锅克剪刀，撞得更疼",
+        "detail": "锅属性克制，质量乘迎击速度按 2 倍参与攻守判定：属性克制，攻击放大了 1.5 倍（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 38,
+        "finishType": "contact",
+        "finishEventIndex": 38
+      },
+      "impacts": [
+        {
+          "t": 3.9499999999999997,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.4958374300315598,
+            0.7786731169816575
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.454894483841868,
+            48.10129433198114
+          ]
+        },
+        {
+          "t": 19.616666666666667,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.2653095985572423
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            16.389078820095296
+          ]
+        },
+        {
+          "t": 25.28333333333333,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.13090633351911307,
+            1.1032107739828183
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0.041160668118947454,
+            68.14909233704839
+          ]
+        },
+        {
+          "t": 42.916666666666664,
+          "item": "pot",
+          "targetItem": "scissors",
+          "rawDamage": 67.5,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.7088387368986122
+          ],
+          "matchupMultipliers": [
+            1,
+            2
+          ],
+          "attackScores": [
+            0,
+            43.787386483349025
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 1,
+      "winner": 1,
+      "potWon": true,
+      "duration": 46.233333333333334,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 1,
+      "potContactDamage": 127.26,
+      "opponentContactDamage": 45.78,
+      "potCapped": 3,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 2.25,
+        "t1": 4.75,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量乘迎击速度占优：撞击冲量 10.4，硬度修正 1.22（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 60
+      },
+      "impacts": [
+        {
+          "t": 3.75,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1286.9799042007987,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7128507908532904,
+            0.3805690839462079
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            8.960979271146638,
+            11.915364964553271
+          ]
+        },
+        {
+          "t": 25.516666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 454.7751026574906,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.04134453050436154,
+            0.43542144925295034
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0.21698663790582104,
+            13.448734027289733
+          ]
+        },
+        {
+          "t": 33.93333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 236.256271430659,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.841438547522161,
+            0.09523494004569742
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            9.63370116156826,
+            2.9414935368409396
+          ]
+        },
+        {
+          "t": 37.05,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1414.072940423453,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3368806906331212,
+            1.2134308356072363
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            6.994047713164581,
+            37.47888074092867
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 2,
+      "winner": 0,
+      "potWon": false,
+      "duration": 50.56666666666666,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 2,
+      "opponentAttacks": 3,
+      "potContactDamage": 62.767487970871464,
+      "opponentContactDamage": 127.59974975941743,
+      "potCapped": 1,
+      "opponentCapped": 3,
+      "finish": {
+        "t0": 16.816666666666666,
+        "t1": 19.316666666666666,
+        "caption": "锅在圈外撑不住，倒下了",
+        "detail": "最大撞击：台灯沿撞击方向冲得更快：撞击冲量 5.9，硬度修正 0.82（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 2,
+        "finishType": "zone",
+        "finishEventIndex": 69
+      },
+      "impacts": [
+        {
+          "t": 12.683333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 16.987487970871463,
+          "damage": 16.987487970871463,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.16316228397018848
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            5.03954539714333
+          ]
+        },
+        {
+          "t": 18.316666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 482.8265078474135,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.7364883708010384,
+            0.10885826260739304
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            14.316259009499602,
+            3.3622730873535818
+          ]
+        },
+        {
+          "t": 28.116666666666667,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 453.66530266563973,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.2319173137456296,
+            0.10942101469870183
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            11.67653650288149,
+            3.37965464541026
+          ]
+        },
+        {
+          "t": 42.11666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1623.7790603580156,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.2304119902924107,
+            0.5556427589694605
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            6.4370442532755,
+            17.16197420313257
+          ]
+        },
+        {
+          "t": 47.733333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 651.4142620118033,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.6047631609681345,
+            0.2887194591682645
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            13.627123165850278,
+            8.917592878161635
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 44.31666666666666,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 3,
+      "potContactDamage": 129.77999999999997,
+      "opponentContactDamage": 129.78,
+      "potCapped": 3,
+      "opponentCapped": 3,
+      "finish": {
+        "t0": 2.6166666666666663,
+        "t1": 5.116666666666666,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量乘迎击速度占优：撞击冲量 1.5，硬度修正 1.22（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 47
+      },
+      "impacts": [
+        {
+          "t": 4.116666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 182.57642996367557,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.6461871165106183,
+            0.5583551240208671
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            8.612220460914509,
+            17.283846355704654
+          ]
+        },
+        {
+          "t": 9.25,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 421.5803574237327,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.8177728830529392,
+            0.18651398570937486
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            9.509891469633002,
+            5.760802529316611
+          ]
+        },
+        {
+          "t": 25.35,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 337.90837333409803,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.145180449576293,
+            0.3085699336941563
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            11.222762452032327,
+            9.530708636864466
+          ]
+        },
+        {
+          "t": 30.03333333333333,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1189.343076228723,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.9438040681421848,
+            0.6529572835291381
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            4.937621382906774,
+            21.485348484068773
+          ]
+        },
+        {
+          "t": 37.733333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 314.8551664068556,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.5836082913788363
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            18.02573736397483
+          ]
+        },
+        {
+          "t": 42.35,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 237.3554144280333,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.4547518863752336,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            15.068911737000377,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 39,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 169.26,
+      "opponentContactDamage": 47.03999999999999,
+      "potCapped": 4,
+      "opponentCapped": 1,
+      "finish": {
+        "t0": 36.5,
+        "t1": 39,
+        "caption": "锅更重，撞疼了台灯",
+        "detail": "锅质量乘迎击速度占优：撞击冲量 13.0，硬度修正 1.22（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 28,
+        "finishType": "contact",
+        "finishEventIndex": 28
+      },
+      "impacts": [
+        {
+          "t": 9.75,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 106.4289225754215,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 18.666666666666668,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 300.298115689908,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.09238481589794433
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            2.853462591939969
+          ]
+        },
+        {
+          "t": 24.6,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 584.9963201646957,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.2093222443297809,
+            1.0286442428929587
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            7.3821398071343864,
+            31.771431690159172
+          ]
+        },
+        {
+          "t": 33.166666666666664,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1655.5018874486598,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.6558776633815202,
+            0.6240146751871306
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            8.662917690410469,
+            19.273757436882743
+          ]
+        },
+        {
+          "t": 39,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1587.7382866356456,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.004317818600711,
+            1.0016658969853407
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            10.485823120835509,
+            30.938159467970138
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "A",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 41.583333333333336,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 4.771315460931215,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 39.083333333333336,
+        "t1": 41.583333333333336,
+        "caption": "锅撞中台灯，台灯掉血了",
+        "detail": "锅质量乘迎击速度占优：撞击冲量 0.8，硬度修正 1.22（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 27,
+        "finishType": "contact",
+        "finishEventIndex": 27
+      },
+      "impacts": [
+        {
+          "t": 8.7,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 1318.1169275776704,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.895515733895057,
+            1.137502652963832
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            4.684995313819257,
+            35.13370933217382
+          ]
+        },
+        {
+          "t": 16.55,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 52.9357538684348,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 27.316666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 79.87346387410955,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.5707997974990573
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            17.630125186910842
+          ]
+        },
+        {
+          "t": 41.583333333333336,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 102.89015510832512,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.3044249772492238
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            9.493365633174639
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 1,
+      "winner": 1,
+      "potWon": true,
+      "duration": 46.233333333333334,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 1,
+      "potContactDamage": 127.26,
+      "opponentContactDamage": 24.029494376702974,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 2.25,
+        "t1": 4.75,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 60
+      },
+      "impacts": [
+        {
+          "t": 3.75,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.694119812609514,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.7128507908532904,
+            0.3805690839462079
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            8.960979271146638,
+            11.915364964553271
+          ]
+        },
+        {
+          "t": 25.516666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.04134453050436154,
+            0.43542144925295034
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0.21698663790582104,
+            13.448734027289733
+          ]
+        },
+        {
+          "t": 33.93333333333333,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.841438547522161,
+            0.09523494004569742
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            9.63370116156826,
+            2.9414935368409396
+          ]
+        },
+        {
+          "t": 37.05,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.3368806906331212,
+            1.2134308356072363
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            6.994047713164581,
+            37.47888074092867
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 2,
+      "winner": 1,
+      "potWon": true,
+      "duration": 59.1,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 3,
+      "potContactDamage": 129.78,
+      "opponentContactDamage": 68.12030974680019,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 56.6,
+        "t1": 59.1,
+        "caption": "锅更重，撞疼了台灯",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 102,
+        "finishType": "contact",
+        "finishEventIndex": 102
+      },
+      "impacts": [
+        {
+          "t": 12.683333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.16316228397018848
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            5.03954539714333
+          ]
+        },
+        {
+          "t": 18.316666666666666,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            2.7364883708010384,
+            0.10885826260739304
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            14.316259009499602,
+            3.3622730873535818
+          ]
+        },
+        {
+          "t": 28.116666666666667,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            2.2319173137456296,
+            0.10942101469870183
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            11.67653650288149,
+            3.37965464541026
+          ]
+        },
+        {
+          "t": 42.11666666666667,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.2304119902924107,
+            0.5556427589694605
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            6.4370442532755,
+            17.16197420313257
+          ]
+        },
+        {
+          "t": 47.733333333333334,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            2.6047631609681345,
+            0.2887194591682645
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            13.627123165850278,
+            8.917592878161635
+          ]
+        },
+        {
+          "t": 59.1,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.5858405083557954,
+            0.5408637400021332
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            13.528127095252788,
+            16.70549899820901
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 3,
+      "winner": 1,
+      "potWon": true,
+      "duration": 44.31666666666666,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 3,
+      "opponentAttacks": 3,
+      "potContactDamage": 129.77999999999997,
+      "opponentContactDamage": 71.94252257796963,
+      "potCapped": 3,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 2.6166666666666663,
+        "t1": 5.116666666666666,
+        "caption": "台灯在圈外撑不住，倒下了",
+        "detail": "最大撞击：锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。最后是在圈外掉血输的。",
+        "eventIndex": 1,
+        "finishType": "zone",
+        "finishEventIndex": 47
+      },
+      "impacts": [
+        {
+          "t": 4.116666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.18821267167097,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.6461871165106183,
+            0.5583551240208671
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            8.612220460914509,
+            17.283846355704654
+          ]
+        },
+        {
+          "t": 9.25,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            1.8177728830529392,
+            0.18651398570937486
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            9.509891469633002,
+            5.760802529316611
+          ]
+        },
+        {
+          "t": 25.35,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            2.145180449576293,
+            0.3085699336941563
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            11.222762452032327,
+            9.530708636864466
+          ]
+        },
+        {
+          "t": 30.03333333333333,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 46.97147261235601,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.9438040681421848,
+            0.6529572835291381
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            4.937621382906774,
+            21.485348484068773
+          ]
+        },
+        {
+          "t": 37.733333333333334,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.5836082913788363
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            18.02573736397483
+          ]
+        },
+        {
+          "t": 42.35,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 25.867620516218036,
+          "damage": 25.867620516218036,
+          "weak": false,
+          "normalSpeeds": [
+            2.4547518863752336,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            15.068911737000377,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 4,
+      "winner": 1,
+      "potWon": true,
+      "duration": 39,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 1,
+      "potContactDamage": 169.26,
+      "opponentContactDamage": 24.69085660725443,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 36.5,
+        "t1": 39,
+        "caption": "锅更重，撞疼了台灯",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 28,
+        "finishType": "contact",
+        "finishEventIndex": 28
+      },
+      "impacts": [
+        {
+          "t": 9.75,
+          "item": "lamp",
+          "targetItem": "pot",
+          "rawDamage": 22.045407685048602,
+          "damage": 22.045407685048602,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 18.666666666666668,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.09238481589794433
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            2.853462591939969
+          ]
+        },
+        {
+          "t": 24.6,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.2093222443297809,
+            1.0286442428929587
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            7.3821398071343864,
+            31.771431690159172
+          ]
+        },
+        {
+          "t": 33.166666666666664,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            1.6558776633815202,
+            0.6240146751871306
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            8.662917690410469,
+            19.273757436882743
+          ]
+        },
+        {
+          "t": 39,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            2.004317818600711,
+            1.0016658969853407
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            10.485823120835509,
+            30.938159467970138
+          ]
+        }
+      ]
+    },
+    {
+      "left": "lamp",
+      "right": "pot",
+      "mode": "B",
+      "seed": 5,
+      "winner": 1,
+      "potWon": true,
+      "duration": 41.583333333333336,
+      "initial": [
+        {
+          "mass": 5.231616973876953,
+          "centerOfMass": [
+            -0.004584586713463068,
+            0.0031181348022073507,
+            0.003199666040018201
+          ]
+        },
+        {
+          "mass": 30.88670539855957,
+          "centerOfMass": [
+            0.0011585602769628167,
+            0.004665810149163008,
+            0.00014302856288850307
+          ]
+        }
+      ],
+      "potAttacks": 4,
+      "opponentAttacks": 0,
+      "potContactDamage": 168,
+      "opponentContactDamage": 2.645448922205832,
+      "potCapped": 4,
+      "opponentCapped": 0,
+      "finish": {
+        "t0": 39.083333333333336,
+        "t1": 41.583333333333336,
+        "caption": "锅更硬，撞疼了台灯",
+        "detail": "锅质量乘迎击速度占优：接触后按攻击和防御扣血（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 27,
+        "finishType": "contact",
+        "finishEventIndex": 27
+      },
+      "impacts": [
+        {
+          "t": 8.7,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0.895515733895057,
+            1.137502652963832
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            4.684995313819257,
+            35.13370933217382
+          ]
+        },
+        {
+          "t": 16.55,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 47.08855338738665,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            0
+          ]
+        },
+        {
+          "t": 27.316666666666666,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.090815370097204,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.5707997974990573
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            17.630125186910842
+          ]
+        },
+        {
+          "t": 41.583333333333336,
+          "item": "pot",
+          "targetItem": "lamp",
+          "rawDamage": 44.51603448399708,
+          "damage": 42,
+          "weak": false,
+          "normalSpeeds": [
+            0,
+            0.3044249772492238
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "attackScores": [
+            0,
+            9.493365633174639
+          ]
+        }
+      ]
+    }
+  ]
+}

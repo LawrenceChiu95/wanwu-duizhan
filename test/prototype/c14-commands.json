@@ -1,0 +1,60 @@
+[
+  {
+    "command": [
+      "node",
+      "sim/batch.js"
+    ],
+    "output": "c14-batch-console.txt",
+    "exit": 0,
+    "wallSeconds": 10.229589917
+  },
+  {
+    "command": [
+      "node",
+      "sim/layouts.js",
+      "broom,pot,pillow"
+    ],
+    "output": "c14-layouts-console.txt",
+    "exit": 0,
+    "wallSeconds": 49.396139167
+  },
+  {
+    "command": [
+      "node",
+      "--test",
+      "test/prototype/sim.test.mjs"
+    ],
+    "output": "c14-node-tests.txt",
+    "exit": 0,
+    "wallSeconds": 1.6266102080000024
+  },
+  {
+    "command": [
+      "node",
+      "test/prototype/penetration-check.mjs"
+    ],
+    "output": "c14-penetration-console.txt",
+    "exit": 0,
+    "wallSeconds": 1.4287111249999995
+  },
+  {
+    "command": [
+      "node",
+      "test/prototype/pot-diagnosis.mjs"
+    ],
+    "output": "c14-pot-console.txt",
+    "exit": 0,
+    "wallSeconds": 1.7922963339999924
+  },
+  {
+    "command": [
+      "node",
+      "test/prototype/tune-c14.mjs",
+      "[{\"counterSpeedMultiplier\":1,\"disableMatchups\":true}]",
+      "final-counter-off"
+    ],
+    "output": "c14-counter-off-console.txt",
+    "exit": 0,
+    "wallSeconds": 11.866250791999988
+  }
+]

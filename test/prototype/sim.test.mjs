@@ -2,14 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import crypto from 'node:crypto';
-import {simulate,loadCatalog,loadRules,contactDamage,zoneRadius,zoneDamageRate,strikeRoles,simultaneousWinner} from '../../sim/index.js';
+import {simulate,loadCatalog,loadRules,contactDamage,zoneRadius,zoneDamageRate,strikeRoles,simultaneousWinner,weakCritical} from '../../sim/index.js';
 import {enumerateLayouts,findReversal} from '../../sim/layouts.js';
 const f=item=>({parts:[{item,mount:'core',rot:[0,0,0]}]});
 const digest=r=>crypto.createHash('sha256').update(JSON.stringify(r)).digest('hex');
 const c=await loadRules();
-test('six licensed GLBs plus two Lux3D variants: measured geometry, hashes and material mass',async()=>{
+test('six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass',async()=>{
  const items=await loadCatalog();assert.equal(items.length,8);assert.equal(items.filter(i=>!i.comparisonBase).length,6);
- for(const i of items){assert.ok(i.hull.length>=4&&i.hull.length<=64);assert.ok(i.hull.flat().every(Number.isFinite));assert.ok(Math.abs(i.mass-i.volume*c.materials[i.material].density)<i.mass*1e-5);assert.ok(i.mass>0);const glb=await readFile(new URL('../../'+i.glb,import.meta.url));assert.equal(glb.readUInt32LE(0),0x46546c67);assert.equal(crypto.createHash('sha256').update(glb).digest('hex'),i.source.normalizedSha256);if(!i.comparisonBase)assert.ok(['CC0-1.0','CC-BY-3.0'].includes(i.source.license));else{const base=items.find(b=>b.id===i.comparisonBase);assert.deepEqual(i.stats,base.stats);assert.equal(i.material,base.material);assert.notDeepEqual(i.hull,base.hull);}}
+ for(const i of items){assert.ok(i.hull.length>=4&&i.hull.length<=64);assert.ok(i.hull.flat().every(Number.isFinite));assert.equal(i.massBasis,'category');assert.equal(i.mass,c.itemStandards[i.category].massKg);assert.ok(i.mass>0);assert.equal(i.standardLongSide,c.itemStandards[i.category].longSideMeters);assert.ok(Math.abs(Math.max(...i.bounds.max.map((v,k)=>v-i.bounds.min[k]))-i.standardLongSide)<1e-6);const glb=await readFile(new URL('../../'+i.glb,import.meta.url));assert.equal(glb.readUInt32LE(0),0x46546c67);assert.equal(crypto.createHash('sha256').update(glb).digest('hex'),i.source.normalizedSha256);if(!i.comparisonBase)assert.ok(['CC0-1.0','CC-BY-3.0'].includes(i.source.license));else{const base=items.find(b=>b.id===i.comparisonBase);assert.deepEqual(i.stats,base.stats);assert.equal(i.tag,base.tag);assert.equal(i.material,base.material);assert.notDeepEqual(i.hull,base.hull);}}
+ const classes={scissors:'sharp',lamp:'blunt',broom:'rod',pot:'blunt',slipper:'soft',pillow:'soft'};for(const [id,tag] of Object.entries(classes))assert.equal(items.find(i=>i.id===id).tag,tag);
+ for(const tag of Object.values(classes))assert.ok(Object.values(c.matchups).some(targets=>targets[tag]>1),'every class has a counter');
  items[0].name='mutated';assert.notEqual((await loadCatalog())[0].name,'mutated');
 });
 test('A impulse/hardness; B material and defense; weak point exactly doubles',()=>{
@@ -26,11 +28,11 @@ test('real simulations: deterministic replay, A/B initial state, physical separa
  const a=await simulate(args),again=await simulate(args),b=await simulate({...args,mode:'B'});
  assert.equal(digest(a),digest(again));assert.deepEqual(a.meta.initial,b.meta.initial);assert.notEqual(digest(a),digest(b));
  for(const r of [a,b]){
-  assert.ok(r.events.some(e=>['hit','crit','weak'].includes(e.type)));assert.ok(r.meta.initial.every(f=>f.maxHp===c.arena.fighterHp));assert.ok(r.meta.duration>0&&r.meta.duration<=60);assert.ok(r.meta.diagnostics.longestContact<1);assert.ok(r.meta.diagnostics.maxResidualPenetration<=.00051);
+  assert.ok(r.events.some(e=>['hit','crit','weak'].includes(e.type)));assert.ok([...r.events,r.decisive].every(e=>[...e.caption].length<=20&&!/冲量|硬度修正|攻守判定|百分比|扣掉|[0-9]/.test(e.caption)&&typeof e.detail==='string'));assert.ok(r.meta.initial.every(f=>f.maxHp===c.arena.fighterHp));assert.ok(r.meta.duration>0&&r.meta.duration<=60);assert.ok(r.meta.diagnostics.longestContact<1);assert.ok(r.meta.diagnostics.maxResidualPenetration<=.00051);
   assert.equal(r.frames[0].t,0);assert.equal(r.frames.at(-1).t,r.meta.duration);assert.ok(r.decisive.t1-r.decisive.t0<=2.500001);
   assert.ok(r.frames.every(fr=>fr.fighters.every(v=>[...v.pos,...v.quat,v.hp,...v.parts.flatMap(p=>[...p.pos,...p.quat])].every(Number.isFinite))));
   for(let i=0;i<2;i++){const total=r.events.filter(e=>e.target===i).reduce((s,e)=>s+e.damage,0);assert.ok(Math.abs(Math.max(0,r.meta.initial[i].maxHp-total)-r.frames.at(-1).fighters[i].hp)<.13);}
-  for(const e of r.events.filter(e=>e.item)){assert.ok(e.impulse>0);assert.equal(e.multiplier,e.weak?2:1);const target=c.items.find(x=>x.id===e.targetItem);const distance=Math.hypot(...e.targetLocalPoint.map((v,k)=>v-target.weakPoint.pos[k]));assert.ok(Math.abs(distance-e.weakDistance)<1e-9);assert.equal(e.weak,distance<=target.weakPoint.radius);const raw=r.meta.mode==='A'?e.impulse*c.arena.impulseToDamage*e.hardness*e.multiplier:Math.max(0,c.items.find(x=>x.id===e.item).stats.attack*e.matchup-target.stats.defense)*e.multiplier*c.arena.statDamageScale*e.hardness;assert.ok(Math.abs(e.rawDamage-raw*e.tipMultiplier)<1e-8);assert.equal(e.damageCap,r.meta.initial[e.target].maxHp*c.arena.maxHitFraction);assert.ok(Math.abs(e.damage-Math.min(raw*e.tipMultiplier,e.damageCap)*e.roleMultiplier)<1e-8);assert.equal(e.role,e.attacker===e.strikeAttacker?'attack':'recoil');assert.equal(e.roleMultiplier,e.role==='attack'?1:c.arena.recoilDamageFraction);assert.ok(e.damage<=r.meta.initial[e.target].maxHp*.35);assert.ok(e.t>=3);}
+  for(const e of r.events.filter(e=>e.item)){assert.ok(e.impulse>0);assert.equal(e.multiplier,e.weak?2:1);const target=c.items.find(x=>x.id===e.targetItem);const distance=Math.hypot(...e.targetLocalPoint.map((v,k)=>v-target.weakPoint.pos[k]));assert.ok(Math.abs(distance-e.weakDistance)<1e-9);assert.equal(e.weakContact,distance<=target.weakPoint.radius);assert.equal(e.weak,e.weakContact&&e.criticalRoll<e.criticalChance);assert.equal(e.criticalRoll===null,!e.weakContact);const raw=r.meta.mode==='A'?e.impulse*c.arena.impulseToDamage*e.hardness*e.multiplier:Math.max(0,c.items.find(x=>x.id===e.item).stats.attack*e.matchup-target.stats.defense)*e.multiplier*c.arena.statDamageScale*e.hardness;assert.ok(Math.abs(e.rawDamage-raw*e.tipMultiplier)<1e-8);assert.equal(e.damageCap,r.meta.initial[e.target].maxHp*(e.weak?c.arena.weakCritMaxFraction:c.arena.maxHitFraction));assert.ok(Math.abs(e.damage-Math.min(raw*e.tipMultiplier,e.damageCap)*e.roleMultiplier)<1e-8);assert.equal(e.role,e.attacker===e.strikeAttacker?'attack':'recoil');assert.equal(e.roleMultiplier,e.role==='attack'?1:c.arena.recoilDamageFraction);assert.ok(e.damage<=r.meta.initial[e.target].maxHp*.4);assert.ok(e.t>=3);for(let k=0;k<2;k++)assert.ok(Math.abs(e.attackScores[k]-e.normalSpeeds[k]*e.masses[k]**e.massPower*e.matchupMultipliers[k]*(1+c.arena.tipBonus*e.tipRatios[k]))<1e-8);}
   const end=r.events[r.decisive.finishEventIndex];if(r.meta.reason==='ko'){assert.ok(end.damage>0);assert.equal(r.decisive.finishType,end.type==='zone'?'zone':'contact');}assert.ok(r.events.filter(e=>e.t<=20&&e.type==='zone').every(e=>e.damage===0));
  }
 });
@@ -46,7 +48,7 @@ test('compound COM follows layout; world part transforms and per-part hit identi
  const b={parts:[{...a.parts[1],mount:'front'},{...a.parts[2],mount:'top'},{...a.parts[0],mount:'side'}]};
  const ra=await simulate({fighters:[a,b],mode:'B',seed:7}),rb=await simulate({fighters:[b,b],mode:'B',seed:7});
  assert.notDeepEqual(ra.meta.initial[0].centerOfMass,rb.meta.initial[0].centerOfMass);assert.ok(Math.abs(ra.meta.initial[0].mass-rb.meta.initial[0].mass)<.0001);
- assert.ok(ra.frames.every(fr=>fr.fighters.every(v=>v.parts.length===3)));assert.ok(ra.events.some(e=>e.item&&e.mount!=='core'));for(const r of [ra,rb]){const hits=r.events.filter(e=>e.item);const times=[...new Set(hits.map(e=>e.t))];assert.ok(hits.every(e=>e.t>=3&&e.damage<=r.meta.initial[e.target].maxHp*.35));for(let k=1;k<times.length;k++)assert.ok(times[k]-times[k-1]>=c.arena.damageCooldown-1e-8);for(const t of times)assert.equal(hits.filter(e=>e.t===t).length,2);assert.ok(r.frames.filter(fr=>fr.t<3).every(fr=>fr.fighters.every(f=>f.hp===f.maxHp)));}
+ assert.ok(ra.frames.every(fr=>fr.fighters.every(v=>v.parts.length===3)));assert.ok(ra.events.some(e=>e.item&&e.mount!=='core'));for(const r of [ra,rb]){const hits=r.events.filter(e=>e.item);const times=[...new Set(hits.map(e=>e.t))];assert.ok(hits.every(e=>e.t>=3&&e.damage<=r.meta.initial[e.target].maxHp*.4));for(let k=1;k<times.length;k++)assert.ok(times[k]-times[k-1]>=c.arena.damageCooldown-1e-8);for(const t of times)assert.equal(hits.filter(e=>e.t===t).length,2);assert.ok(r.frames.filter(fr=>fr.t<3).every(fr=>fr.fighters.every(f=>f.hp===f.maxHp)));}
 });
 test('invalid input fails explicitly',async()=>{
  await assert.rejects(simulate({fighters:[f('missing'),f('pot')],mode:'A',seed:1}),/Unknown item/);await assert.rejects(simulate({fighters:[f('pot'),f('pot')],mode:'C',seed:1}),/mode/);await assert.rejects(simulate({fighters:[f('pot'),f('pot')],mode:'A',seed:NaN}),/seed/);
@@ -57,7 +59,28 @@ test('attack role uses pre-impact normal speed and tip; simultaneous KO explicit
  assert.equal(strikeRoles({...base,velocities:[[2,0,0],[-1,0,0]]}).attacker,0);
  assert.equal(strikeRoles({...base,velocities:[[.5,10,0],[-1,0,0]]}).attacker,1);
  assert.equal(strikeRoles({...base,velocities:[[1,0,0],[-1,0,0]],tipRatios:[1,0]}).attacker,0);
+ const collision={...base,velocities:[[1.4,0,0],[-1,0,0]]};
+ assert.equal(strikeRoles(collision).attacker,0);assert.equal(strikeRoles({...collision,masses:[1,2]}).attacker,1);assert.equal(strikeRoles({...collision,masses:[1,4],massPower:0.5}).attacker,1);assert.equal(strikeRoles({...collision,matchupMultipliers:[1,1.5]}).attacker,1);
  assert.deepEqual(simultaneousWinner({fallen:[[0,'ko'],[1,'ko']],hp:[0,-1],lastStrike:{t:10,attacker:1},t:10,deathCauses:[{t:10,type:'hit'},{t:10,type:'hit'}]}),{winner:1,simultaneousKo:true,resolvedByAttacker:true});
  assert.equal(simultaneousWinner({fallen:[[0,'ko'],[1,'ko']],hp:[0,-1],lastStrike:{t:10,attacker:1},t:10,deathCauses:[{t:10,type:'hit'},{t:10,type:'zone'}]}).winner,null);
  assert.equal(simultaneousWinner({fallen:[[0,'ko'],[1,'ko']],hp:[0,-1],lastStrike:{t:9,attacker:1},t:10,deathCauses:[{t:10,type:'zone'},{t:10,type:'zone'}]}).winner,null);
+});
+
+test('weakpoint chance is gated by physical contact, with an exact deterministic threshold',()=>{
+ assert.equal(weakCritical({contact:false,roll:0,chance:1}),false);
+ assert.equal(weakCritical({contact:true,roll:0,chance:0}),false);
+ assert.equal(weakCritical({contact:true,roll:.49,chance:.5}),true);
+ assert.equal(weakCritical({contact:true,roll:.5,chance:.5}),false);
+});
+
+test('recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker',async()=>{
+ const proof=JSON.parse(await readFile(new URL('./batch/mechanics-evidence.json',import.meta.url)));
+ assert.ok(proof.criticalOverNormalCap>0);assert.ok(proof.weakContacts>proof.weakTriggered);
+ for(const [kind,example] of [['critical',proof.critical],['missed',proof.missed],['counter',proof.counterRoleChange]]){
+  const r=await simulate({fighters:[f(example.left),f(example.right)],mode:example.mode,seed:example.seed});
+  const event=r.events.find(e=>e.t===example.event.t&&e.attacker===example.event.attacker);assert.deepEqual(event,example.event);
+  if(kind==='critical'){assert.ok(event.damage>c.arena.maxHitFraction*c.arena.fighterHp);assert.ok(event.damage<=.4*c.arena.fighterHp);assert.equal(event.type,'weak');}
+  if(kind==='missed'){assert.equal(event.weakContact,true);assert.equal(event.weak,false);assert.ok(event.criticalRoll>=event.criticalChance);assert.ok(event.damage<=c.arena.maxHitFraction*c.arena.fighterHp);}
+  if(kind==='counter')assert.notEqual(event.strikeAttacker,example.withoutCounter.attacker);
+ }
 });

@@ -4,36 +4,43 @@
     {
       "id": "scissors",
       "maxBoundsDrift": 6.938893903907228e-18,
+      "standardDrift": 0,
       "textures": []
     },
     {
       "id": "lamp",
       "maxBoundsDrift": 0,
+      "standardDrift": 5.551115123125783e-17,
       "textures": []
     },
     {
       "id": "broom",
       "maxBoundsDrift": 1.3877787807814457e-17,
+      "standardDrift": 2.220446049250313e-16,
       "textures": []
     },
     {
       "id": "pot",
       "maxBoundsDrift": 2.7755575615628914e-17,
+      "standardDrift": 0,
       "textures": []
     },
     {
       "id": "slipper",
       "maxBoundsDrift": 0,
+      "standardDrift": 0,
       "textures": []
     },
     {
       "id": "pillow",
       "maxBoundsDrift": 0,
+      "standardDrift": 0,
       "textures": []
     },
     {
       "id": "pan-lux3d",
       "maxBoundsDrift": 0.0001035282253126768,
+      "standardDrift": 0.00010353358654996425,
       "textures": [
         {
           "key": "map",
@@ -54,7 +61,8 @@
     },
     {
       "id": "lamp-lux3d",
-      "maxBoundsDrift": 0.0006396158175160233,
+      "maxBoundsDrift": 0.000639615817516051,
+      "standardDrift": 0.00039114451514093984,
       "textures": [
         {
           "key": "map",
@@ -76,21 +84,28 @@
   ],
   "deterministic": true,
   "sameInitial": true,
-  "sha256": "b49f4a675f5b57c8a8910589a95bbce3b0ea7f7c384b5610a8ab8fca01445c2c",
+  "sha256": "ad9f3b430df647d8091c32729118b94025de08b4bdd20e4934f32a4c9151679d",
   "rounds": [
     {
       "mode": "A",
-      "duration": 16.383333333333333,
-      "winner": 0,
-      "events": 11
+      "duration": 35.483333333333334,
+      "winner": 1,
+      "events": 15
     },
     {
       "mode": "B",
-      "duration": 23.983333333333334,
-      "winner": 0,
-      "events": 15
+      "duration": 34.45,
+      "winner": 1,
+      "events": 13
     }
   ],
-  "computeMs": 229.5,
-  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+  "computeMs": 220.10000002384186,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "critical": {
+    "left": "scissors",
+    "right": "broom",
+    "mode": "B",
+    "seed": 1,
+    "sha256": "14a5ea1f5f11726451b7fc0c0ab89765b360dcfa27a41e1dd7d1a00805bcd318"
+  }
 }

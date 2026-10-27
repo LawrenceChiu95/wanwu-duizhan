@@ -1,0 +1,81 @@
+-rw-r--r--@ 1 lawrence  staff  20655748 Oct 27 09:42 /Users/lawrence/Projects/wanwu-duizhan/data/models/pan-lux3d-textures.glb
+-rw-r--r--@ 1 lawrence  staff  17550376 Oct 27 09:42 /Users/lawrence/Projects/wanwu-duizhan/data/models/lamp-lux3d-textures.glb
+[
+  {
+    "item": "pan",
+    "category": "pot",
+    "standardLongSide": 0.38,
+    "uniformScale": 1.0,
+    "input": "data/lux3d/pan-lux3d-pbr.glb",
+    "inputSha256": "8a73df24413a4f6d394c08b87658fabf03f2a058564155d6d6a0d19db611ff34",
+    "output": "data/models/pan-lux3d-mobile.glb",
+    "sha256": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265",
+    "bytes": 1464628,
+    "images": [
+      {
+        "sourceSize": [
+          2048,
+          2048
+        ],
+        "outputSize": [
+          1024,
+          1024
+        ],
+        "bytes": 298785
+      },
+      {
+        "sourceSize": [
+          2048,
+          2048
+        ],
+        "outputSize": [
+          1024,
+          1024
+        ],
+        "bytes": 248433
+      }
+    ],
+    "triangleRatio": 0.14,
+    "gltfpack": "1.3.0",
+    "textureJpegQuality": 92
+  },
+  {
+    "item": "lamp",
+    "category": "lamp",
+    "standardLongSide": 0.45,
+    "uniformScale": 1.0000000000000002,
+    "input": "data/lux3d/lamp-lux3d-pbr.glb",
+    "inputSha256": "0ecd18e7d38661e95b21848b292acadf500ab4bb709d16742b239dede4517b4a",
+    "output": "data/models/lamp-lux3d-mobile.glb",
+    "sha256": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457",
+    "bytes": 1359620,
+    "images": [
+      {
+        "sourceSize": [
+          2048,
+          2048
+        ],
+        "outputSize": [
+          1024,
+          1024
+        ],
+        "bytes": 179816
+      },
+      {
+        "sourceSize": [
+          2048,
+          2048
+        ],
+        "outputSize": [
+          1024,
+          1024
+        ],
+        "bytes": 183334
+      }
+    ],
+    "triangleRatio": 0.14,
+    "gltfpack": "1.3.0",
+    "textureJpegQuality": 92
+  }
+]
+
