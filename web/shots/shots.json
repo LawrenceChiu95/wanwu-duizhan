@@ -1,0 +1,83 @@
+{
+  "base": "http://127.0.0.1:4330/",
+  "a": "broom",
+  "b": "pot",
+  "seed": "2",
+  "report": {
+    "A": {
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "loadMs": 470,
+      "simMs": 88,
+      "fps": 60.045439792096516,
+      "critAt": 4.416666666666667,
+      "slowAt": 23.102395106626645,
+      "meta": {
+        "seed": 2,
+        "mode": "A",
+        "duration": 23.433333333333334,
+        "winner": 0,
+        "reason": "ko",
+        "arenaRadius": 4.2,
+        "engine": "rapier3d-compat@0.21.0",
+        "schemaVersion": 1,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "diagnostics": {
+          "maxPenetration": 0.0013859739992767572,
+          "maxGeometricPenetration": 0.013174215331673622,
+          "maxResidualPenetration": 0.0003054290427826345,
+          "maxPositionCorrection": 0.013274215331673622,
+          "correctionSteps": 5,
+          "contactFrames": 13,
+          "longestContact": 0.03333333333333333
+        }
+      },
+      "decisive": {
+        "t0": 20.933333333333334,
+        "t1": 23.433333333333334,
+        "caption": "扫把远端接触占优：撞击冲量 17.3，硬度修正 0.87（扣血受单击上限限制），扣掉 42.0 点血。",
+        "eventIndex": 8,
+        "finishType": "contact",
+        "finishEventIndex": 8
+      }
+    },
+    "B": {
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "loadMs": 476,
+      "simMs": 71,
+      "fps": null,
+      "critAt": 4.416666666666667,
+      "slowAt": 30.94825345644173,
+      "meta": {
+        "seed": 2,
+        "mode": "B",
+        "duration": 31.28333333333333,
+        "winner": 0,
+        "reason": "ko",
+        "arenaRadius": 4.2,
+        "engine": "rapier3d-compat@0.21.0",
+        "schemaVersion": 1,
+        "simultaneousKo": false,
+        "resolvedByAttacker": false,
+        "diagnostics": {
+          "maxPenetration": 0.0013859739992767572,
+          "maxGeometricPenetration": 0.013174215331673622,
+          "maxResidualPenetration": 0.0003054290427826345,
+          "maxPositionCorrection": 0.013274215331673622,
+          "correctionSteps": 7,
+          "contactFrames": 16,
+          "longestContact": 0.03333333333333333
+        }
+      },
+      "decisive": {
+        "t0": 28.78333333333333,
+        "t1": 31.28333333333333,
+        "caption": "扫把沿撞击方向冲得更快：碰到弱点但未触发暴击；接触后按攻击和防御扣血，扣掉 27.3 点血。",
+        "eventIndex": 11,
+        "finishType": "contact",
+        "finishEventIndex": 11
+      }
+    }
+  },
+  "logs": []
+}
