@@ -36,7 +36,9 @@ export class Overlay {
     this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur: big ? 1.5 : 1.0, rise: big ? 46 : 34, jitter: (Math.random() - 0.5) * 18, pop: big});
   }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
-  showBanner(text, color, dur = 1.1) {
+  /** Big centred word. 'top' keeps it clear of the impact the camera is centred on. */
+  showBanner(text, color, dur = 1.1, place = 'mid') {
+    this.bannerEl.classList.toggle('top', place === 'top');
     this.bannerEl.textContent = text;
     this.bannerEl.style.color = color;
     this.banner = {age: 0, dur};

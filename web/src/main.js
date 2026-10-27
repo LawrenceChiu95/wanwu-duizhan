@@ -179,7 +179,9 @@ async function main() {
     const away = center.clone().sub(stage.fighters[1 - tgt].center);
     const numAt = center.clone().addScaledVector(away.normalize(), stage.fighters[tgt].radius * 0.6);
     const dmg = e.damage >= 10 ? Math.round(e.damage) : e.damage.toFixed(1);
-    if (e.role === 'recoil') {
+    if (e.damage > 0 && e.damage < 0.05) {
+      // Rounds to nothing: no number.
+    } else if (e.role === 'recoil') {
       // The striker's own small jolt: keep it quiet so the real hit reads as the cause.
       stage.flashFighter(tgt, 0.25);
       overlay.number(numAt, `-${dmg}`, 'recoil');
@@ -204,7 +206,7 @@ async function main() {
       stage.burst(center, [RED, TEAM[tgt]], 18, 0.8, 0.02, 1.0);
       stage.dimFighter(tgt);
       stage.shake(0.2);
-      overlay.showBanner('圈外倒下', '#ff6b78', 1.4);
+      overlay.showBanner('圈外倒下', '#ff6b78', 1.4, 'top');
     } else if (e.type === 'ko') {
       stage.burst(center, [TEAM[tgt], WHITE, TEAM[tgt]], 60, 3.2, 0.03, 1.1);
       stage.ring(center, TEAM[tgt], 0.1, 1.6, 0.7);
@@ -212,13 +214,13 @@ async function main() {
       stage.dimFighter(tgt);
       stage.shake(1.1);
       overlay.screenFlash(0.5);
-      overlay.showBanner('KO', HEX[att ?? 0], 1.2);
+      overlay.showBanner('KO', HEX[att ?? 0], 1.2, 'top');
     } else if (e.type === 'ringout') {
       stage.burst(point, [RED, WHITE, TEAM[tgt]], 50, 3, 0.03, 1.0);
       stage.ring(point, RED, 0.1, 1.8, 0.7);
       stage.shake(1);
       overlay.screenFlash(0.35);
-      overlay.showBanner('出界', HEX[att ?? 0], 1.2);
+      overlay.showBanner('出界', HEX[att ?? 0], 1.2, 'top');
     }
     test.onEvent(e);
   }

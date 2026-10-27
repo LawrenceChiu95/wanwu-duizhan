@@ -59,8 +59,9 @@ svg .f { fill: currentColor; stroke: none; }
 .mark.m0 { color: var(--c0); border-top-color: var(--c0); }
 .mark.m1 { color: var(--c1); border-top-color: var(--c1); }
 
-#banner { position: absolute; left: 0; right: 0; top: 17%; text-align: center; font-size: 44px; font-weight: 900; letter-spacing: 0.08em; pointer-events: none; opacity: 0;
+#banner { position: absolute; left: 0; right: 0; top: 40%; text-align: center; font-size: 44px; font-weight: 900; letter-spacing: 0.08em; pointer-events: none; opacity: 0;
   text-shadow: 0 0 18px rgba(255, 255, 255, 0.4), 0 3px 0 rgba(0, 0, 0, 0.5); }
+#banner.top { top: 17%; }
 #caption { position: absolute; left: 12px; right: 12px; bottom: 132px; padding: 10px 14px 12px; border-radius: 14px; background: rgba(6, 9, 18, 0.86); box-shadow: 0 0 0 1px rgba(255, 225, 77, 0.35), 0 8px 24px rgba(0, 0, 0, 0.4);
   pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; }
 #caption.on { opacity: 1; transform: none; }
