@@ -1,0 +1,16 @@
+✔ explicit new schema, deterministic full replay, A/B identical initial geometry (177.609625ms)
+✔ six anchors, standard dimensions and actual rotated face outside core (10.975917ms)
+✔ HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage (3.371042ms)
+✔ one attachment and bare core still rotate, collide and can win; losing all parts is not KO (83.167291ms)
+✔ detachment removes collider, preserves surviving point velocity and rotation without kick (1.246542ms)
+✔ damage tiers and weak cap; near-static approach never gains damage from seed (0.357083ms)
+✔ invalid user selection fails before simulation (2.027708ms)
+✔ sustained real surface contact is reported and repeated rubbing is not a new attack (37.290834ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1685.986208

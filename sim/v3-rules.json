@@ -1,0 +1,62 @@
+{
+  "dt": 0.016666666666666666,
+  "maxDuration": 60,
+  "frameStride": 2,
+  "core": {
+    "radius": 0.14,
+    "mass": 0.75,
+    "hp": 140,
+    "material": "metal",
+    "attack": 11,
+    "defense": 4
+  },
+  "attachmentHp": 70,
+  "anchorGap": 0.015,
+  "initialGap": 0.55,
+  "attraction": 9,
+  "thrust": 6,
+  "recoilSpeed": 0.85,
+  "recoilPause": 0.35,
+  "linearDamping": 0.12,
+  "angularDamping": 0.25,
+  "initialSpin": 5,
+  "spinTorque": 0.025,
+  "speedLimit": 4,
+  "contactCooldown": 0.55,
+  "damageCooldown": 1,
+  "episodeSeparation": 0.1,
+  "minimumClosingSpeed": 0.03,
+  "minimumImpulse": 0.001,
+  "counterSpeedMultiplier": 2,
+  "roleMassPower": 0.5,
+  "tipBonus": 0.3,
+  "recoilDamageFraction": 0.03,
+  "weakCritChance": 0.5,
+  "maxHitFraction": 0.3,
+  "weakCritMaxFraction": 0.4,
+  "tierThresholds": {
+    "A": [
+      0.6,
+      2,
+      5
+    ],
+    "B": [
+      4,
+      9,
+      16
+    ]
+  },
+  "tierDamage": [
+    10,
+    18,
+    26,
+    34
+  ],
+  "overlapIterations": 8,
+  "overlapTolerance": 0.0005,
+  "arenaRadius": 4.2,
+  "damageScale": {
+    "A": 0.8,
+    "B": 1
+  }
+}

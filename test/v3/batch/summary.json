@@ -1,0 +1,660 @@
+{
+  "rules": {
+    "dt": 0.016666666666666666,
+    "maxDuration": 60,
+    "frameStride": 2,
+    "core": {
+      "radius": 0.14,
+      "mass": 0.75,
+      "hp": 140,
+      "material": "metal",
+      "attack": 11,
+      "defense": 4
+    },
+    "attachmentHp": 70,
+    "anchorGap": 0.015,
+    "initialGap": 0.55,
+    "attraction": 9,
+    "thrust": 6,
+    "recoilSpeed": 0.85,
+    "recoilPause": 0.35,
+    "linearDamping": 0.12,
+    "angularDamping": 0.25,
+    "initialSpin": 5,
+    "spinTorque": 0.025,
+    "speedLimit": 4,
+    "contactCooldown": 0.55,
+    "damageCooldown": 1,
+    "episodeSeparation": 0.1,
+    "minimumClosingSpeed": 0.03,
+    "minimumImpulse": 0.001,
+    "counterSpeedMultiplier": 2,
+    "roleMassPower": 0.5,
+    "tipBonus": 0.3,
+    "recoilDamageFraction": 0.03,
+    "weakCritChance": 0.5,
+    "maxHitFraction": 0.3,
+    "weakCritMaxFraction": 0.4,
+    "tierThresholds": {
+      "A": [
+        0.6,
+        2,
+        5
+      ],
+      "B": [
+        4,
+        9,
+        16
+      ]
+    },
+    "tierDamage": [
+      10,
+      18,
+      26,
+      34
+    ],
+    "overlapIterations": 8,
+    "overlapTolerance": 0.0005,
+    "arenaRadius": 4.2,
+    "damageScale": {
+      "A": 0.8,
+      "B": 1
+    }
+  },
+  "rounds": 560,
+  "seconds": 186.822803792,
+  "examples": {
+    "coreKoWithParts": {
+      "left": "scissors",
+      "right": "lamp",
+      "mode": "A",
+      "seed": 1,
+      "file": "example-coreKoWithParts.json",
+      "metrics": {
+        "duration": 23.5,
+        "winner": 1,
+        "reason": "ko",
+        "first": 0.31666666666666665,
+        "medianGap": 1.55,
+        "longestGap": 2,
+        "tail": 0,
+        "hits": 16,
+        "contactFirst": 0.31666666666666665,
+        "contactMedianGap": 0.7666666666666675,
+        "contactMaxGap": 1.1666666666666679,
+        "breaks": 0,
+        "hp": [
+          0,
+          80.95999999999998
+        ],
+        "partsHp": [
+          [
+            40.336,
+            68.32000000000001
+          ],
+          [
+            30.612,
+            49
+          ]
+        ],
+        "residual": 0.0004949441063217819,
+        "scrapeCount": 1,
+        "scrapeDuration": 0.1,
+        "maxScrapeDuration": 0.1,
+        "radialCorrectionSteps": 1,
+        "maxRadialCorrection": 0.0004862498766789498,
+        "maxPositionCorrection": 0.10474626381397248,
+        "zoneDamage": 0
+      },
+      "sha256": "6fca22df2adb423d1ab15c3313e0c50d33c818e4de3f0d68033b15c2a736d4ff",
+      "at": null
+    },
+    "scrape": {
+      "left": "scissors",
+      "right": "lamp",
+      "mode": "A",
+      "seed": 1,
+      "file": "example-scrape.json",
+      "metrics": {
+        "duration": 23.5,
+        "winner": 1,
+        "reason": "ko",
+        "first": 0.31666666666666665,
+        "medianGap": 1.55,
+        "longestGap": 2,
+        "tail": 0,
+        "hits": 16,
+        "contactFirst": 0.31666666666666665,
+        "contactMedianGap": 0.7666666666666675,
+        "contactMaxGap": 1.1666666666666679,
+        "breaks": 0,
+        "hp": [
+          0,
+          80.95999999999998
+        ],
+        "partsHp": [
+          [
+            40.336,
+            68.32000000000001
+          ],
+          [
+            30.612,
+            49
+          ]
+        ],
+        "residual": 0.0004949441063217819,
+        "scrapeCount": 1,
+        "scrapeDuration": 0.1,
+        "maxScrapeDuration": 0.1,
+        "radialCorrectionSteps": 1,
+        "maxRadialCorrection": 0.0004862498766789498,
+        "maxPositionCorrection": 0.10474626381397248,
+        "zoneDamage": 0
+      },
+      "sha256": "6fca22df2adb423d1ab15c3313e0c50d33c818e4de3f0d68033b15c2a736d4ff",
+      "at": null
+    },
+    "weak": {
+      "left": "lamp",
+      "right": "scissors",
+      "mode": "A",
+      "seed": 1,
+      "file": "example-weak.json",
+      "metrics": {
+        "duration": 12.433333333333334,
+        "winner": 0,
+        "reason": "ko",
+        "first": 0.31666666666666665,
+        "medianGap": 1.5666666666666669,
+        "longestGap": 1.6166666666666671,
+        "tail": 0,
+        "hits": 9,
+        "contactFirst": 0.31666666666666665,
+        "contactMedianGap": 0.7666666666666666,
+        "contactMaxGap": 0.8500000000000001,
+        "breaks": 0,
+        "hp": [
+          116.944,
+          0
+        ],
+        "partsHp": [
+          [
+            53.086000000000006,
+            70
+          ],
+          [
+            42,
+            68.938
+          ]
+        ],
+        "residual": 0.0004896670579910278,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "radialCorrectionSteps": 0,
+        "maxRadialCorrection": 0,
+        "maxPositionCorrection": 0.11306621913313866,
+        "zoneDamage": 0
+      },
+      "sha256": "a4d5b8e4324df0a262adb9ac38ced5deb3fa400ae292ec1b1848efd2eb44623b",
+      "at": 0.31666666666666665
+    },
+    "durationFailure": {
+      "left": "lamp",
+      "right": "scissors",
+      "mode": "A",
+      "seed": 1,
+      "file": "example-durationFailure.json",
+      "metrics": {
+        "duration": 12.433333333333334,
+        "winner": 0,
+        "reason": "ko",
+        "first": 0.31666666666666665,
+        "medianGap": 1.5666666666666669,
+        "longestGap": 1.6166666666666671,
+        "tail": 0,
+        "hits": 9,
+        "contactFirst": 0.31666666666666665,
+        "contactMedianGap": 0.7666666666666666,
+        "contactMaxGap": 0.8500000000000001,
+        "breaks": 0,
+        "hp": [
+          116.944,
+          0
+        ],
+        "partsHp": [
+          [
+            53.086000000000006,
+            70
+          ],
+          [
+            42,
+            68.938
+          ]
+        ],
+        "residual": 0.0004896670579910278,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "radialCorrectionSteps": 0,
+        "maxRadialCorrection": 0,
+        "maxPositionCorrection": 0.11306621913313866,
+        "zoneDamage": 0
+      },
+      "sha256": "a4d5b8e4324df0a262adb9ac38ced5deb3fa400ae292ec1b1848efd2eb44623b",
+      "at": null
+    },
+    "largeCorrection": {
+      "left": "lamp",
+      "right": "scissors",
+      "mode": "A",
+      "seed": 2,
+      "file": "example-largeCorrection.json",
+      "metrics": {
+        "duration": 34.81666666666666,
+        "winner": 1,
+        "reason": "ko",
+        "first": 0.3333333333333333,
+        "medianGap": 1.5166666666666675,
+        "longestGap": 2.833333333333334,
+        "tail": 0,
+        "hits": 23,
+        "contactFirst": 0.3333333333333333,
+        "contactMedianGap": 0.7666666666666657,
+        "contactMaxGap": 2.1000000000000005,
+        "breaks": 1,
+        "hp": [
+          0,
+          9.344000000000003
+        ],
+        "partsHp": [
+          [
+            0,
+            38.272000000000006
+          ],
+          [
+            54.544000000000004,
+            7.167999999999999
+          ]
+        ],
+        "residual": 0.000490571022965014,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "radialCorrectionSteps": 1,
+        "maxRadialCorrection": 0.0979385399760026,
+        "maxPositionCorrection": 0.41451034882378757,
+        "zoneDamage": 0
+      },
+      "sha256": "99159be3ca8a106ff2684308d0182da365f9c65cfcce93327d89d4a7e9fbe264",
+      "at": null
+    },
+    "bothPartsBroken": {
+      "left": "scissors",
+      "right": "lamp-lux3d",
+      "mode": "A",
+      "seed": 3,
+      "file": "example-bothPartsBroken.json",
+      "metrics": {
+        "duration": 30.78333333333333,
+        "winner": 0,
+        "reason": "ko",
+        "first": 0.2833333333333333,
+        "medianGap": 1.4666666666666668,
+        "longestGap": 2.133333333333333,
+        "tail": 0,
+        "hits": 21,
+        "contactFirst": 0.2833333333333333,
+        "contactMedianGap": 0.75,
+        "contactMaxGap": 1.5500000000000007,
+        "breaks": 2,
+        "hp": [
+          17.584000000000003,
+          0
+        ],
+        "partsHp": [
+          [
+            40.944,
+            60.51199999999999
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "residual": 0.0004997269134037197,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "radialCorrectionSteps": 5,
+        "maxRadialCorrection": 0.15650266424251177,
+        "maxPositionCorrection": 0.34645019064081284,
+        "zoneDamage": 0
+      },
+      "sha256": "4809cbff928aa81dfc734ada623f9c459f35d7cb7512435a817d882101215d62",
+      "at": 24.066666666666666
+    },
+    "longTail": {
+      "left": "lamp",
+      "right": "broom",
+      "mode": "A",
+      "seed": 5,
+      "file": "example-longTail.json",
+      "metrics": {
+        "duration": 60,
+        "winner": null,
+        "reason": "timeout",
+        "first": 0.3833333333333333,
+        "medianGap": 1.4500000000000002,
+        "longestGap": 1.700000000000001,
+        "tail": 38.233333333333334,
+        "hits": 16,
+        "contactFirst": 0.3833333333333333,
+        "contactMedianGap": 0.7333333333333334,
+        "contactMaxGap": 1,
+        "breaks": 2,
+        "hp": [
+          94.304,
+          28.352000000000004
+        ],
+        "partsHp": [
+          [
+            0,
+            70
+          ],
+          [
+            0,
+            68.74000000000001
+          ]
+        ],
+        "residual": 0,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "radialCorrectionSteps": 0,
+        "maxRadialCorrection": 0,
+        "maxPositionCorrection": 0.07450458238124848,
+        "zoneDamage": 0
+      },
+      "sha256": "b8208ef1c5f8db11c7d5b53b8c8c98e40355fcf8987bacd9964752f0cdab2870",
+      "at": null
+    },
+    "longGap": {
+      "left": "lamp-lux3d",
+      "right": "scissors",
+      "mode": "B",
+      "seed": 4,
+      "file": "example-longGap.json",
+      "metrics": {
+        "duration": 31.183333333333334,
+        "winner": 0,
+        "reason": "ko",
+        "first": 0.3,
+        "medianGap": 1.4833333333333334,
+        "longestGap": 9.333333333333334,
+        "tail": 0,
+        "hits": 17,
+        "contactFirst": 0.3,
+        "contactMedianGap": 0.7166666666666686,
+        "contactMaxGap": 9.333333333333334,
+        "breaks": 1,
+        "hp": [
+          94.38,
+          0
+        ],
+        "partsHp": [
+          [
+            0,
+            49.66
+          ],
+          [
+            69.46,
+            3.570000000000003
+          ]
+        ],
+        "residual": 0.00047266483306884766,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "radialCorrectionSteps": 0,
+        "maxRadialCorrection": 0,
+        "maxPositionCorrection": 0.13181011615991592,
+        "zoneDamage": 0
+      },
+      "sha256": "09b85705ed01ed7f528d886cefdb04e369350b1a179490286113080db31ce632",
+      "at": null
+    }
+  },
+  "modes": {
+    "A": {
+      "rounds": 280,
+      "duration": {
+        "min": 7.55,
+        "median": 26.583333333333332,
+        "max": 60
+      },
+      "first": {
+        "min": 0.25,
+        "median": 0.3333333333333333,
+        "max": 1.3166666666666667
+      },
+      "medianGap": {
+        "min": 1.333333333333333,
+        "median": 1.5,
+        "max": 1.6500000000000004
+      },
+      "longestGap": {
+        "min": 1.5333333333333332,
+        "median": 2.033333333333335,
+        "max": 5.916666666666668
+      },
+      "tail": {
+        "min": 0,
+        "median": 0,
+        "max": 44.56666666666666
+      },
+      "contactMaxGap": {
+        "min": 0.8166666666666664,
+        "median": 1.3666666666666671,
+        "max": 5.216666666666669
+      },
+      "durationPass": 221,
+      "firstPass": 280,
+      "medianGapPass": 280,
+      "longestGapPass": 280,
+      "allRhythmPass": 221,
+      "draws": 5,
+      "timeouts": 5,
+      "breaks": 309,
+      "scrapeCount": 138,
+      "scrapeDuration": 15.933333333333321,
+      "maxScrapeDuration": 0.26666666666666666,
+      "radialCorrectionSteps": 127,
+      "maxRadialCorrection": 0.2747324782284224,
+      "maxPositionCorrection": 0.8891508803887965,
+      "maxResidual": 0.0004999935626983643,
+      "zoneDamage": 0,
+      "items": [
+        {
+          "id": "scissors",
+          "rounds": 70,
+          "wins": 6,
+          "winRate": 0.08571428571428572,
+          "losses": 64,
+          "draws": 0
+        },
+        {
+          "id": "lamp",
+          "rounds": 70,
+          "wins": 36,
+          "winRate": 0.5142857142857142,
+          "losses": 33,
+          "draws": 1
+        },
+        {
+          "id": "broom",
+          "rounds": 70,
+          "wins": 29,
+          "winRate": 0.4142857142857143,
+          "losses": 40,
+          "draws": 1
+        },
+        {
+          "id": "pot",
+          "rounds": 70,
+          "wins": 35,
+          "winRate": 0.5,
+          "losses": 33,
+          "draws": 2
+        },
+        {
+          "id": "slipper",
+          "rounds": 70,
+          "wins": 39,
+          "winRate": 0.5571428571428572,
+          "losses": 30,
+          "draws": 1
+        },
+        {
+          "id": "pillow",
+          "rounds": 70,
+          "wins": 45,
+          "winRate": 0.6428571428571429,
+          "losses": 25,
+          "draws": 0
+        },
+        {
+          "id": "pan-lux3d",
+          "rounds": 70,
+          "wins": 48,
+          "winRate": 0.6857142857142857,
+          "losses": 20,
+          "draws": 2
+        },
+        {
+          "id": "lamp-lux3d",
+          "rounds": 70,
+          "wins": 37,
+          "winRate": 0.5285714285714286,
+          "losses": 30,
+          "draws": 3
+        }
+      ]
+    },
+    "B": {
+      "rounds": 280,
+      "duration": {
+        "min": 13.75,
+        "median": 30.216666666666665,
+        "max": 60
+      },
+      "first": {
+        "min": 0.25,
+        "median": 0.3333333333333333,
+        "max": 1.3166666666666667
+      },
+      "medianGap": {
+        "min": 1.3166666666666664,
+        "median": 1.5,
+        "max": 1.6333333333333329
+      },
+      "longestGap": {
+        "min": 1.549999999999999,
+        "median": 2.083333333333334,
+        "max": 13.849999999999998
+      },
+      "tail": {
+        "min": 0,
+        "median": 0,
+        "max": 49.666666666666664
+      },
+      "contactMaxGap": {
+        "min": 0.8166666666666664,
+        "median": 1.416666666666666,
+        "max": 13.849999999999998
+      },
+      "durationPass": 240,
+      "firstPass": 280,
+      "medianGapPass": 280,
+      "longestGapPass": 278,
+      "allRhythmPass": 239,
+      "draws": 8,
+      "timeouts": 8,
+      "breaks": 395,
+      "scrapeCount": 141,
+      "scrapeDuration": 16.24999999999999,
+      "maxScrapeDuration": 0.26666666666666666,
+      "radialCorrectionSteps": 131,
+      "maxRadialCorrection": 0.2381960048840419,
+      "maxPositionCorrection": 0.8891508803887965,
+      "maxResidual": 0.0004999935626983643,
+      "zoneDamage": 0,
+      "items": [
+        {
+          "id": "scissors",
+          "rounds": 70,
+          "wins": 10,
+          "winRate": 0.14285714285714285,
+          "losses": 60,
+          "draws": 0
+        },
+        {
+          "id": "lamp",
+          "rounds": 70,
+          "wins": 40,
+          "winRate": 0.5714285714285714,
+          "losses": 29,
+          "draws": 1
+        },
+        {
+          "id": "broom",
+          "rounds": 70,
+          "wins": 26,
+          "winRate": 0.37142857142857144,
+          "losses": 43,
+          "draws": 1
+        },
+        {
+          "id": "pot",
+          "rounds": 70,
+          "wins": 38,
+          "winRate": 0.5428571428571428,
+          "losses": 29,
+          "draws": 3
+        },
+        {
+          "id": "slipper",
+          "rounds": 70,
+          "wins": 38,
+          "winRate": 0.5428571428571428,
+          "losses": 30,
+          "draws": 2
+        },
+        {
+          "id": "pillow",
+          "rounds": 70,
+          "wins": 45,
+          "winRate": 0.6428571428571429,
+          "losses": 23,
+          "draws": 2
+        },
+        {
+          "id": "pan-lux3d",
+          "rounds": 70,
+          "wins": 42,
+          "winRate": 0.6,
+          "losses": 26,
+          "draws": 2
+        },
+        {
+          "id": "lamp-lux3d",
+          "rounds": 70,
+          "wins": 33,
+          "winRate": 0.4714285714285714,
+          "losses": 32,
+          "draws": 5
+        }
+      ]
+    }
+  }
+}

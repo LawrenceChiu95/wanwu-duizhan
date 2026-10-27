@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>v3 module verification</title><link rel="icon" href="data:,">
+<script type="importmap">{"imports":{"@dimforge/rapier3d-compat":"/sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs"}}</script>
+<pre id="result">Running module checks...</pre>
+<script type="module">
+import {simulateV3,loadCatalog} from '/sim/v3.js';
+const fighter=item=>({parts:[{item,mount:'front',rot:[0,0,0]},{item:item==='slipper'?'pot':'slipper',mount:'back',rot:[0,0,0]}]});
+try{
+ const items=await loadCatalog(),cases=await(await fetch('/test/v3/samples/index.json')).json(),results=[];
+ for(const example of cases){const {left,right,mode,seed}=example,r=await simulateV3({fighters:[fighter(left),fighter(right)],mode,seed}),digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(r)));results.push({left,right,mode,seed,sha256:[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join(''),duration:r.meta.duration,breaks:r.events.filter(e=>e.type==='break').length,schema:r.meta.schemaVersion});}
+ window.verification={items:items.length,results,userAgent:navigator.userAgent};document.querySelector('#result').textContent=JSON.stringify(window.verification,null,2);
+}catch(e){window.verification={error:String(e),stack:e.stack};document.querySelector('#result').textContent=JSON.stringify(window.verification);}
+</script>

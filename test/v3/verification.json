@@ -1,0 +1,176 @@
+{
+  "phase": "frontend-contract-checkpoint",
+  "createdAtTaipei": "2026-10-27T18:29:58.219469+08:00",
+  "baseCommit": "53482525a8de2e8ddcef422a10ac7a36359fbd4a",
+  "authority": [
+    "Elara df3a0b39",
+    "Elara bcdc5974"
+  ],
+  "sourcesAndEvidence": {
+    "sim/v3.js": {
+      "bytes": 18734,
+      "sha256": "e5d3605881a01cc96bddebc2b8dc5cad91b3099b9db5d7c7169718fb47c84db4"
+    },
+    "sim/v3-rules.json": {
+      "bytes": 1083,
+      "sha256": "772b8a2889a0840ccf89c2e3b6910f9d3a2e655f1ac6d71d7d87ef196b69c28c"
+    },
+    "test/v3/SPEC.md": {
+      "bytes": 5733,
+      "sha256": "1c71880f9215c38986e419021e5fd1d5867b4ae2ceaa9010e0703ad7864de495"
+    },
+    "test/v3/INTERFACE.md": {
+      "bytes": 3639,
+      "sha256": "511dcb7daa8ecf5b2ddf4f07155ae77dc0b910b12c36344ac35b8fce04e7f76a"
+    },
+    "test/v3/RESULT.md": {
+      "bytes": 2207,
+      "sha256": "24c65284331fa5909beee54aece41c63852caba80f2c3a13a8ebe8617a7f0e6e"
+    },
+    "test/v3/AUDIT.md": {
+      "bytes": 7651,
+      "sha256": "3d3d1eac826ceec2504142da0cb1d3679e5b020cb5d11e53b154b222298e8a52"
+    },
+    "test/v3/probe.mjs": {
+      "bytes": 2309,
+      "sha256": "e6ff4db1f7b8ce15bcaeb940e66de1bdcf2706858de1fe7839b07df60c00f67b"
+    },
+    "test/v3/samples.mjs": {
+      "bytes": 959,
+      "sha256": "6a069497176373d742edd714a0d6cb28cf47cc1cbb6051c1acfebde33e1651c2"
+    },
+    "test/v3/sim.test.mjs": {
+      "bytes": 8671,
+      "sha256": "7a4e54ff0ae371611d55d575f413e9b12da3b8600bef570b1dfa32ea9320f939"
+    },
+    "test/v3/rules-variant.mjs": {
+      "bytes": 1084,
+      "sha256": "a0ab5ca87adfc937d7d15eaebd2545e3d67beb48ca2b5cf13db1d0bb3d002571"
+    },
+    "test/v3/batch.mjs": {
+      "bytes": 5071,
+      "sha256": "c180c0fad0569f2d9fa446acb8c39baaedd534f0585934a0557dc9920691d402"
+    },
+    "test/v3/motion-ablation.mjs": {
+      "bytes": 1436,
+      "sha256": "c82862690ba7ecfb415d513a07337c84e04bec296d2d997a160e39f882c653f7"
+    },
+    "test/v3/diagnose.mjs": {
+      "bytes": 1340,
+      "sha256": "280a3a55af9168d3a80d8e21c5e4b1e6a21f148af05617f0e6381281e52c86fc"
+    },
+    "test/v3/surface-proof.mjs": {
+      "bytes": 2136,
+      "sha256": "ab168cb45bece2eb0d27079beee42e76f106c00fdeeb2cc1c76b8088fd6411a7"
+    },
+    "test/v3/browser-check.html": {
+      "bytes": 1389,
+      "sha256": "1f9208b395b6316651d1dfb761edc0b112ecf579fdcb919a038bd2de8d2bfc33"
+    },
+    "test/v3/browser.mjs": {
+      "bytes": 813,
+      "sha256": "cdedc1a65b191bb53933388e0dbc0e0c8dd748bca145421f0bb03e096368f124"
+    },
+    "test/v3/browser-node.mjs": {
+      "bytes": 915,
+      "sha256": "08ad2e8fe94e3f80b0e127dcada050dd255bb73fcc0c6e0cf993ff0dc0decc34"
+    },
+    "test/v3/browser.json": {
+      "bytes": 972,
+      "sha256": "96a5fe188cb0770c2eab2562fcbbb54ca2cd2b24e238e180c050c12160fb2d4c"
+    },
+    "test/v3/browser-node.json": {
+      "bytes": 1000,
+      "sha256": "534f8e25a3c1ee51bebf290f221dd49fb01275aae82794470d9134114f0e5484"
+    },
+    "test/v3/browser.png": {
+      "bytes": 68620,
+      "sha256": "191c6808f374896a4d3c419bb0c3fa29e86dc6a41615337a8d2a7dc828f92808"
+    },
+    "test/v3/tests.txt": {
+      "bytes": 890,
+      "sha256": "df12b85641dfd24fb39b9e957ca88040601a63d4788fff7e66b897331dba726b"
+    },
+    "test/v3/contact-proof.json": {
+      "bytes": 5620,
+      "sha256": "b72529e557cf13e4df348a192371082f93822d8c5d3ff43a8a8e6d6d41f4a2b3"
+    },
+    "test/v3/calibration/README.md": {
+      "bytes": 472,
+      "sha256": "276512fdeb75e0a16703c607b23f2bb03935129310dacd3dd15cd9360fc9a657"
+    },
+    "test/v3/samples/index.json": {
+      "bytes": 2952,
+      "sha256": "f7a92c497a8e577f2b7e0c1bc6390d70dc7ca156a0d80c45b5b9a107113a6669"
+    },
+    "test/v3/samples/ordinary.json": {
+      "bytes": 2219225,
+      "sha256": "7653df6b7ecb9599b44f0ed0649913821c818ebd445062f8f229dff5ab250c5a"
+    },
+    "test/v3/samples/breaks.json": {
+      "bytes": 2287422,
+      "sha256": "4809cbff928aa81dfc734ada623f9c459f35d7cb7512435a817d882101215d62"
+    },
+    "test/v3/samples/weak.json": {
+      "bytes": 911386,
+      "sha256": "a4d5b8e4324df0a262adb9ac38ced5deb3fa400ae292ec1b1848efd2eb44623b"
+    },
+    "test/v3/batch/summary.json": {
+      "bytes": 16254,
+      "sha256": "721000882d9bd7ba048843d71801736d14060a96251950a56ce1816ef1026f80"
+    },
+    "test/v3/batch/rounds.json": {
+      "bytes": 478526,
+      "sha256": "a7711d7749818a9f462d541016a3e210de3b5f428f80e9fe2037f59660f7d514"
+    }
+  },
+  "unchangedV1Inputs": {
+    "sim/index.js": {
+      "sha256": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+      "baseline": "ec4a353100f03e1bd30f7708576cf44a4cf64450",
+      "unchanged": true
+    },
+    "sim/math.js": {
+      "sha256": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+      "baseline": "ec4a353100f03e1bd30f7708576cf44a4cf64450",
+      "unchanged": true
+    },
+    "data/catalog.json": {
+      "sha256": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+      "baseline": "5348252",
+      "unchanged": true
+    }
+  },
+  "catalogNote": "Only author attribution changed by accepted 00a2921 after ec4a353; geometry, stats, rules and masses unchanged; current catalog equals task-start 5348252.",
+  "checks": {
+    "nodeTests": 8,
+    "browserCompleteReplays": 3,
+    "browserNodeFullShaEqual": true,
+    "formalMatrixRows": 560,
+    "AAllRhythmIncludingTailPass": 221,
+    "BAllRhythmIncludingTailPass": 239,
+    "matrixOverallAccepted": false,
+    "sameSeedComparisonComplete": false,
+    "currentMotionAblationComplete": false,
+    "phoneOrGameVisualAccepted": false,
+    "independentReviewComplete": false
+  },
+  "resourceHold": {
+    "owner": "Lyra",
+    "message": "74ef3dc4-8976-4561-8945-e1c4d05e115d",
+    "scope": "remaining same-seed export and motion ablation",
+    "lift": "Explicit release in dm:@Lyra:97acb122",
+    "pausedPid": 80791,
+    "pausedExecSession": 52628,
+    "state": "TNs verified 18:27 Taipei"
+  },
+  "cleanup": {
+    "ownHttp4488Closed": true,
+    "ownHeadlessChromeClosed": true,
+    "existing4330Untouched": true,
+    "oldSourceCopyTrashed": true,
+    "historicalArchive": "/Users/lawrence/Desktop/My Life/Game Building/万物对战/v3历史取证/pre-contact-supplement.tar.gz",
+    "historicalArchiveSha256": "d3f7b6a5c63144850d4eaa4241de97e68de8785f3b730f4bce56cd2ea169f500",
+    "historicalArchiveMembers": 41
+  }
+}

@@ -1,0 +1,131 @@
+[
+  {
+    "name": "ordinary",
+    "left": "broom",
+    "right": "pot",
+    "mode": "B",
+    "seed": 1,
+    "file": "ordinary.json",
+    "sha256": "7653df6b7ecb9599b44f0ed0649913821c818ebd445062f8f229dff5ab250c5a",
+    "duration": 30.016666666666666,
+    "winner": 0,
+    "reason": "ko",
+    "first": 0.3833333333333333,
+    "medianGap": 1.4833333333333343,
+    "longestGap": 2.166666666666666,
+    "tail": 0,
+    "hits": 21,
+    "contactFirst": 0.3833333333333333,
+    "contactMedianGap": 0.716666666666665,
+    "contactMaxGap": 1.4499999999999993,
+    "breaks": 3,
+    "hp": [
+      119.83999999999997,
+      0
+    ],
+    "partsHp": [
+      [
+        0,
+        50.83
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "residual": 0.00045481324195861816,
+    "scrapeCount": 0,
+    "scrapeDuration": 0,
+    "maxScrapeDuration": 0,
+    "radialCorrectionSteps": 0,
+    "maxRadialCorrection": 0,
+    "maxPositionCorrection": 0.07685710320472718,
+    "zoneDamage": 0
+  },
+  {
+    "name": "breaks",
+    "left": "scissors",
+    "right": "lamp-lux3d",
+    "mode": "A",
+    "seed": 3,
+    "file": "breaks.json",
+    "sha256": "4809cbff928aa81dfc734ada623f9c459f35d7cb7512435a817d882101215d62",
+    "duration": 30.78333333333333,
+    "winner": 0,
+    "reason": "ko",
+    "first": 0.2833333333333333,
+    "medianGap": 1.4666666666666668,
+    "longestGap": 2.133333333333333,
+    "tail": 0,
+    "hits": 21,
+    "contactFirst": 0.2833333333333333,
+    "contactMedianGap": 0.75,
+    "contactMaxGap": 1.5500000000000007,
+    "breaks": 2,
+    "hp": [
+      17.584000000000003,
+      0
+    ],
+    "partsHp": [
+      [
+        40.944,
+        60.51199999999999
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "residual": 0.0004997269134037197,
+    "scrapeCount": 0,
+    "scrapeDuration": 0,
+    "maxScrapeDuration": 0,
+    "radialCorrectionSteps": 5,
+    "maxRadialCorrection": 0.15650266424251177,
+    "maxPositionCorrection": 0.34645019064081284,
+    "zoneDamage": 0
+  },
+  {
+    "name": "weak",
+    "left": "lamp",
+    "right": "scissors",
+    "mode": "A",
+    "seed": 1,
+    "file": "weak.json",
+    "sha256": "a4d5b8e4324df0a262adb9ac38ced5deb3fa400ae292ec1b1848efd2eb44623b",
+    "duration": 12.433333333333334,
+    "winner": 0,
+    "reason": "ko",
+    "first": 0.31666666666666665,
+    "medianGap": 1.5666666666666669,
+    "longestGap": 1.6166666666666671,
+    "tail": 0,
+    "hits": 9,
+    "contactFirst": 0.31666666666666665,
+    "contactMedianGap": 0.7666666666666666,
+    "contactMaxGap": 0.8500000000000001,
+    "breaks": 0,
+    "hp": [
+      116.944,
+      0
+    ],
+    "partsHp": [
+      [
+        53.086000000000006,
+        70
+      ],
+      [
+        42,
+        68.938
+      ]
+    ],
+    "residual": 0.0004896670579910278,
+    "scrapeCount": 0,
+    "scrapeDuration": 0,
+    "maxScrapeDuration": 0,
+    "radialCorrectionSteps": 0,
+    "maxRadialCorrection": 0,
+    "maxPositionCorrection": 0.11306621913313866,
+    "zoneDamage": 0
+  }
+]

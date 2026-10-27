@@ -1,0 +1,37 @@
+{
+  "items": 8,
+  "results": [
+    {
+      "left": "broom",
+      "right": "pot",
+      "mode": "B",
+      "seed": 1,
+      "sha256": "7653df6b7ecb9599b44f0ed0649913821c818ebd445062f8f229dff5ab250c5a",
+      "duration": 30.016666666666666,
+      "breaks": 3,
+      "schema": 3
+    },
+    {
+      "left": "scissors",
+      "right": "lamp-lux3d",
+      "mode": "A",
+      "seed": 3,
+      "sha256": "4809cbff928aa81dfc734ada623f9c459f35d7cb7512435a817d882101215d62",
+      "duration": 30.78333333333333,
+      "breaks": 2,
+      "schema": 3
+    },
+    {
+      "left": "lamp",
+      "right": "scissors",
+      "mode": "A",
+      "seed": 1,
+      "sha256": "a4d5b8e4324df0a262adb9ac38ced5deb3fa400ae292ec1b1848efd2eb44623b",
+      "duration": 12.433333333333334,
+      "breaks": 0,
+      "schema": 3
+    }
+  ],
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "pageErrors": []
+}
