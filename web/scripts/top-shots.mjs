@@ -39,6 +39,9 @@ s = await until(s => s.frozen || s.phase === 'result');
 await page.waitForTimeout(250);
 if (s.frozen) { await shot('3-break'); report.break = {t: s.t}; }
 await page.evaluate(() => window.__top.release());
+// The decisive hit: slow motion with its one-line reason on screen.
+s = await until(s => s.caption || s.phase === 'result');
+if (s.caption) { await page.waitForTimeout(350); await page.evaluate(() => window.__top.freeze()); await page.waitForTimeout(120); await shot('5-decisive'); report.decisive = {t: (await status()).t}; await page.evaluate(() => window.__top.release()); }
 s = await until(s => s.phase === 'result', 120000);
 await page.waitForTimeout(600);
 await shot('4-result');

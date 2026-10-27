@@ -257,7 +257,8 @@ async function main() {
     stage.updateCamera(0, true);
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
-    history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}`);
+    // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
+    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     if (pb.t < pb.end - 1e-6) {

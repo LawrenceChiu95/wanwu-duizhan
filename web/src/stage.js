@@ -442,7 +442,8 @@ export class Stage {
       // Follow only a clear turn of the line, and gently, so the view does not swim.
       else if (Math.abs(d) > 0.25) c.yaw += Math.sign(d) * Math.min(Math.abs(d) - 0.25, dt * 1.6);
     }
-    const pitch = c.mode === 'build' ? 0.6 : 0.92;
+    // In the decisive slow motion the view tips toward top-down, so the near top cannot loom over the hit.
+    const pitch = c.mode === 'build' ? 0.6 : 0.92 + c.push * 0.3;
     c.pitch += (pitch - c.pitch) * (snap || !c.ready ? 1 : 1 - Math.exp(-dt / 0.5));
     const fwd = new THREE.Vector3(Math.sin(c.yaw) * Math.cos(c.pitch), -Math.sin(c.pitch), Math.cos(c.yaw) * Math.cos(c.pitch));
     tmpM.lookAt(new THREE.Vector3(), fwd, UP);
@@ -452,7 +453,7 @@ export class Stage {
     let focus;
     if (c.mode === 'build') focus = tmp2.copy(a.center).lerp(b.center, 0.22);
     else focus = tmp2.addVectors(a.center, b.center).multiplyScalar(0.5);
-    focus = focus.clone().lerp(c.pushAt, c.push * 0.85);
+    focus = focus.clone().lerp(c.pushAt, c.push * 0.3);
     if (snap || !c.ready) c.focus.copy(focus);
     else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
 
@@ -471,7 +472,8 @@ export class Stage {
       need = Math.max(need, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
     }
     if (c.mode === 'build') need = Math.max(need, 1.6);
-    need *= 1 - c.push * 0.45;
+    // No zoom-in on the decisive hit: both tops stay whole in frame (the slow motion does the emphasis).
+    need *= 1 + c.push * 0.05;
     if (snap || !c.ready) c.dist = need;
     else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.45 : c.push > 0.05 ? 0.3 : 0.7)));
     c.ready = true;
