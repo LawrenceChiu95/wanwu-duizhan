@@ -34,7 +34,7 @@ export class Overlay {
     this.layer.append(el);
     const big = /big|weak/.test(cls);
     // Width (at the largest pop scale) is measured once, to keep the number inside the screen.
-    this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur: big ? 1.5 : 1.0, rise: big ? 46 : 34, jitter: (Math.random() - 0.5) * 18, pop: big, half: el.offsetWidth * (big ? 1.3 : 1) / 2});
+    this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur: big ? 1.5 : 1.0, rise: big ? 46 : 34, jitter: (Math.random() - 0.5) * 18, pop: big, half: el.offsetWidth * (big ? 1.3 : 1) / 2, h: el.offsetHeight, drop: 0});
   }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
   /** Big centred word. 'top' keeps it clear of the impact the camera is centred on. */
@@ -56,6 +56,8 @@ export class Overlay {
   update(dt, showMarks) {
     const {stage, p} = this;
     const W = this.layer.clientWidth;
+    // While a banner (KO, 出界…) is up, a number that would sit on it drops just below it and stays there.
+    const band = this.banner.dur > 0 ? {top: this.bannerEl.offsetTop, bottom: this.bannerEl.offsetTop + this.bannerEl.offsetHeight} : null;
     for (let k = this.nums.length - 1; k >= 0; k--) {
       const n = this.nums[k];
       n.age += dt;
@@ -66,7 +68,11 @@ export class Overlay {
         continue;
       }
       const scale = n.pop ? (t < 0.1 ? 0.6 + 7 * t : 1.3 - Math.min(0.3, (t - 0.1) * 3)) : 1;
-      const y = p.y - ease(Math.min(1, t * 1.4)) * n.rise;
+      let y = p.y - ease(Math.min(1, t * 1.4)) * n.rise;
+      // Visual box: translate(-50%, -100%) puts the bottom at y, then scale() grows it about its centre.
+      const mid = y - n.h / 2, hh = n.h * scale / 2;
+      if (band && mid + hh > band.top && mid - hh < band.bottom) n.drop = Math.max(n.drop, band.bottom - (mid - hh));
+      y += n.drop;
       n.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
       const x = Math.min(W - 8 - n.half, Math.max(8 + n.half, p.x + n.jitter));
       n.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${scale})`;
