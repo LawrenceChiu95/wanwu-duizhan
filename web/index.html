@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#070a12">
+<link rel="icon" href="data:,">
+<title>万物对战 · 球形擂台</title>
+<link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="view"></canvas>
+  <div id="fx" aria-hidden="true"></div>
+  <div id="flash" aria-hidden="true"></div>
+
+  <header id="hud">
+    <div class="side s0">
+      <div class="row"><b class="name" id="name0">—</b><span class="hp" id="hp0"></span></div>
+      <div class="bar"><i class="chip" id="chip0"></i><i class="fill" id="fill0"></i></div>
+    </div>
+    <div class="mid"><span class="clock" id="clock">0</span><span class="slowtag" id="slowtag">0.25×</span></div>
+    <div class="side s1">
+      <div class="row"><span class="hp" id="hp1"></span><b class="name" id="name1">—</b></div>
+      <div class="bar"><i class="chip" id="chip1"></i><i class="fill" id="fill1"></i></div>
+    </div>
+  </header>
+  <button id="creditsBtn" class="link" type="button">素材署名</button>
+
+  <div id="banner" aria-live="polite"></div>
+  <div id="caption" aria-live="polite"><span class="tag" id="captionTag">决定性一击</span><p id="captionText"></p></div>
+
+  <section id="result" hidden>
+    <div class="winner" id="winnerLine"></div>
+    <div class="reason" id="reasonLine"></div>
+    <p class="why" id="whyLine"></p>
+    <div class="actions">
+      <button type="button" id="replayBtn"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看慢镜头</button>
+      <button type="button" id="againBtn" class="primary"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" /></svg>再来一局</button>
+    </div>
+  </section>
+
+  <footer id="controls">
+    <div class="row">
+      <button type="button" class="pick p0" id="pick0"><i class="dot"></i><b>—</b><small></small></button>
+      <span class="vs">VS</span>
+      <button type="button" class="pick p1" id="pick1"><i class="dot"></i><b>—</b><small></small></button>
+      <button type="button" class="icon" id="shuffleBtn" aria-label="随机两件"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1.3" class="f" /><circle cx="15" cy="15" r="1.3" class="f" /><circle cx="15" cy="9" r="1.3" class="f" /><circle cx="9" cy="15" r="1.3" class="f" /></svg>随机</button>
+    </div>
+    <div class="row">
+      <div class="seg" id="modeSeg" role="radiogroup" aria-label="算法">
+        <button type="button" data-mode="A" role="radio">物理</button><button type="button" data-mode="B" role="radio">数值</button>
+      </div>
+      <label class="seed"><span>#</span><input id="seedInput" inputmode="numeric" pattern="[0-9]*" maxlength="10" aria-label="种子"><button type="button" id="reseedBtn" aria-label="换种子"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></svg></button></label>
+      <div class="seg" id="speedSeg" role="radiogroup" aria-label="速度">
+        <button type="button" data-speed="0.5" role="radio">0.5×</button><button type="button" data-speed="1" role="radio">1×</button>
+      </div>
+      <button type="button" class="go" id="goBtn"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" /></svg><span>开打</span></button>
+    </div>
+  </footer>
+
+  <div id="sheet" hidden>
+    <div class="panel">
+      <div class="head"><i class="dot"></i><b id="sheetTitle">选一件</b><button type="button" class="close" id="sheetClose" aria-label="关闭">×</button></div>
+      <div class="grid" id="sheetGrid"></div>
+    </div>
+  </div>
+
+  <div id="credits" hidden>
+    <div class="panel">
+      <div class="head"><b>素材署名</b><button type="button" class="close" id="creditsClose" aria-label="关闭">×</button></div>
+      <div id="creditsBody"></div>
+    </div>
+  </div>
+
+  <div id="busy" hidden><i></i><span id="busyText">载入中</span></div>
+  <div id="error" hidden></div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
