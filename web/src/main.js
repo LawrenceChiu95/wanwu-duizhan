@@ -31,7 +31,8 @@ addEventListener('unhandledrejection', e => showError(e.reason));
 
 // How the match ended; older replays without finishType are inferred from meta.reason.
 const finishOf = r => r.decisive.finishType ?? (r.meta.reason === 'ringout' ? 'ringout' : r.meta.reason === 'timeout' ? 'timeout' : 'contact');
-const randomSeed = () => Math.floor(Math.random() * MAX_SEED);
+// Random seeds stay short enough to read and type (1–9999); any seed up to MAX_SEED still works.
+const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 // Lux3D items (generated from a photo) keep a short name plus a small tag.
 const isLux = item => /Lux3D/i.test(item.name) || item.glb.includes('/lux3d/');
 const shortName = item => item.name.replace(/[（(]Lux3D[)）]\s*$/i, '');
@@ -188,17 +189,19 @@ async function main() {
     const away = center.clone().sub(stage.fighters[1 - tgt].center);
     const numAt = center.clone().addScaledVector(away.normalize(), stage.fighters[tgt].radius * 0.6);
     const dmg = e.damage >= 10 ? Math.round(e.damage) : e.damage.toFixed(1);
+    // Under 1 damage (recoil, zone ticks, grazes) gets no floating number: they only cluttered the screen.
+    const number = (at, cls, label) => { if (e.damage >= 1) overlay.number(at, `-${dmg}`, cls, label); };
     if (e.damage > 0 && e.damage < 0.05) {
       // Rounds to nothing: no number.
     } else if (e.role === 'recoil') {
       // The striker's own small jolt: keep it quiet so the real hit reads as the cause.
       stage.flashFighter(tgt, 0.25);
-      overlay.number(numAt, `-${dmg}`, 'recoil');
+      number(numAt, 'recoil');
     } else if (e.type === 'hit') {
       stage.burst(point, [WHITE, TEAM[att]], 10, 1.4, 0.018, 0.45);
       stage.flashFighter(tgt, 0.55);
       stage.shake(0.3);
-      overlay.number(numAt, `-${dmg}`, `t${tgt}`);
+      number(numAt, `t${tgt}`);
     } else if (e.type === 'weak' || e.weak === true) {
       // The only real crit: a weak-point contact whose seeded roll succeeded (INTERFACE.md).
       overlay.screenFlash(0.6);
@@ -207,15 +210,15 @@ async function main() {
       stage.ring(point, HOT, 0.05, 0.45, 0.3);
       stage.flashFighter(tgt, 1);
       stage.shake(0.9);
-      overlay.number(numAt, `-${dmg}`, 'weak', '暴击');
+      number(numAt, 'weak', '暴击');
     } else if (e.type === 'crit') {
       // type=crit only means a big ordinary hit (>=20): heavier than a hit, no crit label or screen flash.
       stage.burst(point, [WHITE, TEAM[att]], 20, 2.0, 0.022, 0.55);
       stage.flashFighter(tgt, 0.8);
       stage.shake(0.5);
-      overlay.number(numAt, `-${dmg}`, `t${tgt} big`);
+      number(numAt, `t${tgt} big`);
     } else if (e.type === 'zone') {
-      overlay.number(center.clone(), `-${dmg}`, 'zone');
+      number(center.clone(), 'zone');
     } else if (e.type === 'ko' && finish === 'zone') {
       // Died to the shrinking zone: say it plainly, no knockout fanfare.
       stage.burst(center, [RED, TEAM[tgt]], 18, 0.8, 0.02, 1.0);
