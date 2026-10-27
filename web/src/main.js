@@ -45,21 +45,33 @@ function renderCredits(items) {
   // list yet (e.g. Lux3D generations) fall back to the catalog's own source fields.
   const link = s => s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
-  const rows = creditsMd.split('\n').filter(l => /^\|[^|]*\.glb\s*\|/.test(l)).map(l => l.split('|').slice(1, -1).map(c => c.trim()));
-  const listed = new Set(rows.map(([file]) => file.split('/').pop()));
-  const extra = items.filter(i => !listed.has(i.glb.split('/').pop()));
-  const notes = creditsMd.split('\n').filter(l => /^(Changes|Physics|The convex)/.test(l));
-  el.creditsBody.innerHTML = '<ul>' +
-    rows.map(([file, title, src, lic]) => `<li><b>${esc(title)}</b>（${esc(file.split('/').pop())}）· ${link(esc(lic))} · ${link(esc(src))}</li>`).join('') +
-    extra.map(i => `<li><b>${esc(i.name)}</b>（${esc(i.glb.split('/').pop())}）· ${esc(i.source?.author ?? '')} · ${esc(i.source?.license ?? '')} · ${link(esc(i.source?.url ?? ''))}</li>`).join('') +
-    '</ul>' + notes.map(n => `<p>${link(esc(n))}</p>`).join('');
+  const html = [];
+  let list = false, tableHead = false;
+  const close = () => { if (list) html.push('</ul>'); list = false; };
+  for (const line of creditsMd.split('\n')) {
+    const l = line.trim();
+    if (/^\|/.test(l)) {
+      if (/^\|[\s|:-]+\|$/.test(l)) continue; // separator row
+      if (!list) { html.push('<ul>'); list = true; tableHead = true; }
+      if (tableHead) { tableHead = false; continue; } // header row
+      html.push(`<li>${l.split('|').slice(1, -1).map(c => link(esc(c.trim()))).join(' · ')}</li>`);
+      continue;
+    }
+    close();
+    if (/^# /.test(l) || !l) continue;
+    if (/^##+ /.test(l)) html.push(`<h4>${esc(l.replace(/^#+ /, ''))}</h4>`);
+    else html.push(`<p>${link(esc(l))}</p>`);
+  }
+  close();
+  // Anything the credits file does not mention yet falls back to the catalog's source fields.
+  const extra = items.filter(i => !creditsMd.includes(i.glb.split('/').pop()) && !creditsMd.includes(i.name));
+  if (extra.length) html.push('<ul>' + extra.map(i => `<li>${esc(i.name)} · ${esc(i.source?.author ?? '')} · ${esc(i.source?.license ?? '')} · ${link(esc(i.source?.url ?? ''))}</li>`).join('') + '</ul>');
+  el.creditsBody.innerHTML = html.join('');
 }
 
 async function main() {
   el.busy.hidden = false;
   const [items, rules] = await Promise.all([loadCatalog(), loadRules()]);
-  await loadModels(items);
-  el.busy.hidden = true;
   const byId = new Map(items.map(i => [i.id, i]));
   const arena = rules.arena;
   const stage = new Stage(el.canvas, rules);
@@ -80,6 +92,8 @@ async function main() {
     speed: q.get('speed') === '0.5' ? 0.5 : 1
   };
   s.b = byId.has(q.get('b')) ? q.get('b') : pickRandom(s.a);
+  await loadModels([byId.get(s.a), byId.get(s.b)]);
+  el.busy.hidden = true;
 
   // ---------- match state ----------
   let phase = 'idle'; // idle | play | finale | result | replay
@@ -96,7 +110,14 @@ async function main() {
     });
     return st;
   }
-  function showIdle() {
+  let idleReq = 0;
+  async function showIdle() {
+    const req = ++idleReq;
+    el.busyText.textContent = '载入中';
+    el.busy.hidden = false;
+    await loadModels([byId.get(s.a), byId.get(s.b)]);
+    el.busy.hidden = true;
+    if (req !== idleReq) return;
     phase = 'idle';
     stage.setFighters([def(s.a), def(s.b)]);
     stage.clearFx();
@@ -128,7 +149,7 @@ async function main() {
       if (v.chip < v.hp) v.chip = v.hp;
       $(`fill${i}`).style.transform = `scaleX(${v.hp})`;
       $(`chip${i}`).style.transform = `scaleX(${v.chip})`;
-      $(`hp${i}`).textContent = phase === 'idle' ? `${byId.get(i ? s.b : s.a).stats.hp}` : `${Math.ceil(f.hp)}`;
+      $(`hp${i}`).textContent = phase === 'idle' ? `${arena.fighterHp ?? byId.get(i ? s.b : s.a).stats.hp}` : `${Math.ceil(f.hp)}`;
     });
     el.clock.textContent = pb && phase !== 'idle' ? Math.floor(pb.t) : '0';
   }
@@ -137,7 +158,7 @@ async function main() {
       const item = byId.get(i ? s.b : s.a);
       const btn = $(`pick${i}`);
       btn.querySelector('b').innerHTML = nameHtml(item);
-      btn.querySelector('small').textContent = `${sizeCm(item)} cm`;
+      btn.querySelector('small').textContent = isLux(item) ? '' : `${sizeCm(item)} cm`; // the tag needs the room
       if (phase === 'idle') $(`name${i}`).innerHTML = nameHtml(item);
     });
     for (const b of document.querySelectorAll('#modeSeg button')) b.setAttribute('aria-checked', String(b.dataset.mode === s.mode));
@@ -158,7 +179,11 @@ async function main() {
     const away = center.clone().sub(stage.fighters[1 - tgt].center);
     const numAt = center.clone().addScaledVector(away.normalize(), stage.fighters[tgt].radius * 0.6);
     const dmg = e.damage >= 10 ? Math.round(e.damage) : e.damage.toFixed(1);
-    if (e.type === 'hit') {
+    if (e.role === 'recoil') {
+      // The striker's own small jolt: keep it quiet so the real hit reads as the cause.
+      stage.flashFighter(tgt, 0.25);
+      overlay.number(numAt, `-${dmg}`, 'recoil');
+    } else if (e.type === 'hit') {
       stage.burst(point, [WHITE, TEAM[att]], 10, 1.4, 0.018, 0.45);
       stage.flashFighter(tgt, 0.55);
       stage.shake(0.3);
@@ -210,9 +235,11 @@ async function main() {
     el.seed.parentElement.style.boxShadow = '';
     s.seed = seed;
     const id = ++runId;
+    idleReq++; // a pending idle preview must not override the match
     el.busyText.textContent = '计算中';
     el.busy.hidden = false;
     el.result.hidden = true;
+    await loadModels([byId.get(s.a), byId.get(s.b)]);
     await nextPaint();
     const t0 = performance.now();
     const r = await simulate({fighters: [def(s.a), def(s.b)], mode: s.mode, seed: s.seed});
@@ -255,7 +282,8 @@ async function main() {
     const m = replay.meta;
     const names = m.initial.map(f => f.definition.parts.map(p => nameHtml(byId.get(p.item))).join('+'));
     el.winnerLine.innerHTML = m.winner === null ? '平局' : `<em style="color:${HEX[m.winner]}">${names[m.winner]}</em> 胜`;
-    el.reasonLine.textContent = `${finish === 'zone' ? '在圈外掉光了血' : REASON[m.reason] ?? m.reason} · ${m.duration.toFixed(1)} 秒 · ${MODE_NAME[m.mode]} · #${m.seed}`;
+    const why = finish === 'zone' ? '在圈外掉光了血' : m.reason === 'double-ko' && m.winner !== null ? '同时倒下，按撞击方判胜' : REASON[m.reason] ?? m.reason;
+    el.reasonLine.textContent = `${why} · ${m.duration.toFixed(1)} 秒 · ${MODE_NAME[m.mode]} · #${m.seed}`;
     el.whyLine.textContent = replay.decisive.caption;
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false);

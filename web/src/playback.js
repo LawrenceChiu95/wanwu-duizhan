@@ -64,7 +64,7 @@ export class Playback {
     while (this.cursor < events.length && events[this.cursor].t <= next) {
       const e = events[this.cursor++];
       onEvent(e, this.cursor - 1);
-      stop = Math.max(stop, HIT_STOP[e.type] ?? 0);
+      stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0);
       // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
       if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {
         next = e.t;

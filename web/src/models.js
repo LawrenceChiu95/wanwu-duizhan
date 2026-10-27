@@ -1,17 +1,26 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
-// Bundle the phone-sized GLBs; catalog `glb` paths are relative to the repo root.
-// The 17–20 MB Lux3D originals (*-pbr.glb) and intermediates (*.source.glb) are never shipped.
-const urls = import.meta.glob(['../../data/models/*.glb', '../../data/lux3d/*.glb', '!../../data/lux3d/*-pbr.glb', '!../../data/lux3d/*.source.glb'], {query: '?url', import: 'default', eager: true});
+// Bundle the phone-sized GLBs in data/models (catalog `glb` paths are relative to the repo root).
+// data/lux3d holds the 17–20 MB originals and is deliberately not bundled.
+const urls = import.meta.glob('../../data/models/*.glb', {query: '?url', import: 'default', eager: true});
 const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
 const cache = new Map();
+const loading = new Map();
 
-/** Loads each catalog item's GLB once. Items without a bundled GLB get a box from their bounds. */
-export async function loadModels(items) {
-  await Promise.all(items.map(async item => {
+/** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
+export function loadModels(items) {
+  return Promise.all(items.map(item => {
+    if (!loading.has(item.id)) loading.set(item.id, loadOne(item));
+    return loading.get(item.id);
+  }));
+}
+
+/** Items without a bundled GLB get a box from their bounds. */
+async function loadOne(item) {
+  {
     const url = urlFor(item.glb);
     if (!url) {
       console.warn(`No GLB for ${item.id} (${item.glb}); drawing its bounds box`);
@@ -31,7 +40,7 @@ export async function loadModels(items) {
       }
     });
     cache.set(item.id, gltf.scene);
-  }));
+  }
 }
 
 const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\n';

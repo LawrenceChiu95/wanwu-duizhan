@@ -51,6 +51,7 @@ svg .f { fill: currentColor; stroke: none; }
 .num small { display: block; font-size: 11px; font-weight: 800; text-align: center; letter-spacing: 0.06em; }
 .num.big { font-size: 34px; color: var(--hot); }
 .num.weak { font-size: 38px; color: #fff36b; }
+.num.recoil { font-size: 13px; color: #a7b2c9; font-weight: 700; }
 .num.zone { font-size: 14px; color: #ff5a6a; font-weight: 800; }
 .num.t0 { color: #ffd9c2; }
 .num.t1 { color: #cfeaff; }
@@ -119,6 +120,7 @@ svg .f { fill: currentColor; stroke: none; }
 .grid button.rand { color: var(--hot); }
 #creditsBody { font-size: 13px; line-height: 1.55; color: #c7d2ea; }
 #creditsBody ul { margin: 0 0 10px; padding-left: 18px; }
+#creditsBody h4 { margin: 12px 0 6px; font-size: 13px; color: var(--ink); }
 #creditsBody p { margin: 0 0 8px; color: var(--mute); font-size: 12px; }
 #creditsBody a { color: #9fd3ff; }
 
