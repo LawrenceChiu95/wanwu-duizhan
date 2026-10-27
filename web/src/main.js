@@ -177,8 +177,11 @@ async function main() {
   }
 
   // ---------- events → effects ----------
+  // Endings are coloured by the winner (a double KO fires both KOs; the last one is not the winner).
+  const winColor = () => (replay.meta.winner === null || replay.meta.winner === undefined ? '#ffffff' : HEX[replay.meta.winner]);
   function onEvent(e) {
-    const tgt = e.target, att = e.attacker;
+    // attacker can be null (zone, or a contact the sim could not assign); fall back to the other side for colours.
+    const tgt = e.target, att = e.attacker ?? 1 - tgt;
     const point = new THREE.Vector3().fromArray(e.point);
     const center = stage.fighters[tgt].center;
     // Numbers sit on the target's far side, so the two numbers of one contact don't stack.
@@ -226,13 +229,13 @@ async function main() {
       stage.dimFighter(tgt);
       stage.shake(1.1);
       overlay.screenFlash(0.5);
-      overlay.showBanner('KO', HEX[att ?? 0], 1.2, 'top');
+      overlay.showBanner('KO', winColor(), 1.2, 'top');
     } else if (e.type === 'ringout') {
       stage.burst(point, [RED, WHITE, TEAM[tgt]], 50, 3, 0.03, 1.0);
       stage.ring(point, RED, 0.1, 1.8, 0.7);
       stage.shake(1);
       overlay.screenFlash(0.35);
-      overlay.showBanner('出界', HEX[att ?? 0], 1.2, 'top');
+      overlay.showBanner('出界', winColor(), 1.2, 'top');
     }
     test.onEvent(e);
   }
@@ -299,7 +302,7 @@ async function main() {
     const m = replay.meta;
     const names = m.initial.map(f => f.definition.parts.map(p => nameHtml(byId.get(p.item))).join('+'));
     el.winnerLine.innerHTML = m.winner === null ? '平局' : `<em style="color:${HEX[m.winner]}">${names[m.winner]}</em> 胜`;
-    const why = finish === 'zone' ? '在圈外掉光了血' : m.reason === 'double-ko' && m.winner !== null ? '同时倒下，按撞击方判胜' : REASON[m.reason] ?? m.reason;
+    const why = finish === 'zone' ? '在圈外掉光了血' : m.reason === 'double-ko' ? '同时倒下' : REASON[m.reason] ?? m.reason;
     el.reasonLine.textContent = `${why} · ${m.duration.toFixed(1)} 秒 · ${MODE_NAME[m.mode]} · #${m.seed}`;
     el.whyLine.textContent = replay.decisive.caption;
     $('replayBtn').hidden = pb.slowAt === null;
