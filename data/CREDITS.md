@@ -13,15 +13,15 @@ Downloaded 2026-10-26 from the following model pages. License links on all six p
 
 Changes: centered each model and rescaled to meters; rotated the long implements to point along Z; kept only the right slipper. Original downloads in source-models/ preserve the authors' assets. Normalization and support-point convex approximation are reproducible with `node sim/prepare-assets.mjs`. Hashes, original bounds, final transforms and source vertex counts are in catalog.json.
 
-Convex hulls remain solid collision envelopes, but the current fighter mass uses Elara’s category reference values in item-standards.json (pot 2.5 kg, lamp 1.5, pillow/broom 0.6, slipper 0.25, scissors 0.15), rather than solid hull volume times density. These are nominal prototype values, not measured objects. Generated variants use the same mass as their category. Rapier derives inertia from that mass and collision shape; material hardness/restitution remain game tuning, not engineering measurements.
+Convex hulls remain solid collision envelopes, but the current fighter mass uses the category reference values in item-standards.json (pot 2.5 kg, lamp 1.5, pillow/broom 0.6, slipper 0.25, scissors 0.15), rather than solid hull volume times density. These are nominal prototype values, not measured objects. Generated variants use the same mass as their category. Rapier derives inertia from that mass and collision shape; material hardness/restitution remain game tuning, not engineering measurements.
 
 Physics: [Rapier](https://github.com/dimforge/rapier.js), Apache-2.0; package license retained by npm. [Official contact manifold documentation](https://rapier.rs/docs/user_guides/javascript/advanced_collision_detection_js/) describes contact-space/impulse APIs used here.
 
 ## Lux3D additions
 
-Wren supplied two generated variants and their generation receipts in [lux3d/RECEIPT.md](lux3d/RECEIPT.md). The catalog defaults to the 1.46 MB pan and 1.36 MB lamp mobile GLBs in data/models/, retaining UVs and 1024px base-color and metallic/roughness textures. The untextured ~0.7 MB meshes and textured high-detail files in data/lux3d/ are retained as source evidence. This is a local prototype delivery, not a clearance of generated-asset rights for a public release; the Aholo output terms and photograph attributions must accompany any later release review.
+Two generated variants and their generation receipts are in [lux3d/RECEIPT.md](lux3d/RECEIPT.md). The catalog defaults to the 1.46 MB pan and 1.36 MB lamp mobile GLBs in data/models/, retaining UVs and 1024px base-color and metallic/roughness textures. The untextured ~0.7 MB meshes and textured high-detail files in data/lux3d/ are retained as source evidence. This is a local prototype delivery, not a clearance of generated-asset rights for a public release; the Aholo output terms and photograph attributions must accompany any later release review.
 
-| Variant | Input photograph attribution supplied by Wren |
+| Variant | Input photograph attribution |
 |---|---|
 | 锅（Lux3D） | “Frying pan” — kevin dooley, CC BY; https://www.flickr.com/photos/12836528@N00/4565041679 |
 | 台灯（Lux3D） | “Art Deco Mica Table Lamp” — Artdecodude, CC BY; https://www.flickr.com/photos/62920259@N03/5771792573 |
