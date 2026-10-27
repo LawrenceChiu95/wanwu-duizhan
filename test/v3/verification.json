@@ -28,8 +28,8 @@
       "sha256": "24c65284331fa5909beee54aece41c63852caba80f2c3a13a8ebe8617a7f0e6e"
     },
     "test/v3/AUDIT.md": {
-      "bytes": 7651,
-      "sha256": "3d3d1eac826ceec2504142da0cb1d3679e5b020cb5d11e53b154b222298e8a52"
+      "bytes": 7927,
+      "sha256": "4f9c8e4d5cbd07259e71db3af85f0f7148fd967f4df3fe52af055fd71574b455"
     },
     "test/v3/probe.mjs": {
       "bytes": 2309,
@@ -60,8 +60,8 @@
       "sha256": "280a3a55af9168d3a80d8e21c5e4b1e6a21f148af05617f0e6381281e52c86fc"
     },
     "test/v3/surface-proof.mjs": {
-      "bytes": 2136,
-      "sha256": "ab168cb45bece2eb0d27079beee42e76f106c00fdeeb2cc1c76b8088fd6411a7"
+      "bytes": 2312,
+      "sha256": "1d9f887a3c3b3f80505414446ee03d2f2789dcc6f79952cbe378a19868ebfefa"
     },
     "test/v3/browser-check.html": {
       "bytes": 1389,
@@ -122,6 +122,14 @@
     "test/v3/batch/rounds.json": {
       "bytes": 478526,
       "sha256": "a7711d7749818a9f462d541016a3e210de3b5f428f80e9fe2037f59660f7d514"
+    },
+    "test/v3/batch/surface-proof.json": {
+      "bytes": 9866,
+      "sha256": "41a81fe74c7bd3c1ea7940fbe9f162c616ab1c79d9a8804a05c4f2452b099a1d"
+    },
+    "test/v3/batch/example-longTail.json": {
+      "bytes": 4299737,
+      "sha256": "b8208ef1c5f8db11c7d5b53b8c8c98e40355fcf8987bacd9964752f0cdab2870"
     }
   },
   "unchangedV1Inputs": {
@@ -153,7 +161,19 @@
     "sameSeedComparisonComplete": false,
     "currentMotionAblationComplete": false,
     "phoneOrGameVisualAccepted": false,
-    "independentReviewComplete": false
+    "independentReviewComplete": false,
+    "currentLongTailGeometryProof": {
+      "mode": "A",
+      "primaryItems": [
+        "lamp",
+        "broom"
+      ],
+      "seed": 5,
+      "sampleCount": 39,
+      "minimumGapMetres": 0.11598649621009827,
+      "proved": "No geometric touch at whole-second samples; full-rate events show no impact during the last 38.23s",
+      "notProved": "No visual/inertia regression; no proposed steering fix validated"
+    }
   },
   "resourceHold": {
     "owner": "Lyra",

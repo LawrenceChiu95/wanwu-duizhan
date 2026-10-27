@@ -1,0 +1,331 @@
+{
+  "source": "test/v3/batch/example-longTail.json",
+  "case": {
+    "fighters": [
+      {
+        "parts": [
+          {
+            "item": "lamp",
+            "mount": "front",
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "item": "slipper",
+            "mount": "back",
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "parts": [
+          {
+            "item": "broom",
+            "mount": "front",
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "item": "slipper",
+            "mount": "back",
+            "rot": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "mode": "A",
+    "seed": 5
+  },
+  "lastDamage": 21.766666666666666,
+  "method": "Recreate real active ball/convex colliders from replay world transforms at each whole second after the last damage; positive gap means no touch. Full-rate replay events remain authoritative.",
+  "minSampledGap": 0.11598649621009827,
+  "rows": [
+    {
+      "t": 22,
+      "closestSurfaceGap": 0.554068922996521,
+      "centerDistance": 0.9608743718198525,
+      "relativeRadialVelocity": 1.3066052305342828,
+      "relativeTangentialSpeed": 2.3328802374651425
+    },
+    {
+      "t": 23,
+      "closestSurfaceGap": 0.41143637895584106,
+      "centerDistance": 0.8264572046786697,
+      "relativeRadialVelocity": -2.426214246991137,
+      "relativeTangentialSpeed": 2.6620706246922166
+    },
+    {
+      "t": 24,
+      "closestSurfaceGap": 0.3416244089603424,
+      "centerDistance": 0.6522717468789838,
+      "relativeRadialVelocity": 2.820337112257534,
+      "relativeTangentialSpeed": 3.2514093173718233
+    },
+    {
+      "t": 25,
+      "closestSurfaceGap": 0.4847203493118286,
+      "centerDistance": 0.9387299375842257,
+      "relativeRadialVelocity": -1.5390425551188565,
+      "relativeTangentialSpeed": 2.344081048173045
+    },
+    {
+      "t": 26,
+      "closestSurfaceGap": 0.23057815432548523,
+      "centerDistance": 0.5421440866641698,
+      "relativeRadialVelocity": 2.4544662547792635,
+      "relativeTangentialSpeed": 4.2617214763350715
+    },
+    {
+      "t": 27,
+      "closestSurfaceGap": 0.729922890663147,
+      "centerDistance": 1.0399392360608697,
+      "relativeRadialVelocity": -0.5646653578517646,
+      "relativeTangentialSpeed": 2.302605274989602
+    },
+    {
+      "t": 28,
+      "closestSurfaceGap": 0.11598649621009827,
+      "centerDistance": 0.47268896267327304,
+      "relativeRadialVelocity": -0.2886807312417765,
+      "relativeTangentialSpeed": 4.835718470090973
+    },
+    {
+      "t": 29,
+      "closestSurfaceGap": 0.5681313872337341,
+      "centerDistance": 0.9521969133058514,
+      "relativeRadialVelocity": 0.4629425679393159,
+      "relativeTangentialSpeed": 2.478538827351212
+    },
+    {
+      "t": 30,
+      "closestSurfaceGap": 0.26897740364074707,
+      "centerDistance": 0.5454656322047987,
+      "relativeRadialVelocity": -1.4301051426378462,
+      "relativeTangentialSpeed": 4.492509843098362
+    },
+    {
+      "t": 31,
+      "closestSurfaceGap": 0.5272626876831055,
+      "centerDistance": 0.9386962763038149,
+      "relativeRadialVelocity": 1.229381747387524,
+      "relativeTangentialSpeed": 2.7271517325024663
+    },
+    {
+      "t": 32,
+      "closestSurfaceGap": 0.38259944319725037,
+      "centerDistance": 0.7054666741108059,
+      "relativeRadialVelocity": -2.09124703626587,
+      "relativeTangentialSpeed": 3.7432807417534066
+    },
+    {
+      "t": 33,
+      "closestSurfaceGap": 0.5021759271621704,
+      "centerDistance": 0.8383629342935964,
+      "relativeRadialVelocity": 2.027756404102448,
+      "relativeTangentialSpeed": 3.2832470316802107
+    },
+    {
+      "t": 34,
+      "closestSurfaceGap": 0.5482494235038757,
+      "centerDistance": 0.9118185523996761,
+      "relativeRadialVelocity": -1.6359988539680201,
+      "relativeTangentialSpeed": 3.101904571559876
+    },
+    {
+      "t": 35,
+      "closestSurfaceGap": 0.3556062877178192,
+      "centerDistance": 0.6588565240800601,
+      "relativeRadialVelocity": 1.865910935927535,
+      "relativeTangentialSpeed": 4.451143172638544
+    },
+    {
+      "t": 36,
+      "closestSurfaceGap": 0.775785505771637,
+      "centerDistance": 1.0527494897855636,
+      "relativeRadialVelocity": -0.30717187653025557,
+      "relativeTangentialSpeed": 2.862083289587893
+    },
+    {
+      "t": 37,
+      "closestSurfaceGap": 0.23754678666591644,
+      "centerDistance": 0.616680748105838,
+      "relativeRadialVelocity": -0.8555323002289534,
+      "relativeTangentialSpeed": 5.020941604309364
+    },
+    {
+      "t": 38,
+      "closestSurfaceGap": 0.5898076295852661,
+      "centerDistance": 1.013726380885315,
+      "relativeRadialVelocity": 1.34736368926225,
+      "relativeTangentialSpeed": 3.1484237731057196
+    },
+    {
+      "t": 39,
+      "closestSurfaceGap": 0.5001828670501709,
+      "centerDistance": 0.8770230670301437,
+      "relativeRadialVelocity": -1.9417807476100286,
+      "relativeTangentialSpeed": 3.7158304451517843
+    },
+    {
+      "t": 40,
+      "closestSurfaceGap": 0.4343585669994354,
+      "centerDistance": 0.7758649183480416,
+      "relativeRadialVelocity": 2.025210602488661,
+      "relativeTangentialSpeed": 4.3261640385478515
+    },
+    {
+      "t": 41,
+      "closestSurfaceGap": 0.7898063659667969,
+      "centerDistance": 1.099951358808302,
+      "relativeRadialVelocity": -0.4688040109954855,
+      "relativeTangentialSpeed": 3.1139193560654275
+    },
+    {
+      "t": 42,
+      "closestSurfaceGap": 0.24734707176685333,
+      "centerDistance": 0.6802917870947521,
+      "relativeRadialVelocity": -0.8902342027741496,
+      "relativeTangentialSpeed": 5.144091457334349
+    },
+    {
+      "t": 43,
+      "closestSurfaceGap": 0.6406323909759521,
+      "centerDistance": 1.0328953196052473,
+      "relativeRadialVelocity": 1.53314681648287,
+      "relativeTangentialSpeed": 3.472123499440297
+    },
+    {
+      "t": 44,
+      "closestSurfaceGap": 0.5341308116912842,
+      "centerDistance": 0.9920462554638109,
+      "relativeRadialVelocity": -1.6738628588783175,
+      "relativeTangentialSpeed": 3.673494656981727
+    },
+    {
+      "t": 45,
+      "closestSurfaceGap": 0.3844205141067505,
+      "centerDistance": 0.7405574192634256,
+      "relativeRadialVelocity": 1.394288565426051,
+      "relativeTangentialSpeed": 5.034501677081814
+    },
+    {
+      "t": 46,
+      "closestSurfaceGap": 0.8130428194999695,
+      "centerDistance": 1.1473071789781881,
+      "relativeRadialVelocity": 0.3780608179676363,
+      "relativeTangentialSpeed": 3.3076648429969895
+    },
+    {
+      "t": 47,
+      "closestSurfaceGap": 0.45200783014297485,
+      "centerDistance": 0.8467477259956214,
+      "relativeRadialVelocity": -1.7909394098667488,
+      "relativeTangentialSpeed": 4.54924791049349
+    },
+    {
+      "t": 48,
+      "closestSurfaceGap": 0.6202376484870911,
+      "centerDistance": 0.9128041691116757,
+      "relativeRadialVelocity": 1.9516760045794572,
+      "relativeTangentialSpeed": 4.310643638449867
+    },
+    {
+      "t": 49,
+      "closestSurfaceGap": 0.6964485049247742,
+      "centerDistance": 1.1543863123784572,
+      "relativeRadialVelocity": -0.5939286091877951,
+      "relativeTangentialSpeed": 3.454375257833291
+    },
+    {
+      "t": 50,
+      "closestSurfaceGap": 0.487833172082901,
+      "centerDistance": 0.7677383003379129,
+      "relativeRadialVelocity": -0.9263205310358451,
+      "relativeTangentialSpeed": 5.272590499514512
+    },
+    {
+      "t": 51,
+      "closestSurfaceGap": 0.6797219514846802,
+      "centerDistance": 1.0507284662684273,
+      "relativeRadialVelocity": 1.662035102247235,
+      "relativeTangentialSpeed": 3.922317937241415
+    },
+    {
+      "t": 52,
+      "closestSurfaceGap": 0.8031971454620361,
+      "centerDistance": 1.1142875660336395,
+      "relativeRadialVelocity": -1.218523021794745,
+      "relativeTangentialSpeed": 3.739276459785328
+    },
+    {
+      "t": 53,
+      "closestSurfaceGap": 0.4265556335449219,
+      "centerDistance": 0.770274242562813,
+      "relativeRadialVelocity": 0.15120916706012544,
+      "relativeTangentialSpeed": 5.490900164863566
+    },
+    {
+      "t": 54,
+      "closestSurfaceGap": 0.7080020308494568,
+      "centerDistance": 1.1359701150613013,
+      "relativeRadialVelocity": 1.2194309691254634,
+      "relativeTangentialSpeed": 3.7779728188450186
+    },
+    {
+      "t": 55,
+      "closestSurfaceGap": 0.8097752332687378,
+      "centerDistance": 1.0678170426631983,
+      "relativeRadialVelocity": -1.526488355612085,
+      "relativeTangentialSpeed": 4.05732227636226
+    },
+    {
+      "t": 56,
+      "closestSurfaceGap": 0.4276762008666992,
+      "centerDistance": 0.8133462110567893,
+      "relativeRadialVelocity": 0.8604143556513728,
+      "relativeTangentialSpeed": 5.404010709033465
+    },
+    {
+      "t": 57,
+      "closestSurfaceGap": 0.865541934967041,
+      "centerDistance": 1.1836158912438535,
+      "relativeRadialVelocity": 0.8433468401516291,
+      "relativeTangentialSpeed": 3.7579898146939077
+    },
+    {
+      "t": 58,
+      "closestSurfaceGap": 0.6585229635238647,
+      "centerDistance": 1.034468099378013,
+      "relativeRadialVelocity": -1.6185443944838847,
+      "relativeTangentialSpeed": 4.336114811585977
+    },
+    {
+      "t": 59,
+      "closestSurfaceGap": 0.4381714463233948,
+      "centerDistance": 0.8609134646790959,
+      "relativeRadialVelocity": 1.1968921738045124,
+      "relativeTangentialSpeed": 5.280646278905621
+    },
+    {
+      "t": 60,
+      "closestSurfaceGap": 0.8318110704421997,
+      "centerDistance": 1.2095287627155304,
+      "relativeRadialVelocity": 0.5897762387595797,
+      "relativeTangentialSpeed": 3.7962419246967753
+    }
+  ]
+}
