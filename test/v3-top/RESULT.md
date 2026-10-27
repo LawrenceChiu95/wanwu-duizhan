@@ -52,8 +52,9 @@
 
 - `sim/v3.js` 只用加减乘除和 `Math.sqrt`。起因：Chrome 156 和 Node 的 `Math.exp`（以及更早查到的 `Math.pow`）对个别输入末位不同，一局里第一次接触的攻击分就差了 1 ulp，之后整局分叉。改掉后：
   - `test/v3/browser.mjs` + `browser-node.mjs` 三个样例，Chrome 156、Node 18、Node 25 三边 sha256 一致；
-  - `test/v3-top/cross-engine.mjs 24`：随机 24 局陀螺装法（含模式 B、含固定对手），Chrome 156 和 Node 25 全部逐字节一致（`cross-engine.json`）。
-- `node --test test/v3/sim.test.mjs` 9/9 通过；`test/v3/samples/` 已按新规则重生成。
+  - `test/v3-top/cross-engine.mjs 24`：随机 24 局陀螺装法（含模式 B、含固定对手）加上 240 局里的同步双碎局（第 228 局），共 25 局，Chrome 156 和 Node 25 全部逐字节一致（`cross-engine.json`）。
+- 同一步两颗核心都碎（240 局里 2 局）：按 Elara 裁决，碎核那一下超出所需的伤害（overkill）少的一方赢，完全相等算平局，不按左右；`ko` 事件带 `targets`（碎了的两边）和 `overkill`，战报那句话和「输家还剩几件」都从判定出的输家来，不再取最后一条事件。回归测试用第 228 局。
+- `node --test test/v3/sim.test.mjs` 10/10 通过；`test/v3/samples/` 已按新规则重生成。
 
 ## 网页
 

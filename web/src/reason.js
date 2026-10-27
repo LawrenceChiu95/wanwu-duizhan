@@ -3,9 +3,11 @@ export const NAMES = {'pan-lux3d': '锅', 'lamp-lux3d': '台灯', broom: '扫把
 
 export function reasonLine(replay) {
   const {reason} = replay.meta, why = replay.decisive.why;
+  if (reason === 'double-ko' && replay.meta.winner === null) return '两边核心同时碎了';
   if (reason === 'timeout' || !why) return '时间到，两颗核心都还在';
-  if (reason === 'double-ko') return '同一下撞碎了两颗核心';
   const W = why.attacker === 0 ? '你' : '对手', L = why.target === 0 ? '你' : '对手';
+  // Both broke in the same instant; the decided loser is the one hit harder past zero.
+  if (reason === 'double-ko') return `两颗核心同时碎，${L}伤得更重`;
   const att = why.attackerItem ? NAMES[why.attackerItem] : null;
   const broken = why.loserBroken.map(b => NAMES[b.item]);
   if (why.loserPartsLeft === 0 && broken.length) return `${L}两件都碎了，核心被${att ?? (W === '你' ? '你' : '对手')}撞碎`;

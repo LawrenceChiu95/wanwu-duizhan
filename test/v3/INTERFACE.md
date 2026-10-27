@@ -22,7 +22,7 @@ const replay=await simulateV3({fighters:[fighter('broom'),fighter('pot')],mode:'
 - 同一次碰撞双向伤害用相同t，只选实际冲量最大的部件对；按t去重，`hit+weak`数撞击。`contact`另记接触开始（有实际冲量），不扣血；`recoil`是原有分离脉冲证据，不算额外伤害。
 - `hit/weak` 另有 `orient/targetOrient`（伸出/贴着/core）、`closingSpeed`（接触点沿法线的相对速度，含预判接触那一步）、`ramp`（前松后紧倍率）。`contact` 另有 `closingSpeed`、`orients`。
 - `break {t,target,targetPart,item,mount,orient,pose:{pos,quat},velocity,angularVelocity,massBefore,massAfter,...}`。`velocity`是破碎件中心点速度；碎片是纯前端效果，不要加入战斗物理。移除件后主体线速度已按新COM修正，不要额外推一把。
-- 只有核归零结束：`reason='ko'|'double-ko'|'timeout'`, `winner=0|1|null`；到60秒核都在就是timeout平局，不按剩血判胜。核心可在挂件尚存时被实际接触打碎；件全掉不是失败。`decisive {t0,t1,eventIndex,finishType,caption,why}`沿回放时间播放；`why {attacker,attackerPart,attackerItem(核为null),attackerOrient,target,targetPart,targetItem,targetOrient,weak,loserBroken:[{item,orient,t}],loserPartsLeft}` 供前端写一句白话原因（见 web/src/reason.js）。
+- 只有核归零结束：`reason='ko'|'double-ko'|'timeout'`, `winner=0|1|null`；到60秒核都在就是timeout平局，不按剩血判胜。同一步两颗核都碎（`double-ko`）：碎核那一下超出所需的伤害少的一方赢，完全相等为平局（`winner=null`），不按左右；`ko` 事件带 `targets`（碎了的各方）、`overkill`（两边各自超出的伤害）。`why` 一律从判定出的输家来，平局没有 `why`。核心可在挂件尚存时被实际接触打碎；件全掉不是失败。`decisive {t0,t1,eventIndex,finishType,caption,why}`沿回放时间播放；`why {attacker,attackerPart,attackerItem(核为null),attackerOrient,target,targetPart,targetItem,targetOrient,weak,loserBroken:[{item,orient,t}],loserPartsLeft}` 供前端写一句白话原因（见 web/src/reason.js）。
 - `meta.rules`是这一局参数快照；A/B共用开局RNG；弱点独立种子流。完整输出可JSON序列化，同一输入/参数完全复现；sim/v3.js 只用加减乘除和 Math.sqrt（Chrome 156 与 Node 的 Math.exp/pow 末位会不同），Chrome 与 Node 逐字节一致（`test/v3-top/cross-engine.mjs`）。
 
 持续接触达到0.1秒的段另报`meta.diagnostics.scrapeEpisodes/scrapeCount/scrapeDuration/maxScrapeDuration`，持续段中的重复冲量不重复计有效撞击；有力度的初次接近仍是一撞。

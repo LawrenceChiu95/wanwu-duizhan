@@ -8,6 +8,8 @@ import {LOADOUTS, FOE} from './loadouts.mjs';
 import {random} from '../../sim/math.js';
 const games = Number(process.argv[2] ?? 24), pick = random(1028), cases = [];
 for (let g = 0; g < games; g++) cases.push({fighters: [LOADOUTS[Math.floor(pick() * LOADOUTS.length)], g % 3 === 0 ? FOE : LOADOUTS[Math.floor(pick() * LOADOUTS.length)]], mode: g % 5 === 4 ? 'B' : 'A', seed: 100 + g});
+// Plus the same-step double break from the 240-game batch (game 228), decided by overkill.
+cases.push({fighters: [{parts: [{item: 'broom', mount: 'e0', orient: 'out'}, {item: 'scissors', mount: 'e90', orient: 'hug'}]}, {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'lamp-lux3d', mount: 'e180', orient: 'hug'}]}], mode: 'A', seed: 228});
 const node = [];
 for (const c of cases) node.push(createHash('sha256').update(JSON.stringify(await simulateV3(c))).digest('hex'));
 const browser = await chromium.launch({channel: 'chrome', headless: true});
@@ -21,5 +23,5 @@ const chrome = await page.evaluate(async cases => {
 }, cases);
 await browser.close();
 const mismatched = cases.map((c, i) => ({i, seed: c.seed, mode: c.mode, equal: node[i] === chrome.out[i]})).filter(x => !x.equal);
-console.log(JSON.stringify({games, node: process.version, chrome: chrome.ua.match(/Chrome\/[\d.]+/)?.[0], equal: games - mismatched.length, mismatched}, null, 1));
+console.log(JSON.stringify({games: cases.length, node: process.version, chrome: chrome.ua.match(/Chrome\/[\d.]+/)?.[0], equal: cases.length - mismatched.length, mismatched}, null, 1));
 if (mismatched.length) process.exit(1);

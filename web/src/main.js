@@ -205,12 +205,14 @@ async function main() {
       stage.shake(0.8);
       overlay.screenFlash(0.25);
     } else if (e.type === 'ko') {
-      const f = stage.fighters[e.target];
-      if (f) {
-        stage.burst(f.center, [TEAM[e.target], WHITE, TEAM[e.target], SPARK], 90, 3.4, 0.032, 1.2);
-        stage.ring(f.center, TEAM[e.target], 0.1, 1.8, 0.7);
-        stage.flashPart(e.target, 'core', 1);
-        stage.scatter(e.target);
+      // Every core that broke goes (both, when they break in the same instant).
+      for (const i of e.targets ?? [e.target]) {
+        const f = stage.fighters[i];
+        if (!f) continue;
+        stage.burst(f.center, [TEAM[i], WHITE, TEAM[i], SPARK], 90, 3.4, 0.032, 1.2);
+        stage.ring(f.center, TEAM[i], 0.1, 1.8, 0.7);
+        stage.flashPart(i, 'core', 1);
+        stage.scatter(i);
       }
       stage.shake(1.1);
       overlay.screenFlash(0.5);
@@ -270,7 +272,7 @@ async function main() {
     }
     phase = 'result';
     const m = replay.meta;
-    stage.setCameraMode('result', m.winner === null ? null : [m.winner]);
+    stage.setCameraMode('result', m.winner === null || m.reason === 'double-ko' ? null : [m.winner]);
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;

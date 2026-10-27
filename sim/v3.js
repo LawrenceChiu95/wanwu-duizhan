@@ -101,6 +101,8 @@ export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak
  return {score,tier,hardness,matchup,rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
+// Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.
+export function doubleKoWinner(overkill){return overkill[0]<overkill[1]?0:overkill[1]<overkill[0]?1:null;}
 export function damageRamp(t,points){if(!points?.length)return 1;if(t<=points[0][0])return points[0][1];for(let i=1;i<points.length;i++)if(t<=points[i][0]){const [t0,v0]=points[i-1],[t1,v1]=points[i];return v0+(v1-v0)*(t-t0)/(t1-t0);}return points.at(-1)[1];}
 function contactPair(world,left,right){
  let impulse=0,best=-1,point=null,rightPoint=null,normal=null,penetration=0;
@@ -150,7 +152,7 @@ export async function simulateV3({fighters:definitions,mode='A',seed,onProgress}
  const extents=fs.map(f=>sweepRadius(f,r)),distance=extents[0]+extents[1]+r.initialGap;
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*distance/2,y:(rng()-.5)*.08,z:(rng()-.5)*.08},true));world.propagateModifiedBodyPositionsToColliders();
  const initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)})),events=[],frames=[],diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
- let t=0,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,lastStrike=null,contactRunSteps=0,contactRunStart=0;
+ let t=0,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
  const scrapeEpisodes=[];
  const closeContactRun=()=>{const duration=contactRunSteps*r.dt;if(duration>=.1-1e-8)scrapeEpisodes.push({start:contactRunStart,end:contactRunStart+duration,duration});contactRunSteps=0;};
  const record=()=>frames.push({t,fighters:fs.map(fighterFrame)});record();
@@ -198,7 +200,7 @@ export async function simulateV3({fighters:definitions,mode='A',seed,onProgress}
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?roles.tipMultiplier:1,...d,damageBeforeHpClamp:d.damage,damage,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
     for(const {tp,event}of pending){tp.hp=Math.max(0,tp.hp-event.damage);event.hpAfter=tp.hp;events.push(event);}
-    lastDamage=t;lastStrike=roles.attacker;
+    lastDamage=t;
    }else if(newEpisode&&roles.attacker===null)diagnostics.skippedSlowContacts++;
    if(t-lastRecoil>=r.contactCooldown&&impulse>=r.minimumImpulse){
     const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(normal,(i===0?-1:1)*f.mass*r.recoilSpeed)),true));
@@ -210,16 +212,23 @@ export async function simulateV3({fighters:definitions,mode='A',seed,onProgress}
   const projection=correctOverlap(world,fs,r);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
   const dead=fs.map((f,i)=>f.core.hp<=0?i:null).filter(i=>i!==null);
   if(step%r.frameStride===0||dead.length)record();
-  if(dead.length){winner=dead.length===2?lastStrike:1-dead[0];reason=dead.length===2?'double-ko':'ko';events.push({t,type:'ko',target:dead.length===2?null:dead[0],winner,caption:winner===null?'双方核心都碎了':`${winner===0?'左':'右'}方撞碎核心，赢了`});break;}
+  if(dead.length){
+   // Both cores broke in this step: the one with less damage past zero wins; exactly equal is a draw. Never by side.
+   const overkill=dead.length===2?[0,1].map(i=>events.filter(e=>e.t===t&&e.target===i&&e.targetPart==='core'&&e.damage>0).reduce((n,e)=>n+e.damageBeforeHpClamp-e.damage,0)):null;
+   winner=overkill?doubleKoWinner(overkill):1-dead[0];reason=dead.length===2?'double-ko':'ko';
+   events.push({t,type:'ko',target:winner===null?null:1-winner,targets:dead,winner,overkill,caption:winner===null?'两边核心同时碎了':overkill?`两颗核心同时碎，${winner===0?'右':'左'}方伤得更重`:`${winner===0?'左':'右'}方撞碎核心，赢了`});break;}
  }
  closeContactRun();diagnostics.scrapeEpisodes=scrapeEpisodes;diagnostics.scrapeCount=scrapeEpisodes.length;diagnostics.scrapeDuration=scrapeEpisodes.reduce((n,e)=>n+e.duration,0);diagnostics.maxScrapeDuration=Math.max(0,...scrapeEpisodes.map(e=>e.duration));
  if(frames.at(-1).t!==t)record();
  // No zone, attrition, ringout, or HP-percentage timeout win. Only core KO wins.
- const cause=events.findLast(e=>e.damage>0&&e.targetPart==='core'&&e.hpAfter===0)??events.filter(e=>e.damage>0&&e.role==='attack').sort((a,b)=>b.damage-a.damage)[0]??null;
+ // The winner and loser are decided above; the reason is told from the blow on the loser's core, never from event order.
+ const loser=winner===null?null:1-winner,kills=events.filter(e=>e.damage>0&&e.targetPart==='core'&&e.hpAfter===0);
+ const cause=(loser!==null?kills.findLast(e=>e.target===loser):kills.at(-1))??events.filter(e=>e.damage>0&&e.role==='attack').sort((a,b)=>b.damage-a.damage)[0]??null;
  const at=cause?.t??t,t0=Math.max(0,Math.min(t-2.5,at-1.5));
  // Plain facts for the one-line reason: who struck with what, and what the loser still had on.
- const loser=cause?cause.target:null,brokenBefore=cause?events.filter(e=>e.type==='break'&&e.target===loser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
- const why=cause&&{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,loserBroken:brokenBefore,loserPartsLeft:definitions[loser].parts.length-brokenBefore.length};
+ // A draw has no loser and so no reason facts; a timeout keeps the biggest attack's facts (not shown as a loss).
+ const whyLoser=loser??(reason==='timeout'&&cause?cause.target:null),brokenBefore=whyLoser!==null?events.filter(e=>e.type==='break'&&e.target===whyLoser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
+ const why=whyLoser!==null&&{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,loserBroken:brokenBefore,loserPartsLeft:definitions[whyLoser].parts.length-brokenBefore.length}||null;
  return {meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:r,diagnostics},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:reason==='timeout'?'时间到，双方核心还在':events.at(-1).caption}};
  }finally{world.free();}
 }
