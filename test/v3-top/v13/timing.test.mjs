@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createV3Match,simulateV3,loadV3Rules} from '../../../sim/v3.js';
 import {simulateWithRules} from '../variant.mjs';
 import {rotate} from '../../../sim/math.js';
+import {guardThresholdScenario} from './guard-threshold-fixture.mjs';
 
 const bare=[{parts:[]},{parts:[]}];
 const straight=await simulateWithRules({top:{spinRate:0},initialGap:1});
@@ -58,6 +59,16 @@ test('a guarded new contact during shared damage cooldown succeeds without damag
  assert.equal(JSON.stringify(r),JSON.stringify(await sim({fighters:bare,seed:3,manual:{sides:['input','input'],blockTime:.25,inputs:r.meta.manual.inputs}})));
  const attackerOnly=await sim({fighters:bare,seed:3,manual:{sides:['input','input'],inputs:[{step:125,side:1,action:'block'}]}});
  assert.equal(attackerOnly.events.find(e=>e.type==='blockResult'&&e.side===1).outcome,'empty');
+});
+test('a below-threshold touch does not consume the guard before a real impact in the same window',async()=>{
+ const {samples,replay:r}=await guardThresholdScenario(),minimum=r.meta.rules.minimumImpulse;
+ assert.ok(samples.some(s=>s.step===124&&s.impulse>0&&s.impulse<minimum&&s.injected));
+ assert.ok(samples.some(s=>s.step===125&&s.impulse>=minimum&&!s.injected));
+ assert.ok(!r.events.some(e=>e.t===124/120&&['contact','recoil','blockResult','hit','weak'].includes(e.type)));
+ const results=r.events.filter(e=>e.type==='blockResult'&&e.side===0);
+ assert.equal(results.length,1);assert.equal(results[0].outcome,'perfect');
+ assert.equal(results[0].pressStep,124);assert.equal(results[0].resolvedStep,125);
+ assert.equal(results[0].damageApplied,false);
 });
 test('dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus',async()=>{
  const r=await simulateV3({fighters:bare,mode:'A',seed:3,manual:{sides:['input','input'],inputs:[dash]}});
