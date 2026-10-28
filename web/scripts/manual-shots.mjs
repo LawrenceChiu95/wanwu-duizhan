@@ -61,7 +61,7 @@ s = await status();
 report.result = {winner: s.meta.winner, reason: s.meta.reason, duration: s.meta.duration, line: s.reason, presses: s.inputs.length, deniedTaps: s.denied};
 // Determinism: the replay the browser built live, against Node re-simulating only its recorded presses.
 const json = await page.evaluate(() => window.__top.replayJson()), browserReplay = JSON.parse(json);
-const again = await simulateV3({fighters: browserReplay.meta.initial.map(f => f.definition), mode: browserReplay.meta.mode, seed: browserReplay.meta.seed, manual: {sides: ['input', 'ai'], inputs: browserReplay.meta.manual.inputs, ...(browserReplay.meta.manual.blockTime != null ? {blockTime: browserReplay.meta.manual.blockTime} : {})}});
+const again = await simulateV3({fighters: browserReplay.meta.initial.map(f => f.definition), mode: browserReplay.meta.mode, seed: browserReplay.meta.seed, manual: {sides: ['input', 'ai'], inputs: browserReplay.meta.manual.inputs, ...(browserReplay.meta.manual.blockTime != null ? {blockTime: browserReplay.meta.manual.blockTime} : {}), ...(browserReplay.meta.manual.aiSeeds ? {aiSeeds: browserReplay.meta.manual.aiSeeds} : {})}});
 const h = x => createHash('sha256').update(x).digest('hex');
 report.determinism = {browserLive: h(json), nodeFromPresses: h(JSON.stringify(again)), equal: h(json) === h(JSON.stringify(again)), presses: browserReplay.meta.manual.inputs.length};
 report.logs = logs.slice(0, 20);
