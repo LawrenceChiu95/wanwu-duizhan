@@ -24,5 +24,5 @@ export async function measure(run){
   first,medianGap,maxGap,hits:times.length,pacePass:meta.duration>=20&&meta.duration<=40&&first!==null&&first<=1.5&&medianGap!==null&&medianGap<=3&&maxGap<=6,
   approachMedian:median(impacts.map(x=>x.approach)),separationMedian:median(separation),rubs,
   scrapeCount:meta.diagnostics.scrapeCount,scrapeDuration:meta.diagnostics.scrapeDuration,maxScrapeDuration:meta.diagnostics.maxScrapeDuration,
-  residual:meta.diagnostics.maxResidualPenetration,actions,replaySha256:sha(r)}};
+  residual:meta.diagnostics.maxResidualPenetration,actions,aiSeeds:meta.manual?.aiSeeds??null,aiPressSha256:meta.manual?[0,1].map(side=>sha(events.filter(e=>e.type==='press'&&e.side===side).map(e=>({step:Math.round(e.t/meta.rules.dt),action:e.action})))):null,replaySha256:sha(r)}};
 }

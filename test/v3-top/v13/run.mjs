@@ -4,22 +4,22 @@ import {mkdir,readFile,writeFile,appendFile} from 'node:fs/promises';
 import {simulateV3} from '../../../sim/v3.js';
 import {fixtures,options,baseline,root,sha,mash} from './experiment.mjs';
 import {measure} from './measure.mjs';
-const out=new URL('./results/',import.meta.url);await mkdir(out,{recursive:true});
+const out=new URL(process.env.V13_RESULTS??'./results/',import.meta.url);await mkdir(out,{recursive:true});
 const files=['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','sim/package-lock.json','data/catalog.json','test/v3-top/impact-probe.mjs','test/v3-top/v13/experiment.mjs','test/v3-top/v13/measure.mjs','test/v3-top/v13/run.mjs'];
 const sources=Object.fromEntries(await Promise.all(files.map(async p=>[p,sha(await readFile(new URL(p,root)))])));
-const manifest={schema:1,base:'bbaaeb7',sources,fixtures,mash,primarySeeds:100,sensitivitySeeds:100,fairSeeds:200,swapSeeds:20,feelSeeds:50,causalSeeds:10};
+const manifest={schema:2,node:process.version,fairProtocol:'200 seeds x two swapped AI reaction profiles, same opening',base:'bbaaeb7',sources,fixtures,mash,primarySeeds:100,sensitivitySeeds:100,fairSeeds:200,swapSeeds:20,feelSeeds:50,causalSeeds:10};
 const fingerprint=sha(manifest),old=await baseline(),plan=[];
 for(const f of fixtures){
  for(let seed=0;seed<100;seed++)for(const condition of ['timing','mash','idle'])plan.push({stage:'primary',fixture:f.id,seed,condition,window:.25,mode:'A',version:'v13'});
  for(const window of [.2,.3])for(let seed=0;seed<100;seed++)for(const condition of ['timing','mash'])plan.push({stage:'sensitivity',fixture:f.id,seed,condition,window,mode:'A',version:'v13'});
- for(let seed=0;seed<200;seed++)plan.push({stage:'fair',fixture:f.id,seed,condition:'same',window:.25,mode:'A',version:'v13'});
+ for(let seed=0;seed<200;seed++)for(const condition of ['ai-left','ai-right'])plan.push({stage:'fair',fixture:f.id,seed,condition,window:.25,mode:'A',version:'v13'});
  for(let seed=0;seed<20;seed++)for(const condition of ['flow-left','flow-right'])plan.push({stage:'swap',fixture:f.id,seed,condition,window:.25,mode:'A',version:'v13'});
  for(const mode of ['A','B'])for(let seed=0;seed<50;seed++)for(const version of ['v12','v13'])plan.push({stage:'feel',fixture:f.id,seed,condition:'auto',window:.25,mode,version});
  for(let seed=0;seed<100;seed++)plan.push({stage:'old-ai',fixture:f.id,seed,condition:'timing',window:1,mode:'A',version:'v12'});
  for(let seed=0;seed<10;seed++)plan.push({stage:'causal',fixture:f.id,seed,condition:'delay',window:.25,mode:'A',version:'v13'});
 }
 // Run one stage at a time across all scenes, rather than allowing one scene to monopolise a resource window.
-const order=['primary','sensitivity','fair','swap','feel','old-ai','causal'];plan.sort((a,b)=>order.indexOf(a.stage)-order.indexOf(b.stage));
+const order=['fair','primary','sensitivity','feel','swap','old-ai','causal'];plan.sort((a,b)=>order.indexOf(a.stage)-order.indexOf(b.stage));
 const recordFile=new URL('rounds.ndjson',out),manifestFile=new URL('manifest.json',out),progressFile=new URL('progress.json',out);
 let existing=[];
 try{const previous=JSON.parse(await readFile(manifestFile,'utf8'));assert.equal(previous.fingerprint,fingerprint,'source/input changed: use a fresh evidence directory');existing=(await readFile(recordFile,'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);}catch(e){if(e.code!=='ENOENT')throw e;await writeFile(manifestFile,JSON.stringify({...manifest,fingerprint,planned:plan.length},null,2)+'\n');await writeFile(recordFile,'');}
@@ -43,7 +43,7 @@ for(const p of plan){
  const f=fixtures.find(f=>f.id===p.fixture),begin=performance.now();let row;
  if(p.stage==='causal')row=await causal(f,p);
  else{
-  const o=options(f,p.seed,p.condition,p.window,p.mode);if(p.condition==='same'){o.fighters=[f.definition,f.definition];o.manual.sides=['ai','ai'];}
+  const o=options(f,p.seed,p.condition,p.window,p.mode);if(p.stage==='fair'){o.fighters=[f.definition,f.definition];o.manual.sides=['ai','ai'];const profiles=[(p.seed^0x243f6a88)>>>0,(p.seed^0xb7e15162)>>>0];o.manual.aiSeeds=p.condition==='ai-left'?profiles:profiles.reverse();}
   if(p.stage==='swap'){
    o.fighters=[f.definition,f.definition];
    const inputs=[...mash,...mash.map(x=>({...x,side:1,step:x.step+30}))].sort((a,b)=>a.step-b.step||a.side-b.side);
