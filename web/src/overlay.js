@@ -14,6 +14,7 @@ export class Overlay {
     this.bannerEl = els.banner;
     this.nums = [];
     this.calls = [];
+    this.verdicts = [];
     this.flash = 0;
     this.banner = {age: 0, dur: 0};
     this.p = {x: 0, y: 0};
@@ -75,6 +76,19 @@ export class Overlay {
     if (lift === 0) { pin = document.createElement('i'); pin.className = `callpin t${side}`; pin.style.height = `${base}px`; this.layer.append(pin); }
     this.calls.push({el, pin, at, age: 0, w, h, base, lift});
   }
+  /**
+   * 第 13 版: a one-word verdict on the player's own 冲 / 挡, beside its top (right of the core, level with it, flipped
+   * left near the screen edge) so it never lands on the 「你」 tag above. It follows the top, nudges up a little and is
+   * gone within `dur`; a newer one replaces the old.
+   */
+  verdict(fighter, text, cls, dur = 0.85) {
+    for (const v of this.verdicts) v.el.remove();
+    const el = document.createElement('div');
+    el.className = `num verdict ${cls}`;
+    el.textContent = text;
+    this.layer.append(el);
+    this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight}];
+  }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
   showBanner(text, color, dur = 1.1) {
     this.bannerEl.textContent = text;
@@ -83,7 +97,8 @@ export class Overlay {
   }
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
   clear() {
-    for (const n of [...this.nums, ...this.calls]) { n.el.remove(); n.pin?.remove(); }
+    for (const n of [...this.nums, ...this.calls, ...this.verdicts]) { n.el.remove(); n.pin?.remove(); }
+    this.verdicts = [];
     this.nums = [];
     this.calls = [];
     this.flash = 0;
@@ -115,6 +130,16 @@ export class Overlay {
       c.el.style.opacity = fade;
       c.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${t < 0.12 ? 0.7 + 2.5 * t : 1})`;
       if (c.pin) { c.pin.style.opacity = fade; c.pin.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; }
+    }
+    for (let k = this.verdicts.length - 1; k >= 0; k--) {
+      const v = this.verdicts[k];
+      v.age += dt;
+      const t = v.age / v.dur;
+      if (t >= 1 || !stage.project(v.f.center, p)) { v.el.remove(); this.verdicts.splice(k, 1); continue; }
+      const r = stage.screenRadius(v.f.center, stage.coreRadius * 1.6) + 6;
+      const x = p.x + r + v.w <= W - 6 ? p.x + r : p.x - r - v.w, y = p.y - v.h / 2 - ease(Math.min(1, t * 1.6)) * 10;
+      v.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
+      v.el.style.transform = `translate(${x}px, ${y}px) scale(${t < 0.1 ? 0.7 + 3 * t : 1})`;
     }
     this.flash *= Math.exp(-dt * 11);
     this.flashEl.style.opacity = this.flash > 0.01 ? this.flash.toFixed(3) : 0;

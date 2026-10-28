@@ -105,6 +105,8 @@ async function main() {
   // Fight camera (the HUD toggle, or ?cam=): 俯视 the framing camera from above ('new'), 慢三成 yesterday's chase camera
   // turning, following and zooming 30 % slower ('slow', default), 原速 yesterday's camera as it was ('v4')
   // (远夏 10-28 2735f129: keep all three).
+  // 第 13 版 hand-feel trial only (no on-page option): ?block=0.2 / 0.25 / 0.3 s block window; default is the rules' own.
+  const blockTime = ['0.2', '0.25', '0.3'].includes(q.get('block')) ? Number(q.get('block')) : undefined;
   let camStyle = ['v4', 'new'].includes(q.get('cam')) ? q.get('cam') : 'slow';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
@@ -222,6 +224,30 @@ async function main() {
     el.caption.classList.toggle('on', on);
   }
 
+  // 第 13 版: a one-word verdict on the player's own 冲 / 挡 (完美, 空挡, 擦边, 冲空, 被挡), small, over its own top, gone
+  // within a second. The opponent's get the picture only (Elara 714284f2), so a clash never sprouts several words.
+  function verdict(side, text, cls) {
+    const f = stage.fighters[side];
+    if (side !== 0 || !f) return;
+    overlay.verdict(f, text, cls);
+  }
+  // Older replays have no locked direction on the wind-up: aim at the other core as it stands then.
+  function towardFoe(side) {
+    const a = stage.fighters[side], b = stage.fighters[1 - side];
+    return a && b ? [b.center.x - a.center.x, 0, b.center.z - a.center.z] : null;
+  }
+
+  // Test aid (v13-shots.mjs): freeze on the player's own 第 13 版 moments.
+  const quality = e => e.quality ?? (e.outcome === 'hit' ? 'full' : e.outcome);
+  const V13_FREEZE = {
+    'aim-mine': e => e.type === 'dash' && e.phase === 'charge' && e.side === 0,
+    'aim-foe': e => e.type === 'dash' && e.phase === 'charge' && e.side === 1,
+    perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.side === 0,
+    empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
+    miss: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'miss' && e.side === 0,
+    glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0
+  };
+
   // ---------- events → effects ----------
   function onEvent(e) {
     const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
@@ -266,18 +292,37 @@ async function main() {
       stage.shake(4);
       overlay.screenFlash(0.25);
     } else if (e.type === 'dash') {
-      if (e.phase === 'charge') { stage.charge(e.side, e.until - e.t); sfx.charge(e.until - e.t); }
-      else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
-      else stage.endLunge(e.side);
+      if (e.phase === 'charge') {
+        stage.charge(e.side, e.until - e.t);
+        // 第 13 版: the direction is locked at the press; show it through the wind-up so both sides can read the lunge.
+        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, rules.manual.dashSpeed * rules.manual.dashTime);
+        sfx.charge(e.until - e.t);
+      } else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
+      else {
+        stage.endLunge(e.side);
+        // How the lunge ended, as the sim judged it (full / glance / miss / blocked); the page never judges a hit itself.
+        const q = quality(e);
+        if (q === 'miss') { stage.whiff(e.side); sfx.whiff(); verdict(e.side, '冲空', 'dud'); }
+        else if (q === 'glance') verdict(e.side, '擦边', 'glance');
+        else if (q === 'blocked') verdict(e.side, '被挡', 'dud');
+      }
     } else if (e.type === 'block') {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
+    } else if (e.type === 'blockResult') {
+      // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
+      if (e.outcome === 'perfect') {
+        stage.perfectBlock(e.side, point);
+        overlay.screenFlash(0.2);
+        sfx.perfect();
+        verdict(e.side, '完美', 'perfect');
+      } else { stage.fizzle(e.side); sfx.fizzle(); verdict(e.side, '空挡', 'dud'); }
     } else if (e.type === 'parry') {
       // A lunge into a raised shield: it is bounced, and that should read at a glance (white flash, a clang, a
-      // short slow motion from Playback, the lunger flung away trailing streaks).
+      // short slow motion from Playback, the lunger flung away trailing streaks). The words come from blockResult /
+      // the lunge's end, and only for the player's own top.
       stage.parry(e.target, point, e.attacker);
       stage.punch(point, 7);
-      overlay.callout(point, e.target, '弹开', {cls: 'parry'});
       overlay.screenFlash(0.45);
       sfx.clang();
       buzz([25, 40, 45]);
@@ -319,7 +364,7 @@ async function main() {
     live = null;
     if (control === 'manual') {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
-      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, manual: {sides: ['input', 'ai']}});
+      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {})}});
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false};
@@ -522,7 +567,8 @@ async function main() {
     frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, denied: 0, nth: 1, seen: 0, speed: 1, safe: null,
     onEvent(e) {
       if (!this.freezeOn || this.pending >= 0) return;
-      const ok = this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-mine' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && e.attacker === 0 : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
+      const v13 = V13_FREEZE[this.freezeOn];
+      const ok = v13 ? v13(e) : this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-mine' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && e.attacker === 0 : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
       if (ok && ++this.seen >= this.nth) this.pending = this.freezeDelay;
     }
   };

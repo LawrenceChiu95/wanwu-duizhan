@@ -129,6 +129,24 @@ const SOUNDS = {
     v.noise(v.t, 0.05, 0.4, 'highpass', 2500);
     v.noise(v.t, 0.08, 0.2, 'bandpass', 1100, 700, 2);
   },
+  // Perfect block (第 13 版): the shield bell struck harder and a fifth up, with a quick bright rise. Sits under the
+  // clang when the caught blow was a lunge.
+  perfect(v) {
+    const t = v.t;
+    for (const [f, peak, dur] of [[2490, 0.09, 0.6], [3730, 0.06, 0.45], [4980, 0.035, 0.3]]) v.tone(t, dur, peak, 'sine', f * 0.94, f, 0.04, 0.001);
+    v.noise(t, 0.03, 0.12, 'highpass', 6000);
+  },
+  // Empty block: the bubble going out, a short muffled puff falling in pitch, no ring.
+  fizzle(v) {
+    const t = v.t;
+    v.noise(t, 0.16, 0.12, 'lowpass', 1400, 300, 0.8, 0.004);
+    v.tone(t, 0.14, 0.05, 'triangle', 420, 180, 0.12);
+  },
+  // A lunge that met nothing: a soft low swoosh trailing off.
+  whiff(v) {
+    const t = v.t, f = v.noise(t, 0.26, 0.1, 'bandpass', 900, 900, 1.2, 0.02);
+    f.frequency.exponentialRampToValueAtTime(260, t + 0.26);
+  },
   crunch(v) { crackle(v, v.t); },
   // A core shattering: a long boom, the crackle, and a falling tone.
   ko(v) {
@@ -204,7 +222,7 @@ export const sfx = {
     }
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
-  clang: live('clang'), crunch: live('crunch'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  clang: live('clang'), perfect: live('perfect'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), ko: live('ko'), click: live('click'), deny: live('deny'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {
     if (!tested.has(ctx)) tested.set(ctx, rig(ctx, LEVEL));

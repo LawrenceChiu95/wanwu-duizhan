@@ -25,6 +25,8 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 // CORE_TRAVEL: how far a core gets from the centre (240-game batch max 2.11 m); the drawn rim sits just outside.
 // CORE_RISE: how far a core leaves the spin plane (max 1.05 m).
 export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
+const FIZZLE_TIME = 0.32, AIM_FADE = 0.22;
+const GREY = new THREE.Color('#9aa3ad'), GREY_DARK = new THREE.Color('#5d646d');
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
 // v4 chase camera: how fast it may turn after the line between the tops (rad/s); 'slow' turns at SLOW_TURN of that
 // (远夏 10-28 e3a68f0a: yesterday's camera, turning about 30 % slower) and also follows and zooms slower (2735f129):
@@ -217,6 +219,25 @@ const shieldShader = {
       float rim = pow(f, 2.2);
       float ripple = 0.5 + 0.5 * sin(vP.y * 60.0 - uTime * 9.0);
       gl_FragColor = vec4(uColor * uOpacity * (rim * 1.5 + 0.12 + 0.12 * ripple * f), 1.0);
+      #include <colorspace_fragment>
+    }`
+};
+// Aim of a lunge (第 13 版): a flat arrow on the floor along the direction locked at the press. Chevrons stream toward the
+// head; uGrow reveals it from the core outwards during the wind-up. Plane x: 0 at the tail .. 1 at the tip. Normal
+// (not additive) blending, so the team colour stays true on the blue floor.
+const aimShader = {
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec2 vUv; uniform vec3 uColor; uniform float uOpacity; uniform float uGrow; uniform float uTime;
+    void main(){
+      float x = vUv.x, y = abs(vUv.y - 0.5) * 2.0;
+      float head = step(0.74, x);
+      float hw = head > 0.5 ? (1.0 - x) / 0.26 : 0.34;
+      float inside = 1.0 - smoothstep(hw - 0.1, hw, y);
+      float chev = smoothstep(0.55, 0.85, fract((x - y * 0.12) * 6.0 - uTime * 4.0));
+      float edge = smoothstep(hw - 0.22, hw - 0.08, y) * inside;
+      float a = inside * mix(0.22 + 0.55 * chev, 1.0, max(head, edge * 0.8));
+      a *= smoothstep(0.0, 0.12, x) * (1.0 - smoothstep(uGrow - 0.06, uGrow, x));
+      gl_FragColor = vec4(mix(uColor, vec3(1.0), 0.3 * head + 0.2 * edge), a * uOpacity);
       #include <colorspace_fragment>
     }`
 };
@@ -582,6 +603,15 @@ export class Stage {
     this.meRing.rotation.x = -Math.PI / 2;
     this.meRing.renderOrder = 9;
     this.meRing.visible = false;
+    // One aim arrow per side (第 13 版: 冲 locks its direction at the press; both sides' arrows show, so a lunge can be read and blocked).
+    this.aims = TEAM.map(c => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0.5, 0, 0), new THREE.ShaderMaterial({...aimShader, uniforms: {uColor: {value: c.clone()}, uOpacity: {value: 0}, uGrow: {value: 0}, uTime: {value: 0}}, transparent: true, depthWrite: false, side: THREE.DoubleSide}));
+      m.rotation.order = 'YXZ';
+      m.renderOrder = 8;
+      m.visible = false;
+      this.scene.add(m);
+      return m;
+    });
     this.scene.add(this.meRing);
     this.showMe = false;
     this.camStyle = 'new';
@@ -689,7 +719,7 @@ export class Stage {
     shield.visible = false;
     shield.renderOrder = 4;
     root.add(shield);
-    return {root, core, coreUniforms, halo, parts, sweep, shield, act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
+    return {root, core, coreUniforms, halo, parts, sweep, shield, shieldColor: shield.material.uniforms.uColor.value.clone(), act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
   }
 
   /** Applies one sampled replay state: body transform, angular speed about its up axis, alive flags, HP. */
@@ -748,8 +778,49 @@ export class Stage {
       this.streaks.add(at, f.act.dir, f.act.dir.clone().multiplyScalar(-2.5 - Math.random() * 2), 0.55 + Math.random() * 0.5, 0.035, 0.28 + Math.random() * 0.12, k % 3 ? TEAM[i] : WHITE);
     }
   }
-  endLunge(i) { const f = this.fighters[i]; if (f) f.act.dash = 0; }
-  raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.shield.visible = true; } }
+  endLunge(i) { const f = this.fighters[i]; if (f) { f.act.dash = 0; f.act.aimOut = Math.max(f.act.aimOut ?? 0, 0.001); } }
+  /**
+   * The lunge's locked direction as an arrow on the floor, from the edge of the top's sweep where it stood at the press:
+   * it grows out over the wind-up (`secs`), stays put while the top runs along it and fades out after the lunge ends.
+   * `len` is how far the lunge can carry (m); the arrow stops at the arena wall.
+   */
+  aim(i, dir, secs, len) {
+    const f = this.fighters[i];
+    if (!f || !dir) return;
+    const d = new THREE.Vector3().fromArray(dir).setY(0);
+    if (d.lengthSq() < 1e-8) return;
+    d.normalize();
+    // A fixed lane on the floor from where the top stood at the press (it hardly moves while winding up), cut at the wall.
+    const from = f.center.clone(), start = f.sweep * 1.05, pd = from.x * d.x + from.z * d.z;
+    const toWall = -pd + Math.sqrt(Math.max(0, pd * pd - (from.x * from.x + from.z * from.z) + ARENA_RIM * ARENA_RIM));
+    Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall - start)), aimOut: 0});
+  }
+  raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.act.fizzle = 0; f.shield.visible = true; } }
+  /** A block that caught a real hit in its window: the bubble flares and a bright ring snaps out from the core. */
+  perfectBlock(i, point) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.shield = 0;
+    f.act.parry = Math.max(f.act.parry, 0.3);
+    this.ring(f.center, new THREE.Color('#ffffff'), 0.25, 1.5, 0.32);
+    if (point) this.ring(point, new THREE.Color('#e6fbff'), 0.08, 0.9, 0.3);
+  }
+  /** A block whose window ran out with nothing caught: the bubble goes grey, cracks and drops away in a few dull flakes. */
+  fizzle(i) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.shield = 0;
+    f.act.fizzle = FIZZLE_TIME;
+    this.shards.burst(f.center, 7, 0.9, [GREY, GREY_DARK]);
+  }
+  /** A lunge that met nothing: it pulls up in a small puff of floor dust. */
+  whiff(i) {
+    const f = this.fighters[i];
+    if (!f) return;
+    const at = tmp.copy(f.center).setY(f.center.y - 0.06);
+    this.burst(at, [GREY, GREY_DARK, GREY], 26, 0.7, 0.05, 0.55, f.act.aimDir ? f.act.aimDir.clone().multiplyScalar(0.5) : undefined);
+    this.ring(at, GREY, 0.15, 0.7, 0.35);
+  }
   /** A lunge (by side `by`) bounced off this shield: the bubble flares, a pale ring snaps out, and the lunger is flung with streaks. */
   parry(i, point, by) {
     const f = this.fighters[i];
@@ -768,7 +839,7 @@ export class Stage {
     this.streaks.burst(point, Math.round(5 + 13 * power), 3 + 4 * power, 0.22 + 0.3 * power, 0.025 + 0.02 * power, 0.16 + 0.12 * power, colors);
     this.punch(point, 2 + 9 * power);
   }
-  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0}); f.shield.visible = false; f.root.scale.setScalar(1); } }
+  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0, fizzle: 0, aimDir: null}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
   shake(px) { const c = this.cam; if (this.chase || (c.shakeAge < SHAKE_TIME && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; }
   /** Camera punch: the picture jumps a few px toward the impact and settles back within PUNCH_TIME (translation only). */
@@ -1143,14 +1214,40 @@ export class Stage {
           if (a.ghostIn <= 0) { a.ghostIn = 0.04; this.ghost(f.center, TEAM[i], 0.3); }
         }
       }
-      if (a.shield > 0 || a.parry > 0) {
+      if (a.shield > 0 || a.parry > 0 || a.fizzle > 0) {
         a.shield = Math.max(0, a.shield - simDt);
         a.parry = Math.max(0, a.parry - simDt);
-        const fade = Math.min(1, (a.shieldLen - a.shield) / 0.08, a.shield / 0.2);
-        f.shield.material.uniforms.uOpacity.value = Math.max(0.9 * fade, (a.parry / 0.35) ** 2 * 1.3);
-        f.shield.material.uniforms.uTime.value = this.time;
+        a.fizzle = Math.max(0, (a.fizzle ?? 0) - simDt);
+        // The window (第 13 版, about 0.25 s): the bubble snaps shut at once, then visibly tightens and dims until it ends,
+        // so how long it lasts reads at a glance. A perfect block flares it (parry); an empty one turns it grey and drops it.
+        const u = f.shield.material.uniforms, left = a.shieldLen > 0 ? a.shield / a.shieldLen : 0;
+        const win = a.shield > 0 ? Math.min(1, (a.shieldLen - a.shield) / 0.03) * (0.45 + 0.55 * left) : 0;
+        const fz = a.fizzle / FIZZLE_TIME;
+        u.uOpacity.value = Math.max(1.05 * win, (a.parry / 0.35) ** 2 * 1.3, 0.7 * fz * fz);
+        u.uColor.value.copy(f.shieldColor).lerp(GREY, a.shield > 0 || a.parry > 0 ? 0 : 1);
+        u.uTime.value = this.time;
+        f.shield.scale.setScalar(a.shield > 0 ? 0.82 + 0.18 * left : a.parry > 0 ? 1 + 0.25 * (1 - a.parry / 0.35) : 0.82 - 0.25 * (1 - fz));
         f.shield.visible = f.coreAlive;
       } else f.shield.visible = false;
+      // The lunge's aim arrow: grows over the wind-up, holds while it flies, fades once it is over.
+      const aim = this.aims[i];
+      if (a.aimDir && f.coreAlive) {
+        a.aimAge += simDt;
+        if (a.aimOut > 0) a.aimOut += simDt;
+        const grow = Math.min(1, a.aimAge / a.aimGrow), out = a.aimOut > 0 ? Math.max(0, 1 - a.aimOut / AIM_FADE) : 1;
+        if (out <= 0) { a.aimDir = null; aim.visible = false; }
+        else {
+          const start = f.sweep * 1.05;
+          aim.visible = true;
+          aim.position.set(a.aimFrom.x + a.aimDir.x * start, a.aimFrom.y - 0.04, a.aimFrom.z + a.aimDir.z * start);
+          aim.rotation.set(-Math.PI / 2, Math.atan2(-a.aimDir.z, a.aimDir.x), 0);
+          aim.scale.set(a.aimLen, f.sweep * 0.9, 1);
+          const mu = aim.material.uniforms;
+          mu.uGrow.value = 0.15 + 0.9 * (1 - (1 - grow) ** 2);
+          mu.uOpacity.value = (0.55 + 0.45 * grow) * out * (1 - f.dim);
+          mu.uTime.value = this.time;
+        }
+      } else aim.visible = false;
       // Motion trail: always on for the player's top (orange), only while lunging or flung for the opponent.
       const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe;
       const op = f.dim > 0.5 ? 0 : hot ? 1 : mine ? 0.6 : 0;
