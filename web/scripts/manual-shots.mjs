@@ -29,7 +29,7 @@ await page.waitForTimeout(300);
 await shot('m1b-start');
 
 // Play like a person: lunge when 冲 is ready, raise 挡 when the computer winds up. Grab the moments on the way.
-// The dash shot wants the player's own lunge landing clean on the computer's core (a hit on a hugging part also shows the part's 「挡住」).
+// The dash shot wants the player's own lunge landing clean on the computer's core (a hit on a hugging part also shows the part's 「护住」).
 const want = ['dash-core', 'parry'], got = {};
 let s = await status(), pressedFight = false;
 await page.evaluate(k => window.__top.freezeOn(k, 140, 1), want[0]);

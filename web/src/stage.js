@@ -796,14 +796,14 @@ export class Stage {
     Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall) - start), aimOut: 0});
   }
   raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.act.fizzle = 0; f.shield.visible = true; } }
-  /** A block that caught a real hit in its window: the bubble flares and a bright ring snaps out from the core. */
-  perfectBlock(i, point) {
+  /** A block that caught a real hit in its window: the bubble flares and a bright ring snaps out from the core (size < 1: held without damage). */
+  perfectBlock(i, point, size = 1) {
     const f = this.fighters[i];
     if (!f) return;
     f.act.shield = 0;
-    f.act.parry = Math.max(f.act.parry, 0.3);
-    this.ring(f.center, new THREE.Color('#ffffff'), 0.25, 1.5, 0.32);
-    if (point) this.ring(point, new THREE.Color('#e6fbff'), 0.08, 0.9, 0.3);
+    f.act.parry = Math.max(f.act.parry, 0.3 * size);
+    this.ring(f.center, new THREE.Color('#ffffff'), 0.25, 0.25 + 1.25 * size, 0.32);
+    if (point && size >= 1) this.ring(point, new THREE.Color('#e6fbff'), 0.08, 0.9, 0.3);
   }
   /** A block whose window ran out with nothing caught: the bubble goes grey, cracks and drops away in a few dull flakes. */
   fizzle(i) {

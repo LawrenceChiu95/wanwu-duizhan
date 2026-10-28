@@ -283,7 +283,7 @@ async function main() {
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
         overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak', dash: e.dash && !e.parry});
-        if (!core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry) overlay.callout(point, e.target, '挡住', {cls: 'block'});
+        if (!core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry) overlay.callout(point, e.target, '护住', {cls: 'block'});
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
       }
@@ -318,11 +318,17 @@ async function main() {
       sfx.ting();
     } else if (e.type === 'blockResult') {
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
-      if (e.outcome === 'perfect') {
+      if (e.outcome === 'perfect' && e.damageApplied !== false) {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
         sfx.perfect();
         verdict(e.side, '完美', 'perfect');
+      } else if (e.outcome === 'perfect') {
+        // Caught a real new contact while the shared damage cooldown let nothing through (damageApplied false, Elara
+        // c65e070d): it still counts as held, one size smaller, no 「完美」.
+        stage.perfectBlock(e.side, point, 0.6);
+        sfx.ting();
+        verdict(e.side, '挡住', 'held');
       } else { stage.fizzle(e.side); sfx.fizzle(); verdict(e.side, '空挡', 'dud'); }
     } else if (e.type === 'parry') {
       // A lunge into a raised shield: it is bounced, and that should read at a glance (white flash, a clang, a
