@@ -1,0 +1,2332 @@
+[
+  {
+    "pair": "pan-broom",
+    "label": "Lux3D锅＋扫把",
+    "seed": 37,
+    "split": true,
+    "examples": [
+      {
+        "kind": "best",
+        "layout": "out-out-e90",
+        "file": "pan-broom-best.json",
+        "url": "http://127.0.0.1:4330/?mine=pan-lux3d,out,broom,out,e90&seed=37",
+        "pair": "pan-broom",
+        "condition": "auto",
+        "seed": 37,
+        "winner": 0,
+        "reason": "ko",
+        "duration": 33.55833333333333,
+        "computeMs": null,
+        "firstBreak": {
+          "t": 22.291666666666668,
+          "broken": [
+            {
+              "side": 1,
+              "part": "part-0",
+              "item": "pan-lux3d",
+              "orient": "out"
+            }
+          ]
+        },
+        "firstBreakBySide": [
+          null,
+          {
+            "t": 22.291666666666668,
+            "broken": [
+              {
+                "side": 1,
+                "part": "part-0",
+                "item": "pan-lux3d",
+                "orient": "out"
+              }
+            ]
+          }
+        ],
+        "breaks": [
+          {
+            "t": 22.291666666666668,
+            "side": 1,
+            "part": "part-0",
+            "item": "pan-lux3d",
+            "orient": "out"
+          }
+        ],
+        "core": [
+          {
+            "contacts": 10,
+            "attackHits": 5,
+            "recoilHits": 5,
+            "damage": 127.04447200000001,
+            "first": 0.35833333333333334
+          },
+          {
+            "contacts": 9,
+            "attackHits": 6,
+            "recoilHits": 3,
+            "damage": 159.99999999999997,
+            "first": 8.416666666666666
+          }
+        ],
+        "actions": [
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          },
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          }
+        ],
+        "decisive": {
+          "attacker": 0,
+          "attackerPart": "part-0",
+          "attackerItem": "pan-lux3d",
+          "attackerOrient": "out",
+          "target": 1,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "pan-lux3d",
+              "orient": "out",
+              "t": 22.291666666666668
+            }
+          ],
+          "loserPartsLeft": 1
+        },
+        "replaySha256": "ac1c0eabf71895351e7e9e7febc4cb5c24d24fb293f4a07d1abf1cf193d5235c",
+        "timeline": [
+          {
+            "t": 0.35833333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 20.49746666666667,
+            "hpAfter": 139.50253333333333,
+            "weak": false
+          },
+          {
+            "t": 1.8166666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.479336,
+            "hpAfter": 139.02319733333334,
+            "weak": false
+          },
+          {
+            "t": 3.5416666666666665,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 21.363333333333337,
+            "hpAfter": 117.659864,
+            "weak": false
+          },
+          {
+            "t": 8.416666666666666,
+            "type": "hit",
+            "attacker": 0,
+            "item": "broom",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6126120000000002,
+            "hpAfter": 159.387388,
+            "weak": false
+          },
+          {
+            "t": 13.883333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.725288,
+            "hpAfter": 158.66209999999998,
+            "weak": false
+          },
+          {
+            "t": 15.566666666666666,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 24.891022222222226,
+            "hpAfter": 92.76884177777777,
+            "weak": false
+          },
+          {
+            "t": 17.108333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "broom",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.408320000000003,
+            "hpAfter": 135.25377999999998,
+            "weak": false
+          },
+          {
+            "t": 20.40833333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 28.402844444444447,
+            "hpAfter": 106.85093555555554,
+            "weak": false
+          },
+          {
+            "t": 22.291666666666668,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8930666666666668,
+            "hpAfter": 91.8757751111111,
+            "weak": false
+          },
+          {
+            "t": 22.291666666666668,
+            "type": "break",
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 25.608333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 24.60408888888889,
+            "hpAfter": 82.24684666666664,
+            "weak": false
+          },
+          {
+            "t": 25.608333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7381226666666666,
+            "hpAfter": 91.13765244444443,
+            "weak": false
+          },
+          {
+            "t": 26.95,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 33.14773333333334,
+            "hpAfter": 49.0991133333333,
+            "weak": false
+          },
+          {
+            "t": 26.95,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.9944320000000002,
+            "hpAfter": 90.14322044444442,
+            "weak": false
+          },
+          {
+            "t": 28.133333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 1.0201813333333334,
+            "hpAfter": 89.1230391111111,
+            "weak": false
+          },
+          {
+            "t": 29.466666666666665,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8023253333333332,
+            "hpAfter": 48.296787999999964,
+            "weak": false
+          },
+          {
+            "t": 29.466666666666665,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 26.744177777777775,
+            "hpAfter": 62.37886133333332,
+            "weak": false
+          },
+          {
+            "t": 30.8,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 36.44800000000001,
+            "hpAfter": 11.848787999999956,
+            "weak": false
+          },
+          {
+            "t": 32.291666666666664,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 29.423333333333332,
+            "hpAfter": 32.95552799999999,
+            "weak": false
+          },
+          {
+            "t": 33.55833333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 11.848787999999956,
+            "hpAfter": 0,
+            "weak": false
+          }
+        ]
+      },
+      {
+        "kind": "worst",
+        "layout": "hug-hug-e90",
+        "file": "pan-broom-worst.json",
+        "url": "http://127.0.0.1:4330/?mine=pan-lux3d,hug,broom,hug,e90&seed=37",
+        "pair": "pan-broom",
+        "condition": "auto",
+        "seed": 37,
+        "winner": 1,
+        "reason": "ko",
+        "duration": 32.15,
+        "computeMs": null,
+        "firstBreak": {
+          "t": 24.825,
+          "broken": [
+            {
+              "side": 0,
+              "part": "part-1",
+              "item": "broom",
+              "orient": "hug"
+            }
+          ]
+        },
+        "firstBreakBySide": [
+          {
+            "t": 24.825,
+            "broken": [
+              {
+                "side": 0,
+                "part": "part-1",
+                "item": "broom",
+                "orient": "hug"
+              }
+            ]
+          },
+          null
+        ],
+        "breaks": [
+          {
+            "t": 24.825,
+            "side": 0,
+            "part": "part-1",
+            "item": "broom",
+            "orient": "hug"
+          },
+          {
+            "t": 25.983333333333334,
+            "side": 0,
+            "part": "part-0",
+            "item": "pan-lux3d",
+            "orient": "hug"
+          }
+        ],
+        "core": [
+          {
+            "contacts": 10,
+            "attackHits": 7,
+            "recoilHits": 3,
+            "damage": 160,
+            "first": 3.683333333333333
+          },
+          {
+            "contacts": 5,
+            "attackHits": 3,
+            "recoilHits": 2,
+            "damage": 79.65808444444446,
+            "first": 3.683333333333333
+          }
+        ],
+        "actions": [
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          },
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          }
+        ],
+        "decisive": {
+          "attacker": 1,
+          "attackerPart": "part-1",
+          "attackerItem": "lamp-lux3d",
+          "attackerOrient": "hug",
+          "target": 0,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "broom",
+              "orient": "hug",
+              "t": 24.825
+            },
+            {
+              "item": "pan-lux3d",
+              "orient": "hug",
+              "t": 25.983333333333334
+            }
+          ],
+          "loserPartsLeft": 0
+        },
+        "replaySha256": "5e0f1c6f7eaee1e41cd4ec6a3572635a3d4c0295784d0e96ee86e804c32bb82b",
+        "timeline": [
+          {
+            "t": 3.683333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6420560000000001,
+            "hpAfter": 159.357944,
+            "weak": false
+          },
+          {
+            "t": 3.683333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 21.40186666666667,
+            "hpAfter": 138.59813333333332,
+            "weak": false
+          },
+          {
+            "t": 5.508333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6569480000000001,
+            "hpAfter": 137.94118533333332,
+            "weak": false
+          },
+          {
+            "t": 7.3,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.3856,
+            "hpAfter": 115.55558533333333,
+            "weak": false
+          },
+          {
+            "t": 10.808333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.33986666666667,
+            "hpAfter": 92.21571866666666,
+            "weak": false
+          },
+          {
+            "t": 12.608333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.82946666666667,
+            "hpAfter": 68.38625199999998,
+            "weak": false
+          },
+          {
+            "t": 21.816666666666666,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 29.424355555555557,
+            "hpAfter": 129.93358844444444,
+            "weak": false
+          },
+          {
+            "t": 21.816666666666666,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8827306666666667,
+            "hpAfter": 67.50352133333332,
+            "weak": false
+          },
+          {
+            "t": 24.825,
+            "type": "hit",
+            "attacker": 0,
+            "item": "broom",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 15.059520000000001,
+            "hpAfter": 114.87406844444443,
+            "weak": false
+          },
+          {
+            "t": 24.825,
+            "type": "break",
+            "item": "broom",
+            "target": 0,
+            "targetPart": "part-1"
+          },
+          {
+            "t": 25.983333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.9733973333333334,
+            "hpAfter": 113.9006711111111,
+            "weak": false
+          },
+          {
+            "t": 25.983333333333334,
+            "type": "break",
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 27.516666666666666,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 33.558755555555564,
+            "hpAfter": 80.34191555555553,
+            "weak": false
+          },
+          {
+            "t": 27.516666666666666,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 1.006762666666667,
+            "hpAfter": 66.49675866666666,
+            "weak": false
+          },
+          {
+            "t": 29.224999999999998,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 34.797866666666664,
+            "hpAfter": 31.698892,
+            "weak": false
+          },
+          {
+            "t": 30.766666666666666,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 27.837333333333333,
+            "hpAfter": 3.8615586666666672,
+            "weak": false
+          },
+          {
+            "t": 32.15,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 3.8615586666666672,
+            "hpAfter": 0,
+            "weak": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "pair": "scissors-pillow",
+    "label": "剪刀＋枕头",
+    "seed": 61,
+    "split": true,
+    "examples": [
+      {
+        "kind": "best",
+        "layout": "out-hug-e180",
+        "file": "scissors-pillow-best.json",
+        "url": "http://127.0.0.1:4330/?mine=scissors,out,pillow,hug,e180&seed=61",
+        "pair": "scissors-pillow",
+        "condition": "auto",
+        "seed": 61,
+        "winner": 0,
+        "reason": "ko",
+        "duration": 33.891666666666666,
+        "computeMs": null,
+        "firstBreak": {
+          "t": 28.333333333333332,
+          "broken": [
+            {
+              "side": 1,
+              "part": "part-0",
+              "item": "pan-lux3d",
+              "orient": "out"
+            }
+          ]
+        },
+        "firstBreakBySide": [
+          null,
+          {
+            "t": 28.333333333333332,
+            "broken": [
+              {
+                "side": 1,
+                "part": "part-0",
+                "item": "pan-lux3d",
+                "orient": "out"
+              }
+            ]
+          }
+        ],
+        "breaks": [
+          {
+            "t": 28.333333333333332,
+            "side": 1,
+            "part": "part-0",
+            "item": "pan-lux3d",
+            "orient": "out"
+          }
+        ],
+        "core": [
+          {
+            "contacts": 9,
+            "attackHits": 5,
+            "recoilHits": 4,
+            "damage": 139.8513217777778,
+            "first": 6.508333333333333
+          },
+          {
+            "contacts": 10,
+            "attackHits": 7,
+            "recoilHits": 3,
+            "damage": 160,
+            "first": 2
+          }
+        ],
+        "actions": [
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          },
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          }
+        ],
+        "decisive": {
+          "attacker": 0,
+          "attackerPart": "part-1",
+          "attackerItem": "pillow",
+          "attackerOrient": "hug",
+          "target": 1,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "pan-lux3d",
+              "orient": "out",
+              "t": 28.333333333333332
+            }
+          ],
+          "loserPartsLeft": 1
+        },
+        "replaySha256": "7363ed7fa7369e5f2f90461cf9001ba9231b424a59c3ced89630d075787246a3",
+        "timeline": [
+          {
+            "t": 2,
+            "type": "hit",
+            "attacker": 0,
+            "item": "scissors",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 25.625600000000006,
+            "hpAfter": 134.37439999999998,
+            "weak": false
+          },
+          {
+            "t": 6.508333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.665108,
+            "hpAfter": 133.70929199999998,
+            "weak": false
+          },
+          {
+            "t": 6.508333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.17026666666667,
+            "hpAfter": 137.82973333333334,
+            "weak": false
+          },
+          {
+            "t": 7.983333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.57146666666667,
+            "hpAfter": 111.13782533333331,
+            "weak": false
+          },
+          {
+            "t": 7.983333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6771440000000001,
+            "hpAfter": 137.15258933333334,
+            "weak": false
+          },
+          {
+            "t": 11.133333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 14.332586666666666,
+            "hpAfter": 96.80523866666664,
+            "weak": false
+          },
+          {
+            "t": 17.1,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.5965440000000001,
+            "hpAfter": 136.55604533333334,
+            "weak": false
+          },
+          {
+            "t": 18.575,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.812192,
+            "hpAfter": 95.99304666666664,
+            "weak": false
+          },
+          {
+            "t": 18.575,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 27.07306666666667,
+            "hpAfter": 109.48297866666667,
+            "weak": false
+          },
+          {
+            "t": 21.608333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 29.273244444444448,
+            "hpAfter": 80.20973422222222,
+            "weak": false
+          },
+          {
+            "t": 23.216666666666665,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.277511111111114,
+            "hpAfter": 72.71553555555553,
+            "weak": false
+          },
+          {
+            "t": 23.216666666666665,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6983253333333334,
+            "hpAfter": 79.5114088888889,
+            "weak": false
+          },
+          {
+            "t": 24.675,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.9449280000000001,
+            "hpAfter": 71.77060755555553,
+            "weak": false
+          },
+          {
+            "t": 24.675,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 31.497600000000006,
+            "hpAfter": 48.01380888888889,
+            "weak": false
+          },
+          {
+            "t": 26.816666666666666,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.9915306666666669,
+            "hpAfter": 47.02227822222222,
+            "weak": false
+          },
+          {
+            "t": 28.333333333333332,
+            "type": "break",
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 29.7,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 26.873600000000003,
+            "hpAfter": 20.148678222222216,
+            "weak": false
+          },
+          {
+            "t": 31.141666666666666,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 15.633600000000001,
+            "hpAfter": 56.13700755555553,
+            "weak": false
+          },
+          {
+            "t": 32.608333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "scissors",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 47.60426666666667,
+            "hpAfter": 8.53274088888886,
+            "weak": false
+          },
+          {
+            "t": 33.891666666666666,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 8.53274088888886,
+            "hpAfter": 0,
+            "weak": false
+          }
+        ]
+      },
+      {
+        "kind": "worst",
+        "layout": "out-hug-e90",
+        "file": "scissors-pillow-worst.json",
+        "url": "http://127.0.0.1:4330/?mine=scissors,out,pillow,hug,e90&seed=61",
+        "pair": "scissors-pillow",
+        "condition": "auto",
+        "seed": 61,
+        "winner": 1,
+        "reason": "ko",
+        "duration": 32.858333333333334,
+        "computeMs": null,
+        "firstBreak": {
+          "t": 11.216666666666667,
+          "broken": [
+            {
+              "side": 1,
+              "part": "part-0",
+              "item": "pan-lux3d",
+              "orient": "out"
+            }
+          ]
+        },
+        "firstBreakBySide": [
+          null,
+          {
+            "t": 11.216666666666667,
+            "broken": [
+              {
+                "side": 1,
+                "part": "part-0",
+                "item": "pan-lux3d",
+                "orient": "out"
+              }
+            ]
+          }
+        ],
+        "breaks": [
+          {
+            "t": 11.216666666666667,
+            "side": 1,
+            "part": "part-0",
+            "item": "pan-lux3d",
+            "orient": "out"
+          },
+          {
+            "t": 19.65,
+            "side": 1,
+            "part": "part-1",
+            "item": "lamp-lux3d",
+            "orient": "hug"
+          }
+        ],
+        "core": [
+          {
+            "contacts": 11,
+            "attackHits": 7,
+            "recoilHits": 4,
+            "damage": 159.99999999999997,
+            "first": 0.3
+          },
+          {
+            "contacts": 12,
+            "attackHits": 6,
+            "recoilHits": 6,
+            "damage": 132.2048856888889,
+            "first": 1.9749999999999999
+          }
+        ],
+        "actions": [
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          },
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          }
+        ],
+        "decisive": {
+          "attacker": 1,
+          "attackerPart": "core",
+          "attackerItem": null,
+          "attackerOrient": "core",
+          "target": 0,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [],
+          "loserPartsLeft": 2
+        },
+        "replaySha256": "59298eede0c75b5f71a33fb87b9b862817c5c5e7e5c65a2a79da020138f492d7",
+        "timeline": [
+          {
+            "t": 0.3,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 20.481600000000004,
+            "hpAfter": 139.51839999999999,
+            "weak": false
+          },
+          {
+            "t": 1.9749999999999999,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6281160000000001,
+            "hpAfter": 159.371884,
+            "weak": false
+          },
+          {
+            "t": 1.9749999999999999,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 20.937200000000004,
+            "hpAfter": 118.58119999999998,
+            "weak": false
+          },
+          {
+            "t": 3.7083333333333335,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.64226,
+            "hpAfter": 117.93893999999999,
+            "weak": false
+          },
+          {
+            "t": 6.85,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 13.61984,
+            "hpAfter": 145.75204399999998,
+            "weak": false
+          },
+          {
+            "t": 9.858333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "scissors",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.5865408000000001,
+            "hpAfter": 145.1655032,
+            "weak": false
+          },
+          {
+            "t": 11.216666666666667,
+            "type": "break",
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 12.508333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 14.561386666666667,
+            "hpAfter": 130.60411653333333,
+            "weak": false
+          },
+          {
+            "t": 16.833333333333332,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 19.73688888888889,
+            "hpAfter": 98.2020511111111,
+            "weak": false
+          },
+          {
+            "t": 19.65,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.835584,
+            "hpAfter": 97.3664671111111,
+            "weak": false
+          },
+          {
+            "t": 19.65,
+            "type": "break",
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "part-1"
+          },
+          {
+            "t": 21.166666666666668,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.140444444444448,
+            "hpAfter": 108.46367208888887,
+            "weak": false
+          },
+          {
+            "t": 21.166666666666668,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6642133333333334,
+            "hpAfter": 96.70225377777777,
+            "weak": false
+          },
+          {
+            "t": 22.841666666666665,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6920853333333333,
+            "hpAfter": 107.77158675555553,
+            "weak": false
+          },
+          {
+            "t": 22.841666666666665,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.06951111111111,
+            "hpAfter": 73.63274266666666,
+            "weak": false
+          },
+          {
+            "t": 24.483333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7194026666666667,
+            "hpAfter": 107.05218408888886,
+            "weak": false
+          },
+          {
+            "t": 24.483333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.980088888888893,
+            "hpAfter": 49.652653777777765,
+            "weak": false
+          },
+          {
+            "t": 26.03333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 19.87185777777778,
+            "hpAfter": 87.18032631111109,
+            "weak": false
+          },
+          {
+            "t": 27.724999999999998,
+            "type": "hit",
+            "attacker": 0,
+            "item": "pillow",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 20.62250666666667,
+            "hpAfter": 66.55781964444442,
+            "weak": false
+          },
+          {
+            "t": 29.466666666666665,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8023253333333332,
+            "hpAfter": 65.7554943111111,
+            "weak": false
+          },
+          {
+            "t": 29.466666666666665,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 26.744177777777775,
+            "hpAfter": 22.90847599999999,
+            "weak": false
+          },
+          {
+            "t": 31.25,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 37.06,
+            "hpAfter": 28.69549431111109,
+            "weak": false
+          },
+          {
+            "t": 31.25,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 1.1118000000000001,
+            "hpAfter": 21.79667599999999,
+            "weak": false
+          },
+          {
+            "t": 32.858333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.9003800000000001,
+            "hpAfter": 27.795114311111092,
+            "weak": false
+          },
+          {
+            "t": 32.858333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 21.79667599999999,
+            "hpAfter": 0,
+            "weak": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "pair": "lamp-slipper",
+    "label": "Lux3D台灯＋拖鞋",
+    "seed": 18,
+    "split": true,
+    "examples": [
+      {
+        "kind": "best",
+        "layout": "out-hug-e90",
+        "file": "lamp-slipper-best.json",
+        "url": "http://127.0.0.1:4330/?mine=lamp-lux3d,out,slipper,hug,e90&seed=18",
+        "pair": "lamp-slipper",
+        "condition": "auto",
+        "seed": 18,
+        "winner": 0,
+        "reason": "ko",
+        "duration": 31.40833333333333,
+        "computeMs": null,
+        "firstBreak": {
+          "t": 22.375,
+          "broken": [
+            {
+              "side": 1,
+              "part": "part-1",
+              "item": "lamp-lux3d",
+              "orient": "hug"
+            }
+          ]
+        },
+        "firstBreakBySide": [
+          {
+            "t": 29.78333333333333,
+            "broken": [
+              {
+                "side": 0,
+                "part": "part-0",
+                "item": "lamp-lux3d",
+                "orient": "out"
+              }
+            ]
+          },
+          {
+            "t": 22.375,
+            "broken": [
+              {
+                "side": 1,
+                "part": "part-1",
+                "item": "lamp-lux3d",
+                "orient": "hug"
+              }
+            ]
+          }
+        ],
+        "breaks": [
+          {
+            "t": 22.375,
+            "side": 1,
+            "part": "part-1",
+            "item": "lamp-lux3d",
+            "orient": "hug"
+          },
+          {
+            "t": 23.683333333333334,
+            "side": 1,
+            "part": "part-0",
+            "item": "pan-lux3d",
+            "orient": "out"
+          },
+          {
+            "t": 29.78333333333333,
+            "side": 0,
+            "part": "part-0",
+            "item": "lamp-lux3d",
+            "orient": "out"
+          }
+        ],
+        "core": [
+          {
+            "contacts": 13,
+            "attackHits": 3,
+            "recoilHits": 10,
+            "damage": 75.97386222222224,
+            "first": 0.3416666666666667
+          },
+          {
+            "contacts": 11,
+            "attackHits": 7,
+            "recoilHits": 4,
+            "damage": 160,
+            "first": 0.3416666666666667
+          }
+        ],
+        "actions": [
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          },
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          }
+        ],
+        "decisive": {
+          "attacker": 0,
+          "attackerPart": "core",
+          "attackerItem": null,
+          "attackerOrient": "core",
+          "target": 1,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "lamp-lux3d",
+              "orient": "hug",
+              "t": 22.375
+            },
+            {
+              "item": "pan-lux3d",
+              "orient": "out",
+              "t": 23.683333333333334
+            }
+          ],
+          "loserPartsLeft": 0
+        },
+        "replaySha256": "6ed20379028e05ac259f3859c50975f1e6f3aa5a5c5c9f3c2684fdcff8027200",
+        "timeline": [
+          {
+            "t": 0.3416666666666667,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 20.492933333333333,
+            "hpAfter": 139.50706666666667,
+            "weak": false
+          },
+          {
+            "t": 0.3416666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.614788,
+            "hpAfter": 159.385212,
+            "weak": false
+          },
+          {
+            "t": 3.4416666666666664,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 16.31586666666667,
+            "hpAfter": 143.06934533333333,
+            "weak": false
+          },
+          {
+            "t": 4.833333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 21.71466666666667,
+            "hpAfter": 117.7924,
+            "weak": false
+          },
+          {
+            "t": 4.833333333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.65144,
+            "hpAfter": 142.41790533333332,
+            "weak": false
+          },
+          {
+            "t": 6.441666666666666,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.152133333333335,
+            "hpAfter": 95.64026666666666,
+            "weak": false
+          },
+          {
+            "t": 6.441666666666666,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.664564,
+            "hpAfter": 141.7533413333333,
+            "weak": false
+          },
+          {
+            "t": 7.791666666666667,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.519333333333336,
+            "hpAfter": 73.12093333333333,
+            "weak": false
+          },
+          {
+            "t": 7.791666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6755800000000001,
+            "hpAfter": 141.0777613333333,
+            "weak": false
+          },
+          {
+            "t": 11.091666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.416933333333336,
+            "hpAfter": 117.66082799999998,
+            "weak": false
+          },
+          {
+            "t": 12.833333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 23.89066666666667,
+            "hpAfter": 49.23026666666665,
+            "weak": false
+          },
+          {
+            "t": 14.333333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.72896,
+            "hpAfter": 116.93186799999998,
+            "weak": false
+          },
+          {
+            "t": 15.95,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7550720000000001,
+            "hpAfter": 116.17679599999998,
+            "weak": false
+          },
+          {
+            "t": 17.40833333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7868053333333334,
+            "hpAfter": 115.38999066666665,
+            "weak": false
+          },
+          {
+            "t": 19.133333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "slipper",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8510112,
+            "hpAfter": 48.37925546666665,
+            "weak": false
+          },
+          {
+            "t": 20.741666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 28.644622222222225,
+            "hpAfter": 86.74536844444442,
+            "weak": false
+          },
+          {
+            "t": 22.375,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8948800000000001,
+            "hpAfter": 85.85048844444442,
+            "weak": false
+          },
+          {
+            "t": 22.375,
+            "type": "break",
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "part-1"
+          },
+          {
+            "t": 23.683333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7060906666666668,
+            "hpAfter": 85.14439777777775,
+            "weak": false
+          },
+          {
+            "t": 23.683333333333334,
+            "type": "break",
+            "item": "pan-lux3d",
+            "target": 1,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 25.108333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7298026666666667,
+            "hpAfter": 47.649452799999985,
+            "weak": false
+          },
+          {
+            "t": 26.483333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 25.089422222222225,
+            "hpAfter": 22.56003057777776,
+            "weak": false
+          },
+          {
+            "t": 28.15,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7804159999999999,
+            "hpAfter": 21.77961457777776,
+            "weak": false
+          },
+          {
+            "t": 29.78333333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8075946666666667,
+            "hpAfter": 20.972019911111094,
+            "weak": false
+          },
+          {
+            "t": 29.78333333333333,
+            "type": "break",
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 31.40833333333333,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 20.972019911111094,
+            "hpAfter": 0,
+            "weak": false
+          },
+          {
+            "t": 31.40833333333333,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 1.11826,
+            "hpAfter": 84.02613777777775,
+            "weak": false
+          }
+        ]
+      },
+      {
+        "kind": "worst",
+        "layout": "out-out-e180",
+        "file": "lamp-slipper-worst.json",
+        "url": "http://127.0.0.1:4330/?mine=lamp-lux3d,out,slipper,out,e180&seed=18",
+        "pair": "lamp-slipper",
+        "condition": "auto",
+        "seed": 18,
+        "winner": 1,
+        "reason": "ko",
+        "duration": 31,
+        "computeMs": null,
+        "firstBreak": {
+          "t": 7.825,
+          "broken": [
+            {
+              "side": 0,
+              "part": "part-0",
+              "item": "lamp-lux3d",
+              "orient": "out"
+            }
+          ]
+        },
+        "firstBreakBySide": [
+          {
+            "t": 7.825,
+            "broken": [
+              {
+                "side": 0,
+                "part": "part-0",
+                "item": "lamp-lux3d",
+                "orient": "out"
+              }
+            ]
+          },
+          null
+        ],
+        "breaks": [
+          {
+            "t": 7.825,
+            "side": 0,
+            "part": "part-0",
+            "item": "lamp-lux3d",
+            "orient": "out"
+          }
+        ],
+        "core": [
+          {
+            "contacts": 14,
+            "attackHits": 6,
+            "recoilHits": 8,
+            "damage": 160,
+            "first": 5.416666666666667
+          },
+          {
+            "contacts": 10,
+            "attackHits": 5,
+            "recoilHits": 5,
+            "damage": 146.05568444444447,
+            "first": 2.1666666666666665
+          }
+        ],
+        "actions": [
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          },
+          {
+            "dash": 0,
+            "block": 0,
+            "parry": 0
+          }
+        ],
+        "decisive": {
+          "attacker": 1,
+          "attackerPart": "core",
+          "attackerItem": null,
+          "attackerOrient": "core",
+          "target": 0,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "lamp-lux3d",
+              "orient": "out",
+              "t": 7.825
+            }
+          ],
+          "loserPartsLeft": 1
+        },
+        "replaySha256": "09df6c20598f3c1e1e04284dd0b2a64da4b7a73410822d9373536a24f230c3c2",
+        "timeline": [
+          {
+            "t": 2.1666666666666665,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6296800000000001,
+            "hpAfter": 159.37032,
+            "weak": false
+          },
+          {
+            "t": 5.416666666666667,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6562,
+            "hpAfter": 158.71411999999998,
+            "weak": false
+          },
+          {
+            "t": 5.416666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 21.873333333333335,
+            "hpAfter": 138.12666666666667,
+            "weak": false
+          },
+          {
+            "t": 7.825,
+            "type": "hit",
+            "attacker": 0,
+            "item": "lamp-lux3d",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.5168280000000001,
+            "hpAfter": 158.19729199999998,
+            "weak": false
+          },
+          {
+            "t": 7.825,
+            "type": "break",
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "part-0"
+          },
+          {
+            "t": 9.241666666666667,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.687412,
+            "hpAfter": 157.50987999999998,
+            "weak": false
+          },
+          {
+            "t": 9.241666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 22.913733333333337,
+            "hpAfter": 115.21293333333332,
+            "weak": false
+          },
+          {
+            "t": 10.866666666666667,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.5358080000000001,
+            "hpAfter": 114.67712533333332,
+            "weak": false
+          },
+          {
+            "t": 13.85,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 24.167200000000005,
+            "hpAfter": 133.34267999999997,
+            "weak": false
+          },
+          {
+            "t": 13.85,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.7250160000000001,
+            "hpAfter": 113.95210933333333,
+            "weak": false
+          },
+          {
+            "t": 15.375,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.74256,
+            "hpAfter": 113.20954933333333,
+            "weak": false
+          },
+          {
+            "t": 16.95,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 25.8944,
+            "hpAfter": 87.31514933333332,
+            "weak": false
+          },
+          {
+            "t": 18.433333333333334,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 26.970311111111116,
+            "hpAfter": 106.37236888888886,
+            "weak": false
+          },
+          {
+            "t": 18.433333333333334,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8091093333333335,
+            "hpAfter": 86.50603999999998,
+            "weak": false
+          },
+          {
+            "t": 20.125,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 28.197333333333336,
+            "hpAfter": 78.17503555555552,
+            "weak": false
+          },
+          {
+            "t": 20.125,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.8459200000000001,
+            "hpAfter": 85.66011999999998,
+            "weak": false
+          },
+          {
+            "t": 21.65,
+            "type": "hit",
+            "attacker": 1,
+            "item": "lamp-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.6722559999999999,
+            "hpAfter": 84.98786399999997,
+            "weak": false
+          },
+          {
+            "t": 23.275,
+            "type": "hit",
+            "attacker": 0,
+            "item": "slipper",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 31.468320000000006,
+            "hpAfter": 46.70671555555552,
+            "weak": false
+          },
+          {
+            "t": 24.9,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 31.660800000000002,
+            "hpAfter": 15.045915555555517,
+            "weak": false
+          },
+          {
+            "t": 24.9,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.949824,
+            "hpAfter": 84.03803999999997,
+            "weak": false
+          },
+          {
+            "t": 26.525,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 0.521568,
+            "hpAfter": 83.51647199999996,
+            "weak": false
+          },
+          {
+            "t": 28.091666666666665,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 25.98151111111111,
+            "hpAfter": 57.534960888888854,
+            "weak": false
+          },
+          {
+            "t": 29.45,
+            "type": "hit",
+            "attacker": 1,
+            "item": "pan-lux3d",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 26.734933333333338,
+            "hpAfter": 30.800027555555516,
+            "weak": false
+          },
+          {
+            "t": 31,
+            "type": "hit",
+            "attacker": 0,
+            "item": "__core",
+            "target": 1,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "recoil",
+            "damage": 1.1016000000000001,
+            "hpAfter": 13.944315555555518,
+            "weak": false
+          },
+          {
+            "t": 31,
+            "type": "hit",
+            "attacker": 1,
+            "item": "__core",
+            "target": 0,
+            "targetPart": "core",
+            "targetItem": "__core",
+            "role": "attack",
+            "damage": 30.800027555555516,
+            "hpAfter": 0,
+            "weak": false
+          }
+        ]
+      }
+    ]
+  }
+]
