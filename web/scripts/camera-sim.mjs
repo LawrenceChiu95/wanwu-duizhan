@@ -8,13 +8,15 @@ import {chromium} from 'playwright';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 const [base, name, query, camArg = '-', w = '390', cache = '/tmp/camera-sim'] = process.argv.slice(2);
 mkdirSync(cache, {recursive: true});
-const W = Number(w), H = Math.round(W * 844 / 390), manual = query.includes('manual');
+const W = Number(w), H = Math.round(W * 844 / 390);
 const browser = await chromium.launch({channel: 'chromium'});
 const ctx = await browser.newContext({viewport: {width: W, height: H}, deviceScaleFactor: 1, isMobile: true, hasTouch: true});
 const page = await ctx.newPage();
 page.on('pageerror', e => console.error('pageerror', e.message));
 await page.goto(`${base}?${query}`);
 await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 60000});
+// Manual when the page is actually playing manual (its default since 10-28; play=auto for the auto fight).
+const manual = await page.evaluate(() => window.__top.status().control === 'manual');
 const file = `${cache}/${name}.json`;
 let json = existsSync(file) ? readFileSync(file, 'utf8') : null;
 await page.evaluate(manual => {

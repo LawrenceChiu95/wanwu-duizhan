@@ -16,7 +16,7 @@ const browser = await chromium.launch({channel: 'chromium'});
 const ctx = await browser.newContext(desk ? {viewport: {width: W, height: H}} : {viewport: {width: W, height: H}, deviceScaleFactor: 1, isMobile: true, hasTouch: true});
 const page = await ctx.newPage();
 page.on('pageerror', e => console.error('pageerror', e.message));
-await page.goto(`${base}?seed=1`);
+await page.goto(`${base}?play=manual&seed=1`);
 await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 60000});
 // A live manual match on the page, frozen, so the HUD and the 冲/挡 pad are laid out as in play.
 await page.evaluate(() => window.__top.start());
