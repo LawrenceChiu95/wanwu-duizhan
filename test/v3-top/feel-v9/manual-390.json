@@ -1,0 +1,21 @@
+{
+ "width": 390,
+ "seed": 7,
+ "fightShotAt": 6.016600000000006,
+ "got": {},
+ "result": {
+  "winner": 0,
+  "reason": "ko",
+  "duration": 30.025,
+  "line": "对手两件都碎了，核心被锅撞碎",
+  "presses": 10,
+  "deniedTaps": 25
+ },
+ "determinism": {
+  "browserLive": "e4e8c12aa2e8fe5bed8c9e434256f18f7405b8bfc6c2c31ecf59e8707dcdc473",
+  "nodeFromPresses": "e4e8c12aa2e8fe5bed8c9e434256f18f7405b8bfc6c2c31ecf59e8707dcdc473",
+  "equal": true,
+  "presses": 10
+ },
+ "logs": []
+}

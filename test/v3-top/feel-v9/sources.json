@@ -1,0 +1,54 @@
+{
+  "kind": "preserved-existing-author-receipts",
+  "sourceCommit": "7f48096d33a6f55a37685fbd74c044b766101cc0",
+  "files": [
+    {
+      "file": "camera/F_new_auto_hide/capture.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_auto_hide/capture.json",
+      "bytes": 1400,
+      "sha256": "1c49236478a77ac255e38a72b43a6c46cb5c62cd7bfdc6220bad65ac471dcdb5"
+    },
+    {
+      "file": "camera/F_new_auto_hide/motion.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_auto_hide/motion.json",
+      "bytes": 890,
+      "sha256": "61ff681df8ae0bbf7491888d8b1d50f9dd390122d4dc246a59a2b42a00c44646"
+    },
+    {
+      "file": "camera/F_new_auto_hide/motion-blockmatch.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_auto_hide/motion-blockmatch.json",
+      "bytes": 917,
+      "sha256": "af57e3594b79159a4a7be0dc6bed1c7cae1e10a92f54a5841e2d708811a144f0"
+    },
+    {
+      "file": "camera/F_new_man_hide/capture.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_man_hide/capture.json",
+      "bytes": 1516,
+      "sha256": "8ffb6e888cfcef31dd12085bb37562265c600b2ac9d7ff42ab51e661a348454c"
+    },
+    {
+      "file": "camera/F_new_man_hide/motion.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_man_hide/motion.json",
+      "bytes": 984,
+      "sha256": "b662d09fbb9c5dde17d93b3b336c63e50e4b3138797df0508ac8e00d685f5f9f"
+    },
+    {
+      "file": "camera/F_new_man_hide/motion-blockmatch.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_man_hide/motion-blockmatch.json",
+      "bytes": 1010,
+      "sha256": "cb03bc58dd871d4baf09ce69059d542dae3d9b92c8286d9f5acd5953af454971"
+    },
+    {
+      "file": "manual-390.json",
+      "source": "/tmp/feel-work/manual-shots/manual-390.json",
+      "bytes": 482,
+      "sha256": "508b11fc95f6ca40d5d5f2bc4db0761f29158522482422676b4b48a2dc764572"
+    },
+    {
+      "file": "tests-baseline.txt",
+      "source": "/tmp/feel-work/tests-baseline.txt",
+      "bytes": 2480,
+      "sha256": "112c02196597a1607349ab2f9fd62896d06b1bb50df0d7388c0220801da91c4f"
+    }
+  ]
+}
