@@ -1,0 +1,65 @@
+{
+ "width": 390,
+ "height": 844,
+ "pairs": 79,
+ "span_s": 7.9,
+ "mean_px_s": 14.47,
+ "worst_second_px_s": 35.8,
+ "reversals": 6,
+ "opposite_halves_pct": 0.0,
+ "over30_s": 0.0,
+ "max_pair_px": 10.8,
+ "moving_pairs": 32,
+ "safe": {
+  "play": {
+   "px": -6.255244465875903,
+   "who": "1:0",
+   "t": 0.76,
+   "w": 390
+  },
+  "finale": {
+   "px": -25.512785395610518,
+   "who": "0:1",
+   "t": 32.63,
+   "w": 390
+  },
+  "replay": {
+   "px": -50.15633175797183,
+   "who": "0:1",
+   "t": 31.44,
+   "w": 390
+  },
+  "result": {
+   "px": -92.56720502611832,
+   "who": "0:1",
+   "t": 32.63,
+   "w": 390
+  }
+ },
+ "frame": {
+  "frames": 2228,
+  "core15Pct": 99.3,
+  "ok15Pct": 88.4,
+  "minMarginPx": 6.3,
+  "sweptMinMarginLrPx": 8.1,
+  "sweptMinMarginSafePx": 8.1,
+  "core15PctExact": 99.33,
+  "pxPerMetre": {
+   "p10": 74.8,
+   "median": 89.9,
+   "p90": 126.9,
+   "min": 67.6,
+   "max": 177.3
+  }
+ },
+ "presses": 10,
+ "truth": {
+  "floorMeanPxS": 26.66,
+  "floorWorstSecondPx": 40.2,
+  "floorMaxStepPx": 7.8,
+  "zoomPairsOver1px": 39,
+  "pairs": 79
+ },
+ "errors": [],
+ "pass": true
+}

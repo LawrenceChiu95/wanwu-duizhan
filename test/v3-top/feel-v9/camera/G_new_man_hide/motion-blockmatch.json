@@ -1,0 +1,64 @@
+{
+ "method": "blockmatch",
+ "width": 390,
+ "height": 844,
+ "pairs": 79,
+ "span_s": 10.46,
+ "mean_px_s": 22.28,
+ "worst_second_px_s": 74.72,
+ "reversals": 3,
+ "opposite_halves_pct": 2.5,
+ "over30_s": 0.0,
+ "max_pair_px": 12.95,
+ "moving_pairs": 49,
+ "blocks_grid": 312,
+ "textured_blocks_mean": 251.6,
+ "textured_blocks_min": 193,
+ "pairs_with_thin_half": 0,
+ "safe": {
+  "play": {
+   "px": -8.570340729720158,
+   "who": "0:1",
+   "t": 0.68,
+   "w": 390
+  },
+  "finale": {
+   "px": -13.396722437572292,
+   "who": "0:1",
+   "t": 31.85,
+   "w": 390
+  },
+  "replay": {
+   "px": -28.409889192508274,
+   "who": "0:1",
+   "t": 30.55,
+   "w": 390
+  },
+  "result": {
+   "px": -97.89329595961743,
+   "who": "0:1",
+   "t": 31.85,
+   "w": 390
+  }
+ },
+ "rim_overflow_px": null,
+ "frame": {
+  "frames": 2163,
+  "core15Pct": 100,
+  "ok15Pct": 85.9,
+  "minMarginPx": 8.6,
+  "sweptMinMarginLrPx": 6.1,
+  "sweptMinMarginSafePx": 6.1,
+  "core15PctExact": 100,
+  "pxPerMetre": {
+   "p10": 85.6,
+   "median": 99.7,
+   "p90": 122,
+   "min": 81.7,
+   "max": 177.3
+  }
+ },
+ "errors": [],
+ "runtime_s": 4.5,
+ "pass": true
+}

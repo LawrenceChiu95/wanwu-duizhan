@@ -46,4 +46,4 @@ node --test --test-concurrency=1 test/prototype/sim.test.mjs test/v3/sim.test.mj
 
 - **硬线**：两颗陀螺整颗始终在画面里，不出画。
 - **目标**：陀螺中心离屏幕边至少 15% 屏宽，至少 99% 的帧做到。
-- **晃动**：用藏掉陀螺的量法（`HIDE=1 camera-motion.mjs`）或按块匹配；平均移动 ≤40 px/秒、最差一秒 ≤150 px、上下反向 ≤5%，单帧移动 >30 px 的累计时长 ≤0.3 秒。
+- **晃动**：以藏掉陀螺后的相位相关量法（`HIDE=1 camera-motion.mjs`）为主尺，块匹配只作参考；平均移动 ≤40 px/秒、最差一秒 ≤150 px、上下反向 ≤5%，单帧移动 >30 px 的累计时长 ≤0.3 秒。

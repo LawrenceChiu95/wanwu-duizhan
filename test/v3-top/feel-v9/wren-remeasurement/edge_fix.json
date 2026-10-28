@@ -1,0 +1,14 @@
+[
+ {
+  "round": 1,
+  "seconds": 40.6,
+  "frames": 386,
+  "sweep_min_left": 6.1,
+  "sweep_min_right": 8.3,
+  "sweep_min_lr": 6.1,
+  "core_margin15_frac": 0.9741,
+  "diameter_median": 104.6,
+  "diameter_min": 77.2,
+  "diameter_max": 181.8
+ }
+]

@@ -1,0 +1,24 @@
+{
+  "kind": "acceptance-provenance",
+  "reviewCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+  "leadAcceptedRemeasurement": {
+    "target": "dm:@Elara:9e323c61",
+    "message": "206a71d3-a548-4db1-95ee-0773284a3b2e",
+    "referencedWrenMessage": "ff7d7afe",
+    "result": "四项通过；合并只差远夏玩过说行"
+  },
+  "rawEvidenceHandoff": {
+    "target": "dm:@Wren:61db5e05",
+    "message": "2031e28f-c824-4e03-8dab-15443e6b4440"
+  },
+  "reviewDecision": {
+    "target": "dm:@Elara:9e323c61",
+    "message": "76a3254d-ffcf-4704-bb3e-363841426033",
+    "result": "零阻塞；相位相关为主尺；块匹配5.1%参考，不调参数"
+  },
+  "archiveValidation": "原字节复制；只核复制文件及manifest给出的SHA，不重跑测试或浏览器；原目录259项清单保留，未声称全部截图已复制或复核",
+  "pending": [
+    "远夏试玩认可",
+    "按原流程整合3a53ef4与本分支、PR CI、合main；未部署"
+  ]
+}
