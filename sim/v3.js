@@ -58,7 +58,7 @@ function partFrame(p){return {id:p.id,item:p.item.id==='__core'?null:p.item.id,m
 function fighterFrame(f){return {pos:arr(f.body.translation()),quat:qarr(f.body.rotation()),hp:f.core.hp,maxHp:f.core.maxHp,core:partFrame(f.core),parts:f.parts.map(partFrame),velocity:arr(f.body.linvel()),angularVelocity:arr(f.body.angvel()),mass:f.mass,centerOfMass:arr(f.body.worldCom())};}
 /** Moment of inertia about the body's spin axis (local +Y). */
 function spinInertia(body){const I=arr(body.principalInertia()),local=inverseRotate(qarr(body.principalInertiaLocalFrame()),UP);return I[0]*local[0]*local[0]+I[1]*local[1]*local[1]+I[2]*local[2]*local[2];}
-function buildFighter(world,def,index,c,r){
+function buildFighter(world,def,index,c,r,openingHalfTurn){
  const spin=r.top.spinRate*r.top.spinDirections[index];
  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping));
  const item={id:'__core',name:'核心',tag:'core',material:r.core.material,stats:{attack:r.core.attack,defense:r.core.defense},bounds:{min:[-r.core.radius,-r.core.radius,-r.core.radius],max:[r.core.radius,r.core.radius,r.core.radius]}};
@@ -71,7 +71,7 @@ function buildFighter(world,def,index,c,r){
  });
  body.recomputeMassPropertiesFromColliders();
  // Opposite sides face each other by a half turn, without reflecting handed geometry.
- const q=index===0?[0,0,0,1]:[0,1,0,0];body.setRotation(quat(q),true);body.setAngvel(vec(scale(rotate(q,UP),spin)),true);
+ const q=index===(openingHalfTurn?1:0)?[0,0,0,1]:[0,1,0,0];body.setRotation(quat(q),true);body.setAngvel(vec(scale(rotate(q,UP),spin)),true);
  return {body,core,parts,spin,mass:body.mass(),inertia:spinInertia(body),definition:structuredClone(def)};
 }
 const active=f=>[f.core,...f.parts.filter(p=>p.alive)];
@@ -164,14 +164,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
  // Automatic play has the same symmetric opening, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
+ // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
+ const openingHalfTurn=random(seed^0xd1b54a35)()>=.5;
  const aiSeeds=manual?.aiSeeds??[(seed^0x243f6a88)>>>0,(seed^0xb7e15162)>>>0],aiRoll=aiSeeds.map(random);
  const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
  try{
- critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r));
+ critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn));
  extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
- fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
+ fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
  initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)}));events=[];frames=[];diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
  scrapeEpisodes=[];
  closeContactRun=()=>{const duration=contactRunSteps*r.dt;if(duration>=.1-1e-8)scrapeEpisodes.push({start:contactRunStart,end:contactRunStart+duration,duration});contactRunSteps=0;};
@@ -310,7 +312,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  // A draw has no loser and so no reason facts; a timeout keeps the biggest attack's facts (not shown as a loss).
  const whyLoser=loser??(reason==='timeout'&&cause?cause.target:null),brokenBefore=whyLoser!==null?events.filter(e=>e.type==='break'&&e.target===whyLoser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
  const why=whyLoser!==null&&{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,loserBroken:brokenBefore,loserPartsLeft:definitions[whyLoser].parts.length-brokenBefore.length,...(M&&{dash:Boolean(cause.dash)})}||null;
- result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:reason==='timeout'?'时间到，双方核心还在':events.findLast(e=>e.type==='ko').caption}};
+ result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:reason==='timeout'?'时间到，双方核心还在':events.findLast(e=>e.type==='ko').caption}};
   }finally{world.free();}
  }
  return {

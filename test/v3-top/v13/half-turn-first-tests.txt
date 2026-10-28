@@ -1,0 +1,44 @@
+✔ six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass (13.974083ms)
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.317125ms)
+✔ real simulations: deterministic replay, A/B initial state, physical separation and HP accounting (350.451375ms)
+✔ 162 unique layouts, same-seed contact reversal and timeout percentage decision (167.067709ms)
+✔ compound COM follows layout; world part transforms and per-part hit identity (212.288917ms)
+✔ invalid input fails explicitly (3.310833ms)
+✔ attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker (0.218ms)
+✔ weakpoint chance is gated by physical contact, with an exact deterministic threshold (0.052709ms)
+✔ recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker (183.311333ms)
+✔ near-static normal approach never chooses an attacker from seed parity (0.603917ms)
+✔ review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions (195.286958ms)
+✔ block includes its first/last step, excludes the next step; empty block still consumes full cooldown (573.068917ms)
+✔ block cooldown accepts exactly 600 steps later, and its replay retains blockTime (221.485ms)
+✔ full dash uses pre-impact alignment, a real contact and the post-cap multiplier; shield produces one result (27.996042ms)
+✔ a guarded new contact during shared damage cooldown succeeds without damage, once per window (81.52625ms)
+✔ a below-threshold touch does not consume the guard before a real impact in the same window (4.403125ms)
+✔ dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus (48.119916ms)
+✔ dash timeout is a miss and a zero locked direction never invents a full alignment or NaN (36.722084ms)
+✔ seeded global half-turn changes only seating; same-loadout collider, COM and spin symmetry remain (2.879792ms)
+✔ global half-turn is seeded, recorded, and never swaps fighter definitions or input ownership (32.723875ms)
+✔ invalid sensitivity value fails; automatic mode retains no manual state (30.602666ms)
+✔ relative score ties clash on both sides; real advantage and below-speed contacts retain their meaning (0.124417ms)
+✔ a real head-on clash deals two capped main blows and both defenders can resolve one guard (18.842417ms)
+✔ AI reaction delays are seeded, bounded, replayed, and carry with the profile on seat swap (434.135ms)
+✔ explicit new schema, deterministic full replay, A/B identical initial geometry (127.261042ms)
+✔ equator slots and orientations, standard dimensions, inner end sunk into the core (1.485292ms)
+✔ HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage (1.23225ms)
+✔ one attachment and bare core still rotate, collide and can win; losing all parts is not KO (75.728333ms)
+✔ detachment removes collider, preserves surviving point velocity and rotation without kick (0.593041ms)
+✔ damage ramp is piecewise linear and never applies without a hit (0.122458ms)
+✔ damage tiers and weak cap; near-static approach never gains damage from seed (0.156042ms)
+✔ invalid user selection fails before simulation (1.260416ms)
+✔ sustained real surface contact is reported and repeated rubbing is not a new attack (23.216625ms)
+✔ same-step double break: less overkill wins, exact tie is a draw; reason keeps the decided loser and its broken parts (140.537875ms)
+✔ manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical (493.073125ms)
+✔ manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap (29.815ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2133.1175
