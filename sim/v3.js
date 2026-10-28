@@ -87,6 +87,12 @@ export function detachPart(world,f,p){
 }
 // mass^p for the strike-role score, built from sqrt only (see the portable-math note at the top).
 const massWeight=(m,p)=>{const r=Math.sqrt(m),q=Math.sqrt(r);if(p===1)return m;if(p===.75)return r*q;if(p===.5)return r;if(p===.25)return q;throw Error('roleMassPower must be 0.25, 0.5, 0.75 or 1 (portable math)');};
+/** Near-equal scores are a head-on clash, not a one-sided blow selected by Float32 round-off. */
+export function topStrikeRoles(options,relativeTolerance){
+ const roles=strikeRoles(options),high=Math.max(...roles.scores);
+ const clash=Math.max(...roles.normalSpeeds)>=options.minimumSpeed&&high>0&&Math.abs(roles.scores[0]-roles.scores[1])<=high*relativeTolerance;
+ return {...roles,clash,attacker:clash?null:roles.attacker};
+}
 function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.angular,sub(point,f.before.center)));}
 function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
@@ -152,11 +158,13 @@ const ACTIONS=['dash','block'];
 export async function createV3Match({fighters:definitions,mode='A',seed,manual=null}){
  if(!['A','B'].includes(mode))throw Error('mode must be A or B');if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('seed must be a uint32');if(!Array.isArray(definitions)||definitions.length!==2)throw Error('Exactly two fighters required');
  if(manual&&(!Array.isArray(manual.sides)||manual.sides.length!==2||!manual.sides.every(x=>x==='input'||x==='ai')))throw Error("manual.sides must be two of 'input' | 'ai'");
+ if(manual?.aiSeeds!==undefined&&(!Array.isArray(manual.aiSeeds)||manual.aiSeeds.length!==2||!manual.aiSeeds.every(s=>Number.isInteger(s)&&s>=0&&s<=0xffffffff)))throw Error('manual.aiSeeds must be two uint32 values');
  for(const x of manual?.inputs??[])if(!Number.isInteger(x.step)||x.step<1||![0,1].includes(x.side)||manual.sides[x.side]!=='input'||!ACTIONS.includes(x.action))throw Error(`Bad manual input ${JSON.stringify(x)}`);
  const c=await loadCatalogRules(),r=await loadV3Rules();definitions.forEach(d=>validate(d,c,r));await ready();
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
  // Automatic play has the same symmetric opening, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
+ const aiSeeds=manual?.aiSeeds??[(seed^0x243f6a88)>>>0,(seed^0xb7e15162)>>>0],aiRoll=aiSeeds.map(random);
  const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
@@ -171,13 +179,13 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  }catch(e){world.free();throw e;}
  // ---- manual play state (steps, not seconds) ----
  const queued=[[],[]],inputs=[],scripted=new Map();
- if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
+ if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null,pendingAi:null};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
  const charging=f=>f.ctl.chargeUntil>=step,dashing=f=>f.ctl.dashUntil>=step,shielded=f=>f.ctl.shieldUntil>=step;
  const flat=(a,b)=>{const d=[b[0]-a[0],0,b[2]-a[2]],n=hyp(d[0],d[2]);return n>1e-6?[d[0]/n,0,d[2]/n]:[0,0,0];};
- function tryPress(i,action,source){
+ function tryPress(i,action,source,decisionStep){
   const f=fs[i],k=f.ctl;
-  if(action==='dash'){if(step<k.dashReady||charging(f)||dashing(f))return;k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));k.dashPressStep=step;k.chargeUntil=step+steps(M.chargeTime)-1;k.dashReady=step+steps(M.dashCooldown);events.push({t,type:'press',side:i,action,source});events.push({t,type:'dash',phase:'charge',side:i,until:t+M.chargeTime,pressStep:step,lockedDir:k.lockedDir});}
-  else{if(step<k.blockReady)return;k.shieldUntil=step+steps(M.blockTime)-1;k.blockReady=step+steps(M.blockCooldown);k.blockPressStep=step;k.blockResolved=false;events.push({t,type:'press',side:i,action,source});events.push({t,type:'block',side:i,until:t+M.blockTime,pressStep:step,windowSteps:steps(M.blockTime)});}
+  if(action==='dash'){if(step<k.dashReady||charging(f)||dashing(f))return;k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));k.dashPressStep=step;k.chargeUntil=step+steps(M.chargeTime)-1;k.dashReady=step+steps(M.dashCooldown);events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'dash',phase:'charge',side:i,until:t+M.chargeTime,pressStep:step,lockedDir:k.lockedDir});}
+  else{if(step<k.blockReady)return;k.shieldUntil=step+steps(M.blockTime)-1;k.blockReady=step+steps(M.blockCooldown);k.blockPressStep=step;k.blockResolved=false;events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'block',side:i,until:t+M.blockTime,pressStep:step,windowSteps:steps(M.blockTime)});}
   if(manual.sides[i]==='input')inputs.push({step,side:i,action});
  }
  function blockResult(i,outcome,hit={}){const k=fs[i].ctl;if(k.blockResolved)return;k.blockResolved=true;events.push({t,type:'blockResult',side:i,outcome,pressStep:k.blockPressStep,resolvedStep:step,...hit});}
@@ -190,12 +198,18 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   if(step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=M.ai.dashRange[0]&&dist<=M.ai.dashRange[1]&&gap>0&&eta>M.chargeTime*.7&&dot(n,futureN)>=M.dashAlignment&&t-lastRecoil>=r.recoilPause)return 'dash';
   return null;
  }
+ function aiActions(i){
+  const k=fs[i].ctl;
+  if(k.pendingAi===null&&(step-1)%steps(M.ai.think)===0){const action=think(i);if(action)k.pendingAi={action,decisionStep:step,at:step+Math.floor(aiRoll[i]()*(steps(M.ai.reactionJitter)+1))};}
+  if(k.pendingAi&&k.pendingAi.at<=step){const action=k.pendingAi;k.pendingAi=null;return [action];}
+  return [];
+ }
  function manualStep(){
   for(let i=0;i<2;i++)if(fs[i].ctl.shieldUntil<step)blockResult(i,'empty');
   // Both decisions read the same pre-input state, including on the first step.
-  const wants=fs.map((f,i)=>manual.sides[i]==='ai'?((step-1)%steps(M.ai.think)===0?[think(i)].filter(Boolean):[]):[...(scripted.get(`${step}|${i}`)??[]),...queued[i].splice(0)]);
+  const wants=fs.map((f,i)=>manual.sides[i]==='ai'?aiActions(i):[...(scripted.get(`${step}|${i}`)??[]),...queued[i].splice(0)].map(action=>({action})));
   for(let i=0;i<2;i++){
-   for(const action of wants[i])tryPress(i,action,manual.sides[i]);
+   for(const {action,decisionStep}of wants[i])tryPress(i,action,manual.sides[i],decisionStep);
   }
   fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*M.dashSpeed,v[1],dir[2]*M.dashSpeed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
    else if(f.ctl.dashUntil===step-1)events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:f.ctl.dashPressStep});});
@@ -239,27 +253,27 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const fullLunge=alignment.filter(x=>x.value!==null&&x.value>=M.dashAlignment&&x.closing>0).map(x=>x.side);
    const matchupMultipliers=[[left,right],[right,left]].map(([a,b])=>(c.matchups[a.item.tag]?.[b.item.tag]??1)>1?r.counterSpeedMultiplier:1);
    const pointVelocities=[contactVelocity(fs[0],point),contactVelocity(fs[1],rightPoint)],closingSpeed=dot(sub(pointVelocities[0],pointVelocities[1]),normal);
-   let roles=strikeRoles({normal,velocities:pointVelocities,tipRatios:[tipRatio(left,point),tipRatio(right,rightPoint)],tipBonus:r.tipBonus,seed,masses:fs.map(f=>massWeight(f.mass,r.roleMassPower)),massPower:1,matchupMultipliers,minimumSpeed:r.minimumClosingSpeed});
+   let roles=topStrikeRoles({normal,velocities:pointVelocities,tipRatios:[tipRatio(left,point),tipRatio(right,rightPoint)],tipBonus:r.tipBonus,seed,masses:fs.map(f=>massWeight(f.mass,r.roleMassPower)),massPower:1,matchupMultipliers,minimumSpeed:r.minimumClosingSpeed},r.clashRelativeTolerance);
    // A lunge is the blow: the lunging side strikes (which pieces touch is still the physics' call).
-   if(M&&fullLunge.length===1)roles={...roles,attacker:fullLunge[0],tipMultiplier:1+r.tipBonus*roles.tipRatios[fullLunge[0]]};
-   if(newEpisode)events.push({t,type:'contact',point,rightPoint,normal,impulse,closingSpeed,parts:[left.id,right.id],items:[left.item.id,right.item.id],orients:[left.orient,right.orient],closingSpeeds:roles.normalSpeeds,attackScores:roles.scores,attacker:roles.attacker,pairCount:pairs.length});
-   let shieldDamageApplied=false;
-   if(newEpisode&&roles.attacker!==null&&impulse>=r.minimumImpulse&&(t-lastDamage>=r.damageCooldown||M&&fullLunge.length>0)){
+   if(M&&fullLunge.length===1)roles={...roles,clash:false,attacker:fullLunge[0],tipMultiplier:1+r.tipBonus*roles.tipRatios[fullLunge[0]]};
+   if(newEpisode)events.push({t,type:'contact',point,rightPoint,normal,impulse,closingSpeed,parts:[left.id,right.id],items:[left.item.id,right.item.id],orients:[left.orient,right.orient],closingSpeeds:roles.normalSpeeds,attackScores:roles.scores,attacker:roles.attacker,clash:roles.clash,pairCount:pairs.length});
+   const shieldDamageApplied=[false,false];
+   if(newEpisode&&(roles.attacker!==null||roles.clash)&&impulse>=r.minimumImpulse&&(t-lastDamage>=r.damageCooldown||M&&fullLunge.length>0)){
     const pending=[];
     for(const [attacker,target,ap,tp,tpnt] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
-     const role=attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
+     const role=roles.clash||attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
      const weakTouch=weakContact(tp,tpnt),roll=role==='attack'&&weakTouch?critRoll():null,weak=roll!==null&&weakCritical({contact:true,roll,chance:r.weakCritChance});
-     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?roles.tipMultiplier:1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),rules:r});
+     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),rules:r});
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
      const damage=Math.min(tp.hp,d.damage);
-     pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?roles.tipMultiplier:1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
+     pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
-    for(const {tp,event}of pending){tp.hp=Math.max(0,tp.hp-event.damage);event.hpAfter=tp.hp;events.push(event);if(M&&event.role==='attack'&&event.shield&&event.damage>0)shieldDamageApplied=true;}
+    for(const {tp,event}of pending){tp.hp=Math.max(0,tp.hp-event.damage);event.hpAfter=tp.hp;events.push(event);if(M&&event.role==='attack'&&event.shield&&event.damage>0)shieldDamageApplied[event.target]=true;}
     lastDamage=t;
-   }else if(newEpisode&&roles.attacker===null)diagnostics.skippedSlowContacts++;
+   }else if(newEpisode&&roles.attacker===null&&!roles.clash)diagnostics.skippedSlowContacts++;
    // A correctly timed guard is contact feedback, independent of the shared damage cooldown.
-   if(M&&newEpisode&&roles.attacker!==null&&shield[1-roles.attacker])blockResult(1-roles.attacker,'perfect',{point:roles.attacker===0?rightPoint:point,attacker:roles.attacker,damageApplied:shieldDamageApplied});
+   if(M&&newEpisode&&(roles.attacker!==null||roles.clash))for(let i=0;i<2;i++)if(shield[i]&&(roles.clash||i!==roles.attacker))blockResult(i,'perfect',{point:i===0?point:rightPoint,attacker:1-i,clash:roles.clash,damageApplied:shieldDamageApplied[i]});
    if((t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
     // Manual recoil scales: a shield barely moves; a lunge into a shield bounces hard; a landed lunge knocks the other back.
     const k=M?[0,1].map(i=>fullLunge.includes(i)?(shield[1-i]?M.bounceRecoil:1):shield[i]?M.blockRecoil:fullLunge.includes(1-i)?M.dashRecoil:1):null;
@@ -268,7 +282,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    }
    if(impulse>=r.minimumImpulse)lastSeen=t;
    // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
-   for(const i of lunge){const f=fs[i],full=fullLunge.includes(i),blocked=full&&i===roles.attacker&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0),quality=blocked?'blocked':full?'full':'glance';f.ctl.dashUntil=-1;events.push({t,type:'dash',phase:'end',side:i,outcome:blocked?'blocked':'hit',quality,alignment:alignment.find(x=>x.side===i).value,pressStep:f.ctl.dashPressStep,point:i===0?rightPoint:point});if(blocked)events.push({t,type:'parry',attacker:i,target:1-i,point:i===0?rightPoint:point});}
+   for(const i of lunge){const f=fs[i],full=fullLunge.includes(i),blocked=full&&(roles.clash||i===roles.attacker)&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0),quality=blocked?'blocked':full?'full':'glance';f.ctl.dashUntil=-1;events.push({t,type:'dash',phase:'end',side:i,outcome:blocked?'blocked':'hit',quality,alignment:alignment.find(x=>x.side===i).value,pressStep:f.ctl.dashPressStep,point:i===0?rightPoint:point});if(blocked)events.push({t,type:'parry',attacker:i,target:1-i,point:i===0?rightPoint:point});}
   }
   for(let i=0;i<2;i++)for(const p of fs[i].parts)if(p.alive&&p.hp<=0){const detached=detachPart(world,fs[i],p);events.push({t,type:'break',target:i,targetPart:p.id,item:p.item.id,mount:p.mount,orient:p.orient,...detached,caption:`${name(p)}碎了`});}
   const projection=correctOverlap(world,fs,r);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
@@ -296,7 +310,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  // A draw has no loser and so no reason facts; a timeout keeps the biggest attack's facts (not shown as a loss).
  const whyLoser=loser??(reason==='timeout'&&cause?cause.target:null),brokenBefore=whyLoser!==null?events.filter(e=>e.type==='break'&&e.target===whyLoser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
  const why=whyLoser!==null&&{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,loserBroken:brokenBefore,loserPartsLeft:definitions[whyLoser].parts.length-brokenBefore.length,...(M&&{dash:Boolean(cause.dash)})}||null;
- result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,inputs}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:reason==='timeout'?'时间到，双方核心还在':events.findLast(e=>e.type==='ko').caption}};
+ result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:reason==='timeout'?'时间到，双方核心还在':events.findLast(e=>e.type==='ko').caption}};
   }finally{world.free();}
  }
  return {

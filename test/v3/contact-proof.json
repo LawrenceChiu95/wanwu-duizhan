@@ -96,6 +96,7 @@
     "minimumImpulse": 0.001,
     "counterSpeedMultiplier": 2,
     "roleMassPower": 0.25,
+    "clashRelativeTolerance": 0.00001,
     "tipBonus": 0.3,
     "recoilDamageFraction": 0.03,
     "weakCritChance": 0.5,
@@ -187,6 +188,7 @@
         0
       ],
       "attacker": null,
+      "clash": false,
       "pairCount": 1
     },
     {
