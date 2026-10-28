@@ -231,6 +231,13 @@ async function main() {
     if (side !== 0 || !f) return;
     overlay.verdict(f, text, cls);
   }
+  // How far the aim arrow reaches from the core: the lunge's carry, but no further than the far side of the target as it
+  // stands at the press (Kimi fbe3bc4a 2678e876: a near-camera arrow running past it took half the phone screen).
+  function aimReach(side) {
+    const a = stage.fighters[side], b = stage.fighters[1 - side], carry = rules.manual.dashSpeed * rules.manual.dashTime;
+    // The head lands just past the target so it is not hidden under it, and the arrow is never shorter than ~0.9 m.
+    return a && b ? Math.min(carry, Math.max(Math.hypot(b.center.x - a.center.x, b.center.z - a.center.z) + b.sweep + 0.4, a.sweep * 1.05 + 0.9)) : carry;
+  }
   // Older replays have no locked direction on the wind-up: aim at the other core as it stands then.
   function towardFoe(side) {
     const a = stage.fighters[side], b = stage.fighters[1 - side];
@@ -240,8 +247,8 @@ async function main() {
   // Test aid (v13-shots.mjs): freeze on the player's own 第 13 版 moments.
   const quality = e => e.quality ?? (e.outcome === 'hit' ? 'full' : e.outcome);
   const V13_FREEZE = {
-    'aim-mine': e => e.type === 'dash' && e.phase === 'charge' && e.side === 0,
-    'aim-foe': e => e.type === 'dash' && e.phase === 'charge' && e.side === 1,
+    'aim-mine': e => e.type === 'dash' && e.phase === 'charge' && e.side === 0 && e.t > 1,
+    'aim-foe': e => e.type === 'dash' && e.phase === 'charge' && e.side === 1 && e.t > 1,
     perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.side === 0,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
     miss: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'miss' && e.side === 0,
@@ -295,7 +302,7 @@ async function main() {
       if (e.phase === 'charge') {
         stage.charge(e.side, e.until - e.t);
         // 第 13 版: the direction is locked at the press; show it through the wind-up so both sides can read the lunge.
-        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, rules.manual.dashSpeed * rules.manual.dashTime);
+        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side));
         sfx.charge(e.until - e.t);
       } else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
       else {

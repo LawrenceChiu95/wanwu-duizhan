@@ -13,7 +13,7 @@ page.on('pageerror', e => logs.push(`pageerror: ${e.message}`));
 page.on('console', m => { if (m.type() === 'error') logs.push(m.text()); });
 const status = () => page.evaluate(() => window.__top.status());
 const tap = sel => desk ? page.click(sel) : page.tap(sel);
-const want = ['aim-mine', 'aim-foe', 'miss', 'glance', 'empty', 'perfect'], delay = {'aim-mine': 220, 'aim-foe': 220, miss: 120, glance: 90, empty: 90, perfect: 90}, got = {};
+const want = process.env.WANT ? process.env.WANT.split(',') : ['aim-mine', 'aim-foe', 'miss', 'glance', 'empty', 'perfect'], delay = {'aim-mine': 220, 'aim-foe': 220, miss: 120, glance: 90, empty: 90, perfect: 90}, got = {};
 const report = {width: W, seed: Number(seedArg), extra};
 await page.goto(`${base}?play=manual&seed=${seedArg}${extra ? `&${extra}` : ''}`);
 await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 120000});

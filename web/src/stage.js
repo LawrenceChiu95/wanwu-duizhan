@@ -782,7 +782,7 @@ export class Stage {
   /**
    * The lunge's locked direction as an arrow on the floor, from the edge of the top's sweep where it stood at the press:
    * it grows out over the wind-up (`secs`), stays put while the top runs along it and fades out after the lunge ends.
-   * `len` is how far the lunge can carry (m); the arrow stops at the arena wall.
+   * `len` is how far from the core it reaches (m, the caller caps it at the lunge's carry and the target); it stops at the wall.
    */
   aim(i, dir, secs, len) {
     const f = this.fighters[i];
@@ -793,7 +793,7 @@ export class Stage {
     // A fixed lane on the floor from where the top stood at the press (it hardly moves while winding up), cut at the wall.
     const from = f.center.clone(), start = f.sweep * 1.05, pd = from.x * d.x + from.z * d.z;
     const toWall = -pd + Math.sqrt(Math.max(0, pd * pd - (from.x * from.x + from.z * from.z) + ARENA_RIM * ARENA_RIM));
-    Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall - start)), aimOut: 0});
+    Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall) - start), aimOut: 0});
   }
   raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.act.fizzle = 0; f.shield.visible = true; } }
   /** A block that caught a real hit in its window: the bubble flares and a bright ring snaps out from the core. */
@@ -1241,7 +1241,7 @@ export class Stage {
           aim.visible = true;
           aim.position.set(a.aimFrom.x + a.aimDir.x * start, a.aimFrom.y - 0.04, a.aimFrom.z + a.aimDir.z * start);
           aim.rotation.set(-Math.PI / 2, Math.atan2(-a.aimDir.z, a.aimDir.x), 0);
-          aim.scale.set(a.aimLen, f.sweep * 0.9, 1);
+          aim.scale.set(a.aimLen, f.sweep * 0.7, 1);
           const mu = aim.material.uniforms;
           mu.uGrow.value = 0.15 + 0.9 * (1 - (1 - grow) ** 2);
           mu.uOpacity.value = (0.55 + 0.45 * grow) * out * (1 - f.dim);
