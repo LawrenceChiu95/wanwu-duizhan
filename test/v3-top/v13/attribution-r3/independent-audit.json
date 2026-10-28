@@ -1,0 +1,69 @@
+{
+  "legacyCompleteReplaysVerified": 2,
+  "batchToolShaVerified": true,
+  "rows": 1500,
+  "unique": 1500,
+  "pythonRecomputedGroups": 7,
+  "manualNoopFullShaPairs": 600,
+  "clashOffMeasuredFieldsEqual": 300,
+  "fixedOrientationMatchesArchivedR2": 300,
+  "fieldsComparedToR2": [
+    "winner",
+    "reason",
+    "duration",
+    "first",
+    "medianGap",
+    "maxGap",
+    "hits",
+    "pacePass",
+    "approachMedian",
+    "separationMedian",
+    "residual",
+    "actions"
+  ],
+  "jointRows": 300,
+  "jointDurationExactlyLegacy": 300,
+  "jointFullShaAfterNamedMetadataNormalization": 298,
+  "jointDifferences": [
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 36,
+      "changedFields": {
+        "winner": [
+          1,
+          0
+        ],
+        "reason": [
+          "ko",
+          "double-ko"
+        ],
+        "approachMedian": [
+          6.243866900595358,
+          6.389291727294648
+        ]
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 46,
+      "changedFields": {
+        "approachMedian": [
+          5.350396972555661,
+          5.372238934677979
+        ]
+      }
+    }
+  ],
+  "frozenSources": {
+    "sim/v3.js": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+    "sim/v3-rules.json": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+    "data/catalog.json": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+    "test/v3-top/impact-probe.mjs": "a7fe86356dca4afd3102d9f8c53d2fc9cc66e561914a112840af77718a9d06d8",
+    "test/v3-top/v13/experiment.mjs": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+    "test/v3-top/v13/measure.mjs": "ed362ad85afb98ab5dae7e056cd438abda131316ff1d60951b1bf33eed153b8d",
+    "test/v3-top/v13/run.mjs": "29a13bbeaeaed10e3a72bc4474b062a37e0743e897e581eb391bf8b3d8c8eacd"
+  }
+}

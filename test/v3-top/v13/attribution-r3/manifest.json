@@ -1,0 +1,157 @@
+{
+  "sourceSha": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+  "ruleSha": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+  "catalogSha": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+  "frozen": {
+    "sim/v3.js": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+    "sim/v3-rules.json": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+    "data/catalog.json": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+    "test/v3-top/impact-probe.mjs": "a7fe86356dca4afd3102d9f8c53d2fc9cc66e561914a112840af77718a9d06d8",
+    "test/v3-top/v13/experiment.mjs": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+    "test/v3-top/v13/measure.mjs": "ed362ad85afb98ab5dae7e056cd438abda131316ff1d60951b1bf33eed153b8d",
+    "test/v3-top/v13/run.mjs": "29a13bbeaeaed10e3a72bc4474b062a37e0743e897e581eb391bf8b3d8c8eacd"
+  },
+  "toolSha": "b36e77e66c477d51a2eb65e284b5392e593fd63f715fdefa40771ed0de1be46d",
+  "node": "v18.18.1",
+  "fixtures": [
+    {
+      "id": "pan-broom/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "broom",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pan-broom/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "broom",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scissors-pillow/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "scissors",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "pillow",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scissors-pillow/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "scissors",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "pillow",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lamp-slipper/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "slipper",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lamp-slipper/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "slipper",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    }
+  ],
+  "seeds": 50,
+  "reference": "../results-r3/rounds.ndjson",
+  "planned": 1500,
+  "additionalChecks": 4,
+  "variants": [
+    {
+      "id": "dash-follow",
+      "purpose": "Disable motion direction lock only; automatic mode executes neither branch.",
+      "expectSame": true,
+      "sourceSha": "6aa233a64dc36335b372d05d710baf9e0383c5665d0e030da7a42d9e2faec173"
+    },
+    {
+      "id": "long-block-refund-empty",
+      "purpose": "Use a 1s shield and refund empty cooldown; automatic mode has no manual state.",
+      "expectSame": true,
+      "sourceSha": "541e6157710bb052d6ef026f48ffb680c468917e2dc473eade15a1d017d9ef3a"
+    },
+    {
+      "id": "no-double-clash",
+      "purpose": "Restore pre-v13 strikeRoles attacker selection, including its known numeric seat bias; no tuning.",
+      "sourceSha": "dd2e62a812b0678467f7924a5e574d939c3d2ce156bef043dc6b8af3ba95d166"
+    },
+    {
+      "id": "no-global-half-turn",
+      "purpose": "Fixed global orientation while retaining symmetric opening.",
+      "sourceSha": "25debaa1513c5ebfbac609f47e7668557b4713de3af28d3391e314b93a7f09b7"
+    },
+    {
+      "id": "old-asymmetric-opening",
+      "purpose": "Old same-facing seeded tilts and position jitter, preserving current half-turn bit and every other v13 rule.",
+      "sourceSha": "eb9fb94629bd684efb3e92777c1e83f09e0e57a87961def6e16a1487cf4534ce"
+    }
+  ],
+  "scope": "Each intervention is isolated in memory; no shipping default changed."
+}

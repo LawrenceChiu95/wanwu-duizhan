@@ -1,0 +1,344 @@
+{
+  "fixture": "scissors-pillow/out-out-e180",
+  "seed": 130,
+  "current": {
+    "stage": "fair",
+    "fixture": "scissors-pillow/out-out-e180",
+    "seed": 130,
+    "condition": "ai-left",
+    "window": 0.25,
+    "mode": "A",
+    "version": "v13",
+    "winner": 1,
+    "reason": "ko",
+    "duration": 34.916666666666664,
+    "score": 0,
+    "openingHalfTurn": false,
+    "role0StartsLeft": true,
+    "physicalLeftScore": 0,
+    "first": 0.3833333333333333,
+    "medianGap": 1.5833333333333357,
+    "maxGap": 1.9333333333333336,
+    "hits": 24,
+    "pacePass": true,
+    "approachMedian": 5.368267395909213,
+    "separationMedian": 3.38907776801631,
+    "rubs": 0,
+    "scrapeCount": 0,
+    "scrapeDuration": 0,
+    "maxScrapeDuration": 0,
+    "residual": 0.08875560760498047,
+    "actions": [
+      {
+        "press": 15,
+        "dash": 8,
+        "dashEnd": {
+          "full": 4,
+          "glance": 4,
+          "miss": 0,
+          "blocked": 0
+        },
+        "block": 7,
+        "perfect": 0,
+        "contactOnly": 0,
+        "empty": 7
+      },
+      {
+        "press": 15,
+        "dash": 8,
+        "dashEnd": {
+          "full": 4,
+          "glance": 4,
+          "miss": 0,
+          "blocked": 0
+        },
+        "block": 7,
+        "perfect": 5,
+        "contactOnly": 1,
+        "empty": 2
+      }
+    ],
+    "aiSeeds": [
+      608135690,
+      3084997088
+    ],
+    "aiPressSha256": [
+      "19d4da145f8b6eb0c7602bc6a8a359a766f8d7bc2d18dd84a1e8f2739ecd3cee",
+      "caa5197e3587563c647f356f984cd6a3129e92a51f642057168238bfe8bf64c7"
+    ],
+    "replaySha256": "f3ec64e513514268247f7046d5b58b50403607b5cf8c12c051dcc110a67d281f",
+    "wallMs": 154.3874590098858
+  },
+  "legacyNativeAi": {
+    "winner": 1,
+    "reason": "ko",
+    "duration": 31.341666666666665,
+    "score": 0,
+    "openingHalfTurn": false,
+    "role0StartsLeft": true,
+    "physicalLeftScore": 0,
+    "first": 0.35833333333333334,
+    "medianGap": 1.4333333333333331,
+    "maxGap": 1.9250000000000007,
+    "hits": 26,
+    "pacePass": true,
+    "approachMedian": 5.316322710798493,
+    "separationMedian": 2.6082688911129734,
+    "rubs": 0,
+    "scrapeCount": 0,
+    "scrapeDuration": 0,
+    "maxScrapeDuration": 0,
+    "residual": 0.02193877100944519,
+    "actions": [
+      {
+        "press": 7,
+        "dash": 6,
+        "dashEnd": {
+          "full": 0,
+          "glance": 0,
+          "miss": 0,
+          "blocked": 0
+        },
+        "block": 1,
+        "perfect": 0,
+        "contactOnly": 0,
+        "empty": 0
+      },
+      {
+        "press": 11,
+        "dash": 7,
+        "dashEnd": {
+          "full": 0,
+          "glance": 0,
+          "miss": 0,
+          "blocked": 0
+        },
+        "block": 4,
+        "perfect": 0,
+        "contactOnly": 0,
+        "empty": 0
+      }
+    ],
+    "aiSeeds": null,
+    "aiPressSha256": [
+      "540aae97a32d7073ab7a85ef9d8653650a4d43fd48419f734e42d64904741afa",
+      "ff017a10b5461041cee68b477c9789c8d9da3617af1413e768037f276641b2cb"
+    ],
+    "replaySha256": "d133136b54591eef94577e009d21859e55b261532ff8669e04d5a7b4cae647df"
+  },
+  "legacyCurrentPressTranscript": {
+    "winner": 0,
+    "reason": "ko",
+    "duration": 33.65833333333333,
+    "score": 1,
+    "openingHalfTurn": false,
+    "role0StartsLeft": true,
+    "physicalLeftScore": 1,
+    "first": 0.39166666666666666,
+    "medianGap": 1.533333333333335,
+    "maxGap": 2.1416666666666693,
+    "hits": 24,
+    "pacePass": true,
+    "approachMedian": 5.4697770632470455,
+    "separationMedian": 3.735861110841961,
+    "rubs": 0,
+    "scrapeCount": 0,
+    "scrapeDuration": 0,
+    "maxScrapeDuration": 0,
+    "residual": 0.029288873076438904,
+    "actions": [
+      {
+        "press": 15,
+        "dash": 7,
+        "dashEnd": {
+          "full": 0,
+          "glance": 0,
+          "miss": 0,
+          "blocked": 0
+        },
+        "block": 7,
+        "perfect": 0,
+        "contactOnly": 0,
+        "empty": 0
+      },
+      {
+        "press": 14,
+        "dash": 7,
+        "dashEnd": {
+          "full": 0,
+          "glance": 0,
+          "miss": 0,
+          "blocked": 0
+        },
+        "block": 7,
+        "perfect": 0,
+        "contactOnly": 0,
+        "empty": 0
+      }
+    ],
+    "aiSeeds": null,
+    "aiPressSha256": [
+      "19d4da145f8b6eb0c7602bc6a8a359a766f8d7bc2d18dd84a1e8f2739ecd3cee",
+      "e03c0d04895309fee690aa6758ebcd06bac29d556e10698d79a3334acb2e96a0"
+    ],
+    "replaySha256": "781bd21a3ee9f2fdef7e0e4fc76b91a8d4e655db14bbfb965948ba737f9fd8af"
+  },
+  "requestedInputs": [
+    {
+      "step": 5,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 7,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 14,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 15,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 628,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 631,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 638,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 640,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 1180,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 1182,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 1298,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 1300,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 1793,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 1794,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 1933,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 1933,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 2344,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 2345,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 2581,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 2582,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 2929,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 2933,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 3183,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 3197,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 3469,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 3485,
+      "side": 1,
+      "action": "dash"
+    },
+    {
+      "step": 3807,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 3809,
+      "side": 1,
+      "action": "block"
+    },
+    {
+      "step": 4012,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 4146,
+      "side": 1,
+      "action": "dash"
+    }
+  ],
+  "requestedCounts": [
+    15,
+    15
+  ],
+  "legacy": "bbaaeb7",
+  "scope": "Legacy lacks v13 reaction jitter and has a different shield window. Native AI is the actual old same-seed result; the current press transcript is an additional control, not a claim of identical physics or accepted input."
+}

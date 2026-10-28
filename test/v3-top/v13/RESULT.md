@@ -8,6 +8,8 @@
 - [原固定座位8700局](results-r2/RESULT.md)、[几何/顺序/挡窗原因对照](DIAGNOSTIC-R2.md)
 - [新规则跨端完整证明](browser-r3/proof.json)、[最终Node18测试](final-node18-tests.txt)、[失败完整回放与输入](results-r3/failures/receipt.json)
 
+补充[自动 B 单变量与联合归因](attribution-r3/RESULT.md)：旧开局 76 局超 40 秒，改成对称且固定朝向为 170，再加整场半圈为 83；冲／挡完整 SHA 无影响，当前开局下撤对撞测量不变。最大残余同案例旧 2.194 厘米、新 8.876 厘米，旧有问题但这一局扩大。只加证据，默认未改。
+
 以下为历史首轮和审查过程，数字不作为当前版本结论。
 
 ---

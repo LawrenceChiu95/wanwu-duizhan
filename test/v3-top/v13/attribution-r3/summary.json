@@ -1,0 +1,2078 @@
+{
+  "complete": true,
+  "rows": 1500,
+  "additionalChecks": 4,
+  "wallSeconds": 302.605,
+  "sourceSha": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+  "ruleSha": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+  "catalogSha": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+  "frozen": {
+    "sim/v3.js": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+    "sim/v3-rules.json": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+    "data/catalog.json": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+    "test/v3-top/impact-probe.mjs": "a7fe86356dca4afd3102d9f8c53d2fc9cc66e561914a112840af77718a9d06d8",
+    "test/v3-top/v13/experiment.mjs": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+    "test/v3-top/v13/measure.mjs": "ed362ad85afb98ab5dae7e056cd438abda131316ff1d60951b1bf33eed153b8d",
+    "test/v3-top/v13/run.mjs": "29a13bbeaeaed10e3a72bc4474b062a37e0743e897e581eb391bf8b3d8c8eacd"
+  },
+  "openingProof": [
+    {
+      "seed": 1,
+      "openingHalfTurn": false,
+      "maxError": 0
+    },
+    {
+      "seed": 7,
+      "openingHalfTurn": true,
+      "maxError": 0
+    }
+  ],
+  "oldToCurrent": {
+    "newlyOver40": 62,
+    "recovered": 55,
+    "net": 7
+  },
+  "summary": [
+    {
+      "id": "v12",
+      "n": 300,
+      "over40": 76,
+      "under20": 0,
+      "pacePass": 224,
+      "durationMedian": 37.34583333333333,
+      "separationMedian": 3.5061547872048764,
+      "approachMedian": 5.5067726381277335,
+      "fullShaSameAsCurrent": 0,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 17,
+          "under20": 0,
+          "pacePass": 33,
+          "durationMedian": 37.891666666666666,
+          "separationMedian": 3.959967984931747,
+          "approachMedian": 5.543780295565579
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 16,
+          "under20": 0,
+          "pacePass": 34,
+          "durationMedian": 38.837500000000006,
+          "separationMedian": 3.3126568546626256,
+          "approachMedian": 5.421097095038531
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 9,
+          "under20": 0,
+          "pacePass": 41,
+          "durationMedian": 36.20833333333333,
+          "separationMedian": 3.105739634618981,
+          "approachMedian": 5.154466299253645
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 14,
+          "under20": 0,
+          "pacePass": 36,
+          "durationMedian": 37.270833333333336,
+          "separationMedian": 3.4783014989431686,
+          "approachMedian": 5.857852274633358
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 6,
+          "under20": 0,
+          "pacePass": 44,
+          "durationMedian": 36.5625,
+          "separationMedian": 3.590607780822824,
+          "approachMedian": 5.437912420200577
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 14,
+          "under20": 0,
+          "pacePass": 36,
+          "durationMedian": 37.52916666666667,
+          "separationMedian": 3.7180682475073565,
+          "approachMedian": 5.652529103760119
+        }
+      ]
+    },
+    {
+      "id": "v13",
+      "n": 300,
+      "over40": 83,
+      "under20": 0,
+      "pacePass": 217,
+      "durationMedian": 35.31666666666666,
+      "separationMedian": 3.4818027531754296,
+      "approachMedian": 5.36116550189029,
+      "fullShaSameAsCurrent": 300,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 10,
+          "under20": 0,
+          "pacePass": 40,
+          "durationMedian": 26.366666666666667,
+          "separationMedian": 4.111762957406842,
+          "approachMedian": 5.604140635997504
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 37.95,
+          "separationMedian": 3.241482165622803,
+          "approachMedian": 4.62817783159449
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 33.90833333333333,
+          "separationMedian": 3.4932098865286103,
+          "approachMedian": 5.36116550189029
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 35.80833333333333,
+          "separationMedian": 3.4818027531754296,
+          "approachMedian": 5.090358266902214
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 27,
+          "under20": 0,
+          "pacePass": 23,
+          "durationMedian": 40.19166666666666,
+          "separationMedian": 3.726222857490112,
+          "approachMedian": 5.55325432112652
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 30.224999999999998,
+          "separationMedian": 4.089243472053246,
+          "approachMedian": 5.728345146645093
+        }
+      ]
+    },
+    {
+      "id": "dash-follow",
+      "n": 300,
+      "over40": 83,
+      "under20": 0,
+      "pacePass": 217,
+      "durationMedian": 35.31666666666666,
+      "separationMedian": 3.4818027531754296,
+      "approachMedian": 5.36116550189029,
+      "fullShaSameAsCurrent": 300,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 10,
+          "under20": 0,
+          "pacePass": 40,
+          "durationMedian": 26.366666666666667,
+          "separationMedian": 4.111762957406842,
+          "approachMedian": 5.604140635997504
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 37.95,
+          "separationMedian": 3.241482165622803,
+          "approachMedian": 4.62817783159449
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 33.90833333333333,
+          "separationMedian": 3.4932098865286103,
+          "approachMedian": 5.36116550189029
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 35.80833333333333,
+          "separationMedian": 3.4818027531754296,
+          "approachMedian": 5.090358266902214
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 27,
+          "under20": 0,
+          "pacePass": 23,
+          "durationMedian": 40.19166666666666,
+          "separationMedian": 3.726222857490112,
+          "approachMedian": 5.55325432112652
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 30.224999999999998,
+          "separationMedian": 4.089243472053246,
+          "approachMedian": 5.728345146645093
+        }
+      ]
+    },
+    {
+      "id": "long-block-refund-empty",
+      "n": 300,
+      "over40": 83,
+      "under20": 0,
+      "pacePass": 217,
+      "durationMedian": 35.31666666666666,
+      "separationMedian": 3.4818027531754296,
+      "approachMedian": 5.36116550189029,
+      "fullShaSameAsCurrent": 300,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 10,
+          "under20": 0,
+          "pacePass": 40,
+          "durationMedian": 26.366666666666667,
+          "separationMedian": 4.111762957406842,
+          "approachMedian": 5.604140635997504
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 37.95,
+          "separationMedian": 3.241482165622803,
+          "approachMedian": 4.62817783159449
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 33.90833333333333,
+          "separationMedian": 3.4932098865286103,
+          "approachMedian": 5.36116550189029
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 35.80833333333333,
+          "separationMedian": 3.4818027531754296,
+          "approachMedian": 5.090358266902214
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 27,
+          "under20": 0,
+          "pacePass": 23,
+          "durationMedian": 40.19166666666666,
+          "separationMedian": 3.726222857490112,
+          "approachMedian": 5.55325432112652
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 30.224999999999998,
+          "separationMedian": 4.089243472053246,
+          "approachMedian": 5.728345146645093
+        }
+      ]
+    },
+    {
+      "id": "no-double-clash",
+      "n": 300,
+      "over40": 83,
+      "under20": 0,
+      "pacePass": 217,
+      "durationMedian": 35.31666666666666,
+      "separationMedian": 3.4818027531754296,
+      "approachMedian": 5.36116550189029,
+      "fullShaSameAsCurrent": 0,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 10,
+          "under20": 0,
+          "pacePass": 40,
+          "durationMedian": 26.366666666666667,
+          "separationMedian": 4.111762957406842,
+          "approachMedian": 5.604140635997504
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 37.95,
+          "separationMedian": 3.241482165622803,
+          "approachMedian": 4.62817783159449
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 33.90833333333333,
+          "separationMedian": 3.4932098865286103,
+          "approachMedian": 5.36116550189029
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 23,
+          "under20": 0,
+          "pacePass": 27,
+          "durationMedian": 35.80833333333333,
+          "separationMedian": 3.4818027531754296,
+          "approachMedian": 5.090358266902214
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 27,
+          "under20": 0,
+          "pacePass": 23,
+          "durationMedian": 40.19166666666666,
+          "separationMedian": 3.726222857490112,
+          "approachMedian": 5.55325432112652
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 30.224999999999998,
+          "separationMedian": 4.089243472053246,
+          "approachMedian": 5.728345146645093
+        }
+      ]
+    },
+    {
+      "id": "no-global-half-turn",
+      "n": 300,
+      "over40": 170,
+      "under20": 0,
+      "pacePass": 130,
+      "durationMedian": 40.016666666666666,
+      "separationMedian": 3.4559917337959325,
+      "approachMedian": 5.344470825403283,
+      "fullShaSameAsCurrent": 138,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 20,
+          "under20": 0,
+          "pacePass": 30,
+          "durationMedian": 31.833333333333332,
+          "separationMedian": 3.753926650673958,
+          "approachMedian": 5.676092604577634
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 50,
+          "under20": 0,
+          "pacePass": 0,
+          "durationMedian": 41.325,
+          "separationMedian": 3.2672453664445738,
+          "approachMedian": 5.278206325203412
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 34,
+          "separationMedian": 2.8310003228157647,
+          "approachMedian": 5.344470825403283
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 50,
+          "under20": 0,
+          "pacePass": 0,
+          "durationMedian": 40.20833333333333,
+          "separationMedian": 3.4943716197907584,
+          "approachMedian": 6.045317730500169
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 50,
+          "under20": 0,
+          "pacePass": 0,
+          "durationMedian": 42.65,
+          "separationMedian": 3.9923243935601644,
+          "approachMedian": 5.55325432112652
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 0,
+          "under20": 0,
+          "pacePass": 50,
+          "durationMedian": 34.825,
+          "separationMedian": 3.4559917337959325,
+          "approachMedian": 4.649131110539844
+        }
+      ]
+    },
+    {
+      "id": "old-asymmetric-opening",
+      "n": 300,
+      "over40": 77,
+      "under20": 0,
+      "pacePass": 223,
+      "durationMedian": 37.266666666666666,
+      "separationMedian": 3.473070100109354,
+      "approachMedian": 5.456127428024684,
+      "fullShaSameAsCurrent": 0,
+      "byFixture": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "n": 50,
+          "over40": 16,
+          "under20": 0,
+          "pacePass": 34,
+          "durationMedian": 36.849999999999994,
+          "separationMedian": 3.7535393219613162,
+          "approachMedian": 5.418194066233314
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "n": 50,
+          "over40": 16,
+          "under20": 0,
+          "pacePass": 34,
+          "durationMedian": 38.53333333333333,
+          "separationMedian": 3.3040744774846624,
+          "approachMedian": 5.463953574610373
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "n": 50,
+          "over40": 9,
+          "under20": 0,
+          "pacePass": 41,
+          "durationMedian": 35.287499999999994,
+          "separationMedian": 3.125418319032055,
+          "approachMedian": 5.282184881250202
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "n": 50,
+          "over40": 16,
+          "under20": 0,
+          "pacePass": 34,
+          "durationMedian": 37.75416666666666,
+          "separationMedian": 3.471520125638156,
+          "approachMedian": 5.80638822902694
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "n": 50,
+          "over40": 5,
+          "under20": 0,
+          "pacePass": 45,
+          "durationMedian": 36.47916666666667,
+          "separationMedian": 3.5285504258180422,
+          "approachMedian": 5.395361891827962
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "n": 50,
+          "over40": 15,
+          "under20": 0,
+          "pacePass": 35,
+          "durationMedian": 38.52916666666667,
+          "separationMedian": 3.553941819350393,
+          "approachMedian": 5.479433232153152
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "variant": "no-double-clash",
+      "recoveredCurrentOver40": [],
+      "newOver40": []
+    },
+    {
+      "variant": "no-global-half-turn",
+      "recoveredCurrentOver40": [],
+      "newOver40": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 0
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 12
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 19
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 26
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 27
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 34
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 35
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 40
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 48
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 49
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 0
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 6
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 7
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 8
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 9
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 11
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 12
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 14
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 17
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 19
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 20
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 21
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 23
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 26
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 27
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 28
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 29
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 30
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 34
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 35
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 39
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 40
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 44
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 45
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 46
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 48
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 49
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 0
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 6
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 7
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 8
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 9
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 11
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 12
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 14
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 17
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 19
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 20
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 21
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 23
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 26
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 27
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 28
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 29
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 30
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 34
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 35
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 39
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 40
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 44
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 45
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 46
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 48
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 49
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 0
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 6
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 7
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 8
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 9
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 11
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 12
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 14
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 19
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 20
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 21
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 23
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 26
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 27
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 28
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 29
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 30
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 35
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 39
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 40
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 46
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 48
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 49
+        }
+      ]
+    },
+    {
+      "variant": "old-asymmetric-opening",
+      "recoveredCurrentOver40": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 1
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 2
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 4
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 13
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 22
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 31
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 37
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 41
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 1
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 2
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 3
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 10
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 13
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 18
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 22
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 24
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 31
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 32
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 36
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 37
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 41
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 42
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 43
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 47
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 1
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 2
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 3
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 4
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 10
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 16
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 18
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 22
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 24
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 25
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 31
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 36
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 42
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 43
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 2
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 3
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 4
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 5
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 13
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 15
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 16
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 17
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 18
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 22
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 24
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 25
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 31
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 32
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 33
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 36
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 37
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 38
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 41
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 42
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 43
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 44
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 45
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 47
+        }
+      ],
+      "newOver40": [
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 0
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 5
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 6
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 8
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 12
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 16
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 17
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 34
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 35
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 36
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 40
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 44
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 45
+        },
+        {
+          "fixture": "pan-broom/out-out-e180",
+          "seed": 46
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 8
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 9
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 12
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 20
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 23
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 30
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 35
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 39
+        },
+        {
+          "fixture": "pan-broom/hug-hug-e90",
+          "seed": 45
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 5
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 6
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 7
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 9
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 18
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 27
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 32
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 43
+        },
+        {
+          "fixture": "scissors-pillow/out-out-e180",
+          "seed": 45
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 12
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 14
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 27
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 29
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 39
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 46
+        },
+        {
+          "fixture": "scissors-pillow/hug-hug-e90",
+          "seed": 48
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 12
+        },
+        {
+          "fixture": "lamp-slipper/out-out-e180",
+          "seed": 23
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 3
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 5
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 7
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 8
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 9
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 12
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 16
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 20
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 23
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 31
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 32
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 34
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 36
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 40
+        },
+        {
+          "fixture": "lamp-slipper/hug-hug-e90",
+          "seed": 41
+        }
+      ]
+    }
+  ],
+  "added": [
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 1,
+      "duration": 41.50833333333333,
+      "legacyDuration": 31.375,
+      "ablations": {
+        "no-double-clash": 41.50833333333333,
+        "no-global-half-turn": 41.50833333333333,
+        "old-asymmetric-opening": 31.375
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 2,
+      "duration": 42.583333333333336,
+      "legacyDuration": 28.258333333333333,
+      "ablations": {
+        "no-double-clash": 42.583333333333336,
+        "no-global-half-turn": 42.583333333333336,
+        "old-asymmetric-opening": 28.258333333333333
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 4,
+      "duration": 41.50833333333333,
+      "legacyDuration": 37.275,
+      "ablations": {
+        "no-double-clash": 41.50833333333333,
+        "no-global-half-turn": 41.50833333333333,
+        "old-asymmetric-opening": 37.275
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 13,
+      "duration": 41.50833333333333,
+      "legacyDuration": 35.56666666666666,
+      "ablations": {
+        "no-double-clash": 41.50833333333333,
+        "no-global-half-turn": 41.50833333333333,
+        "old-asymmetric-opening": 35.56666666666666
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 22,
+      "duration": 42.583333333333336,
+      "legacyDuration": 36.425,
+      "ablations": {
+        "no-double-clash": 42.583333333333336,
+        "no-global-half-turn": 42.583333333333336,
+        "old-asymmetric-opening": 36.425
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 31,
+      "duration": 41.50833333333333,
+      "legacyDuration": 32.875,
+      "ablations": {
+        "no-double-clash": 41.50833333333333,
+        "no-global-half-turn": 41.50833333333333,
+        "old-asymmetric-opening": 32.875
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 37,
+      "duration": 42.583333333333336,
+      "legacyDuration": 34.2,
+      "ablations": {
+        "no-double-clash": 42.583333333333336,
+        "no-global-half-turn": 42.583333333333336,
+        "old-asymmetric-opening": 34.2
+      }
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 41,
+      "duration": 42.583333333333336,
+      "legacyDuration": 33.983333333333334,
+      "ablations": {
+        "no-double-clash": 42.583333333333336,
+        "no-global-half-turn": 42.583333333333336,
+        "old-asymmetric-opening": 33.983333333333334
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 1,
+      "duration": 41.325,
+      "legacyDuration": 34.108333333333334,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 34.108333333333334
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 2,
+      "duration": 41.325,
+      "legacyDuration": 38.916666666666664,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 38.916666666666664
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 3,
+      "duration": 41.325,
+      "legacyDuration": 36.025,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 36.025
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 10,
+      "duration": 41.325,
+      "legacyDuration": 32.266666666666666,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 32.266666666666666
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 13,
+      "duration": 41.325,
+      "legacyDuration": 38.225,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 38.225
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 18,
+      "duration": 41.325,
+      "legacyDuration": 36.55,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 36.55
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 22,
+      "duration": 41.325,
+      "legacyDuration": 35.71666666666667,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 35.71666666666667
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 24,
+      "duration": 41.325,
+      "legacyDuration": 27.791666666666668,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 27.791666666666668
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 31,
+      "duration": 41.325,
+      "legacyDuration": 39.63333333333333,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 39.63333333333333
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 32,
+      "duration": 41.325,
+      "legacyDuration": 32.31666666666666,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 32.31666666666666
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 36,
+      "duration": 41.325,
+      "legacyDuration": 38.84166666666667,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 38.84166666666667
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 37,
+      "duration": 41.325,
+      "legacyDuration": 34.18333333333333,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 34.18333333333333
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 41,
+      "duration": 41.325,
+      "legacyDuration": 36.86666666666667,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 36.86666666666667
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 42,
+      "duration": 41.325,
+      "legacyDuration": 39.675,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 39.675
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 43,
+      "duration": 41.325,
+      "legacyDuration": 30.90833333333333,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 30.90833333333333
+      }
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 47,
+      "duration": 41.325,
+      "legacyDuration": 34.7,
+      "ablations": {
+        "no-double-clash": 41.325,
+        "no-global-half-turn": 41.325,
+        "old-asymmetric-opening": 34.7
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 1,
+      "duration": 40.016666666666666,
+      "legacyDuration": 35.61666666666667,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 35.61666666666667
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 2,
+      "duration": 40.4,
+      "legacyDuration": 38.425,
+      "ablations": {
+        "no-double-clash": 40.4,
+        "no-global-half-turn": 40.4,
+        "old-asymmetric-opening": 38.425
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 3,
+      "duration": 40.016666666666666,
+      "legacyDuration": 30.775,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 30.775
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 4,
+      "duration": 40.016666666666666,
+      "legacyDuration": 34.95,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 34.95
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 10,
+      "duration": 40.016666666666666,
+      "legacyDuration": 38.333333333333336,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 38.333333333333336
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 16,
+      "duration": 40.016666666666666,
+      "legacyDuration": 36.3,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 36.3
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 18,
+      "duration": 40.016666666666666,
+      "legacyDuration": 36.95,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 36.95
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 22,
+      "duration": 40.4,
+      "legacyDuration": 32.075,
+      "ablations": {
+        "no-double-clash": 40.4,
+        "no-global-half-turn": 40.4,
+        "old-asymmetric-opening": 32.075
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 24,
+      "duration": 40.016666666666666,
+      "legacyDuration": 29.65833333333333,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 29.65833333333333
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 25,
+      "duration": 40.016666666666666,
+      "legacyDuration": 36.5,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 36.5
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 31,
+      "duration": 40.016666666666666,
+      "legacyDuration": 28.4,
+      "ablations": {
+        "no-double-clash": 40.016666666666666,
+        "no-global-half-turn": 40.016666666666666,
+        "old-asymmetric-opening": 28.4
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 36,
+      "duration": 40.4,
+      "legacyDuration": 34.80833333333333,
+      "ablations": {
+        "no-double-clash": 40.4,
+        "no-global-half-turn": 40.4,
+        "old-asymmetric-opening": 34.80833333333333
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 42,
+      "duration": 40.4,
+      "legacyDuration": 35.81666666666666,
+      "ablations": {
+        "no-double-clash": 40.4,
+        "no-global-half-turn": 40.4,
+        "old-asymmetric-opening": 35.81666666666666
+      }
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 43,
+      "duration": 40.4,
+      "legacyDuration": 38.00833333333333,
+      "ablations": {
+        "no-double-clash": 40.4,
+        "no-global-half-turn": 40.4,
+        "old-asymmetric-opening": 38.00833333333333
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 2,
+      "duration": 42.65,
+      "legacyDuration": 38.45,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 38.45
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 3,
+      "duration": 42.65,
+      "legacyDuration": 29.841666666666665,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 29.841666666666665
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 4,
+      "duration": 42.65,
+      "legacyDuration": 37.925,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 37.925
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 5,
+      "duration": 42.65,
+      "legacyDuration": 30.133333333333333,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 30.133333333333333
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 13,
+      "duration": 42.65,
+      "legacyDuration": 36.5,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 36.5
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 15,
+      "duration": 42.65,
+      "legacyDuration": 33.65833333333333,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 33.65833333333333
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 16,
+      "duration": 42.65,
+      "legacyDuration": 36.625,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 36.625
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 17,
+      "duration": 40.19166666666666,
+      "legacyDuration": 34.49166666666667,
+      "ablations": {
+        "no-double-clash": 40.19166666666666,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 39.45
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 18,
+      "duration": 42.65,
+      "legacyDuration": 37.725,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 37.725
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 22,
+      "duration": 42.65,
+      "legacyDuration": 29.966666666666665,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 29.966666666666665
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 24,
+      "duration": 42.65,
+      "legacyDuration": 33.45,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 33.45
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 25,
+      "duration": 42.65,
+      "legacyDuration": 31.8,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 31.8
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 31,
+      "duration": 42.65,
+      "legacyDuration": 39.11666666666667,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 39.11666666666667
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 32,
+      "duration": 42.65,
+      "legacyDuration": 37.5,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 37.5
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 33,
+      "duration": 42.65,
+      "legacyDuration": 33,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 33
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 34,
+      "duration": 40.19166666666666,
+      "legacyDuration": 38.583333333333336,
+      "ablations": {
+        "no-double-clash": 40.19166666666666,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 40.43333333333333
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 36,
+      "duration": 42.65,
+      "legacyDuration": 39.016666666666666,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 39.016666666666666
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 37,
+      "duration": 42.65,
+      "legacyDuration": 31.416666666666668,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 31.416666666666668
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 38,
+      "duration": 42.65,
+      "legacyDuration": 36.458333333333336,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 36.458333333333336
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 41,
+      "duration": 42.65,
+      "legacyDuration": 35.975,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 35.975
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 42,
+      "duration": 42.65,
+      "legacyDuration": 39.74166666666667,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 39.74166666666667
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 43,
+      "duration": 42.65,
+      "legacyDuration": 39.025,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 39.025
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 44,
+      "duration": 40.19166666666666,
+      "legacyDuration": 36.15,
+      "ablations": {
+        "no-double-clash": 40.19166666666666,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 32.358333333333334
+      }
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 47,
+      "duration": 42.65,
+      "legacyDuration": 28.525,
+      "ablations": {
+        "no-double-clash": 42.65,
+        "no-global-half-turn": 42.65,
+        "old-asymmetric-opening": 28.525
+      }
+    }
+  ],
+  "legacyTranscriptResidual": 0.029288873076438904,
+  "legacyNativeResidual": 0.02193877100944519,
+  "currentResidual": 0.08875560760498047
+}
