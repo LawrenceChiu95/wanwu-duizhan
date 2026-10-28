@@ -1,4 +1,4 @@
-// 第 13 版「时机算数」画面提示看一遍：自己冲的箭头、对手冲的箭头、冲空、擦边、空挡、完美挡住，各定格截一张。
+// 第 13 版「时机算数」画面提示看一遍：自己冲的箭头、对手冲的箭头、冲空、擦边、挡空了、完美挡住，各定格截一张。
 // 玩法像人：冲好了就冲；对手冲出来时挡（会挡住）；偶尔对手没动也挡（会空挡）。按键走真的点按（无头浏览器）。
 // Usage: /opt/homebrew/bin/node web/scripts/v13-shots.mjs <baseUrl> <outDir> [width=390] [seed=7] [extra query, e.g. block=0.3]
 import {chromium} from 'playwright';

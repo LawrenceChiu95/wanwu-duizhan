@@ -783,8 +783,10 @@ export class Stage {
    * The lunge's locked direction as an arrow on the floor, from the edge of the top's sweep where it stood at the press:
    * it grows out over the wind-up (`secs`), stays put while the top runs along it and fades out after the lunge ends.
    * `len` is how far from the core it reaches (m, the caller caps it at the lunge's carry and the target); it stops at the wall.
+   * `align` (the player's own top only): the full-lunge alignment; once the target has moved off the locked lane (cosine
+   * below it) until the lunge ends, the arrow goes grey and thin, so a lunge going wide reads as wide (Elara 80e885bc).
    */
-  aim(i, dir, secs, len) {
+  aim(i, dir, secs, len, align = null) {
     const f = this.fighters[i];
     if (!f || !dir) return;
     const d = new THREE.Vector3().fromArray(dir).setY(0);
@@ -793,7 +795,7 @@ export class Stage {
     // A fixed lane on the floor from where the top stood at the press (it hardly moves while winding up), cut at the wall.
     const from = f.center.clone(), start = f.sweep * 1.05, pd = from.x * d.x + from.z * d.z;
     const toWall = -pd + Math.sqrt(Math.max(0, pd * pd - (from.x * from.x + from.z * from.z) + ARENA_RIM * ARENA_RIM));
-    Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall) - start), aimOut: 0});
+    Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall) - start), aimOut: 0, aimAlign: align, aimWide: 0});
   }
   raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.act.fizzle = 0; f.shield.visible = true; } }
   /** A block that caught a real hit in its window: the bubble flares and a bright ring snaps out from the core (size < 1: held without damage). */
@@ -1241,10 +1243,19 @@ export class Stage {
           aim.visible = true;
           aim.position.set(a.aimFrom.x + a.aimDir.x * start, a.aimFrom.y - 0.04, a.aimFrom.z + a.aimDir.z * start);
           aim.rotation.set(-Math.PI / 2, Math.atan2(-a.aimDir.z, a.aimDir.x), 0);
-          aim.scale.set(a.aimLen, f.sweep * 0.7, 1);
+          // Off the lane: judged on the cores as drawn, while the lunge is still live; it eases in and holds once it ends.
+          const o = this.fighters[1 - i];
+          if (a.aimAlign !== null && a.aimOut === 0 && o?.coreAlive) {
+            const dx = o.center.x - f.center.x, dz = o.center.z - f.center.z, n = Math.hypot(dx, dz);
+            const wide = n > 1e-6 && (dx * a.aimDir.x + dz * a.aimDir.z) / n < a.aimAlign ? 1 : 0;
+            a.aimWide += (wide - a.aimWide) * Math.min(1, realDt * 18);
+          }
+          const wide = a.aimWide ?? 0;
+          aim.scale.set(a.aimLen, f.sweep * 0.7 * (1 - 0.5 * wide), 1);
           const mu = aim.material.uniforms;
+          mu.uColor.value.copy(TEAM[i]).lerp(GREY, wide);
           mu.uGrow.value = 0.15 + 0.9 * (1 - (1 - grow) ** 2);
-          mu.uOpacity.value = (0.55 + 0.45 * grow) * out * (1 - f.dim);
+          mu.uOpacity.value = (0.55 + 0.45 * grow) * (1 - 0.3 * wide) * out * (1 - f.dim);
           mu.uTime.value = this.time;
         }
       } else aim.visible = false;

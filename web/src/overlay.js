@@ -89,6 +89,8 @@ export class Overlay {
     this.layer.append(el);
     this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight}];
   }
+  /** Floating words of one kind (a class, e.g. 'broke') still up: let them fade out now, over about a third of a second. */
+  hurry(cls) { for (const n of this.nums) if (n.el.classList.contains(cls)) n.age = Math.max(n.age, n.dur * 0.8); }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
   showBanner(text, color, dur = 1.1) {
     this.bannerEl.textContent = text;

@@ -114,6 +114,9 @@ async function main() {
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
+  // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
+  // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
+  let lastParryT = -Infinity, lateNums = [];
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -156,7 +159,7 @@ async function main() {
     el.pad.hidden = true;
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
-    overlay.clear();
+    overlay.clear(); lateNums = [];
     stage.setCameraMode('build');
     stage.setFocusOn(null);
     stage.setLookahead(null);
@@ -224,7 +227,7 @@ async function main() {
     el.caption.classList.toggle('on', on);
   }
 
-  // 第 13 版: a one-word verdict on the player's own 冲 / 挡 (完美, 空挡, 擦边, 冲空, 被挡), small, over its own top, gone
+  // 第 13 版: a one-word verdict on the player's own 冲 / 挡 (完美, 挡空了, 擦边, 冲空, 被挡), small, over its own top, gone
   // within a second. The opponent's get the picture only (Elara 714284f2), so a clash never sprouts several words.
   function verdict(side, text, cls) {
     const f = stage.fighters[side];
@@ -253,7 +256,9 @@ async function main() {
     held: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied === false && e.side === 0,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
     miss: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'miss' && e.side === 0,
-    glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0
+    glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0,
+    // Any end of the player's own lunge (aim-check.mjs compares the arrow's grey with the sim's verdict).
+    'end-mine': e => e.type === 'dash' && e.phase === 'end' && e.side === 0
   };
 
   // ---------- events → effects ----------
@@ -295,7 +300,8 @@ async function main() {
       sfx.crunch();
       buzz(25);
       stage.shakeV4(0.8);
-      overlay.number(new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8);
+      const broke = [new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
+      if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke);
       // The camera never moves; only a piece or a core breaking jolts the picture a few px.
       stage.shake(4);
       overlay.screenFlash(0.25);
@@ -303,7 +309,8 @@ async function main() {
       if (e.phase === 'charge') {
         stage.charge(e.side, e.until - e.t);
         // 第 13 版: the direction is locked at the press; show it through the wind-up so both sides can read the lunge.
-        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side));
+        // Only the player's own arrow greys out when the target leaves the full-lunge lane (Elara 80e885bc); the opponent's is unchanged.
+        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side), e.side === 0 ? rules.manual.dashAlignment : null);
         sfx.charge(e.until - e.t);
       } else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
       else {
@@ -330,8 +337,11 @@ async function main() {
         stage.perfectBlock(e.side, point, 0.6);
         sfx.ting();
         verdict(e.side, '挡住', 'held');
-      } else { stage.fizzle(e.side); sfx.fizzle(); verdict(e.side, '空挡', 'dud'); }
+      } else { stage.fizzle(e.side); sfx.fizzle(); verdict(e.side, '挡空了', 'dud'); }
     } else if (e.type === 'parry') {
+      // A 「…碎了」 still up from an earlier break would read as this blow's result: clear it (Elara 80e885bc, Wren's 被挡 shot).
+      lastParryT = e.t;
+      overlay.hurry('broke');
       // A lunge into a raised shield: it is bounced, and that should read at a glance (white flash, a clang, a
       // short slow motion from Playback, the lunger flung away trailing streaks). The words come from blockResult /
       // the lunge's end, and only for the player's own top.
@@ -394,7 +404,7 @@ async function main() {
     liveSlowShown = false;
     stage.setFighters(r.meta.initial.map(f => f.definition));
     stage.clearFx();
-    overlay.clear();
+    overlay.clear(); lateNums = [];
     stage.setCameraMode('fight');
     stage.setFocusOn(null);
     stage.showMe = true;
@@ -407,6 +417,7 @@ async function main() {
     el.pad.hidden = !live;
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
+    lastParryT = -Infinity;
     layout_();
     stage.pose(pb.state);
     stage.setLookahead(lookahead());
@@ -420,7 +431,7 @@ async function main() {
     el.pad.hidden = true;
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
-      overlay.clear();
+      overlay.clear(); lateNums = [];
       pb.seek(pb.end);
       stage.pose(pb.state);
     }
@@ -447,7 +458,7 @@ async function main() {
     el.result.hidden = true;
     el.pad.hidden = true;
     stage.clearFx();
-    overlay.clear();
+    overlay.clear(); lateNums = [];
     pb.slowEnabled = true;
     stage.setCameraMode('fight');
     stage.setFocusOn(null);
@@ -583,7 +594,7 @@ async function main() {
       if (!this.freezeOn || this.pending >= 0) return;
       const v13 = V13_FREEZE[this.freezeOn];
       const ok = v13 ? v13(e) : this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-mine' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && e.attacker === 0 : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
-      if (ok && ++this.seen >= this.nth) this.pending = this.freezeDelay;
+      if (ok && ++this.seen >= this.nth) { this.pending = this.freezeDelay; this.caught = {type: e.type, side: e.side, quality: e.quality ?? e.outcome ?? null, alignment: e.alignment ?? null, t: e.t}; }
     }
   };
   window.__top = {
@@ -598,6 +609,9 @@ async function main() {
     // Safe-area audit: worst overflow per phase over every rendered frame (px > 0 means something was cut off).
     trackSafe(speed = 1) { test.speed = speed; test.safe = {}; test.frame = null; },
     safe: () => test.safe,
+    // The player's own aim arrow: 0 on the lane .. 1 grey (off the full-lunge lane), null when none is showing.
+    caught: () => test.caught ?? null,
+    aimWide: () => stage.fighters[0]?.act.aimDir ? stage.fighters[0].act.aimWide : null,
     framing() {
       const m = test.frame;
       if (!m) return null;
@@ -626,6 +640,8 @@ async function main() {
     if (test.frozen) dt = 0;
     dt *= test.speed;
     if (phase === 'loading') return;
+    for (const n of lateNums) if ((n.wait -= dt) <= 0) overlay.number(...n.broke);
+    lateNums = lateNums.filter(n => n.wait > 0);
     let simDt = dt;
     if (phase === 'build' || phase === 'computing') {
       spinAngle += dt * PREVIEW_SPIN;
