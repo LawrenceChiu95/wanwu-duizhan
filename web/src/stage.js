@@ -15,7 +15,9 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 // - the widest framing needed over the last HOLD seconds (and a tenth of a second ahead, from the replay or from the
 //   tops' velocities) is kept, so it does not breathe in and out with every clash;
 // - it pulls in no faster than zoomInRate (5 %/s: a zoom that slow does not read as motion), and out with a soft spring;
-// - a hard floor keeps every visible top fully on screen whatever the springs are doing.
+// - a hard floor, whatever the springs are doing: every visible top's whole swept radius (`sweep`, its pieces as built,
+//   Wren's measure) at least hardPx inside the screen, plus room for the shake / punch offset, and each core centre
+//   hardCore of the width inside the safe area.
 // Tuned (10-28) with a replay-driven camera simulator over two auto and two manual fights at 390 wide: as large as the
 // tops can be while the floor still moves under the sway limits (mean <=40 px/s, worst second <=150 px, top and bottom
 // halves opposite <=5 %). Bigger needs faster zooms, which those limits rule out (see RESULT/report).
@@ -24,7 +26,7 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 // CORE_RISE: how far a core leaves the spin plane (max 1.05 m).
 export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
-export const CAM = {margin: 0.15, edgePx: 12, hold: 0.6, zoomInRate: 0.05, zoomW: 3, slack: 0, panW: 2.0, deadZone: 0.25, minHalfWidth: 1.1, hardPx: 10};
+export const CAM = {margin: 0.15, edgePx: 12, hold: 0.6, zoomInRate: 0.05, zoomW: 3, slack: 0, panW: 2.0, deadZone: 0.25, minHalfWidth: 1.1, hardPx: 6, hardCore: 0.15};
 const CAM_FWD = new THREE.Vector3(Math.sin(CAM_YAW) * Math.cos(CAM_PITCH), -Math.sin(CAM_PITCH), Math.cos(CAM_YAW) * Math.cos(CAM_PITCH));
 const CAM_QUAT = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(), CAM_FWD, new THREE.Vector3(0, 1, 0)));
 const CAM_RIGHT = new THREE.Vector3(1, 0, 0).applyQuaternion(CAM_QUAT), CAM_UP = new THREE.Vector3(0, 1, 0).applyQuaternion(CAM_QUAT);
@@ -931,6 +933,11 @@ export class Stage {
     const {h, pad = 0, bottom} = this.view, c = this.cam;
     return Math.max(bottom, pad, c.cardTop != null ? h - c.cardTop + 8 : 0);
   }
+  /**
+   * What the framing keeps on screen: the top's swept radius (`sweep`, its pieces' full reach as built, which Wren
+   * measures with screenRadius and which does not shrink when a piece breaks off) or its models' reach, if larger.
+   */
+  frameRadius(f) { return Math.max(f.sweep, this.reachOf(f)); }
   /** How far a fighter reaches about its spin axis right now (core, or its longest piece still on). */
   reachOf(f) {
     let r = this.coreRadius * 1.4;
@@ -963,12 +970,28 @@ export class Stage {
       const wantOff = (B - top) / 2;
       if (snap || !c.ready) { c.offY = wantOff; c.offYv = 0; } else [c.offY, c.offYv] = spring(c.offY, c.offYv, wantOff, 3, dt);
       const framed = this.fighters.map((f, i) => i).filter(i => c.only == null || c.only === i);
-      // Per top: its core centre keeps `margin` of the width from every safe-area edge, its whole reach keeps edgePx.
-      const now = [], soon = [], hardSet = [], m = CAM.margin * w;
+      // Per top: its core centre keeps `margin` of the width from every safe-area edge, its whole swept radius edgePx.
+      // Shake and punch are worked out first: the hard floor leaves room for the few px they move the picture.
+      let sx = 0, sy = 0;
+      if (c.shakeAge < SHAKE_TIME) {
+        c.shakeAge += dt;
+        const k = Math.max(0, 1 - c.shakeAge / SHAKE_TIME), ph = c.shakeAge * 2 * Math.PI * 14;
+        sx = Math.sin(ph) * c.shakeAmp * k;
+        sy = Math.cos(ph * 0.8) * c.shakeAmp * 0.6 * k;
+      }
+      if (c.punch) {
+        c.punch.age += dt;
+        const k = c.punch.age / PUNCH_TIME;
+        if (k >= 1) c.punch = null;
+        else { const e = k < 0.25 ? Math.sin(k / 0.25 * Math.PI / 2) : Math.pow(1 - (k - 0.25) / 0.75, 2); sx -= c.punch.dx * c.punch.px * e; sy -= c.punch.dy * c.punch.px * e; }
+      }
+      sx = Math.round(sx); sy = Math.round(sy);
+      const now = [], soon = [], hardSet = [], m = CAM.margin * w, hardM = CAM.hardPx + Math.max(Math.abs(sx), Math.abs(sy));
       for (const i of framed) {
-        const f = this.fighters[i], r = this.reachOf(f);
+        const f = this.fighters[i], r = this.frameRadius(f);
         now.push({p: f.center, r: this.coreRadius, m}, {p: f.center, r, m: CAM.edgePx});
-        hardSet.push({p: f.center, r, m: CAM.hardPx});
+        hardSet.push({p: f.center, r, m: hardM});
+        if (CAM.hardCore) hardSet.push({p: f.center, r: 0, m: CAM.hardCore * w + hardM - CAM.hardPx});
         for (const p of c.ahead?.[i] ?? []) soon.push({p, r: this.coreRadius, m}, {p, r, m: CAM.edgePx});
       }
       // Aim: the midpoint of the framed tops (the winner alone on the result card).
@@ -992,7 +1015,7 @@ export class Stage {
         c.goal = goal > c.goal ? goal + CAM.slack : Math.max(goal, c.goal - CAM.zoomInRate * dt);
         [c.logD, c.logDv] = spring(c.logD, c.logDv, c.goal, CAM.zoomW, dt);
       }
-      // Hard floor: every framed top fully on screen right now, whatever the springs are doing.
+      // Hard floor: every framed top's whole swept radius on screen right now, whatever the springs are doing.
       const hard = Math.log(this.distanceFor(c.focus, hardSet));
       if (c.logD < hard) { c.logD = hard; c.logDv = Math.max(0, c.logDv); }
       c.ready = true;
@@ -1000,20 +1023,7 @@ export class Stage {
       this.camera.quaternion.copy(CAM_QUAT);
       this.camera.position.copy(c.focus).addScaledVector(CAM_FWD, -c.dist);
       // Shake (a break) and punch (a big hit): translation of the picture only, a few px, gone within 0.16 s.
-      let sx = 0, sy = 0;
-      if (c.shakeAge < SHAKE_TIME) {
-        c.shakeAge += dt;
-        const k = Math.max(0, 1 - c.shakeAge / SHAKE_TIME), ph = c.shakeAge * 2 * Math.PI * 14;
-        sx = Math.sin(ph) * c.shakeAmp * k;
-        sy = Math.cos(ph * 0.8) * c.shakeAmp * 0.6 * k;
-      }
-      if (c.punch) {
-        c.punch.age += dt;
-        const k = c.punch.age / PUNCH_TIME;
-        if (k >= 1) c.punch = null;
-        else { const e = k < 0.25 ? Math.sin(k / 0.25 * Math.PI / 2) : Math.pow(1 - (k - 0.25) / 0.75, 2); sx -= c.punch.dx * c.punch.px * e; sy -= c.punch.dy * c.punch.px * e; }
-      }
-      this.setOffset(Math.round(sx), Math.round(c.offY + sy));
+      this.setOffset(sx, Math.round(c.offY + sy));
       // Test aid: the framing as it was this frame.
       c.stat = {pxPerMetre: this.screenRadius(c.focus, 1), dist: c.dist};
       return;
@@ -1203,6 +1213,21 @@ export class Stage {
     return worst;
   }
 
+  /**
+   * Test aid (Wren's measure): the smallest gap (CSS px) between a framed top's swept circle, screenRadius(center, sweep),
+   * and the screen's left / right edges (lr), and the safe area's four edges (safe). Negative: off.
+   */
+  sweptMargin() {
+    const {w, h, top} = this.view, bottom = this.safeBottom(), o = {x: 0, y: 0};
+    let lr = Infinity, safe = Infinity;
+    this.fighters.forEach((f, i) => {
+      if (!f.core.visible || (this.cam.only != null && this.cam.only !== i) || !this.project(f.center, o)) return;
+      const r = this.screenRadius(f.center, f.sweep);
+      lr = Math.min(lr, o.x - r, w - o.x - r);
+      safe = Math.min(safe, o.x - r, w - o.x - r, o.y - r - top, h - bottom - o.y - r);
+    });
+    return {lr, safe};
+  }
   /** Test aid: the smallest distance (CSS px) from a framed core centre to an edge of the safe area. */
   coreMargin() {
     const {w, h, top} = this.view, bottom = this.safeBottom(), o = {x: 0, y: 0};
