@@ -35,7 +35,7 @@ try{
   assert.equal(chromeJson,nodeJson,`${c.id}: complete JSON byte mismatch`);
   const oldHash=c.options.manual===null?sha(await old.simulateV3(c.options)):null;
   await writeFile(new URL(`${c.id}.json.gz`,out),gzipSync(nodeJson));
-  receipts.push({id:c.id,width:c.width,mode:c.options.mode,seed:c.options.seed,blockTime:nodeReplay.meta.manual?.blockTime??null,nodeSha256:sha(nodeJson),chromeSha256:sha(chromeJson),bytes:Buffer.byteLength(nodeJson),equal:true,oldAutoSha256:oldHash,automaticBaselineChanged:oldHash===null?null:oldHash!==sha(nodeJson),duration:nodeReplay.meta.duration,winner:nodeReplay.meta.winner,accepted:nodeReplay.meta.manual?.inputs.length??0});
+  receipts.push({id:c.id,width:c.width,mode:c.options.mode,seed:c.options.seed,openingHalfTurn:nodeReplay.meta.openingHalfTurn,blockTime:nodeReplay.meta.manual?.blockTime??null,nodeSha256:sha(nodeJson),chromeSha256:sha(chromeJson),bytes:Buffer.byteLength(nodeJson),equal:true,oldAutoSha256:oldHash,automaticBaselineChanged:oldHash===null?null:oldHash!==sha(nodeJson),duration:nodeReplay.meta.duration,winner:nodeReplay.meta.winner,accepted:nodeReplay.meta.manual?.inputs.length??0});
  }
  assert.deepEqual(errors,[]);
  for(const [p,hash]of Object.entries(sources))assert.equal(sha(await readFile(new URL(p,root))),hash,`source changed: ${p}`);
