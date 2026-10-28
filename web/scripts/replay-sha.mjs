@@ -1,5 +1,6 @@
 // 自动版回放没变：网页里算出的整局回放（JSON）和 Node 里同装法、同种子 simulateV3 的结果比 sha256，逐字节一致才算过。
 // 网页只改了画面和反馈，回放应和改之前（main 上同一个 sim/）完全一样；这里同时打印 sha，可和 main 上跑出的对照。
+// 页面只剩手动（10-28），自动对打用 play=auto 打开。
 // Usage: /opt/homebrew/bin/node web/scripts/replay-sha.mjs <baseUrl> [seeds=7,42] [mine=pan-lux3d,out,pillow,hug,e180]
 import {chromium} from 'playwright';
 import {createHash} from 'node:crypto';
@@ -10,7 +11,7 @@ const browser = await chromium.launch({channel: 'chromium'});
 const page = await browser.newPage({viewport: {width: 390, height: 844}});
 const rows = [];
 for (const seed of seeds.split(',').map(Number)) {
-  await page.goto(`${base}?mine=${mine}&seed=${seed}`);
+  await page.goto(`${base}?mine=${mine}&seed=${seed}&play=auto`);
   await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 120000});
   await page.evaluate(() => window.__top.start());
   await page.waitForFunction(() => window.__top.status().phase === 'play', null, {timeout: 120000});
