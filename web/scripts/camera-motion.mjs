@@ -1,7 +1,7 @@
 // 镜头晃不晃：照 Wren 的量法，点「开打」后 1.5 秒起，10 帧/秒截 8 秒（CSS px，DPR 1），交给 camera-motion.py 做整帧相位相关
 // （camera-blockmatch.py 用块匹配再量一遍）。
 // 同时记下整局里两颗陀螺有没有出安全区（stage.safeOverflow）、离安全区四边留没留够屏宽 15%、镜头比例尺（px/米）。
-// 手动模式（query 带 play=manual）页面里装一个「像人一样按」的小循环：冲好了隔一会儿就冲，电脑蓄力时多半举挡。
+// 手动模式（页面实际在手动，即默认或 play=manual；play=auto 是自动）页面里装一个「像人一样按」的小循环：冲好了隔一会儿就冲，电脑蓄力时多半举挡。
 // Usage: /opt/homebrew/bin/node web/scripts/camera-motion.mjs <baseUrl> <outDir> [width=390] [height] [query]
 import {chromium} from 'playwright';
 import {mkdir, writeFile} from 'node:fs/promises';
@@ -14,6 +14,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 await page.goto(`${base}?${query}`);
 await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 120000});
+const manual = await page.evaluate(() => window.__top.status().control === 'manual');
 await page.waitForTimeout(600);
 // Tuning runs: CAMTUNE='{"hold":1}' overrides framing-camera parameters before the match.
 if (process.env.CAMTUNE) await page.evaluate(t => Object.assign(window.__top.cam, t), JSON.parse(process.env.CAMTUNE));
@@ -47,7 +48,7 @@ await page.evaluate(manual => {
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
-}, query.includes('play=manual'));
+}, manual);
 // Desktop: only the game frame (the side panels never move), which also keeps 10 shots a second possible.
 const box = await page.locator('#app').boundingBox(), clip = {x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height)};
 await page.click('#goBtn');

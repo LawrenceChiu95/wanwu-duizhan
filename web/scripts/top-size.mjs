@@ -10,6 +10,8 @@ const ctx = await browser.newContext({viewport: {width: W, height: H}, deviceSca
 const page = await ctx.newPage();
 await page.goto(`${base}?${query}`);
 await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 120000});
+// Presses only when the page is actually playing manual (its default since 10-28; play=auto for the auto fight).
+const manual = await page.evaluate(() => window.__top.status().control === 'manual');
 await page.evaluate(manual => {
   const top = window.__top, stage = top.stage;
   window.__size = {core: [], swept: [], sweptBoth: [], sweepX2: []};
@@ -44,7 +46,7 @@ await page.evaluate(manual => {
   };
   requestAnimationFrame(loop);
   top.start();
-}, query.includes('play=manual'));
+}, manual);
 await page.waitForTimeout(Number(secs) * 1000);
 const out = await page.evaluate(() => {
   const q = (arr, k) => { const s = [...arr].sort((x, y) => x - y); return +s[Math.floor(k * (s.length - 1))].toFixed(1); };

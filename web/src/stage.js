@@ -26,6 +26,12 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 // CORE_RISE: how far a core leaves the spin plane (max 1.05 m).
 export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
+// v4 chase camera: how fast it may turn after the line between the tops (rad/s); 'slow' turns at SLOW_TURN of that
+// (远夏 10-28 e3a68f0a: yesterday's camera, turning about 30 % slower) and also follows and zooms slower (2735f129):
+// the eases' rates are scaled by SLOW_PAN / SLOW_ZOOM, set so the measured median pan and zoom speeds come out about
+// 0.7 of v4's (web/scripts/cam-yaw.mjs), with more room round the tops (SLOW_FIT of the frame instead of 0.88) so the
+// slower zoom keeps them on screen; SLOW_FLOOR is the last-resort limit on how far the zoom-out may lag.
+const V4_TURN = 1.6, SLOW_TURN = 0.7, SLOW_PAN = 0.4, SLOW_ZOOM = 0.6, SLOW_FIT = 0.75, SLOW_FLOOR = 0.9;
 export const CAM = {margin: 0.15, edgePx: 12, hold: 0.6, zoomInRate: 0.05, zoomW: 3, slack: 0, panW: 2.0, deadZone: 0.25, minHalfWidth: 1.1, hardPx: 6, hardCore: 0.15};
 const CAM_FWD = new THREE.Vector3(Math.sin(CAM_YAW) * Math.cos(CAM_PITCH), -Math.sin(CAM_PITCH), Math.cos(CAM_YAW) * Math.cos(CAM_PITCH));
 const CAM_QUAT = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(), CAM_FWD, new THREE.Vector3(0, 1, 0)));
@@ -164,23 +170,20 @@ const wallShader = {
       #include <colorspace_fragment>
     }`
 };
-// The player's own top: a bright ground ring under it (drawn over everything, so it stays visible when the tops overlap).
+// The player's own top: a thin, half-transparent line hugging the outside of its core (远夏 10-28 89169677: the big
+// bright ring read as a skill or weapon range). No glow, no pulse, no ticks; 「你」 and the orange trail do the work.
+// The line sits at r = 0.9 of the quad and stays about 2 px wide whatever the zoom.
+const ME_RING_R = 1.22, ME_RING_OPACITY = 0.5;
 const meRingShader = {
-  uniforms: {uColor: {value: new THREE.Color('#ff8a3d')}, uOpacity: {value: 1}, uTime: {value: 0}, uPulse: {value: 0}},
+  uniforms: {uColor: {value: new THREE.Color('#ff8a3d')}, uOpacity: {value: ME_RING_OPACITY}},
   vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity; uniform float uTime; uniform float uPulse;
+  fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity;
     void main(){
       float r = length(vP);
-      float w = fwidth(r);
-      float line = 1.0 - smoothstep(0.035, 0.035 + w * 1.5, abs(r - 0.9));
-      float glow = exp(-pow((r - 0.9) / 0.09, 2.0)) * 0.55;
-      float fill = smoothstep(0.92, 0.55, r) * 0.10;
-      // Four short ticks just outside the ring, turning slowly: a target marker, not a halo.
-      float ang = atan(vP.y, vP.x) + uTime * 0.9;
-      float tick = step(0.86, abs(cos(ang * 2.0))) * (1.0 - smoothstep(0.0, w * 1.5, abs(r - 1.0) - 0.035));
-      float a = (line * 1.25 + glow + fill + tick * 0.95) * uOpacity * (1.0 + uPulse);
-      if (r > 1.08) discard;
-      gl_FragColor = vec4(mix(uColor, vec3(1.0, 0.93, 0.82), line * 0.35) * a, 1.0);
+      float a = (1.0 - smoothstep(0.6, 1.4, abs(r - 0.9) / max(fwidth(r), 1e-5))) * uOpacity;
+      if (a <= 0.0) discard;
+      gl_FragColor = vec4(uColor, a);
+      #include <colorspace_fragment>
     }`
 };
 // Motion trail: a ribbon along the last few tenths of a second of the core's path, brightest at the head.
@@ -575,13 +578,16 @@ export class Stage {
     });
     this.nextGhost = 0;
     // The player's marker ring (side 0, the orange side, is "you" in both modes).
-    this.meRing = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({...meRingShader, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending}));
+    this.meRing = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({...meRingShader, transparent: true, depthWrite: false}));
     this.meRing.rotation.x = -Math.PI / 2;
     this.meRing.renderOrder = 9;
     this.meRing.visible = false;
     this.scene.add(this.meRing);
     this.showMe = false;
     this.camStyle = 'new';
+    this.chase = false;
+    this.turnScale = 1;
+    this.panScale = this.zoomScale = 1;
     this.fighters = [];
     this.debris = [];
     this.time = 0;
@@ -764,11 +770,12 @@ export class Stage {
   }
   clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0}); f.shield.visible = false; f.root.scale.setScalar(1); } }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
-  shake(px) { const c = this.cam; if (c.shakeAge < SHAKE_TIME && c.shakeAmp > px) return; c.shakeAge = 0; c.shakeAmp = px; }
+  shake(px) { const c = this.cam; if (this.chase || (c.shakeAge < SHAKE_TIME && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; }
   /** Camera punch: the picture jumps a few px toward the impact and settles back within PUNCH_TIME (translation only). */
   punch(point, px) {
     const c = this.cam, at = {x: 0, y: 0};
-    if (!this.project(point, at)) return;
+    // Shake and punch belong to the framing camera (俯视); the chase cameras shake their own way (shakeV4).
+    if (this.chase || !this.project(point, at)) return;
     const {w, h, top} = this.view, cx = w / 2, cy = top + (h - top - this.safeBottom()) / 2;
     let dx = cx - at.x, dy = cy - at.y;
     const n = Math.hypot(dx, dy);
@@ -847,18 +854,25 @@ export class Stage {
   }
 
   /**
-   * Which fight camera: 'new' (the framing camera above) or 'v4', yesterday's chase camera (03a4da9), kept as it was
-   * so the two can be compared: it turns to follow the line between the tops, pulls in and out at once, and shakes.
+   * Which fight camera: 'v4', yesterday's chase camera (03a4da9), kept as it was: it turns to follow the line between
+   * the tops, pulls in and out at once, and shakes; 'slow', the same camera turning at SLOW_TURN of v4's rate and
+   * following and zooming slower (SLOW_PAN, SLOW_ZOOM), with more room (SLOW_FIT) and a floor on its zoom-out (SLOW_FLOOR) so a top
+   * never leaves the screen; or 'new', the framing camera above (俯视).
    */
   setCamStyle(style) {
-    this.camStyle = style === 'v4' ? 'v4' : 'new';
-    this.camera.fov = this.camStyle === 'v4' ? V4_FOV : CAM_FOV;
+    this.camStyle = style === 'v4' || style === 'slow' ? style : 'new';
+    this.chase = this.camStyle !== 'new';
+    this.turnScale = this.camStyle === 'slow' ? SLOW_TURN : 1;
+    this.panScale = this.camStyle === 'slow' ? SLOW_PAN : 1;
+    this.zoomScale = this.camStyle === 'slow' ? SLOW_ZOOM : 1;
+    this.camera.fov = this.chase ? V4_FOV : CAM_FOV;
     this.camera.updateProjectionMatrix();
     this.particles.mat.uniforms.uScale.value = this.view.h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
-    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0});
+    // A switch is a clean cut: no jolt started under the other camera carries over (Sol 第 11 版 R1).
+    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0, shakeAge: SHAKE_TIME, shakeAmp: 0, punch: null});
   }
-  /** v4 only: camera-position shake on blows (0..1.2) and the decisive push (0..1), as v4 drove them. */
-  shakeV4(amount) { if (this.camStyle === 'v4') this.cam.shake4 = Math.min(1.2, Math.max(this.cam.shake4 ?? 0, amount)); }
+  /** Chase camera only: camera-position shake on blows (0..1.2) and the decisive push (0..1), as v4 drove them. */
+  shakeV4(amount) { if (this.chase) this.cam.shake4 = Math.min(1.2, Math.max(this.cam.shake4 ?? 0, amount)); }
   setPushV4(amount) { this.cam.push4 = amount; }
   /** Yesterday's chase camera (03a4da9 updateCamera, fight and result), lifted as it was; only the safe area now counts the 冲/挡 pad. */
   updateCameraV4(dt, snap) {
@@ -871,7 +885,7 @@ export class Stage {
       d = Math.atan2(Math.sin(d), Math.cos(d));
       if (snap || !c.ready) c.yaw = want;
       // Follow only a clear turn of the line, and gently, so the view does not swim.
-      else if (Math.abs(d) > 0.25) c.yaw += Math.sign(d) * Math.min(Math.abs(d) - 0.25, dt * 1.6);
+      else if (Math.abs(d) > 0.25) c.yaw += Math.sign(d) * Math.min(Math.abs(d) - 0.25, dt * V4_TURN * this.turnScale);
     }
     // In the decisive slow motion the view tips toward top-down, so the near top cannot loom over the hit;
     // the result looks down on the winner so its core and both pieces read.
@@ -902,14 +916,23 @@ export class Stage {
     let x0 = Infinity, x1 = -Infinity, v0 = Infinity, v1 = -Infinity;
     for (const p of pts) { const d = tmp.copy(p).sub(base), x = d.dot(right), y = d.dot(upv); x0 = Math.min(x0, x); x1 = Math.max(x1, x); v0 = Math.min(v0, y); v1 = Math.max(v1, y); }
     const focus = base.addScaledVector(right, (x0 + x1) / 2).addScaledVector(upv, (v0 + v1) / 2);
-    if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.15));
+    if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt * this.panScale / 0.15));
     // Distance from the focus actually used, so a lagging pan is covered too.
-    const m = c.mode === 'result' ? 0.62 : 0.88;
+    const m = c.mode === 'result' ? 0.62 : this.camStyle === 'slow' ? SLOW_FIT : 0.88;
     let need = 0.8;
     for (const p of pts) { const d = tmp.copy(p).sub(c.focus), z = d.dot(fwd); need = Math.max(need, Math.abs(d.dot(right)) / (tanH * m) - z, Math.abs(d.dot(upv)) / (freeV * m) - z); }
     // Zoom out at once when the tops fly apart; come back in gently.
     if (snap || !c.ready) c.dist = need;
-    else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.06 : c.mode === 'result' ? 0.3 : 0.6)));
+    else c.dist += (need - c.dist) * (1 - Math.exp(-dt * (c.mode === 'result' ? 1 : this.zoomScale) / (need > c.dist ? 0.06 : c.mode === 'result' ? 0.3 : 0.6)));
+    // 'slow' only: the zoom-out may not lag so far that a top's sweep crosses the screen edge (v4 let it, for up to
+    // 0.25 s at a time, by up to 17 px at 390 wide): never looser than SLOW_FLOOR of the frame. Rarely acts (<1 % of frames).
+    if (this.camStyle === 'slow') {
+      let hard = 0;
+      for (const p of pts) { const d = tmp.copy(p).sub(c.focus), z = d.dot(fwd); hard = Math.max(hard, Math.abs(d.dot(right)) / (tanH * SLOW_FLOOR) - z, Math.abs(d.dot(upv)) / (freeV * SLOW_FLOOR) - z); }
+      // Test aid: how often this limit had to act.
+      c.floorFrames = (c.floorFrames ?? 0) + 1;
+      if (hard > c.dist) { c.dist = hard; c.floorHits = (c.floorHits ?? 0) + 1; }
+    }
     c.ready = true;
     this.camera.quaternion.copy(tmpQ);
     this.camera.position.copy(c.focus).addScaledVector(fwd, -c.dist);
@@ -963,7 +986,7 @@ export class Stage {
     const [a, b] = this.fighters;
     if (!a || !b) return;
     const c = this.cam;
-    if (c.mode !== 'build' && this.camStyle === 'v4') return this.updateCameraV4(dt, snap);
+    if (c.mode !== 'build' && this.chase) return this.updateCameraV4(dt, snap);
     if (c.mode !== 'build') {
       const {w, h, top} = this.view, B = this.safeBottom();
       // The principal point sits in the middle of the safe area (eased, so a card coming up never jumps the picture).
@@ -1137,18 +1160,13 @@ export class Stage {
       this.wall.material.uniforms[i ? 'uB' : 'uA'].value.set(f.center.x, f.center.z);
       this.wall.material.uniforms[i ? 'uCB' : 'uCA'].value.copy(TEAM[i]).multiplyScalar(near * 0.9);
     });
-    // The player's ring: under the orange top, sized to its reach, over everything so an overlap never hides it.
+    // The player's ring: a fixed thin line just outside its core (the core hides the far side of it); nothing drives it.
     const me = this.fighters[0];
     this.meRing.visible = Boolean(this.showMe && me && me.dim < 0.6);
     if (this.meRing.visible) {
-      const want = this.reachOf(me) + 0.1;
-      this.meR = this.meR ? this.meR + (want - this.meR) * (1 - Math.exp(-realDt * 6)) : want;
-      this.meRing.position.set(me.center.x, me.center.y - 0.06, me.center.z);
-      this.meRing.scale.setScalar(this.meR);
-      const u = this.meRing.material.uniforms;
-      u.uTime.value = this.time;
-      u.uOpacity.value = 1 - me.dim;
-      u.uPulse.value = me.act.charge > 0 ? 0.6 * (0.5 + 0.5 * Math.sin(this.time * 30)) : me.act.dash > 0 ? 0.5 : 0;
+      this.meRing.position.set(me.center.x, me.center.y - 0.04, me.center.z);
+      this.meRing.scale.setScalar(this.coreRadius * ME_RING_R / 0.9);
+      this.meRing.material.uniforms.uOpacity.value = ME_RING_OPACITY * (1 - me.dim);
     }
     for (const g of this.ghosts) {
       if (!g.s.visible) continue;

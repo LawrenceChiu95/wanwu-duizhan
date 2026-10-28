@@ -1,0 +1,164 @@
+{
+ "new": {
+  "camPanPxS": {
+   "mean": 27.3,
+   "median": 22.94,
+   "p95": 68.46
+  },
+  "floorPointPxS": {
+   "mean": 32,
+   "median": 24.72
+  },
+  "topScreenPxS": {
+   "median": 173.23,
+   "p95": 415.42
+  },
+  "minSweptEdgePx": -4.1,
+  "minCoreEdgePx": 38.9,
+  "yawDegS": {
+   "median": 0,
+   "p95": 0
+  },
+  "focusMS": {
+   "median": 0.24,
+   "p95": 0.77
+  },
+  "zoomPerS": {
+   "median": 0.05,
+   "p95": 0.2
+  },
+  "floorLimit": null,
+  "games": [
+   {
+    "seed": 7,
+    "dur": 29.8,
+    "presses": 9,
+    "minSweptEdgePx": -3.2,
+    "at": 6.17,
+    "minCoreEdgePx": 39.5,
+    "outS": 0.25
+   },
+   {
+    "seed": 37,
+    "dur": 36.4,
+    "presses": 12,
+    "minSweptEdgePx": -4.1,
+    "at": 2.85,
+    "minCoreEdgePx": 38.9,
+    "outS": 0.32
+   }
+  ]
+ },
+ "slow": {
+  "camPanPxS": {
+   "mean": 85.1,
+   "median": 78.79,
+   "p95": 176.85
+  },
+  "floorPointPxS": {
+   "mean": 184.6,
+   "median": 199.92
+  },
+  "topScreenPxS": {
+   "median": 212.16,
+   "p95": 495.3
+  },
+  "minSweptEdgePx": 20.6,
+  "minCoreEdgePx": 51.2,
+  "yawDegS": {
+   "median": 64.17,
+   "p95": 64.17
+  },
+  "focusMS": {
+   "median": 0.65,
+   "p95": 1.61
+  },
+  "zoomPerS": {
+   "median": 0.22,
+   "p95": 0.96
+  },
+  "floorLimit": {
+   "hits": 5,
+   "frames": 3970,
+   "pct": 0.13
+  },
+  "games": [
+   {
+    "seed": 7,
+    "dur": 29.8,
+    "presses": 9,
+    "minSweptEdgePx": 24.1,
+    "at": 6.1,
+    "minCoreEdgePx": 51.2,
+    "outS": 0
+   },
+   {
+    "seed": 37,
+    "dur": 36.4,
+    "presses": 12,
+    "minSweptEdgePx": 20.6,
+    "at": 6.75,
+    "minCoreEdgePx": 60.5,
+    "outS": 0
+   }
+  ]
+ },
+ "v4": {
+  "camPanPxS": {
+   "mean": 145.2,
+   "median": 126.95,
+   "p95": 321.5
+  },
+  "floorPointPxS": {
+   "mean": 293.2,
+   "median": 312.39
+  },
+  "topScreenPxS": {
+   "median": 240.85,
+   "p95": 573.96
+  },
+  "minSweptEdgePx": -0.9,
+  "minCoreEdgePx": 42.7,
+  "yawDegS": {
+   "median": 91.67,
+   "p95": 91.67
+  },
+  "focusMS": {
+   "median": 0.94,
+   "p95": 2.29
+  },
+  "zoomPerS": {
+   "median": 0.3,
+   "p95": 1.26
+  },
+  "floorLimit": null,
+  "games": [
+   {
+    "seed": 7,
+    "dur": 29.8,
+    "presses": 9,
+    "minSweptEdgePx": 2,
+    "at": 6.05,
+    "minCoreEdgePx": 42.7,
+    "outS": 0
+   },
+   {
+    "seed": 37,
+    "dur": 36.4,
+    "presses": 12,
+    "minSweptEdgePx": -0.9,
+    "at": 6.77,
+    "minCoreEdgePx": 48.4,
+    "outS": 0.03
+   }
+  ]
+ },
+ "ratioSlowOverV4": {
+  "yawMedian": 0.7,
+  "focusMedian": 0.691,
+  "zoomMedian": 0.733,
+  "camPanMedian": 0.621,
+  "camPanMean": 0.586,
+  "topScreenMedian": 0.881
+ }
+}

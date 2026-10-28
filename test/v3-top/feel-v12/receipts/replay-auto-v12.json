@@ -1,0 +1,20 @@
+[
+ {
+  "seed": 7,
+  "mine": "pan-lux3d,out,pillow,hug,e180",
+  "browser": "b91d8a5c9363255b16a70dbf735584d870680cc73a2e18e4a5fac1aa25bc6b5c",
+  "node": "b91d8a5c9363255b16a70dbf735584d870680cc73a2e18e4a5fac1aa25bc6b5c",
+  "equal": true,
+  "duration": 39.725,
+  "winner": 0
+ },
+ {
+  "seed": 42,
+  "mine": "pan-lux3d,out,pillow,hug,e180",
+  "browser": "e71a0f074b0419012f43416d66b58924dfc9f4f80ab30bf0ccab7691210e96ec",
+  "node": "e71a0f074b0419012f43416d66b58924dfc9f4f80ab30bf0ccab7691210e96ec",
+  "equal": true,
+  "duration": 28.416666666666668,
+  "winner": 0
+ }
+]

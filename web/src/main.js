@@ -100,10 +100,12 @@ async function main() {
   const mine = structuredClone(fromUrl() ?? DEFAULT);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
-  // 自动 / 手动 (same loadout, same opponent); manual adds the 冲 / 挡 buttons.
-  let control = q.get('play') === 'manual' ? 'manual' : 'auto', live = null;
-  // Fight camera: the new framing camera, or yesterday's chase camera (v4) to compare (?cam=v4, or the HUD toggle).
-  let camStyle = q.get('cam') === 'v4' ? 'v4' : 'new';
+  // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).
+  let control = q.get('play') === 'auto' ? 'auto' : 'manual', live = null;
+  // Fight camera (the HUD toggle, or ?cam=): 俯视 the framing camera from above ('new'), 慢三成 yesterday's chase camera
+  // turning, following and zooming 30 % slower ('slow', default), 原速 yesterday's camera as it was ('v4')
+  // (远夏 10-28 2735f129: keep all three).
+  let camStyle = ['v4', 'new'].includes(q.get('cam')) ? q.get('cam') : 'slow';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
   el.busy.hidden = true;
@@ -134,7 +136,6 @@ async function main() {
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
-    for (const b of document.querySelectorAll('[data-control]')) b.setAttribute('aria-checked', String(b.dataset.control === control));
   }
   let buildReq = 0;
   async function rebuildMine() {
@@ -354,7 +355,7 @@ async function main() {
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
-    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'manual' ? '&play=manual' : ''}${camStyle === 'v4' ? '&cam=v4' : ''}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
@@ -422,7 +423,6 @@ async function main() {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
   }));
   document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; mine.spread = b.dataset.spread; rebuildMine(); }; });
-  document.querySelectorAll('[data-control]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; control = b.dataset.control; syncBuild(); }; });
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action) {
     if (!live || live.done || phase !== 'play') return;
@@ -447,14 +447,14 @@ async function main() {
   const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
   el.mute.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
   syncMute();
-  // 新镜头 / 昨天的镜头: switch at any time (a cut, then that camera carries on).
+  // 俯视 / 慢三成 / 原速: switch at any time (a cut, then that camera carries on).
   const syncCam = () => { for (const b of el.camSeg.querySelectorAll('[data-cam]')) b.setAttribute('aria-checked', String(b.dataset.cam === camStyle)); };
   el.camSeg.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
     if (b.dataset.cam === camStyle) return;
     camStyle = b.dataset.cam;
     stage.setCamStyle(camStyle);
     syncCam();
-    try { const rest = location.search.slice(1).split('&').filter(p => p && !p.startsWith('cam=')); if (camStyle === 'v4') rest.push('cam=v4'); history.replaceState(null, '', `?${rest.join('&')}`); } catch { /* sandboxed viewer */ }
+    try { const rest = location.search.slice(1).split('&').filter(p => p && !p.startsWith('cam=')); if (camStyle !== 'slow') rest.push(`cam=${camStyle}`); history.replaceState(null, '', `?${rest.join('&')}`); } catch { /* sandboxed viewer */ }
   }));
   syncCam();
   function updatePad() {
@@ -528,7 +528,7 @@ async function main() {
   };
   window.__top = {
     press,
-    setControl(c) { control = c; syncBuild(); },
+    setControl(c) { control = c; },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
     status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),

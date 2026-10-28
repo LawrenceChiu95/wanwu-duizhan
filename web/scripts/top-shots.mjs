@@ -1,5 +1,6 @@
 // Playwright look at the top demo. Usage: node scripts/top-shots.mjs <baseUrl> <outDir> [width] [query]
 // Shots: build, a hit, a break, the result. Uses the page's window.__top test hooks.
+// It presses nothing, so it plays the auto fight unless the query picks a mode (the page is manual by default since 10-28).
 import {chromium} from 'playwright';
 import {mkdir, writeFile} from 'node:fs/promises';
 const [base = 'http://127.0.0.1:4377/', out = './shots-top', w = '390', query = ''] = process.argv.slice(2);
@@ -23,7 +24,7 @@ async function until(pred, timeout = 120000) {
 }
 const shot = name => page.screenshot({path: `${out}/${name}-${W}.png`});
 const report = {width: W};
-await page.goto(`${base}?${query}`);
+await page.goto(`${base}?${/(^|&)play=/.test(query) ? query : [query, 'play=auto'].filter(Boolean).join('&')}`);
 await until(s => s.phase === 'build');
 await page.waitForTimeout(900);
 await shot('1-build');
