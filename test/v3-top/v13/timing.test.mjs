@@ -90,17 +90,32 @@ test('dash timeout is a miss and a zero locked direction never invents a full al
  assert.deepEqual(go.lockedDir,[0,0,0]);assert.equal(end.quality,'glance');assert.equal(end.alignment,null);
  assert.ok(!r.events.some(e=>e.dash));assert.ok(!JSON.stringify(r).includes('NaN'));
 });
-test('opening is seed-independent, with a half-turn of every same-loadout collider, COM and angular velocity',async()=>{
+test('seeded global half-turn changes only seating; same-loadout collider, COM and spin symmetry remain',async()=>{
  const def={parts:[{item:'broom',mount:'e0',orient:'out'},{item:'pan-lux3d',mount:'e90',orient:'hug'}]};
  const a=await createV3Match({fighters:[def,def],mode:'A',seed:1}),b=await createV3Match({fighters:[def,def],mode:'A',seed:101});
  try{
-  assert.deepEqual(a.initial,b.initial);
-  const [left,right]=a.initial,half=[0,1,0,0],turn=v=>rotate(half,v),close=(x,y)=>assert.ok(x.every((v,i)=>Math.abs(v-y[i])<1e-6),`${x} != ${y}`);
-  close(turn(left.pos),right.pos);close(turn(left.centerOfMass),right.centerOfMass);
-  close(turn(left.angularVelocity),right.angularVelocity);assert.deepEqual(left.velocity,[0,0,0]);assert.deepEqual(right.velocity,[0,0,0]);
-  for(let i=0;i<left.parts.length;i++)close(turn(left.parts[i].pos),right.parts[i].pos);
-  assert.deepEqual(left.quat,[0,0,0,1]);assert.deepEqual(right.quat,[0,1,0,0]);
+  // These fixed seeds select opposite global orientations, never a reflection or a relative tilt.
+  assert.deepEqual(a.initial,[...b.initial].reverse());
+  const half=[0,1,0,0],turn=v=>rotate(half,v),close=(x,y)=>assert.ok(x.every((v,i)=>Math.abs(v-y[i])<1e-6),`${x} != ${y}`);
+  for(const m of [a,b]){
+   const [left,right]=m.initial;
+   close(turn(left.pos),right.pos);close(turn(left.centerOfMass),right.centerOfMass);
+   close(turn(left.angularVelocity),right.angularVelocity);assert.deepEqual(left.velocity,[0,0,0]);assert.deepEqual(right.velocity,[0,0,0]);
+   for(let i=0;i<left.parts.length;i++)close(turn(left.parts[i].pos),right.parts[i].pos);
+  }
+  assert.deepEqual(a.initial[0].quat,[0,0,0,1]);assert.deepEqual(b.initial[0].quat,[0,1,0,0]);
  }finally{a.free();b.free();}
+});
+test('global half-turn is seeded, recorded, and never swaps fighter definitions or input ownership',async()=>{
+ const sim=await simulateWithRules({maxDuration:.1});
+ const fighters=[{parts:[{item:'broom',mount:'e0',orient:'out'}]},{parts:[{item:'pillow',mount:'e90',orient:'hug'}]}];
+ for(const seed of [1,101]){
+  const o={fighters,mode:'A',seed,manual:{sides:['input','ai'],inputs:[{step:1,side:0,action:'block'}],aiSeeds:[123,456]}};
+  const a=await sim(o),again=await sim({...o,manual:{...a.meta.manual}}),b=await sim({...o,mode:'B'});
+  assert.equal(a.meta.openingHalfTurn,seed===101);assert.equal(JSON.stringify(a),JSON.stringify(again));assert.deepEqual(a.meta.initial,b.meta.initial);
+  assert.deepEqual(a.meta.initial.map(f=>f.definition),fighters);assert.deepEqual(a.meta.manual.sides,['input','ai']);assert.deepEqual(a.meta.manual.aiSeeds,[123,456]);
+  assert.deepEqual(a.meta.manual.inputs,[{step:1,side:0,action:'block'}]);assert.equal(a.events.find(e=>e.type==='block').side,0);
+ }
 });
 test('invalid sensitivity value fails; automatic mode retains no manual state',async()=>{
  await assert.rejects(createV3Match({fighters:bare,seed:1,manual:{sides:['input','ai'],blockTime:.1}}),/blockTime/);

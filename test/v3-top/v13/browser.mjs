@@ -6,7 +6,7 @@ import {gzipSync} from 'node:zlib';
 import {chromium} from '../../../web/node_modules/playwright/index.mjs';
 import {simulateV3} from '../../../sim/v3.js';
 import {root,fixtures,options,sha,baseline} from './experiment.mjs';
-const out=new URL('./browser/',import.meta.url);await mkdir(out,{recursive:true});
+const out=new URL(process.env.V13_BROWSER??'./browser/',import.meta.url);await mkdir(out,{recursive:true});
 const sources=Object.fromEntries(await Promise.all(['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','data/catalog.json','test/v3-top/v13/browser.mjs'].map(async p=>[p,sha(await readFile(new URL(p,root)))])));
 const html='<!doctype html><meta charset="utf-8"><title>Module verification</title><link rel="icon" href="data:,"><script type="importmap">{"imports":{"@dimforge/rapier3d-compat":"/sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs"}}</script><script type="module">import {simulateV3} from "/sim/v3.js";window.runModule=simulateV3;</script>';
 const server=createServer(async(req,res)=>{
@@ -26,6 +26,7 @@ try{
  const old=await baseline(),cases=[];
  for(const mode of ['A','B'])for(const seed of [7,42])cases.push({id:`auto-${mode}-${seed}`,width:1440,options:options(fixtures[0],seed,'auto',.25,mode)});
  for(const width of [390,1440])for(const window of [.2,.25,.3])cases.push({id:`manual-${width}-${window}`,width,options:options(fixtures[0],width===390?7:42,'mash',window)});
+ cases.push({id:'manual-explicit-ai-profiles',width:390,options:{...options(fixtures[1],19,'timing'),manual:{sides:['ai','ai'],blockTime:.25,aiSeeds:[123,456]}}});
  const receipts=[];
  for(const c of cases){
   await page.setViewportSize({width:c.width,height:c.width===390?844:900});
