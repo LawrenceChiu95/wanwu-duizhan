@@ -770,11 +770,12 @@ export class Stage {
   }
   clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0}); f.shield.visible = false; f.root.scale.setScalar(1); } }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
-  shake(px) { const c = this.cam; if (c.shakeAge < SHAKE_TIME && c.shakeAmp > px) return; c.shakeAge = 0; c.shakeAmp = px; }
+  shake(px) { const c = this.cam; if (this.chase || (c.shakeAge < SHAKE_TIME && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; }
   /** Camera punch: the picture jumps a few px toward the impact and settles back within PUNCH_TIME (translation only). */
   punch(point, px) {
     const c = this.cam, at = {x: 0, y: 0};
-    if (!this.project(point, at)) return;
+    // Shake and punch belong to the framing camera (俯视); the chase cameras shake their own way (shakeV4).
+    if (this.chase || !this.project(point, at)) return;
     const {w, h, top} = this.view, cx = w / 2, cy = top + (h - top - this.safeBottom()) / 2;
     let dx = cx - at.x, dy = cy - at.y;
     const n = Math.hypot(dx, dy);
@@ -867,7 +868,8 @@ export class Stage {
     this.camera.fov = this.chase ? V4_FOV : CAM_FOV;
     this.camera.updateProjectionMatrix();
     this.particles.mat.uniforms.uScale.value = this.view.h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
-    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0});
+    // A switch is a clean cut: no jolt started under the other camera carries over (Sol 第 11 版 R1).
+    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0, shakeAge: SHAKE_TIME, shakeAmp: 0, punch: null});
   }
   /** Chase camera only: camera-position shake on blows (0..1.2) and the decisive push (0..1), as v4 drove them. */
   shakeV4(amount) { if (this.chase) this.cam.shake4 = Math.min(1.2, Math.max(this.cam.shake4 ?? 0, amount)); }
