@@ -42,7 +42,22 @@ test('full dash uses pre-impact alignment, a real contact and the post-cap multi
   if(e.dash){assert.ok(e.alignment>=.9);assert.equal(e.dashQuality,'full');}
  }
  const results=r.events.filter(e=>e.type==='blockResult'&&e.side===1);
- assert.equal(results.length,1);assert.equal(results[0].outcome,'perfect');
+ assert.equal(results.length,1);assert.equal(results[0].outcome,'perfect');assert.equal(results[0].damageApplied,true);
+});
+test('a guarded new contact during shared damage cooldown succeeds without damage, once per window',async()=>{
+ const sim=await simulateWithRules({maxDuration:1.3,top:{spinRate:0}});
+ const inputs=[{step:125,side:0,action:'block'},{step:126,side:0,action:'block'}];
+ const r=await sim({fighters:bare,seed:3,manual:{sides:['input','input'],blockTime:.25,inputs}});
+ const contact=r.events.find(e=>e.type==='contact'&&e.t===125/120),prior=r.events.find(e=>e.role==='attack'&&e.damage>0);
+ assert.equal(contact.attacker,1);assert.ok(contact.t-prior.t<r.meta.rules.damageCooldown);
+ assert.ok(!r.events.some(e=>e.t===contact.t&&e.damage>0));
+ const results=r.events.filter(e=>e.type==='blockResult'&&e.side===0);
+ assert.equal(results.length,1);assert.equal(results[0].outcome,'perfect');assert.equal(results[0].damageApplied,false);
+ assert.equal(results[0].resolvedStep,125);assert.equal(results[0].attacker,1);assert.deepEqual(results[0].point,contact.point);
+ assert.equal(r.events.filter(e=>e.type==='block'&&e.side===0).length,1);
+ assert.equal(JSON.stringify(r),JSON.stringify(await sim({fighters:bare,seed:3,manual:{sides:['input','input'],blockTime:.25,inputs:r.meta.manual.inputs}})));
+ const attackerOnly=await sim({fighters:bare,seed:3,manual:{sides:['input','input'],inputs:[{step:125,side:1,action:'block'}]}});
+ assert.equal(attackerOnly.events.find(e=>e.type==='blockResult'&&e.side===1).outcome,'empty');
 });
 test('dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus',async()=>{
  const r=await simulateV3({fighters:bare,mode:'A',seed:3,manual:{sides:['input','input'],inputs:[dash]}});

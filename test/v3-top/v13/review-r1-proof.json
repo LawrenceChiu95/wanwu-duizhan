@@ -1,0 +1,635 @@
+{
+  "beforeCommit": "622fdd0",
+  "afterSourceSha256": "5a32a8f9dc5eb2371530d2080bf083b8387bccd14245e97d3afabb4fbacd1a82",
+  "rulesSha256": "d28fa1ea4ebd54f5a54b5da70bc5f155b319bfb899cbb362a77ac2a83da3b5c5",
+  "cases": [
+    {
+      "id": "cold-new-contact",
+      "inputs": {
+        "sides": [
+          "input",
+          "input"
+        ],
+        "blockTime": 0.25,
+        "inputs": [
+          {
+            "step": 125,
+            "side": 0,
+            "action": "block"
+          }
+        ]
+      },
+      "framesSha256": "97a7e982b57d4505bedf937d4b40848305e359e86a5c5ae476aea9b1ec5fa2b0",
+      "afterFramesSha256": "97a7e982b57d4505bedf937d4b40848305e359e86a5c5ae476aea9b1ec5fa2b0",
+      "nonFeedbackReplaySha256": "8f3d4e1e9072eb5582ed166d7f288630708d965d4c58c619c56891d05ae8bb5f",
+      "afterNonFeedbackReplaySha256": "8f3d4e1e9072eb5582ed166d7f288630708d965d4c58c619c56891d05ae8bb5f",
+      "equalOutsideBlockFeedback": true,
+      "beforeResults": [
+        {
+          "t": 1.2916666666666667,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 125,
+          "resolvedStep": 155
+        }
+      ],
+      "afterResults": [
+        {
+          "t": 1.0416666666666667,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 125,
+          "resolvedStep": 125,
+          "point": [
+            0.0013954490423202515,
+            0,
+            0
+          ],
+          "attacker": 1,
+          "damageApplied": false
+        }
+      ]
+    },
+    {
+      "id": "formal-timing-7",
+      "inputs": {
+        "sides": [
+          "ai",
+          "ai"
+        ],
+        "inputs": [],
+        "blockTime": 0.25
+      },
+      "framesSha256": "75dd6e84c0c46534dfe8c40e7e3f1c25bc5a089c688cea8462100d49e22522f1",
+      "afterFramesSha256": "75dd6e84c0c46534dfe8c40e7e3f1c25bc5a089c688cea8462100d49e22522f1",
+      "nonFeedbackReplaySha256": "a120120394aa41f95f8959c710e583a945926f9151887fdf878ee1b699b10f87",
+      "afterNonFeedbackReplaySha256": "a120120394aa41f95f8959c710e583a945926f9151887fdf878ee1b699b10f87",
+      "equalOutsideBlockFeedback": true,
+      "beforeResults": [
+        {
+          "t": 0.39166666666666666,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "perfect",
+          "pressStep": 37,
+          "resolvedStep": 47,
+          "point": [
+            0.6431582254125812,
+            -0.0019784448296381388,
+            0.01569573762474405
+          ],
+          "attacker": 0
+        },
+        {
+          "t": 0.5583333333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 37,
+          "resolvedStep": 67
+        },
+        {
+          "t": 5.658333333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 673,
+          "resolvedStep": 679,
+          "point": [
+            0.3031591897071302,
+            0.06943217330784877,
+            0.15930031617507986
+          ],
+          "attacker": 1
+        },
+        {
+          "t": 5.858333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 673,
+          "resolvedStep": 703
+        },
+        {
+          "t": 10.958333333333334,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 1285,
+          "resolvedStep": 1315
+        },
+        {
+          "t": 10.958333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 1285,
+          "resolvedStep": 1315
+        },
+        {
+          "t": 15.958333333333334,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 1885,
+          "resolvedStep": 1915
+        },
+        {
+          "t": 15.958333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 1885,
+          "resolvedStep": 1915
+        },
+        {
+          "t": 21.15833333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 2509,
+          "resolvedStep": 2539
+        },
+        {
+          "t": 21.15833333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 2509,
+          "resolvedStep": 2539
+        },
+        {
+          "t": 26.15833333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 3109,
+          "resolvedStep": 3139
+        },
+        {
+          "t": 26.15833333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 3109,
+          "resolvedStep": 3139
+        }
+      ],
+      "afterResults": [
+        {
+          "t": 0.39166666666666666,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "perfect",
+          "pressStep": 37,
+          "resolvedStep": 47,
+          "point": [
+            0.6431582254125812,
+            -0.0019784448296381388,
+            0.01569573762474405
+          ],
+          "attacker": 0,
+          "damageApplied": true
+        },
+        {
+          "t": 0.5583333333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 37,
+          "resolvedStep": 67
+        },
+        {
+          "t": 5.658333333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 673,
+          "resolvedStep": 679,
+          "point": [
+            0.3031591897071302,
+            0.06943217330784877,
+            0.15930031617507986
+          ],
+          "attacker": 1,
+          "damageApplied": true
+        },
+        {
+          "t": 5.858333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 673,
+          "resolvedStep": 703
+        },
+        {
+          "t": 10.875,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 1285,
+          "resolvedStep": 1305,
+          "point": [
+            -0.008391113999306199,
+            0.0496746232431334,
+            -0.24346931840739514
+          ],
+          "attacker": 1,
+          "damageApplied": false
+        },
+        {
+          "t": 10.958333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 1285,
+          "resolvedStep": 1315
+        },
+        {
+          "t": 15.816666666666666,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 1885,
+          "resolvedStep": 1898,
+          "point": [
+            0.24350724668860263,
+            -0.011951492839993097,
+            0.18829287956912738
+          ],
+          "attacker": 1,
+          "damageApplied": false
+        },
+        {
+          "t": 15.958333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 1885,
+          "resolvedStep": 1915
+        },
+        {
+          "t": 21.15833333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 2509,
+          "resolvedStep": 2539
+        },
+        {
+          "t": 21.15833333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 2509,
+          "resolvedStep": 2539
+        },
+        {
+          "t": 26.15833333333333,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 3109,
+          "resolvedStep": 3139
+        },
+        {
+          "t": 26.15833333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 3109,
+          "resolvedStep": 3139
+        }
+      ]
+    },
+    {
+      "id": "formal-mash-42",
+      "inputs": {
+        "sides": [
+          "input",
+          "ai"
+        ],
+        "inputs": [
+          {
+            "step": 60,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 300,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 612,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 924,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 1164,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 1548,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 1716,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 2172,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 2268,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 2796,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 2820,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 3372,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 3420,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 3924,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 4044,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 4476,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 4668,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 5028,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 5292,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 5580,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 5916,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 6132,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 6540,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 6684,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 7164,
+            "side": 0,
+            "action": "block"
+          }
+        ],
+        "blockTime": 0.25
+      },
+      "framesSha256": "56b88baca86049023aa5063656b6605214bcc31ae79cac611272af84193eec76",
+      "afterFramesSha256": "56b88baca86049023aa5063656b6605214bcc31ae79cac611272af84193eec76",
+      "nonFeedbackReplaySha256": "ee6cac33a5962440b5602b2714819552d351f504f7f14afac633963c0f177061",
+      "afterNonFeedbackReplaySha256": "ee6cac33a5962440b5602b2714819552d351f504f7f14afac633963c0f177061",
+      "equalOutsideBlockFeedback": true,
+      "beforeResults": [
+        {
+          "t": 0.4583333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 25,
+          "resolvedStep": 55
+        },
+        {
+          "t": 2.75,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 300,
+          "resolvedStep": 330
+        },
+        {
+          "t": 6.358333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 733,
+          "resolvedStep": 763
+        },
+        {
+          "t": 7.95,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 924,
+          "resolvedStep": 954
+        },
+        {
+          "t": 11.758333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 1381,
+          "resolvedStep": 1411
+        },
+        {
+          "t": 13.15,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 1548,
+          "resolvedStep": 1578
+        },
+        {
+          "t": 17.058333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 2017,
+          "resolvedStep": 2047
+        },
+        {
+          "t": 18.35,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 2172,
+          "resolvedStep": 2202
+        },
+        {
+          "t": 22.058333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 2617,
+          "resolvedStep": 2647
+        },
+        {
+          "t": 23.55,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 2796,
+          "resolvedStep": 2826
+        }
+      ],
+      "afterResults": [
+        {
+          "t": 0.4583333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 25,
+          "resolvedStep": 55
+        },
+        {
+          "t": 2.591666666666667,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 300,
+          "resolvedStep": 311,
+          "point": [
+            0.5766510574191832,
+            0.1436106656696683,
+            0.4981709603219445
+          ],
+          "attacker": 1,
+          "damageApplied": false
+        },
+        {
+          "t": 6.358333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 733,
+          "resolvedStep": 763
+        },
+        {
+          "t": 7.95,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 924,
+          "resolvedStep": 954
+        },
+        {
+          "t": 11.758333333333333,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 1381,
+          "resolvedStep": 1411
+        },
+        {
+          "t": 13.15,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 1548,
+          "resolvedStep": 1578
+        },
+        {
+          "t": 16.966666666666665,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "perfect",
+          "pressStep": 2017,
+          "resolvedStep": 2036,
+          "point": [
+            -1.182178338457311,
+            0.09920737731466109,
+            0.5489471794373072
+          ],
+          "attacker": 0,
+          "damageApplied": false
+        },
+        {
+          "t": 18.35,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "empty",
+          "pressStep": 2172,
+          "resolvedStep": 2202
+        },
+        {
+          "t": 22.058333333333334,
+          "type": "blockResult",
+          "side": 1,
+          "outcome": "empty",
+          "pressStep": 2617,
+          "resolvedStep": 2647
+        },
+        {
+          "t": 23.541666666666668,
+          "type": "blockResult",
+          "side": 0,
+          "outcome": "perfect",
+          "pressStep": 2796,
+          "resolvedStep": 2825,
+          "point": [
+            0.37856035564845997,
+            -0.012880942535156814,
+            -0.4031450730594036
+          ],
+          "attacker": 1,
+          "damageApplied": false
+        }
+      ]
+    }
+  ]
+}
