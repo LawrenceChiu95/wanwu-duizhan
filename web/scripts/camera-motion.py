@@ -1,6 +1,7 @@
 # 镜头晃不晃（Wren 的量法）：相邻两帧整帧相位相关求平移（CSS px），再分上下两半各求一次看是不是反向（转/滚）。
-# Usage: /usr/bin/python3 -I web/scripts/camera-motion.py <dir from camera-motion.mjs>
-# 过线（Elara 98f93d28）：平均 ≤40 px/s，最差一秒 ≤150 px/s，上下两半反向 ≤5% 帧对，位移 >30 px 的帧合计 ≤0.3 秒。
+# Usage: <python with numpy + pillow> -I web/scripts/camera-motion.py <dir from camera-motion.mjs>
+# 过线（Elara 98f93d28）：平均 ≤40 px/s，最差一秒 ≤150 px/s，上下两半反向 ≤5% 帧对，位移 >30 px 的帧合计 ≤0.3 秒；
+# 10-28 跟拍取景版起「场地四角始终在画面里」换成「两颗陀螺始终整颗在画面里（安全区内）」，场地边缘不再算。
 import json, sys, pathlib
 import numpy as np
 from PIL import Image
@@ -59,9 +60,9 @@ out = {
     'mean_px_s': round(float(mean), 2), 'worst_second_px_s': round(float(worst), 2), 'reversals': rev,
     'opposite_halves_pct': round(100 * opposite / len(mag), 1), 'over30_s': round(float(dt[big].sum()), 2),
     'max_pair_px': round(float(mag.max()), 2), 'moving_pairs': int((mag >= 0.5).sum()),
-    'safe': cap['safe'], 'rim_overflow_px': cap['rim']['px'], 'frame': cap.get('frame'), 'errors': cap['errors'],
+    'safe': cap['safe'], 'frame': cap.get('frame'), 'presses': cap.get('presses'), 'truth': cap.get('truth'), 'errors': cap['errors'],
 }
 out['pass'] = out['mean_px_s'] <= 40 and out['worst_second_px_s'] <= 150 and out['opposite_halves_pct'] <= 5 and out['over30_s'] <= 0.3 \
-    and all(v['px'] <= 0 for v in cap['safe'].values()) and cap['rim']['px'] <= 0
+    and all(v['px'] <= 0 for v in cap['safe'].values())
 (d / 'motion.json').write_text(json.dumps(out, indent=1, ensure_ascii=False))
 print(json.dumps(out, ensure_ascii=False))
