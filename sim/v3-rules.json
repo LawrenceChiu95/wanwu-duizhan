@@ -93,12 +93,13 @@
     "dashThrust": 8,
     "dashCooldown": 4.5,
     "dashDamage": 1.25,
+    "dashAlignment": 0.9,
     "dashRecoil": 1.6,
-    "blockTime": 1,
+    "blockTime": 0.25,
     "blockCooldown": 5,
     "blockDamage": 0.3,
     "blockRecoil": 0.3,
     "bounceRecoil": 2.6,
-    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "dashChance": 0.25, "blockRange": 2.8, "blockReact": 0.15}
+    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "blockLead": 0.15}
   }
 }

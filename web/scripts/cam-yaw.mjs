@@ -26,7 +26,9 @@ await page.waitForFunction(() => window.__top?.status().phase === 'build', null,
 // A live manual match on the page, frozen, so the HUD and the 冲/挡 pad are laid out as in play.
 await page.evaluate(() => window.__top.start());
 await page.waitForFunction(() => window.__top.status().phase === 'play', null, {timeout: 60000});
-const out = await page.evaluate(async ([replays, styles]) => {
+// RADIUS=1.05: the swept disc at the as-built sweep × 1.05 (Wren's ruler; does not shrink when a piece breaks off).
+// Default: the reach of the pieces still on (core × 1.4 at least). No glow or outline either way; edges = the viewport.
+const out = await page.evaluate(async ([replays, styles, R_AS_BUILT]) => {
   const top = window.__top, st = top.stage;
   top.freeze();
   const {Playback} = await import('/src/playback.js');
@@ -45,7 +47,7 @@ const out = await page.evaluate(async ([replays, styles]) => {
   const sweptEdge = f => {
     let y0 = -st.coreRadius, y1 = st.coreRadius;
     for (const p of f.parts) if (p.alive) { y0 = Math.min(y0, p.y0); y1 = Math.max(y1, p.y1); }
-    return disc(f, st.reachOf(f), y0, y1);
+    return disc(f, R_AS_BUILT ? st.frameRadius(f) * R_AS_BUILT : st.reachOf(f), y0, y1);
   };
   const coreEdge = f => disc(f, st.coreRadius, -st.coreRadius, st.coreRadius);
   const grid = [];
@@ -134,7 +136,7 @@ const out = await page.evaluate(async ([replays, styles]) => {
       floorLimit: floorFrames ? {hits: floorHits, frames: floorFrames, pct: +(100 * floorHits / floorFrames).toFixed(2)} : null, games};
   }
   return res;
-}, [replays, styleArg.split(',')]);
+}, [replays, styleArg.split(','), Number(process.env.RADIUS ?? 0)]);
 if (out.slow && out.v4) {  // ratios for the shipped 'slow' only
   const r = (k, s) => +(out.slow[k][s] / out.v4[k][s]).toFixed(3);
   out.ratioSlowOverV4 = {yawMedian: r('yawDegS', 'median'), focusMedian: r('focusMS', 'median'), zoomMedian: r('zoomPerS', 'median'), camPanMedian: r('camPanPxS', 'median'), camPanMean: r('camPanPxS', 'mean'), topScreenMedian: r('topScreenPxS', 'median')};
