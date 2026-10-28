@@ -1,0 +1,55 @@
+{
+  "sourceBranch": "opus/v10",
+  "publishedCode": "e5b70feda7cb9412cc8fed9edfa4526cbbc1ceb7",
+  "rulerOnlyCommit": "bbaaeb7f53e0fb26e8103c1cd1bb07bc528e7878",
+  "files": [
+    {
+      "source": "web/shots/v11/cam-ruler-390.json",
+      "copy": "receipts/cam-ruler-original-390.json",
+      "sha256": "423687cafa20af9a60811df851c163497080a6f8b3dcdf61ef82ff064ef5e761",
+      "bytes": 2504
+    },
+    {
+      "source": "web/shots/v11/cam-ruler-390-sweep105.json",
+      "copy": "receipts/cam-ruler-sweep105-390.json",
+      "sha256": "a1928e8d9c97fe0a487592d56965c0992a8fd8801d8229a3fdc9f0eff77469ba",
+      "bytes": 2516
+    },
+    {
+      "source": "web/shots/v11/manual-390.json",
+      "copy": "receipts/manual-v11-390.json",
+      "sha256": "b4c64705347c521dabb3766cabc9dd12d0e9eb855d47abadac793ac2a4e542d0",
+      "bytes": 529
+    },
+    {
+      "source": "web/shots/v11/manual-1440.json",
+      "copy": "receipts/manual-v11-1440.json",
+      "sha256": "b09bbd622755f778cbf42d7a7e486bac90ba72ae8baa84d4a3dca0d8a5b69516",
+      "bytes": 545
+    },
+    {
+      "source": "web/shots/v12/replay-sha-auto.json",
+      "copy": "receipts/replay-auto-v12.json",
+      "sha256": "2c3ba8a7db1ca2e49d9b1d28e52530242cb83e406b736ca6ab285eec690fc73d",
+      "bytes": 566
+    },
+    {
+      "source": "web/shots/v12/cam-switch-before-v11.json",
+      "copy": "receipts/cam-switch-before-v11.json",
+      "sha256": "655cb190bd332c8e016c7f2d4ca6d02e9c7cf971be78bae35a48a48b1b4b5cf5",
+      "bytes": 1494
+    },
+    {
+      "source": "web/shots/v12/cam-switch-after-v12.json",
+      "copy": "receipts/cam-switch-after-v12.json",
+      "sha256": "abc9ef94ea2f302108e354445db47eb3331c4b82793145bec19c17171740efc6",
+      "bytes": 1443
+    },
+    {
+      "source": "web/shots/v12/manual-replay-390.json",
+      "copy": "receipts/manual-replay-390.json",
+      "sha256": "3ed599406ee62ad9b8653cd9f6ae08e6623754df86a11284b05a89b75d99199b",
+      "bytes": 560
+    }
+  ]
+}

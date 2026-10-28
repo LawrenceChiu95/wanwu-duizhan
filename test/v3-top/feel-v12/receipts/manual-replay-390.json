@@ -1,0 +1,24 @@
+{
+ "width": 390,
+ "seed": 7,
+ "fightShotAt": 13.924966666666645,
+ "got": {
+  "dash-core": 6.158333333333334,
+  "parry": 11.146646666666667
+ },
+ "result": {
+  "winner": 1,
+  "reason": "ko",
+  "duration": 34.68333333333333,
+  "line": "你两件都碎了，核心被对手撞碎",
+  "presses": 11,
+  "deniedTaps": 25
+ },
+ "determinism": {
+  "browserLive": "f7df479696da5577b45e847738b865f9c399688b5551d924b46bcb2b7cc07b16",
+  "nodeFromPresses": "f7df479696da5577b45e847738b865f9c399688b5551d924b46bcb2b7cc07b16",
+  "equal": true,
+  "presses": 11
+ },
+ "logs": []
+}
