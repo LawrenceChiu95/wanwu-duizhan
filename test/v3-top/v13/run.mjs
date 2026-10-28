@@ -7,7 +7,7 @@ import {measure} from './measure.mjs';
 const out=new URL(process.env.V13_RESULTS??'./results/',import.meta.url);await mkdir(out,{recursive:true});
 const files=['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','sim/package-lock.json','data/catalog.json','test/v3-top/impact-probe.mjs','test/v3-top/v13/experiment.mjs','test/v3-top/v13/measure.mjs','test/v3-top/v13/run.mjs'];
 const sources=Object.fromEntries(await Promise.all(files.map(async p=>[p,sha(await readFile(new URL(p,root)))])));
-const manifest={schema:2,node:process.version,fairProtocol:'200 seeds x two swapped AI reaction profiles, same opening',base:'bbaaeb7',sources,fixtures,mash,primarySeeds:100,sensitivitySeeds:100,fairSeeds:200,swapSeeds:20,feelSeeds:50,causalSeeds:10};
+const manifest={schema:3,node:process.version,fairProtocol:'200 seeds x two swapped AI reaction profiles; each seed fixes one global half-turn; score is identity 0, physical-left score reported separately',base:'bbaaeb7',sources,fixtures,mash,primarySeeds:100,sensitivitySeeds:100,fairSeeds:200,swapSeeds:20,feelSeeds:50,causalSeeds:10};
 const fingerprint=sha(manifest),old=await baseline(),plan=[];
 for(const f of fixtures){
  for(let seed=0;seed<100;seed++)for(const condition of ['timing','mash','idle'])plan.push({stage:'primary',fixture:f.id,seed,condition,window:.25,mode:'A',version:'v13'});

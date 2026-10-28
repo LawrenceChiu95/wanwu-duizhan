@@ -20,7 +20,9 @@ export async function measure(run){
   empty:events.filter(e=>e.type==='blockResult'&&e.side===side&&e.outcome==='empty').length
  }));
  const first=times[0]??null,medianGap=median(gaps),maxGap=gaps.length?Math.max(...gaps):null;
+ const physicalLeft=meta.initial[0].pos[0]<meta.initial[1].pos[0]?0:1;
  return {replay:r,row:{winner:meta.winner,reason:meta.reason,duration:meta.duration,score:meta.winner===0?1:meta.winner===null?.5:0,
+  openingHalfTurn:meta.openingHalfTurn??false,role0StartsLeft:physicalLeft===0,physicalLeftScore:meta.winner===null?.5:meta.winner===physicalLeft?1:0,
   first,medianGap,maxGap,hits:times.length,pacePass:meta.duration>=20&&meta.duration<=40&&first!==null&&first<=1.5&&medianGap!==null&&medianGap<=3&&maxGap<=6,
   approachMedian:median(impacts.map(x=>x.approach)),separationMedian:median(separation),rubs,
   scrapeCount:meta.diagnostics.scrapeCount,scrapeDuration:meta.diagnostics.scrapeDuration,maxScrapeDuration:meta.diagnostics.maxScrapeDuration,

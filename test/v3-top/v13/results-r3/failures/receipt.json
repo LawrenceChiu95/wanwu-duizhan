@@ -1,0 +1,328 @@
+[
+  {
+    "id": "residual-maximum",
+    "options": {
+      "fighters": [
+        {
+          "parts": [
+            {
+              "item": "scissors",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "pillow",
+              "mount": "e180",
+              "orient": "out"
+            }
+          ]
+        },
+        {
+          "parts": [
+            {
+              "item": "scissors",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "pillow",
+              "mount": "e180",
+              "orient": "out"
+            }
+          ]
+        }
+      ],
+      "mode": "A",
+      "seed": 130,
+      "manual": {
+        "sides": [
+          "ai",
+          "ai"
+        ],
+        "inputs": [],
+        "blockTime": 0.25,
+        "aiSeeds": [
+          608135690,
+          3084997088
+        ]
+      }
+    },
+    "batchRow": {
+      "stage": "fair",
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 130,
+      "condition": "ai-left",
+      "window": 0.25,
+      "mode": "A",
+      "version": "v13",
+      "winner": 1,
+      "reason": "ko",
+      "duration": 34.916666666666664,
+      "score": 0,
+      "openingHalfTurn": false,
+      "role0StartsLeft": true,
+      "physicalLeftScore": 0,
+      "first": 0.3833333333333333,
+      "medianGap": 1.5833333333333357,
+      "maxGap": 1.9333333333333336,
+      "hits": 24,
+      "pacePass": true,
+      "approachMedian": 5.368267395909213,
+      "separationMedian": 3.38907776801631,
+      "rubs": 0,
+      "scrapeCount": 0,
+      "scrapeDuration": 0,
+      "maxScrapeDuration": 0,
+      "residual": 0.08875560760498047,
+      "actions": [
+        {
+          "press": 15,
+          "dash": 8,
+          "dashEnd": {
+            "full": 4,
+            "glance": 4,
+            "miss": 0,
+            "blocked": 0
+          },
+          "block": 7,
+          "perfect": 0,
+          "contactOnly": 0,
+          "empty": 7
+        },
+        {
+          "press": 15,
+          "dash": 8,
+          "dashEnd": {
+            "full": 4,
+            "glance": 4,
+            "miss": 0,
+            "blocked": 0
+          },
+          "block": 7,
+          "perfect": 5,
+          "contactOnly": 1,
+          "empty": 2
+        }
+      ],
+      "aiSeeds": [
+        608135690,
+        3084997088
+      ],
+      "aiPressSha256": [
+        "19d4da145f8b6eb0c7602bc6a8a359a766f8d7bc2d18dd84a1e8f2739ecd3cee",
+        "caa5197e3587563c647f356f984cd6a3129e92a51f642057168238bfe8bf64c7"
+      ],
+      "replaySha256": "f3ec64e513514268247f7046d5b58b50403607b5cf8c12c051dcc110a67d281f",
+      "wallMs": 154.3874590098858
+    },
+    "sha256": "f3ec64e513514268247f7046d5b58b50403607b5cf8c12c051dcc110a67d281f",
+    "reproducedFullJsonEqual": true,
+    "file": "failures/residual-maximum.json.gz"
+  },
+  {
+    "id": "auto-B-over40",
+    "options": {
+      "fighters": [
+        {
+          "parts": [
+            {
+              "item": "lamp-lux3d",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "slipper",
+              "mount": "e180",
+              "orient": "out"
+            }
+          ]
+        },
+        {
+          "parts": [
+            {
+              "item": "pan-lux3d",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "lamp-lux3d",
+              "mount": "e180",
+              "orient": "hug"
+            }
+          ]
+        }
+      ],
+      "mode": "B",
+      "seed": 47,
+      "manual": null
+    },
+    "batchRow": {
+      "stage": "feel",
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 47,
+      "condition": "auto",
+      "window": 0.25,
+      "mode": "B",
+      "version": "v13",
+      "winner": 1,
+      "reason": "ko",
+      "duration": 42.65,
+      "score": 0,
+      "openingHalfTurn": false,
+      "role0StartsLeft": true,
+      "physicalLeftScore": 0,
+      "first": 0.35,
+      "medianGap": 1.637500000000001,
+      "maxGap": 1.8916666666666657,
+      "hits": 27,
+      "pacePass": false,
+      "approachMedian": 5.55325432112652,
+      "separationMedian": 3.9923243935601644,
+      "rubs": 0,
+      "scrapeCount": 0,
+      "scrapeDuration": 0,
+      "maxScrapeDuration": 0,
+      "residual": 0.02916876971721649,
+      "actions": [
+        {
+          "press": 0,
+          "dash": 0,
+          "dashEnd": {
+            "full": 0,
+            "glance": 0,
+            "miss": 0,
+            "blocked": 0
+          },
+          "block": 0,
+          "perfect": 0,
+          "contactOnly": 0,
+          "empty": 0
+        },
+        {
+          "press": 0,
+          "dash": 0,
+          "dashEnd": {
+            "full": 0,
+            "glance": 0,
+            "miss": 0,
+            "blocked": 0
+          },
+          "block": 0,
+          "perfect": 0,
+          "contactOnly": 0,
+          "empty": 0
+        }
+      ],
+      "aiSeeds": null,
+      "aiPressSha256": null,
+      "replaySha256": "3a5eedcc4c90735a1676f405165549836b49f843af63d228d39e4919b1b0725b",
+      "wallMs": 143.30808299779892
+    },
+    "sha256": "3a5eedcc4c90735a1676f405165549836b49f843af63d228d39e4919b1b0725b",
+    "reproducedFullJsonEqual": true,
+    "file": "failures/auto-B-over40.json.gz"
+  },
+  {
+    "id": "auto-A-separation-down",
+    "options": {
+      "fighters": [
+        {
+          "parts": [
+            {
+              "item": "pan-lux3d",
+              "mount": "e0",
+              "orient": "hug"
+            },
+            {
+              "item": "broom",
+              "mount": "e90",
+              "orient": "hug"
+            }
+          ]
+        },
+        {
+          "parts": [
+            {
+              "item": "pan-lux3d",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "lamp-lux3d",
+              "mount": "e180",
+              "orient": "hug"
+            }
+          ]
+        }
+      ],
+      "mode": "A",
+      "seed": 1,
+      "manual": null
+    },
+    "batchRow": {
+      "stage": "feel",
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 1,
+      "condition": "auto",
+      "window": 0.25,
+      "mode": "A",
+      "version": "v13",
+      "winner": 1,
+      "reason": "ko",
+      "duration": 34.666666666666664,
+      "score": 0,
+      "openingHalfTurn": false,
+      "role0StartsLeft": true,
+      "physicalLeftScore": 0,
+      "first": 0.30833333333333335,
+      "medianGap": 1.5500000000000007,
+      "maxGap": 1.6333333333333329,
+      "hits": 24,
+      "pacePass": true,
+      "approachMedian": 5.395741560464461,
+      "separationMedian": 2.8242359951668847,
+      "rubs": 0,
+      "scrapeCount": 0,
+      "scrapeDuration": 0,
+      "maxScrapeDuration": 0,
+      "residual": 0.01654597371816635,
+      "actions": [
+        {
+          "press": 0,
+          "dash": 0,
+          "dashEnd": {
+            "full": 0,
+            "glance": 0,
+            "miss": 0,
+            "blocked": 0
+          },
+          "block": 0,
+          "perfect": 0,
+          "contactOnly": 0,
+          "empty": 0
+        },
+        {
+          "press": 0,
+          "dash": 0,
+          "dashEnd": {
+            "full": 0,
+            "glance": 0,
+            "miss": 0,
+            "blocked": 0
+          },
+          "block": 0,
+          "perfect": 0,
+          "contactOnly": 0,
+          "empty": 0
+        }
+      ],
+      "aiSeeds": null,
+      "aiPressSha256": null,
+      "replaySha256": "73b84a95792985d1486be9a083f533d20a73a89a57e0527a8f461e178d7ed8bb",
+      "wallMs": 153.53700000047684
+    },
+    "sha256": "73b84a95792985d1486be9a083f533d20a73a89a57e0527a8f461e178d7ed8bb",
+    "reproducedFullJsonEqual": true,
+    "file": "failures/auto-A-separation-down.json.gz"
+  }
+]

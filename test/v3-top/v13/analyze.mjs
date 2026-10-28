@@ -26,10 +26,10 @@ for(const f of fixtures){
  }
  const fs=rows.filter(x=>x.fixture===f.id&&x.stage==='fair'),r=rate(fs);
  const left=fs.filter(x=>x.condition==='ai-left'),right=new Map(fs.filter(x=>x.condition==='ai-right').map(x=>[x.seed,x]));
- const pairs=left.filter(x=>right.has(x.seed)).map(x=>({seed:x.seed,first:x.winner,swapped:right.get(x.seed).winner,firstSha:x.replaySha256,swappedSha:right.get(x.seed).replaySha256}));
- for(const a of left){const b=right.get(a.seed);if(b)assert.deepEqual(a.aiSeeds,[...b.aiSeeds].reverse(),'AI profiles did not travel to opposite seats');}
+ const pairs=left.filter(x=>right.has(x.seed)).map(x=>({seed:x.seed,first:x.winner,swapped:right.get(x.seed).winner,openingHalfTurn:x.openingHalfTurn??false,firstSha:x.replaySha256,swappedSha:right.get(x.seed).replaySha256}));
+ for(const a of left){const b=right.get(a.seed);if(b){assert.deepEqual(a.aiSeeds,[...b.aiSeeds].reverse(),'AI profiles did not travel to opposite seats');assert.equal(a.openingHalfTurn,b.openingHalfTurn,'paired matches changed their global orientation');assert.equal(a.role0StartsLeft,b.role0StartsLeft,'paired matches changed physical seat assignment');}}
  const decided=pairs.filter(x=>x.first!==null&&x.swapped!==null);
- fairness.push({fixture:f.id,...r,pass:r.n===400&&pairs.length===200&&r.score>=45&&r.score<=55,pairCount:pairs.length,winnerFollowsProfile:decided.filter(x=>x.first===1-x.swapped).length,winnerFollowsSeat:decided.filter(x=>x.first===x.swapped).length,decidedPairs:decided.length,drawPairs:pairs.filter(x=>x.first===null||x.swapped===null).length,profileFollowPercent:percent(decided.map(x=>x.first===1-x.swapped?1:0)),pairs,byOrientation:['ai-left','ai-right'].map(condition=>({condition,...rate(fs.filter(x=>x.condition===condition))})),uniqueInputFlows:[0,1].map(side=>new Set(fs.map(x=>x.aiPressSha256?.[side])).size),metrics:metrics(fs)});
+ fairness.push({fixture:f.id,...r,physicalLeftScore:percent(fs.map(x=>x.physicalLeftScore??x.score)),byHalfTurn:[false,true].map(openingHalfTurn=>{const group=fs.filter(x=>(x.openingHalfTurn??false)===openingHalfTurn);return {openingHalfTurn,...rate(group),physicalLeftScore:percent(group.map(x=>x.physicalLeftScore??x.score))};}),pass:r.n===400&&pairs.length===200&&r.score>=45&&r.score<=55,pairCount:pairs.length,winnerFollowsProfile:decided.filter(x=>x.first===1-x.swapped).length,winnerFollowsSeat:decided.filter(x=>x.first===x.swapped).length,decidedPairs:decided.length,drawPairs:pairs.filter(x=>x.first===null||x.swapped===null).length,profileFollowPercent:percent(decided.map(x=>x.first===1-x.swapped?1:0)),pairs,byOrientation:['ai-left','ai-right'].map(condition=>({condition,...rate(fs.filter(x=>x.condition===condition))})),uniqueInputFlows:[0,1].map(side=>new Set(fs.map(x=>x.aiPressSha256?.[side])).size),metrics:metrics(fs)});
  const swap=rows.filter(x=>x.fixture===f.id&&x.stage==='swap'),a=swap.filter(x=>x.condition==='flow-left'),b=swap.filter(x=>x.condition==='flow-right'),swapped=new Map(b.map(x=>[x.seed,x]));
  swaps.push({fixture:f.id,originalLeft:rate(a),swappedLeft:rate(b),sameStreamScoreBefore:percent(a.map(x=>x.score)),sameStreamScoreAfter:percent(b.map(x=>1-x.score)),paired:a.filter(x=>swapped.has(x.seed)).map(x=>({seed:x.seed,winnerBefore:x.winner,winnerAfter:swapped.get(x.seed).winner,mirrored:x.winner===null?swapped.get(x.seed).winner===null:swapped.get(x.seed).winner===1-x.winner}))});
  for(const mode of ['A','B']){
@@ -45,15 +45,17 @@ const sensitivity=[.2,.25,.3].map(window=>({window,medianPP:median(comparisons.f
 const summary={fingerprint:manifest.fingerprint,rows:rows.length,planned:manifest.planned,complete:rows.length===manifest.planned,sensitivity,timingPass:sensitivity.find(x=>x.window===.25).medianPP>=15&&rows.length===manifest.planned,fairPass:fairness.every(x=>x.pass),comparisons,fairness,swaps,feel,causal};
 await writeFile(new URL('summary.json',dir),JSON.stringify(summary,null,2)+'\n');
 const pct=x=>Number.isFinite(x)?x.toFixed(1):'未跑',num=x=>Number.isFinite(x)?x.toFixed(2):'未跑';
-let md='# 第13版固定样本对照\n\n默认挡窗0.25秒；同一固定对手、六种预先确定的装法，结论不能外推所有装法或真人。平局单列且计半分；差值区间是同种子配对的正态近似95%区间。\n\n';
+let md='# 第13版固定样本对照\n\n默认挡窗0.25秒；同一固定对手、六种预先确定的装法，结论不能外推所有装法或真人。所有胜负得分默认按角色0（原左方，始终由同一方操作），不是屏幕物理左侧；开局整场半圈后角色0可能在右。平局单列且计半分；差值区间是同种子配对的正态近似95%区间。\n\n';
 md+='| 场景 | 挡窗 | 择时赢/局 | 乱按赢/局 | 择时−乱按(点，95%区间) | 不按赢/局 |\n|---|---:|---:|---:|---:|---:|\n';
 for(const x of comparisons)md+=`| ${x.fixture} | ${x.window} | ${x.timing.wins}/${x.timing.n} | ${x.mash.wins}/${x.mash.n} | ${pct(x.timingMinusMash.pp)} (${x.timingMinusMash.ci95?.map(pct).join('～')??'未跑'}) | ${x.idle.wins}/${x.idle.n} |\n`;
 md+='\n六场景差值中位：'+sensitivity.map(x=>`${x.window}秒 ${pct(x.medianPP)}点`).join('；')+'。默认15点线：'+(summary.timingPass?'通过':'未通过')+'。\n\n';
-md+='| 同装法，两边都择时 | 左赢 | 平 | 超时 | 左侧得分率 | 45–55% |\n|---|---:|---:|---:|---:|---|\n';
-for(const x of fairness)md+=`| ${x.fixture} | ${x.wins}/${x.n} | ${x.draws} | ${x.timeouts} | ${pct(x.score)}% | ${x.pass?'过':'未过'} |\n`;
-md+='\n上表为200个种子×2座位方向；配对非独立。每对保留相同物品和中心对称开局，AI反应流随人换位。\n\n| 场景 | AI流原位/换位左得分 | 胜者跟反应流/非平配对 | 胜者仍跟座位 | 含平局配对 | 独特输入流(左/右) |\n|---|---:|---:|---:|---:|---|\n';
+md+='| 同装法，两边都择时 | 角色0赢 | 平 | 超时 | 角色0得分率 | 物理左侧得分率 | 45–55%角色0 |\n|---|---:|---:|---:|---:|---:|---|\n';
+for(const x of fairness)md+=`| ${x.fixture} | ${x.wins}/${x.n} | ${x.draws} | ${x.timeouts} | ${pct(x.score)}% | ${pct(x.physicalLeftScore)}% | ${x.pass?'过':'未过'} |\n`;
+md+='\n上表为200个种子×2套AI反应流互换；配对非独立。每对保留相同物品、中心对称开局和同一个整场半圈标记；只把AI反应流交换角色。角色0为公平目标，物理左侧数字另报；这只分摊引擎座位偏差，不表示物理左侧偏差已消除。\n\n| 场景 | AI流原位/换位角色0得分 | 胜者跟反应流/非平配对 | 胜者仍跟座位 | 含平局配对 | 独特输入流(角色0/1) |\n|---|---:|---:|---:|---:|---|\n';
 for(const x of fairness)md+=`| ${x.fixture} | ${x.byOrientation.map(o=>pct(o.score)).join('/')}% | ${x.winnerFollowsProfile}/${x.decidedPairs} | ${x.winnerFollowsSeat} | ${x.drawPairs} | ${x.uniqueInputFlows.join('/')} |\n`;
-md+='\n互换按键流只作座位偏差核查，不并进上表的公平样本；同装法、同种子，固定两条按键流在左右互换。\n\n| 场景 | 原左得分 | 互换后左得分 | 原按键流在左→右的得分 | 胜者随控制流镜像/配对 |\n|---|---:|---:|---:|---:|\n';
+md+='\n| 场景 | 是否整场半圈 | 局数 | 角色0得分 | 物理左侧得分 |\n|---|---|---:|---:|---:|\n';
+for(const x of fairness)for(const g of x.byHalfTurn)md+=`| ${x.fixture} | ${g.openingHalfTurn?'是':'否'} | ${g.n} | ${pct(g.score)}% | ${pct(g.physicalLeftScore)}% |\n`;
+md+='\n互换按键流只作座位偏差核查，不并进上表的公平样本；同装法、同种子，固定两条按键流在左右互换。\n\n| 场景 | 原角色0得分 | 互换后角色0得分 | 原按键流从角色0→1的得分 | 胜者随控制流镜像/配对 |\n|---|---:|---:|---:|---:|\n';
 for(const x of swaps)md+=`| ${x.fixture} | ${pct(x.originalLeft.score)}% | ${pct(x.swappedLeft.score)}% | ${pct(x.sameStreamScoreBefore)}→${pct(x.sameStreamScoreAfter)}% | ${x.paired.filter(p=>p.mirrored).length}/${x.paired.length} |\n`;
 md+='\n| 场景/模式 | 条件 | 20–40秒等节奏线，旧→新 | 时长中位，旧→新 | 撞前接近速度，旧→新 | 撞后分离速度，旧→新 |\n|---|---|---:|---:|---:|---:|\n';
 for(const x of feel)md+=`| ${x.fixture}/${x.mode} | ${x.condition} | ${x.before.pacePass}/${x.before.n}→${x.after.pacePass}/${x.after.n} | ${num(x.before.duration.median)}→${num(x.after.duration.median)} | ${num(x.before.approach)}→${num(x.after.approach)} | ${num(x.before.separation)}→${num(x.after.separation)} |\n`;

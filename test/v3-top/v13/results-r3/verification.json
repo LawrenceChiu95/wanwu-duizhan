@@ -1,0 +1,570 @@
+{
+  "at": "2026-10-28T19:37:22.228Z",
+  "node": "v18.18.1",
+  "fingerprint": "36ce4750d5a048a9ea8447fa1f97443a7ea5cfcf33dbbe72a541a71c479c07a4",
+  "planned": 8700,
+  "rows": 8700,
+  "uniqueRows": 8700,
+  "expectedPlanEqual": true,
+  "sourceChecks": [
+    {
+      "file": "sim/v3.js",
+      "expected": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+      "actual": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+      "equal": true
+    },
+    {
+      "file": "sim/v3-rules.json",
+      "expected": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+      "actual": "20c52b8eb4b412043c05b290c88f3a3be811bdfb30239b044d5d08a723aa4d9d",
+      "equal": true
+    },
+    {
+      "file": "sim/index.js",
+      "expected": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+      "actual": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+      "equal": true
+    },
+    {
+      "file": "sim/math.js",
+      "expected": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+      "actual": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+      "equal": true
+    },
+    {
+      "file": "sim/package-lock.json",
+      "expected": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+      "actual": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+      "equal": true
+    },
+    {
+      "file": "data/catalog.json",
+      "expected": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+      "actual": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+      "equal": true
+    },
+    {
+      "file": "test/v3-top/impact-probe.mjs",
+      "expected": "a7fe86356dca4afd3102d9f8c53d2fc9cc66e561914a112840af77718a9d06d8",
+      "actual": "a7fe86356dca4afd3102d9f8c53d2fc9cc66e561914a112840af77718a9d06d8",
+      "equal": true
+    },
+    {
+      "file": "test/v3-top/v13/experiment.mjs",
+      "expected": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+      "actual": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+      "equal": true
+    },
+    {
+      "file": "test/v3-top/v13/measure.mjs",
+      "expected": "ed362ad85afb98ab5dae7e056cd438abda131316ff1d60951b1bf33eed153b8d",
+      "actual": "ed362ad85afb98ab5dae7e056cd438abda131316ff1d60951b1bf33eed153b8d",
+      "equal": true
+    },
+    {
+      "file": "test/v3-top/v13/run.mjs",
+      "expected": "29a13bbeaeaed10e3a72bc4474b062a37e0743e897e581eb391bf8b3d8c8eacd",
+      "actual": "29a13bbeaeaed10e3a72bc4474b062a37e0743e897e581eb391bf8b3d8c8eacd",
+      "equal": true
+    }
+  ],
+  "progress": {
+    "status": "complete",
+    "count": 8700,
+    "total": 8700,
+    "at": "2026-10-28T19:31:27.758Z",
+    "wallSeconds": 1330.512
+  },
+  "scoreProtocol": "identity 0 is target; physical-left is diagnostic; 200 seeds each paired with the two reversed AI profiles",
+  "fair": [
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "independentSeeds": 200,
+      "pairedRows": 400,
+      "score": 46.25,
+      "physicalLeftScore": 18.75,
+      "pass": true
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "independentSeeds": 200,
+      "pairedRows": 400,
+      "score": 45.25,
+      "physicalLeftScore": 46.25,
+      "pass": true
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "independentSeeds": 200,
+      "pairedRows": 400,
+      "score": 49.5,
+      "physicalLeftScore": 49.5,
+      "pass": true
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "independentSeeds": 200,
+      "pairedRows": 400,
+      "score": 52.25,
+      "physicalLeftScore": 49.75,
+      "pass": true
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "independentSeeds": 200,
+      "pairedRows": 400,
+      "score": 45.5,
+      "physicalLeftScore": 52,
+      "pass": true
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "independentSeeds": 200,
+      "pairedRows": 400,
+      "score": 50.5,
+      "physicalLeftScore": 50.5,
+      "pass": true
+    }
+  ],
+  "pace": [
+    {
+      "condition": "auto",
+      "mode": "A",
+      "n": 300,
+      "passed": 300,
+      "under20": 0,
+      "over40": 0,
+      "firstLate": 0,
+      "gapFailures": 0,
+      "timeouts": 0
+    },
+    {
+      "condition": "auto",
+      "mode": "B",
+      "n": 300,
+      "passed": 217,
+      "under20": 0,
+      "over40": 83,
+      "firstLate": 0,
+      "gapFailures": 0,
+      "timeouts": 0
+    },
+    {
+      "condition": "timing",
+      "mode": "A",
+      "n": 600,
+      "passed": 573,
+      "under20": 5,
+      "over40": 22,
+      "firstLate": 0,
+      "gapFailures": 0,
+      "timeouts": 0
+    }
+  ],
+  "browser": {
+    "simSha256": "21ae1aa3bd1c0d85db7f348f767bb2aa16ac322625c4379ac566e40e67757c55",
+    "cases": [
+      {
+        "id": "auto-A-7",
+        "bytes": 1640235,
+        "sha256": "37e3e308b82f4d45ce0ac514ac10c288c30d5105ec709987b3629d365c72d4ff",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "auto-A-42",
+        "bytes": 2111794,
+        "sha256": "7376afeea914cf6598c5d883b9d8a5337a0818df09f949df268998e9ba41777b",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "auto-B-7",
+        "bytes": 2039676,
+        "sha256": "91e9deac80883938e07c0232a1edf60e3e7feff96161d2de5ee2ce634fed3ad2",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "auto-B-42",
+        "bytes": 2457182,
+        "sha256": "2d5fd5a7273bde15d5536d1f6dc1bf9d5392a13e5812a5b123ede4b682bb8307",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-390-0.2",
+        "bytes": 2892542,
+        "sha256": "2b4cd71a8d7bdb17bacc6d7dc1239e355b9013216ecd33beeeb0673d871387b8",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-390-0.25",
+        "bytes": 2892532,
+        "sha256": "cdf9fbe0744ac0aa6597cba6ebbf5d6ca62b377336f7ed230d6248e386ea5c14",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-390-0.3",
+        "bytes": 2905162,
+        "sha256": "2c0687eddd4eb384235d3e1b1e9285be139ffde46d79ddf5fe17ae55b0555ec1",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-1440-0.2",
+        "bytes": 1979101,
+        "sha256": "dd4c7444fe52459841e257d14abf45896168d20ec4e93d2b151aa3eb425a77ef",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-1440-0.25",
+        "bytes": 1979093,
+        "sha256": "ceb0c0769a42b3f3a8fcd2320d2a5f55f423b0d51d5452f1000d60a3caf7be0e",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-1440-0.3",
+        "bytes": 2156544,
+        "sha256": "d3015a2439aa91f45707e7c0e0eb4cf6e9bb2a151399b568246558d5252f896b",
+        "completeJsonEqual": true
+      },
+      {
+        "id": "manual-explicit-ai-profiles",
+        "bytes": 2643121,
+        "sha256": "e222894ebf36a1f23ef9711693d14bf574d63c3a85f3ed3001a03cd89d0c1b8f",
+        "completeJsonEqual": true
+      }
+    ]
+  },
+  "failures": [
+    {
+      "id": "residual-maximum",
+      "options": {
+        "fighters": [
+          {
+            "parts": [
+              {
+                "item": "scissors",
+                "mount": "e0",
+                "orient": "out"
+              },
+              {
+                "item": "pillow",
+                "mount": "e180",
+                "orient": "out"
+              }
+            ]
+          },
+          {
+            "parts": [
+              {
+                "item": "scissors",
+                "mount": "e0",
+                "orient": "out"
+              },
+              {
+                "item": "pillow",
+                "mount": "e180",
+                "orient": "out"
+              }
+            ]
+          }
+        ],
+        "mode": "A",
+        "seed": 130,
+        "manual": {
+          "sides": [
+            "ai",
+            "ai"
+          ],
+          "inputs": [],
+          "blockTime": 0.25,
+          "aiSeeds": [
+            608135690,
+            3084997088
+          ]
+        }
+      },
+      "batchRow": {
+        "stage": "fair",
+        "fixture": "scissors-pillow/out-out-e180",
+        "seed": 130,
+        "condition": "ai-left",
+        "window": 0.25,
+        "mode": "A",
+        "version": "v13",
+        "winner": 1,
+        "reason": "ko",
+        "duration": 34.916666666666664,
+        "score": 0,
+        "openingHalfTurn": false,
+        "role0StartsLeft": true,
+        "physicalLeftScore": 0,
+        "first": 0.3833333333333333,
+        "medianGap": 1.5833333333333357,
+        "maxGap": 1.9333333333333336,
+        "hits": 24,
+        "pacePass": true,
+        "approachMedian": 5.368267395909213,
+        "separationMedian": 3.38907776801631,
+        "rubs": 0,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "residual": 0.08875560760498047,
+        "actions": [
+          {
+            "press": 15,
+            "dash": 8,
+            "dashEnd": {
+              "full": 4,
+              "glance": 4,
+              "miss": 0,
+              "blocked": 0
+            },
+            "block": 7,
+            "perfect": 0,
+            "contactOnly": 0,
+            "empty": 7
+          },
+          {
+            "press": 15,
+            "dash": 8,
+            "dashEnd": {
+              "full": 4,
+              "glance": 4,
+              "miss": 0,
+              "blocked": 0
+            },
+            "block": 7,
+            "perfect": 5,
+            "contactOnly": 1,
+            "empty": 2
+          }
+        ],
+        "aiSeeds": [
+          608135690,
+          3084997088
+        ],
+        "aiPressSha256": [
+          "19d4da145f8b6eb0c7602bc6a8a359a766f8d7bc2d18dd84a1e8f2739ecd3cee",
+          "caa5197e3587563c647f356f984cd6a3129e92a51f642057168238bfe8bf64c7"
+        ],
+        "replaySha256": "f3ec64e513514268247f7046d5b58b50403607b5cf8c12c051dcc110a67d281f",
+        "wallMs": 154.3874590098858
+      },
+      "sha256": "f3ec64e513514268247f7046d5b58b50403607b5cf8c12c051dcc110a67d281f",
+      "reproducedFullJsonEqual": true,
+      "file": "failures/residual-maximum.json.gz"
+    },
+    {
+      "id": "auto-B-over40",
+      "options": {
+        "fighters": [
+          {
+            "parts": [
+              {
+                "item": "lamp-lux3d",
+                "mount": "e0",
+                "orient": "out"
+              },
+              {
+                "item": "slipper",
+                "mount": "e180",
+                "orient": "out"
+              }
+            ]
+          },
+          {
+            "parts": [
+              {
+                "item": "pan-lux3d",
+                "mount": "e0",
+                "orient": "out"
+              },
+              {
+                "item": "lamp-lux3d",
+                "mount": "e180",
+                "orient": "hug"
+              }
+            ]
+          }
+        ],
+        "mode": "B",
+        "seed": 47,
+        "manual": null
+      },
+      "batchRow": {
+        "stage": "feel",
+        "fixture": "lamp-slipper/out-out-e180",
+        "seed": 47,
+        "condition": "auto",
+        "window": 0.25,
+        "mode": "B",
+        "version": "v13",
+        "winner": 1,
+        "reason": "ko",
+        "duration": 42.65,
+        "score": 0,
+        "openingHalfTurn": false,
+        "role0StartsLeft": true,
+        "physicalLeftScore": 0,
+        "first": 0.35,
+        "medianGap": 1.637500000000001,
+        "maxGap": 1.8916666666666657,
+        "hits": 27,
+        "pacePass": false,
+        "approachMedian": 5.55325432112652,
+        "separationMedian": 3.9923243935601644,
+        "rubs": 0,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "residual": 0.02916876971721649,
+        "actions": [
+          {
+            "press": 0,
+            "dash": 0,
+            "dashEnd": {
+              "full": 0,
+              "glance": 0,
+              "miss": 0,
+              "blocked": 0
+            },
+            "block": 0,
+            "perfect": 0,
+            "contactOnly": 0,
+            "empty": 0
+          },
+          {
+            "press": 0,
+            "dash": 0,
+            "dashEnd": {
+              "full": 0,
+              "glance": 0,
+              "miss": 0,
+              "blocked": 0
+            },
+            "block": 0,
+            "perfect": 0,
+            "contactOnly": 0,
+            "empty": 0
+          }
+        ],
+        "aiSeeds": null,
+        "aiPressSha256": null,
+        "replaySha256": "3a5eedcc4c90735a1676f405165549836b49f843af63d228d39e4919b1b0725b",
+        "wallMs": 143.30808299779892
+      },
+      "sha256": "3a5eedcc4c90735a1676f405165549836b49f843af63d228d39e4919b1b0725b",
+      "reproducedFullJsonEqual": true,
+      "file": "failures/auto-B-over40.json.gz"
+    },
+    {
+      "id": "auto-A-separation-down",
+      "options": {
+        "fighters": [
+          {
+            "parts": [
+              {
+                "item": "pan-lux3d",
+                "mount": "e0",
+                "orient": "hug"
+              },
+              {
+                "item": "broom",
+                "mount": "e90",
+                "orient": "hug"
+              }
+            ]
+          },
+          {
+            "parts": [
+              {
+                "item": "pan-lux3d",
+                "mount": "e0",
+                "orient": "out"
+              },
+              {
+                "item": "lamp-lux3d",
+                "mount": "e180",
+                "orient": "hug"
+              }
+            ]
+          }
+        ],
+        "mode": "A",
+        "seed": 1,
+        "manual": null
+      },
+      "batchRow": {
+        "stage": "feel",
+        "fixture": "pan-broom/hug-hug-e90",
+        "seed": 1,
+        "condition": "auto",
+        "window": 0.25,
+        "mode": "A",
+        "version": "v13",
+        "winner": 1,
+        "reason": "ko",
+        "duration": 34.666666666666664,
+        "score": 0,
+        "openingHalfTurn": false,
+        "role0StartsLeft": true,
+        "physicalLeftScore": 0,
+        "first": 0.30833333333333335,
+        "medianGap": 1.5500000000000007,
+        "maxGap": 1.6333333333333329,
+        "hits": 24,
+        "pacePass": true,
+        "approachMedian": 5.395741560464461,
+        "separationMedian": 2.8242359951668847,
+        "rubs": 0,
+        "scrapeCount": 0,
+        "scrapeDuration": 0,
+        "maxScrapeDuration": 0,
+        "residual": 0.01654597371816635,
+        "actions": [
+          {
+            "press": 0,
+            "dash": 0,
+            "dashEnd": {
+              "full": 0,
+              "glance": 0,
+              "miss": 0,
+              "blocked": 0
+            },
+            "block": 0,
+            "perfect": 0,
+            "contactOnly": 0,
+            "empty": 0
+          },
+          {
+            "press": 0,
+            "dash": 0,
+            "dashEnd": {
+              "full": 0,
+              "glance": 0,
+              "miss": 0,
+              "blocked": 0
+            },
+            "block": 0,
+            "perfect": 0,
+            "contactOnly": 0,
+            "empty": 0
+          }
+        ],
+        "aiSeeds": null,
+        "aiPressSha256": null,
+        "replaySha256": "73b84a95792985d1486be9a083f533d20a73a89a57e0527a8f461e178d7ed8bb",
+        "wallMs": 153.53700000047684
+      },
+      "sha256": "73b84a95792985d1486be9a083f533d20a73a89a57e0527a8f461e178d7ed8bb",
+      "reproducedFullJsonEqual": true,
+      "file": "failures/auto-A-separation-down.json.gz"
+    }
+  ],
+  "scrape": {
+    "scope": "all current-v13 experiment rows; repeated seeds and conditions are not independent population observations",
+    "episodes": 420,
+    "seconds": 55.37500000000014,
+    "maxEpisodeSeconds": 0.8416666666666667
+  },
+  "assertionScope": "Run-time per-match assertions checked real contact at damage, damage cap, and no damage during sustained scrape. Recomputed three failure replays only; no claim of zero penetration or rendered visual acceptance."
+}
