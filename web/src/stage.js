@@ -27,8 +27,11 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
 // v4 chase camera: how fast it may turn after the line between the tops (rad/s); 'slow' turns at SLOW_TURN of that
-// (远夏 10-28 e3a68f0a: yesterday's camera, turning about 30 % slower).
-const V4_TURN = 1.6, SLOW_TURN = 0.7, SLOW_FLOOR = 0.9;
+// (远夏 10-28 e3a68f0a: yesterday's camera, turning about 30 % slower) and also follows and zooms slower (2735f129):
+// the eases' rates are scaled by SLOW_PAN / SLOW_ZOOM, set so the measured median pan and zoom speeds come out about
+// 0.7 of v4's (web/scripts/cam-yaw.mjs), with more room round the tops (SLOW_FIT of the frame instead of 0.88) so the
+// slower zoom keeps them on screen; SLOW_FLOOR is the last-resort limit on how far the zoom-out may lag.
+const V4_TURN = 1.6, SLOW_TURN = 0.7, SLOW_PAN = 0.4, SLOW_ZOOM = 0.6, SLOW_FIT = 0.75, SLOW_FLOOR = 0.9;
 export const CAM = {margin: 0.15, edgePx: 12, hold: 0.6, zoomInRate: 0.05, zoomW: 3, slack: 0, panW: 2.0, deadZone: 0.25, minHalfWidth: 1.1, hardPx: 6, hardCore: 0.15};
 const CAM_FWD = new THREE.Vector3(Math.sin(CAM_YAW) * Math.cos(CAM_PITCH), -Math.sin(CAM_PITCH), Math.cos(CAM_YAW) * Math.cos(CAM_PITCH));
 const CAM_QUAT = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(), CAM_FWD, new THREE.Vector3(0, 1, 0)));
@@ -584,6 +587,7 @@ export class Stage {
     this.camStyle = 'new';
     this.chase = false;
     this.turnScale = 1;
+    this.panScale = this.zoomScale = 1;
     this.fighters = [];
     this.debris = [];
     this.time = 0;
@@ -850,14 +854,16 @@ export class Stage {
 
   /**
    * Which fight camera: 'v4', yesterday's chase camera (03a4da9), kept as it was: it turns to follow the line between
-   * the tops, pulls in and out at once, and shakes; 'slow', the same camera turning at SLOW_TURN of v4's rate, plus a
-   * floor on its zoom-out so a top never leaves the screen (SLOW_FLOOR); or 'new', the framing camera above (no longer
-   * offered on the page, kept for comparison).
+   * the tops, pulls in and out at once, and shakes; 'slow', the same camera turning at SLOW_TURN of v4's rate and
+   * following and zooming slower (SLOW_PAN, SLOW_ZOOM), with more room (SLOW_FIT) and a floor on its zoom-out (SLOW_FLOOR) so a top
+   * never leaves the screen; or 'new', the framing camera above (俯视).
    */
   setCamStyle(style) {
     this.camStyle = style === 'v4' || style === 'slow' ? style : 'new';
     this.chase = this.camStyle !== 'new';
     this.turnScale = this.camStyle === 'slow' ? SLOW_TURN : 1;
+    this.panScale = this.camStyle === 'slow' ? SLOW_PAN : 1;
+    this.zoomScale = this.camStyle === 'slow' ? SLOW_ZOOM : 1;
     this.camera.fov = this.chase ? V4_FOV : CAM_FOV;
     this.camera.updateProjectionMatrix();
     this.particles.mat.uniforms.uScale.value = this.view.h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
@@ -908,20 +914,22 @@ export class Stage {
     let x0 = Infinity, x1 = -Infinity, v0 = Infinity, v1 = -Infinity;
     for (const p of pts) { const d = tmp.copy(p).sub(base), x = d.dot(right), y = d.dot(upv); x0 = Math.min(x0, x); x1 = Math.max(x1, x); v0 = Math.min(v0, y); v1 = Math.max(v1, y); }
     const focus = base.addScaledVector(right, (x0 + x1) / 2).addScaledVector(upv, (v0 + v1) / 2);
-    if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.15));
+    if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt * this.panScale / 0.15));
     // Distance from the focus actually used, so a lagging pan is covered too.
-    const m = c.mode === 'result' ? 0.62 : 0.88;
+    const m = c.mode === 'result' ? 0.62 : this.camStyle === 'slow' ? SLOW_FIT : 0.88;
     let need = 0.8;
     for (const p of pts) { const d = tmp.copy(p).sub(c.focus), z = d.dot(fwd); need = Math.max(need, Math.abs(d.dot(right)) / (tanH * m) - z, Math.abs(d.dot(upv)) / (freeV * m) - z); }
     // Zoom out at once when the tops fly apart; come back in gently.
     if (snap || !c.ready) c.dist = need;
-    else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.06 : c.mode === 'result' ? 0.3 : 0.6)));
+    else c.dist += (need - c.dist) * (1 - Math.exp(-dt * (c.mode === 'result' ? 1 : this.zoomScale) / (need > c.dist ? 0.06 : c.mode === 'result' ? 0.3 : 0.6)));
     // 'slow' only: the zoom-out may not lag so far that a top's sweep crosses the screen edge (v4 let it, for up to
     // 0.25 s at a time, by up to 17 px at 390 wide): never looser than SLOW_FLOOR of the frame. Rarely acts (<1 % of frames).
     if (this.camStyle === 'slow') {
       let hard = 0;
       for (const p of pts) { const d = tmp.copy(p).sub(c.focus), z = d.dot(fwd); hard = Math.max(hard, Math.abs(d.dot(right)) / (tanH * SLOW_FLOOR) - z, Math.abs(d.dot(upv)) / (freeV * SLOW_FLOOR) - z); }
-      c.dist = Math.max(c.dist, hard);
+      // Test aid: how often this limit had to act.
+      c.floorFrames = (c.floorFrames ?? 0) + 1;
+      if (hard > c.dist) { c.dist = hard; c.floorHits = (c.floorHits ?? 0) + 1; }
     }
     c.ready = true;
     this.camera.quaternion.copy(tmpQ);

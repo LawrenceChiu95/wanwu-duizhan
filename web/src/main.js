@@ -102,8 +102,9 @@ async function main() {
   const fixedSeed = q.has('seed');
   // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).
   let control = q.get('play') === 'auto' ? 'auto' : 'manual', live = null;
-  // Fight camera: yesterday's chase camera turning 30 % slower ('slow', default), or as it was (?cam=v4, or the HUD
-  // toggle); the framing camera from above only by address (?cam=new), to compare.
+  // Fight camera (the HUD toggle, or ?cam=): 俯视 the framing camera from above ('new'), 慢三成 yesterday's chase camera
+  // turning, following and zooming 30 % slower ('slow', default), 原速 yesterday's camera as it was ('v4')
+  // (远夏 10-28 2735f129: keep all three).
   let camStyle = ['v4', 'new'].includes(q.get('cam')) ? q.get('cam') : 'slow';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
@@ -446,7 +447,7 @@ async function main() {
   const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
   el.mute.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
   syncMute();
-  // 慢三成 / 原速: switch at any time (a cut, then that camera carries on).
+  // 俯视 / 慢三成 / 原速: switch at any time (a cut, then that camera carries on).
   const syncCam = () => { for (const b of el.camSeg.querySelectorAll('[data-cam]')) b.setAttribute('aria-checked', String(b.dataset.cam === camStyle)); };
   el.camSeg.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
     if (b.dataset.cam === camStyle) return;

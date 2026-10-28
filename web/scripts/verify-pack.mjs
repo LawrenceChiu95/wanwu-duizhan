@@ -1,7 +1,7 @@
 // Check a packed artifact under the viewer-like sandbox (scripts/viewer-sandbox-server.mjs must be serving it).
 // Cover at 300 and 390 px, the play link, then the game: blocked requests, page errors, display font, textures;
 // then (10-28) a real tap on 开打 goes straight into a manual fight (no 自动 / 手动 choice left), a tap on 冲 is taken,
-// the sound is on (an AudioContext running after the tap, and voices started), and the 慢三成 / 原速 switch flips the camera.
+// the sound is on (an AudioContext running after the tap, and voices started), and the 俯视 / 慢三成 / 原速 switch flips the camera.
 // Usage: node scripts/verify-pack.mjs [base=http://127.0.0.1:4399/] [outDir]
 import {chromium} from 'playwright';
 const [base = 'http://127.0.0.1:4399/', out = '/tmp'] = process.argv.slice(2);
@@ -51,8 +51,10 @@ for (const W of [300, 390]) {
   }, before));
   await page.tap('[data-cam="v4"]');
   game.camAfterTap1 = (await page.evaluate(() => window.__top.status())).cam;
-  await page.tap('[data-cam="slow"]');
+  await page.tap('[data-cam="new"]');
   game.camAfterTap2 = (await page.evaluate(() => window.__top.status())).cam;
+  await page.tap('[data-cam="slow"]');
+  game.camAfterTap3 = (await page.evaluate(() => window.__top.status())).cam;
   await page.screenshot({path: `${out}/1-fight-${W}.png`});
   report[W] = {cover, game, problems};
   await ctx.close();

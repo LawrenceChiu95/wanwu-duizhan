@@ -1,16 +1,21 @@
-// 追拍镜头转多快：同一批回放逐帧（1/60 秒）喂给「原速」（v4）和「慢三成」两种镜头，量镜头偏航角速度（度/秒）和
-// 两颗陀螺离屏幕边、离安全区边最近多少 px（sweep：按装好时整颗转起来的半径，碎件后也不缩；live：按还在的件），不渲染，几秒出结果。
-// 回放在 Node 里打：手动模式电脑对电脑（同网页默认装法和固定对手，同种子结果固定），可再加自动的。
-// 撞击时的追拍震屏照网页的触发量加上（带随机，只影响离边 px 的零头）。需 dev server（npx vite）。
-// Usage: /opt/homebrew/bin/node web/scripts/cam-yaw.mjs <baseUrl> [seeds=1..10] [styles=v4,slow] [width=390] [out.json]
+// 三个镜头比一比（渲染器真值）：同一局手动回放（同一份按键）逐帧（1/60 秒）喂给网页里的镜头，每帧读相机位姿、投影两颗陀螺，
+// 不靠截图。报：镜头平移（场地地面点 10 帧/秒的整体位移，px/s）、地面点各自位移（含转动）、陀螺屏幕速度（核心中心，px/s）、
+// 扫过圆盘（还挂着的件，绕自己的轴）离屏幕边最近、核心离屏幕边最近、偏航角速度、镜头焦点平移速度（m/s）、推拉速度（|d ln 距离|/s）、
+// 「慢三成」拉远兜底触发的帧占比。手动回放在 Node 里打：先电脑对电脑打一局，取玩家一方的按键，再用这份按键当玩家输入重打（各镜头共用）。
+// 撞击时的追拍震屏、碎件震屏照网页的触发量加上（追拍震屏带随机，只影响 px 的零头）。需 dev server（npx vite）。
+// Usage: /opt/homebrew/bin/node web/scripts/cam-yaw.mjs <baseUrl> [seeds=7,37] [styles=new,slow,v4] [width=390] [out.json]
 import {chromium} from 'playwright';
 import {writeFileSync} from 'node:fs';
 import {simulateV3} from '../../sim/v3.js';
-const [base = 'http://127.0.0.1:4391/', seedArg = '1,2,3,4,5,6,7,8,9,10', styleArg = 'v4,slow', w = '390', outFile] = process.argv.slice(2);
+const [base = 'http://127.0.0.1:4391/', seedArg = '7,37', styleArg = 'new,slow,v4', w = '390', outFile] = process.argv.slice(2);
 const MINE = {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'pillow', mount: 'e180', orient: 'hug'}]};
 const FOE = {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'lamp-lux3d', mount: 'e180', orient: 'hug'}]};
 const replays = [];
-for (const seed of seedArg.split(',').map(Number)) replays.push(JSON.stringify(await simulateV3({fighters: [MINE, FOE], mode: 'A', seed, manual: {sides: ['ai', 'ai']}})));
+for (const seed of seedArg.split(',').map(Number)) {
+  const ai = await simulateV3({fighters: [MINE, FOE], mode: 'A', seed, manual: {sides: ['ai', 'ai']}}), dt = ai.meta.rules.dt;
+  const inputs = ai.events.filter(e => e.type === 'press' && e.side === 0).map(e => ({step: Math.round(e.t / dt), side: 0, action: e.action}));
+  replays.push(JSON.stringify(await simulateV3({fighters: [MINE, FOE], mode: 'A', seed, manual: {sides: ['input', 'ai'], inputs}})));
+}
 const W = Number(w), desk = W >= 900, H = desk ? 900 : Math.round(W * 844 / 390);
 const browser = await chromium.launch({channel: 'chromium'});
 const ctx = await browser.newContext(desk ? {viewport: {width: W, height: H}} : {viewport: {width: W, height: H}, deviceScaleFactor: 1, isMobile: true, hasTouch: true});
@@ -26,111 +31,114 @@ const out = await page.evaluate(async ([replays, styles]) => {
   top.freeze();
   const {Playback} = await import('/src/playback.js');
   const V = st.camera.position.constructor, dt = 1 / 60, LEAD = 0.05, deg = 180 / Math.PI;
-  const o = {x: 0, y: 0}, a = {x: 0, y: 0}, b = {x: 0, y: 0};
-  // The disc a top sweeps as it spins, about its own (possibly tilted) axis: radius R, from its pieces' lowest to highest
-  // point; 36 points round each rim. Returns the nearest distance of any of them to the four edges [left, right, top, bottom].
+  const o = {x: 0, y: 0}, a = {x: 0, y: 0};
+  // The disc a top sweeps about its own (possibly tilted) axis, radius R from its pieces' lowest to highest point, 36
+  // points round each rim; nearest distance of any of them to the screen edges [left, right, top, bottom].
   const disc = (f, R, y0, y1) => {
     const e = [Infinity, Infinity, Infinity, Infinity];
     for (let k = 0; k < 36; k++) for (const y of [y0, 0, y1]) {
       st.project(new V(Math.cos(k * Math.PI / 18) * R, y, Math.sin(k * Math.PI / 18) * R).applyQuaternion(f.root.quaternion).add(f.center), a);
       e[0] = Math.min(e[0], a.x); e[1] = Math.min(e[1], st.view.w - a.x); e[2] = Math.min(e[2], a.y); e[3] = Math.min(e[3], st.view.h - a.y);
     }
-    return e;
+    return Math.min(...e);
   };
-  const extent = (f, live) => {
-    let R = live ? st.reachOf(f) : st.frameRadius(f), y0 = -st.coreRadius, y1 = st.coreRadius;
-    for (const p of f.parts) if (!live || p.alive) { y0 = Math.min(y0, p.y0); y1 = Math.max(y1, p.y1); }
-    return disc(f, R, y0, y1);
+  const sweptEdge = f => {
+    let y0 = -st.coreRadius, y1 = st.coreRadius;
+    for (const p of f.parts) if (p.alive) { y0 = Math.min(y0, p.y0); y1 = Math.max(y1, p.y1); }
+    return disc(f, st.reachOf(f), y0, y1);
   };
-  // Floor ground truth (as camera-sim.mjs): arena floor points, 10 a second; per pair the mean shift of the visible ones
-  // (whole-picture move), the mean of each point's own shift (counts turning too), and top / bottom halves moving opposite.
+  const coreEdge = f => disc(f, st.coreRadius, -st.coreRadius, st.coreRadius);
   const grid = [];
   for (let x = -2.4; x <= 2.4; x += 0.2) for (let z = -2.4; z <= 2.4; z += 0.2) if (Math.hypot(x, z) <= 2.4) grid.push(new V(x, 0, z));
+  const q = (arr, k) => { const s = [...arr].sort((x, y) => x - y); return s.length ? +s[Math.floor(k * (s.length - 1))].toFixed(2) : null; };
   const res = {};
   for (const style of styles) {
-    const rates = [], games = [], pairs = [];
+    const yaw = [], pan = [], zoom = [], topV = [], pairs = [], games = [];
+    let floorHits = 0, floorFrames = 0;
     for (const json of replays) {
       const r = JSON.parse(json), pb = new Playback(r), fr = r.frames;
       const lerpAt = (t, n) => { const i = pb.frameIndex(t), A = fr[i], B = fr[Math.min(i + 1, fr.length - 1)], k = B.t > A.t ? (t - A.t) / (B.t - A.t) : 0; return new V().fromArray(A.fighters[n].pos).lerp(new V().fromArray(B.fighters[n].pos), k); };
       // The page's live lookahead (main.js): the sim's lead, then a short capped carry-on at the current velocity.
       const look = t => pb.state.fighters.map((s, n) => [0.1].map(d => {
         const lt = Math.min(t + LEAD, pb.end), from = lerpAt(lt, n);
-        const p = from.add(s.vel.clone().multiplyScalar(Math.min(0.2, t + d - lt)).clampLength(0, 0.45)), q = Math.hypot(p.x, p.z);
-        if (q > 2.2) { p.x *= 2.2 / q; p.z *= 2.2 / q; }
+        const p = from.add(s.vel.clone().multiplyScalar(Math.min(0.2, t + d - lt)).clampLength(0, 0.45)), qq = Math.hypot(p.x, p.z);
+        if (qq > 2.2) { p.x *= 2.2 / qq; p.z *= 2.2 / qq; }
         return p;
       }));
-      st.setCamStyle(style);
+      st.setCamStyle(style.split(':')[0]);
+      // Tuning: 'slow:0.4:0.6' overrides the slow camera's pan and zoom speed factors.
+      if (style.includes(':')) [st.panScale, st.zoomScale] = style.split(':').slice(1).map(Number);
       st.setCameraMode('fight');
       st.setFocusOn(null);
-      let prev = null, ei = 0, yawSum = 0, n = 0, minScreen = Infinity, minSafe = Infinity, minScreenLive = Infinity, minSafeLive = Infinity, at = null, atLive = null, outT = 0, run = 0, longest = 0, edges = {};
+      Object.assign(st.cam, {floorHits: 0, floorFrames: 0});
       const {w, h, top: hudTop} = st.view, bottom = st.safeBottom();
-      let nextSample = 0, last = null;
+      let prev = null, ei = 0, minSwept = Infinity, minCore = Infinity, atSwept = null, outT = 0, nextSample = 0, last = null, prevScr = null;
       for (let t = 0; t <= pb.end; t += dt) {
         pb.seek(t);
         st.pose(pb.state);
         st.setLookahead(look(t));
         st.setPushV4(pb.pushAmount(t));
-        // The page's chase-camera shake triggers (main.js onEvent).
+        // The page's shake triggers (main.js onEvent): chase-camera shake on blows; the framing camera's few-px jolt on a break / KO.
         for (; ei < r.events.length && r.events[ei].t <= t; ei++) {
           const e = r.events[ei];
-          if ((e.type === 'hit' || e.type === 'weak') && e.role !== 'recoil') { const core = e.targetPart === 'core'; st.shakeV4(core ? 0.75 : core || e.type === 'weak' || e.tier >= 2 ? 0.5 : 0.3); }
-          else if (e.type === 'break') st.shakeV4(0.8);
-          else if (e.type === 'ko') st.shakeV4(1.1);
+          if ((e.type === 'hit' || e.type === 'weak') && e.role !== 'recoil') { const core = e.targetPart === 'core'; st.shakeV4(core ? 0.75 : e.type === 'weak' || e.tier >= 2 ? 0.5 : 0.3); }
+          else if (e.type === 'break') { st.shakeV4(0.8); st.shake(4); }
+          else if (e.type === 'ko') { st.shakeV4(1.1); st.shake(6); }
         }
         st.updateCamera(dt, t === 0);
         st.camera.updateMatrixWorld();
-        const yaw = st.cam.yaw;
-        if (prev !== null) { const d = Math.abs(Math.atan2(Math.sin(yaw - prev), Math.cos(yaw - prev))) * deg / dt; rates.push(d); yawSum += d * dt; n++; }
-        prev = yaw;
-        let outNow = false;
-        for (const f of st.fighters) {
-          if (!f.core.visible) continue;
-          const S = extent(f, false), L = extent(f, true);
-          const e = Math.min(...S), el = Math.min(...L);
-          if (e < minScreen) { minScreen = e; at = +t.toFixed(2); }
-          if (el < minScreenLive) { minScreenLive = el; atLive = +t.toFixed(2); }
-          if (el < 0) { outNow = true; const k = ['left', 'right', 'top', 'bottom'][L.indexOf(el)]; edges[k] = (edges[k] ?? 0) + 1; }
-          minSafeLive = Math.min(minSafeLive, L[0], L[1], L[2] - hudTop, L[3] - bottom);
-          minSafe = Math.min(minSafe, S[0], S[1], S[2] - hudTop, S[3] - bottom);
+        const c = st.cam, now = {yaw: c.yaw, focus: c.focus.clone(), dist: c.dist};
+        if (prev) {
+          yaw.push(Math.abs(Math.atan2(Math.sin(now.yaw - prev.yaw), Math.cos(now.yaw - prev.yaw))) * deg / dt);
+          pan.push(now.focus.distanceTo(prev.focus) / dt);
+          zoom.push(Math.abs(Math.log(now.dist / prev.dist)) / dt);
         }
-        if (outNow) { outT += dt; run += dt; longest = Math.max(longest, run); } else run = 0;
+        prev = now;
+        const scr = [];
+        let out = false;
+        for (const f of st.fighters) {
+          if (!f.core.visible) { scr.push(null); continue; }
+          st.project(f.center, o); scr.push([o.x, o.y]);
+          const se = sweptEdge(f), ce = coreEdge(f);
+          if (se < minSwept) { minSwept = se; atSwept = +t.toFixed(2); }
+          minCore = Math.min(minCore, ce);
+          if (se < 0) out = true;
+        }
+        if (out) outT += dt;
+        if (prevScr) scr.forEach((p, i) => { if (p && prevScr[i]) topV.push(Math.hypot(p[0] - prevScr[i][0], p[1] - prevScr[i][1]) / dt); });
+        prevScr = scr;
         if (t >= nextSample - 1e-9) {
           nextSample += 0.1;
-          const pts = grid.map(g => { const q = {x: 0, y: 0}; return st.project(g, q) ? [q.x, q.y] : null; });
+          const pts = grid.map(g => { const qq = {x: 0, y: 0}; return st.project(g, qq) ? [qq.x, qq.y] : null; });
           if (last) {
-            let n = 0, sx = 0, sy = 0, own = 0, tn = 0, tx = 0, ty = 0, bn = 0, bx = 0, by = 0;
+            let n = 0, sx = 0, sy = 0, own = 0;
             last.forEach((p, k) => {
-              const q = pts[k];
-              if (!p || !q || p[0] < 0 || p[0] > w || p[1] < hudTop || p[1] > h - bottom) return;
-              const dx = q[0] - p[0], dy = q[1] - p[1];
-              n++; sx += dx; sy += dy; own += Math.hypot(dx, dy);
-              if (p[1] < (hudTop + h - bottom) / 2) { tn++; tx += dx; ty += dy; } else { bn++; bx += dx; by += dy; }
+              const qq = pts[k];
+              if (!p || !qq || p[0] < 0 || p[0] > w || p[1] < hudTop || p[1] > h - bottom) return;
+              n++; sx += qq[0] - p[0]; sy += qq[1] - p[1]; own += Math.hypot(qq[0] - p[0], qq[1] - p[1]);
             });
-            const T = tn ? [tx / tn, ty / tn] : [0, 0], B = bn ? [bx / bn, by / bn] : [0, 0];
-            pairs.push({m: n ? Math.hypot(sx / n, sy / n) : 0, own: n ? own / n : 0, opp: Math.hypot(...T) >= 1 && Math.hypot(...B) >= 1 && T[0] * B[0] + T[1] * B[1] < 0, game: games.length});
+            pairs.push({m: n ? Math.hypot(sx / n, sy / n) / 0.1 : 0, own: n ? own / n / 0.1 : 0});
           }
           last = pts;
         }
       }
-      games.push({seed: r.meta.seed, dur: +pb.end.toFixed(1), meanDegS: +(yawSum / (n * dt)).toFixed(1), minScreenPx: +minScreen.toFixed(1), at, minSafePx: +minSafe.toFixed(1), live: {minScreenPx: +minScreenLive.toFixed(1), at: atLive, minSafePx: +minSafeLive.toFixed(1), outS: +outT.toFixed(2), longestOutS: +longest.toFixed(2), edges}});
+      floorHits += st.cam.floorHits ?? 0; floorFrames += st.cam.floorFrames ?? 0;
+      games.push({seed: r.meta.seed, dur: +pb.end.toFixed(1), presses: r.meta.manual.inputs.length, minSweptEdgePx: +minSwept.toFixed(1), at: atSwept, minCoreEdgePx: +minCore.toFixed(1), outS: +outT.toFixed(2)});
     }
-    const s = [...rates].sort((x, y) => x - y), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
-    const moving = s.filter(v => v > 1), qm = k => +moving[Math.floor(k * (moving.length - 1))].toFixed(1);
-    let worst = 0;
-    for (let i = 0; i + 10 <= pairs.length; i++) if (pairs[i].game === pairs[i + 9].game) worst = Math.max(worst, pairs.slice(i, i + 10).reduce((x, p) => x + p.m, 0));
-    const floor = {meanPxS: +(pairs.reduce((x, p) => x + p.m, 0) / (pairs.length * 0.1)).toFixed(1), ownMeanPxS: +(pairs.reduce((x, p) => x + p.own, 0) / (pairs.length * 0.1)).toFixed(1),
-      worstSecondPx: +worst.toFixed(1), oppositePct: +(100 * pairs.filter(p => p.opp).length / pairs.length).toFixed(1), over30S: +(pairs.filter(p => p.m > 30).length * 0.1).toFixed(1)};
-    res[style] = {floor, frames: s.length, all: {median: q(0.5), p75: q(0.75), p90: q(0.9), p95: q(0.95), max: q(1)}, turning: {pct: +(100 * moving.length / s.length).toFixed(1), median: qm(0.5), p95: qm(0.95)},
-      meanDegS: +(s.reduce((x, y) => x + y, 0) / s.length).toFixed(1), minScreenPx: Math.min(...games.map(g => g.minScreenPx)), minSafePx: Math.min(...games.map(g => g.minSafePx)),
-      live: {minScreenPx: Math.min(...games.map(g => g.live.minScreenPx)), minSafePx: Math.min(...games.map(g => g.live.minSafePx)), outS: +games.reduce((x, g) => x + g.live.outS, 0).toFixed(2), longestOutS: Math.max(...games.map(g => g.live.longestOutS)), totalS: +games.reduce((x, g) => x + g.dur, 0).toFixed(1)}, games};
+    res[style] = {
+      camPanPxS: {mean: +(pairs.reduce((x, p) => x + p.m, 0) / pairs.length).toFixed(1), median: q(pairs.map(p => p.m), 0.5), p95: q(pairs.map(p => p.m), 0.95)},
+      floorPointPxS: {mean: +(pairs.reduce((x, p) => x + p.own, 0) / pairs.length).toFixed(1), median: q(pairs.map(p => p.own), 0.5)},
+      topScreenPxS: {median: q(topV, 0.5), p95: q(topV, 0.95)},
+      minSweptEdgePx: Math.min(...games.map(g => g.minSweptEdgePx)), minCoreEdgePx: Math.min(...games.map(g => g.minCoreEdgePx)),
+      yawDegS: {median: q(yaw, 0.5), p95: q(yaw, 0.95)}, focusMS: {median: q(pan, 0.5), p95: q(pan, 0.95)}, zoomPerS: {median: q(zoom, 0.5), p95: q(zoom, 0.95)},
+      floorLimit: floorFrames ? {hits: floorHits, frames: floorFrames, pct: +(100 * floorHits / floorFrames).toFixed(2)} : null, games};
   }
   return res;
 }, [replays, styleArg.split(',')]);
-const styles = Object.keys(out);
-if (styles.length === 2) {
-  const [A, B] = styles.map(k => out[k]), r = (x, y) => +(y / x).toFixed(3);
-  out.ratio = {of: `${styles[1]}/${styles[0]}`, floorMean: r(A.floor.meanPxS, B.floor.meanPxS), floorOwnMean: r(A.floor.ownMeanPxS, B.floor.ownMeanPxS), allMedian: r(A.all.median, B.all.median), allP95: r(A.all.p95, B.all.p95), turningMedian: r(A.turning.median, B.turning.median), turningP95: r(A.turning.p95, B.turning.p95), mean: r(A.meanDegS, B.meanDegS)};
+if (out.slow && out.v4) {  // ratios for the shipped 'slow' only
+  const r = (k, s) => +(out.slow[k][s] / out.v4[k][s]).toFixed(3);
+  out.ratioSlowOverV4 = {yawMedian: r('yawDegS', 'median'), focusMedian: r('focusMS', 'median'), zoomMedian: r('zoomPerS', 'median'), camPanMedian: r('camPanPxS', 'median'), camPanMean: r('camPanPxS', 'mean'), topScreenMedian: r('topScreenPxS', 'median')};
 }
 if (outFile) writeFileSync(outFile, JSON.stringify(out, null, 1));
-console.log(JSON.stringify(out, (k, v) => k === 'games' ? v.map(g => `${g.seed}:${g.dur}s mean${g.meanDegS} sweep edge${g.minScreenPx}@${g.at} safe${g.minSafePx} | live edge${g.live.minScreenPx}@${g.live.at} safe${g.live.minSafePx} out${g.live.outS}s longest${g.live.longestOutS}s ${JSON.stringify(g.live.edges)}`) : v, 1));
+console.log(JSON.stringify(out, null, 1));
 await browser.close();
