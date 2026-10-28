@@ -1,0 +1,202 @@
+{
+  "base": "d08a698f7bc8c710279afc6929418bf5858448ed",
+  "mode": "A",
+  "pairs": [
+    {
+      "id": "pan-broom",
+      "label": "Lux3D锅＋扫把",
+      "items": [
+        "pan-lux3d",
+        "broom"
+      ]
+    },
+    {
+      "id": "scissors-pillow",
+      "label": "剪刀＋枕头",
+      "items": [
+        "scissors",
+        "pillow"
+      ]
+    },
+    {
+      "id": "lamp-slipper",
+      "label": "Lux3D台灯＋拖鞋",
+      "items": [
+        "lamp-lux3d",
+        "slipper"
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "id": "out-out-e180",
+      "orients": [
+        "out",
+        "out"
+      ],
+      "spread": "e180"
+    },
+    {
+      "id": "out-out-e90",
+      "orients": [
+        "out",
+        "out"
+      ],
+      "spread": "e90"
+    },
+    {
+      "id": "out-hug-e180",
+      "orients": [
+        "out",
+        "hug"
+      ],
+      "spread": "e180"
+    },
+    {
+      "id": "out-hug-e90",
+      "orients": [
+        "out",
+        "hug"
+      ],
+      "spread": "e90"
+    },
+    {
+      "id": "hug-out-e180",
+      "orients": [
+        "hug",
+        "out"
+      ],
+      "spread": "e180"
+    },
+    {
+      "id": "hug-out-e90",
+      "orients": [
+        "hug",
+        "out"
+      ],
+      "spread": "e90"
+    },
+    {
+      "id": "hug-hug-e180",
+      "orients": [
+        "hug",
+        "hug"
+      ],
+      "spread": "e180"
+    },
+    {
+      "id": "hug-hug-e90",
+      "orients": [
+        "hug",
+        "hug"
+      ],
+      "spread": "e90"
+    }
+  ],
+  "conditions": [
+    "auto",
+    "ai-ai"
+  ],
+  "seeds": 1,
+  "sources": {
+    "data/CREDITS.md": "b62f3681a21713a2c100c1da6e52517fb016331bd87091a0351dc2f914477a2e",
+    "data/catalog.json": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+    "data/item-standards.json": "348d32e814ac722ff4620b01bde7ec349c750b27bb1c6ebaf96c4ac99a06b419",
+    "data/lux3d/README.md": "4355c7142a043fc0b23cd4b396d9af79378dd7b4f32d8911b3a3a296b58d5eed",
+    "data/lux3d/RECEIPT.md": "271bc7b0814b0cb278edafb06d07ecbb0bfd1fdf0b953d65b2fa719f097a28c7",
+    "data/lux3d/catalog-entries.json": "d6c22f5e08033c13ee9ae864328c81b4d56dab628ab8f17862298b667943559e",
+    "data/lux3d/files.json": "c79bded4f29c72fb2145c98d937e21eae2baddc466d6ca6c31959f084053fcda",
+    "data/lux3d/lamp-lux3d-pbr.glb": "0ecd18e7d38661e95b21848b292acadf500ab4bb709d16742b239dede4517b4a",
+    "data/lux3d/lamp-lux3d.glb": "62943ef2c3fc87ef776ee2839ce969beee6b5274ebb8a89ba6e3446e7f1ead9a",
+    "data/lux3d/lamp.source.glb": "9a75c26fb9ac7fbd0667750c9706ed5172eb5d048d9c43390a8ec2bd4a5aa799",
+    "data/lux3d/pan-lux3d-pbr.glb": "8a73df24413a4f6d394c08b87658fabf03f2a058564155d6d6a0d19db611ff34",
+    "data/lux3d/pan-lux3d.glb": "93429afe28f371797ed83a01298aafc838479eabe611dcfb6827f9c5583ffdfa",
+    "data/lux3d/pan.source.glb": "594425a1c9f38c97f87edae1026fc18f70ac3de00a9aad9ce05449f176ccbeb5",
+    "data/lux3d/prepare.mjs": "d6634b159c281ce076cf34a3ab2a1481e78b3b955029b6f4b558943ecce0eb36",
+    "data/models/broom.glb": "d69ce691fcfa633b0c8ca468e40f90fb01989d740182e76315bee0fd4419e6f3",
+    "data/models/lamp-lux3d-mobile.glb": "286814d6176b8052eca2052a132978a53307132d4973877697811a859e200457",
+    "data/models/lamp.glb": "f9f3a927e96e488567b81ee9a103d04e9536233706c81b6bcd47c3e34a231dfd",
+    "data/models/pan-lux3d-mobile.glb": "2eee4a262b294ff289da24c63c23f83720b735e92aa4e66aa53965276b00c265",
+    "data/models/pillow.glb": "3a47dd4f293f04b420682d8131c83aa5d03e1ae9035351b51d334e7532e5cde3",
+    "data/models/pot.glb": "e822e2257eff5f6fa628f5f20cbd13bf8e38603d04013f9df63c83c376764f9f",
+    "data/models/scissors.glb": "b2b3939e4598be22454769d1af0a4054fdb147789d62216993206ac1c8a3e48c",
+    "data/models/slipper.glb": "b5dd16f74dfa621f70abe6debd90fabb7208ea5a9aa76a750dbe3f3caefa1bb9",
+    "data/source-models/broom.glb": "d76781ebe7bbb61dd074f23d26f03a60379d702650f66d926d622fe1b3539656",
+    "data/source-models/lamp.glb": "8cc60fda9fd27041d43eff26eb253924554317b3b51a97b80d6277f1e6dc97a8",
+    "data/source-models/pillow.glb": "02287ddd8cbce78fc41e422a2ecc23178f12b334075541ad747edfc0e6cbe6e2",
+    "data/source-models/pot.glb": "3836f63ea0a1135d1dbb6f8a942af6a1bc27912c21d5112c1820e88c64779995",
+    "data/source-models/scissors.glb": "a9aea31267768bea64085c8097c21fb38a65fc37a8c9a6f4e1418d173e91cad3",
+    "data/source-models/slipper.glb": "106394219dd14c618d024f99c24fddf5cc946c9f63863952cf1e936a3616051b",
+    "sim/.gitignore": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97",
+    "sim/batch.js": "be01cb6b680e62466d81f6c214af03de0f2188ed3a7d81dc2c67c2c5d6a1935f",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/layouts.js": "8adca3a3a729b190b6c6ae5ab2042594a1ccab70259bf822cedbb94a6455258f",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+    "sim/package.json": "022be4f4765a8526424b9e71ff2352e4bbe93deceb5d9c9310f52a11e8255454",
+    "sim/prepare-assets.mjs": "a448fc512370c3acdada7e60ee9d9702aea2eb2aa41741137e8522b15828776e",
+    "sim/prepare-mobile.py": "0a4ae7acbaeffd6f4ae55119d9f15494e4fec2a49403f86ec614708b79c8e34a",
+    "sim/v3-rules.json": "647c7fb22cd9d3eb1bd32cf821533500a184f4a86d1c1197a9fa6e56bff0c24b",
+    "sim/v3.js": "ea9d96d71876c3a03fa8d049992bd36d626b5348f624a4e23545367027cc3e59",
+    "web/.gitignore": "790e3169bc19b046fe55ba1da6d13b976c28363c8c00462a2195fe5faf260910",
+    "web/index.html": "ed3dc5f482b15e4a48293104eef602bb272b9a629809b316776170ad08591cd6",
+    "web/package-lock.json": "59d93cd0bcd16e3f120b99443046c679565b13a81e67c25011e900aa66a1fcc2",
+    "web/package.json": "1548eacf7bc1f0a8bf903cca5a75d5a0cd02474d4bd59f6aa0286961a83e10ed",
+    "web/publish/cover.html": "312a40cfc661d8bcb600fd58ac0fa09db8c610490c28bd1f36f070cf71e10cb0",
+    "web/publish/hero.jpg": "2e4c4a9d712460f407093bd8b491c271d9ea3c91b301ed83915d8ec24bc46d89",
+    "web/scripts/artifact-batch.mjs": "f2d072f20f06c9b0c6a4992075b6a48753b0b12be22f5cd7d293967b9164525a",
+    "web/scripts/camera-motion.mjs": "f283949a328803a4d19ee17c6a1d45176483397ba0a49fef4ae864a76ecad659",
+    "web/scripts/camera-motion.py": "0c59cc995dbacef08a20c175bf25db0d0e3d9ef7854bd9ce8b25640ab8bd8b5a",
+    "web/scripts/font-subset.py": "05db7dbe19b4d79974fa9189389ff80a874fb3e451db39b382b76c143c1d089f",
+    "web/scripts/frame-timing.mjs": "9df9f812787e2e5f44f78c71c11534d871b4dc740a7a3fa393ac9a450b6f3578",
+    "web/scripts/manual-shots.mjs": "80ece25985ac20330685d602d4bb2e74fc15c9c3cc05df54ad2656ff9f6037d2",
+    "web/scripts/pack-artifact.mjs": "d96ef640adf08938ed7c50ec84683cabf6d0e4c941f952643d47f8030a7d7e5f",
+    "web/scripts/safe-audit.mjs": "098b76b23ee6be0ce3d2e08c936c8e099822d308262836226366dea911bc9e17",
+    "web/scripts/shots.mjs": "0591c492f0827cb1d732fd0e9c11189e3e0d376ed4e70aac29f2f1a45fbcdb55",
+    "web/scripts/top-shots.mjs": "5d86c2b6c9c5c38732b0069dd513e7ea294a8fdded1474aaf1aac70393d8d50b",
+    "web/scripts/verify-pack.mjs": "066737813396bedd8a3b54c0e1fb9d0e521da48f6fe6a2ec2f2c682c1fb6bc0f",
+    "web/scripts/viewer-sandbox-server.mjs": "61f329b03f48b3a98ef4cd83f48b12fabef10b00de3766df1fc82102011cc1e8",
+    "web/shots/A-1-start.png": "33d2120cce5691a94dc96f0f6b6b58ebe23a867ce3f9cff5524d0e9dde469f9b",
+    "web/shots/A-2-bighit.png": "560e14f5ed2b4c1a27b91bb27332630600f6e8a99bd60343d7417c04c2ec0894",
+    "web/shots/A-3-slowmo.png": "d4887a927caf94f0700af8c58f71f529d5e5aaeadf0b2d6960dc9263d48adc14",
+    "web/shots/A-4-result.png": "e7ff32001291119e7f694ee4a1902a2541fb7fcb6e70e853b862811a6a8e0067",
+    "web/shots/B-1-start.png": "7afea1502ef766bf402753cf57b1e2dcadb9320d6bace04a0aa40600820a8dd1",
+    "web/shots/B-2-bighit.png": "a88e4243af0b864b15815386f55e0170f94716e16478fd30adaab3be27477f57",
+    "web/shots/B-3-slowmo.png": "509db511d6f0a8c73318546f6e9bd084a13272710edcb94f6ce06a2aa40f5820",
+    "web/shots/B-4-result.png": "23125c4fe2648409b21cc893f386ec7e3c85faf5df9b39590ff452170e446d2a",
+    "web/shots/shots.json": "79ab34c2d3a9f2e1a650561a557f970819d06152debd9565ec9001455cd1ebe1",
+    "web/shots/sp-A-1-start.png": "e9d9e5f42f1750ae7fe85682cf97b908a033cb33068e6c301b37bf2fd19db6f6",
+    "web/shots/sp-A-2-bighit.png": "9a1b5386d1ca8174ace77780b3ee732a0e9e5ee3f55152ac72ad283ba8ae70ae",
+    "web/shots/sp-A-3-slowmo.png": "3f650089a1b8930dd485f277557bdf845642ad24f1ebd27a9dad8121a6416be3",
+    "web/shots/sp-A-4-result.png": "c05ae834685c20dcffac6dadc894e6d35f99ae3995b58c638b501e49c4442d00",
+    "web/shots/sp-B-1-start.png": "809fab1e952549cd1c2ac99937c77984dfe06a8d5e59ed8017c159dfafbd5fd5",
+    "web/shots/sp-B-2-bighit.png": "1942631f817456e7a8b668b51016408cbf59356f230aaa30de8e1138c47c82df",
+    "web/shots/sp-B-3-slowmo.png": "83ad51dc1ceb90a19213f0528c534ea542f5823a915518c26be8c9fea1b84dd3",
+    "web/shots/sp-B-4-result.png": "941e6869fe0e0e736b908a4bfa31492c7a1b98cb2adf44b87dd4b83e105a7f41",
+    "web/shots/sp-shots.json": "9e3845bc1c7d6ccd08704ad8ba7c7275d0f30533fd7726622948db9d141b7b3d",
+    "web/shots/sp5-A-1-start.png": "e22bb225d65763437936edde766cf6a48e7cf90f60f7fcdadcf9882924216825",
+    "web/shots/sp5-A-2-crit.png": "5cf522892af8d13110df8d5745e684882aa42e438d6f2a0e3bafbb72cca761fc",
+    "web/shots/sp5-A-3-slowmo.png": "44f477239e0537b0505fa8b9a3ea45caf75ab6b9acc42935d6a307196007eaec",
+    "web/shots/sp5-A-4-result.png": "ee00bcb7f713b3c68a44db2af4a612902c5f71e6a6989360bbc3fb39f6e6b4fc",
+    "web/shots/sp5-B-1-start.png": "fa497e17bb4e797fe1c939532de87b70a2e38649c303530eeb136e68c59f3a04",
+    "web/shots/sp5-B-2-crit.png": "420210d0737caad22a1c01516f192c1dc7f1aee6cbb75f18fc22903c3ff8eb7d",
+    "web/shots/sp5-B-3-slowmo.png": "0d9306299d3efa6c56687f2e8095011ffc561d7c4cbcec00c83c08ec18b3dd48",
+    "web/shots/sp5-B-4-result.png": "476a7f2e7ec8c7e86d75f336694faf645c4945bd2d95713c1fe3e9b6cf78e910",
+    "web/shots/sp5-shots.json": "55f88a8beb3afb250f9bca6dd5dcc188459dc402fecc9dc42fcd1f7c386600e0",
+    "web/shots/ui-1-idle.png": "e2052804dd745aa181f4f421054901f7a24936dd397c92415bd9e48c6da147ea",
+    "web/shots/ui-2-picker.png": "2324bd92ece4a8c2d48177872aec5bfe5f618c8f4adc1c24a839d500b713e214",
+    "web/shots/ui-3-credits.png": "34964ae94d75ad5c19b410c5457aabc0d3ab7bb6304ff81208fba9edad916763",
+    "web/src/fonts/smiley-sans-sub.woff": "590e8cb8cfb149f67092455719b8dc4e75004c80be77ee936882b259a49ddcaf",
+    "web/src/main.js": "821fa2a29a16c9e4405d2a86831e8bd7ce6f3d8164bb9e4524da445a73670780",
+    "web/src/models.js": "cc82db4d559094263dad90254d120199ce48218346fb45dea1bcd6bba34cf09d",
+    "web/src/overlay.js": "316901a8595117b21e41cb78fd22c0744132b49d68754263141d2aee0c03177d",
+    "web/src/playback.js": "f6ad59f0aedb0fe738da30d2c9ab025c66e0b432490c20d36ed0b7bb42bfc293",
+    "web/src/reason.js": "f1a5ba222251877e945ab68e97bc92d4f053fd2394ec4b30d8a76b9892f98177",
+    "web/src/stage.js": "a1b58645ad9be539237b76bfe0a7a3a63814c15829cd7a94edcefc1cc2c8e893",
+    "web/src/style.css": "947e1bb30802aebf986d1518bde656668f834b527d513f202b086594194a2df6",
+    "web/vite.config.js": "2d3c041dd257f5083083db4a5d058497836cf3c84571c3b5b9b9f39d70f6c9da"
+  },
+  "inputSha256": "0ba75df9547a9cec38a4309487f3dd25dff5ec3e0a40f47f5fdfbaab97fc6517",
+  "node": "v25.5.0",
+  "nice": "20"
+}

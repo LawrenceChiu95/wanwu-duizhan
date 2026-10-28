@@ -1,0 +1,3893 @@
+{
+  "games": 48,
+  "seedsPerCell": 1,
+  "cells": [
+    {
+      "pair": "pan-broom",
+      "layout": "out-out-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 26.78333333333333,
+        "median": 26.78333333333333
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 4,
+            "median": 4
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 48.66938311111112,
+            "median": 48.66938311111112
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-out-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 35.03333333333333,
+        "median": 35.03333333333333
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 6,
+            "median": 6
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 50.06844666666667,
+            "median": 50.06844666666667
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-hug-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 28.466666666666665,
+        "median": 28.466666666666665
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 1,
+            "median": 1
+          },
+          "attackHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "recoilHits": {
+            "mean": 0,
+            "median": 0
+          },
+          "damage": {
+            "mean": 28.517688888888895,
+            "median": 28.517688888888895
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-hug-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 26.9,
+        "median": 26.9
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 25.842188000000004,
+            "median": 25.842188000000004
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-out-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 39.49166666666667,
+        "median": 39.49166666666667
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 145.69124755555555,
+            "median": 145.69124755555555
+          }
+        },
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-out-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 36.1,
+        "median": 36.1
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 47.65237155555556,
+            "median": 47.65237155555556
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-hug-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 36.95,
+        "median": 36.95
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 108.66371511111112,
+            "median": 108.66371511111112
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-hug-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 37.94166666666666,
+        "median": 37.94166666666666
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 95.68227600000002,
+            "median": 95.68227600000002
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-out-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 26.258333333333333,
+        "median": 26.258333333333333
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 26.472734666666664,
+            "median": 26.472734666666664
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-out-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 36.7,
+        "median": 36.7
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 87.446508,
+            "median": 87.446508
+          }
+        },
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 9,
+            "median": 9
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-hug-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 28.45,
+        "median": 28.45
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 4,
+            "median": 4
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 48.825233777777775,
+            "median": 48.825233777777775
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-hug-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 27.741666666666667,
+        "median": 27.741666666666667
+      },
+      "firstBreak": {
+        "0:pillow": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 71.57450826666667,
+            "median": 71.57450826666667
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-out-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 33.65,
+        "median": 33.65
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 15,
+            "median": 15
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 9,
+            "median": 9
+          },
+          "damage": {
+            "mean": 131.44709911111113,
+            "median": 131.44709911111113
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-out-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 30.716666666666665,
+        "median": 30.716666666666665
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 115.80914444444446,
+            "median": 115.80914444444446
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-hug-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 37.858333333333334,
+        "median": 37.858333333333334
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 156.04015555555557,
+            "median": 156.04015555555557
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-hug-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 30.791666666666668,
+        "median": 30.791666666666668
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 37.29397466666667,
+            "median": 37.29397466666667
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-out-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 33.016666666666666,
+        "median": 33.016666666666666
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 14,
+            "median": 14
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 133.39522844444446,
+            "median": 133.39522844444446
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-out-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 34.46666666666667,
+        "median": 34.46666666666667
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 110.5878422222222,
+            "median": 110.5878422222222
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-hug-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 32.425,
+        "median": 32.425
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 90.50378044444446,
+            "median": 90.50378044444446
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-hug-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 34.641666666666666,
+        "median": 34.641666666666666
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 115.42042177777779,
+            "median": 115.42042177777779
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-out-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 37.11666666666667,
+        "median": 37.11666666666667
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 155.10619244444447,
+            "median": 155.10619244444447
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-out-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 35.975,
+        "median": 35.975
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 13,
+            "median": 13
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 146.24056266666668,
+            "median": 146.24056266666668
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-hug-e180",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 22.291666666666668,
+        "median": 22.291666666666668
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 4,
+            "median": 4
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 51.063784000000005,
+            "median": 51.063784000000005
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-hug-e90",
+      "condition": "auto",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 28.083333333333332,
+        "median": 28.083333333333332
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 6,
+            "median": 6
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 78.97865066666668,
+            "median": 78.97865066666668
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        },
+        {
+          "dash": 0,
+          "block": 0,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-out-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 36.225,
+        "median": 36.225
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 13,
+            "median": 13
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 107.61867333333333,
+            "median": 107.61867333333333
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 7,
+          "block": 2,
+          "parry": 1
+        },
+        {
+          "dash": 7,
+          "block": 2,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-out-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 24.616666666666667,
+        "median": 24.616666666666667
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160.00000000000006,
+            "median": 160.00000000000006
+          }
+        },
+        {
+          "contacts": {
+            "mean": 6,
+            "median": 6
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 98.26829880000001,
+            "median": 98.26829880000001
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 5,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 5,
+          "block": 2,
+          "parry": 1
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-hug-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 30.741666666666667,
+        "median": 30.741666666666667
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 87.27375862222223,
+            "median": 87.27375862222223
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 3
+        },
+        {
+          "dash": 7,
+          "block": 3,
+          "parry": 3
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "out-hug-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 34.766666666666666,
+        "median": 34.766666666666666
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:broom": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 150.95056755555555,
+            "median": 150.95056755555555
+          }
+        },
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 7,
+          "block": 3,
+          "parry": 3
+        },
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 1
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-out-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 29.474999999999998,
+        "median": 29.474999999999998
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 13,
+            "median": 13
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 47.40941017777777,
+            "median": 47.40941017777777
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 3
+        },
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 4
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-out-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 32.36666666666667,
+        "median": 32.36666666666667
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "recoilHits": {
+            "mean": 10,
+            "median": 10
+          },
+          "damage": {
+            "mean": 28.944450133333333,
+            "median": 28.944450133333333
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 3
+        },
+        {
+          "dash": 7,
+          "block": 3,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-hug-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 31.075,
+        "median": 31.075
+      },
+      "firstBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pan-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 14,
+            "median": 14
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 82.62125164444444,
+            "median": 82.62125164444444
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 3
+        },
+        {
+          "dash": 7,
+          "block": 4,
+          "parry": 4
+        }
+      ]
+    },
+    {
+      "pair": "pan-broom",
+      "layout": "hug-hug-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 29.383333333333333,
+        "median": 29.383333333333333
+      },
+      "firstBreak": {
+        "0:broom": 1
+      },
+      "firstOwnBreak": {
+        "0:broom": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 90.84344173333335,
+            "median": 90.84344173333335
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 9,
+            "median": 9
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 3
+        },
+        {
+          "dash": 5,
+          "block": 4,
+          "parry": 4
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-out-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 26.474999999999998,
+        "median": 26.474999999999998
+      },
+      "firstBreak": {
+        "0:pillow": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 88.82743751111113,
+            "median": 88.82743751111113
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 5,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-out-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 34.541666666666664,
+        "median": 34.541666666666664
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 44.324797333333336,
+            "median": 44.324797333333336
+          }
+        },
+        {
+          "contacts": {
+            "mean": 16,
+            "median": 16
+          },
+          "attackHits": {
+            "mean": 11,
+            "median": 11
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 7,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 3
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-hug-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 18.825,
+        "median": 18.825
+      },
+      "firstBreak": {
+        "0:pillow": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 5,
+            "median": 5
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 53.223875911111115,
+            "median": 53.223875911111115
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 4,
+          "block": 1,
+          "parry": 1
+        },
+        {
+          "dash": 3,
+          "block": 2,
+          "parry": 1
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "out-hug-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 31.466666666666665,
+        "median": 31.466666666666665
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "damage": {
+            "mean": 93.48046844444445,
+            "median": 93.48046844444445
+          }
+        },
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 3
+        },
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 3
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-out-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 33.03333333333333,
+        "median": 33.03333333333333
+      },
+      "firstBreak": {
+        "0:pillow": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 7,
+            "median": 7
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 49.04588906666667,
+            "median": 49.04588906666667
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 3,
+          "parry": 2
+        },
+        {
+          "dash": 7,
+          "block": 3,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-out-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 31.575,
+        "median": 31.575
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 102.92418422222222,
+            "median": 102.92418422222222
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 3
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-hug-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 23.966666666666665,
+        "median": 23.966666666666665
+      },
+      "firstBreak": {
+        "0:pillow": 1
+      },
+      "firstOwnBreak": {
+        "0:pillow": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 3,
+            "median": 3
+          },
+          "attackHits": {
+            "mean": 0,
+            "median": 0
+          },
+          "recoilHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "damage": {
+            "mean": 2.6628165333333333,
+            "median": 2.6628165333333333
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 5,
+          "block": 4,
+          "parry": 2
+        },
+        {
+          "dash": 5,
+          "block": 4,
+          "parry": 3
+        }
+      ]
+    },
+    {
+      "pair": "scissors-pillow",
+      "layout": "hug-hug-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 20.3,
+        "median": 20.3
+      },
+      "firstBreak": {
+        "none": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "recoilHits": {
+            "mean": 0,
+            "median": 0
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 4,
+            "median": 4
+          },
+          "attackHits": {
+            "mean": 0,
+            "median": 0
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 2.2631720000000004,
+            "median": 2.2631720000000004
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 4,
+          "block": 2,
+          "parry": 1
+        },
+        {
+          "dash": 5,
+          "block": 2,
+          "parry": 0
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-out-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 29.958333333333332,
+        "median": 29.958333333333332
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 16,
+            "median": 16
+          },
+          "attackHits": {
+            "mean": 9,
+            "median": 9
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 123.2915968888889,
+            "median": 123.2915968888889
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 4
+        },
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 3
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-out-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 25.616666666666667,
+        "median": 25.616666666666667
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 112.25004488888891,
+            "median": 112.25004488888891
+          }
+        },
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 5,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 5,
+          "block": 1,
+          "parry": 1
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-hug-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 30.066666666666666,
+        "median": 30.066666666666666
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 15,
+            "median": 15
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "damage": {
+            "mean": 118.61380008888891,
+            "median": 118.61380008888891
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 2,
+          "parry": 1
+        },
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 4
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "out-hug-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 20.316666666666666,
+        "median": 20.316666666666666
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "recoilHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        },
+        {
+          "contacts": {
+            "mean": 3,
+            "median": 3
+          },
+          "attackHits": {
+            "mean": 1,
+            "median": 1
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 8.443298666666667,
+            "median": 8.443298666666667
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 4,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 5,
+          "block": 3,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-out-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 32.225,
+        "median": 32.225
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 11,
+            "median": 11
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 8,
+            "median": 8
+          },
+          "attackHits": {
+            "mean": 3,
+            "median": 3
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 80.26732719999998,
+            "median": 80.26732719999998
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 2,
+          "parry": 2
+        },
+        {
+          "dash": 6,
+          "block": 2,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-out-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 26.016666666666666,
+        "median": 26.016666666666666
+      },
+      "firstBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "none": 1
+      },
+      "firstFoeBreak": {
+        "1:lamp-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 135.61280800000003,
+            "median": 135.61280800000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 14,
+            "median": 14
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 159.99999999999997,
+            "median": 159.99999999999997
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 5,
+          "block": 1,
+          "parry": 1
+        },
+        {
+          "dash": 6,
+          "block": 1,
+          "parry": 1
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-hug-e180",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 0,
+      "losses": 1,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 0,
+      "winRate95": [
+        0,
+        0.7934506856227626
+      ],
+      "duration": {
+        "mean": 26.183333333333334,
+        "median": 26.183333333333334
+      },
+      "firstBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "none": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 13,
+            "median": 13
+          },
+          "attackHits": {
+            "mean": 6,
+            "median": 6
+          },
+          "recoilHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "damage": {
+            "mean": 160.00000000000003,
+            "median": 160.00000000000003
+          }
+        },
+        {
+          "contacts": {
+            "mean": 10,
+            "median": 10
+          },
+          "attackHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "recoilHits": {
+            "mean": 5,
+            "median": 5
+          },
+          "damage": {
+            "mean": 125.10101546666667,
+            "median": 125.10101546666667
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 5,
+          "block": 2,
+          "parry": 0
+        },
+        {
+          "dash": 6,
+          "block": 2,
+          "parry": 2
+        }
+      ]
+    },
+    {
+      "pair": "lamp-slipper",
+      "layout": "hug-hug-e90",
+      "condition": "ai-ai",
+      "games": 1,
+      "wins": 1,
+      "losses": 0,
+      "draws": 0,
+      "timeouts": 0,
+      "winRate": 1,
+      "winRate95": [
+        0.20654931437723745,
+        1
+      ],
+      "duration": {
+        "mean": 27.416666666666668,
+        "median": 27.416666666666668
+      },
+      "firstBreak": {
+        "1:pan-lux3d": 1
+      },
+      "firstOwnBreak": {
+        "0:lamp-lux3d": 1
+      },
+      "firstFoeBreak": {
+        "1:pan-lux3d": 1
+      },
+      "core": [
+        {
+          "contacts": {
+            "mean": 12,
+            "median": 12
+          },
+          "attackHits": {
+            "mean": 4,
+            "median": 4
+          },
+          "recoilHits": {
+            "mean": 8,
+            "median": 8
+          },
+          "damage": {
+            "mean": 94.09708706666667,
+            "median": 94.09708706666667
+          }
+        },
+        {
+          "contacts": {
+            "mean": 9,
+            "median": 9
+          },
+          "attackHits": {
+            "mean": 7,
+            "median": 7
+          },
+          "recoilHits": {
+            "mean": 2,
+            "median": 2
+          },
+          "damage": {
+            "mean": 160,
+            "median": 160
+          }
+        }
+      ],
+      "actions": [
+        {
+          "dash": 6,
+          "block": 2,
+          "parry": 1
+        },
+        {
+          "dash": 6,
+          "block": 4,
+          "parry": 4
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "condition": "auto",
+      "pair": "pan-broom",
+      "best": [
+        "out-out-e90",
+        "out-hug-e180",
+        "out-hug-e90",
+        "hug-out-e180",
+        "hug-out-e90"
+      ],
+      "worst": [
+        "out-out-e180",
+        "hug-hug-e180",
+        "hug-hug-e90"
+      ],
+      "bestRate": 1,
+      "worstRate": 0,
+      "spread": 1,
+      "pass": true
+    },
+    {
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "best": [
+        "out-out-e180",
+        "out-out-e90",
+        "out-hug-e180",
+        "hug-out-e180",
+        "hug-out-e90",
+        "hug-hug-e180"
+      ],
+      "worst": [
+        "out-hug-e90",
+        "hug-hug-e90"
+      ],
+      "bestRate": 1,
+      "worstRate": 0,
+      "spread": 1,
+      "pass": true
+    },
+    {
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "best": [
+        "out-out-e90",
+        "out-hug-e180",
+        "out-hug-e90",
+        "hug-out-e180"
+      ],
+      "worst": [
+        "out-out-e180",
+        "hug-out-e90",
+        "hug-hug-e180",
+        "hug-hug-e90"
+      ],
+      "bestRate": 1,
+      "worstRate": 0,
+      "spread": 1,
+      "pass": true
+    },
+    {
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "best": [
+        "out-hug-e90",
+        "hug-hug-e90"
+      ],
+      "worst": [
+        "out-out-e180",
+        "out-out-e90",
+        "out-hug-e180",
+        "hug-out-e180",
+        "hug-out-e90",
+        "hug-hug-e180"
+      ],
+      "bestRate": 1,
+      "worstRate": 0,
+      "spread": 1,
+      "pass": true
+    },
+    {
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "best": [
+        "out-out-e90",
+        "out-hug-e90"
+      ],
+      "worst": [
+        "out-out-e180",
+        "out-hug-e180",
+        "hug-out-e180",
+        "hug-out-e90",
+        "hug-hug-e180",
+        "hug-hug-e90"
+      ],
+      "bestRate": 1,
+      "worstRate": 0,
+      "spread": 1,
+      "pass": true
+    },
+    {
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "best": [
+        "out-out-e90",
+        "hug-out-e90",
+        "hug-hug-e90"
+      ],
+      "worst": [
+        "out-out-e180",
+        "out-hug-e180",
+        "out-hug-e90",
+        "hug-out-e180",
+        "hug-hug-e180"
+      ],
+      "bestRate": 1,
+      "worstRate": 0,
+      "spread": 1,
+      "pass": true
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "auto",
+      "pass": false,
+      "allSpreadsPass": true,
+      "universalBest": [
+        "out-out-e90",
+        "out-hug-e180",
+        "hug-out-e180"
+      ]
+    },
+    {
+      "condition": "ai-ai",
+      "pass": true,
+      "allSpreadsPass": true,
+      "universalBest": []
+    }
+  ],
+  "pass": false,
+  "seconds": 13.175054666,
+  "inputSha256": "0ba75df9547a9cec38a4309487f3dd25dff5ec3e0a40f47f5fdfbaab97fc6517"
+}

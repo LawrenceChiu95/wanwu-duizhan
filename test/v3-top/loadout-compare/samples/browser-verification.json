@@ -1,0 +1,162 @@
+{
+  "browser": "156.0.8078.4",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "checkedAt": "2026-10-28T07:36:20.518Z",
+  "receipts": [
+    {
+      "pair": "pan-broom",
+      "kind": "best",
+      "url": "http://127.0.0.1:4330/?mine=pan-lux3d,out,broom,out,e90&seed=37",
+      "resolvedUrl": "http://127.0.0.1:4330/?mine=pan-lux3d,out,broom,out,e90&seed=37",
+      "seed": 37,
+      "mine": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "orient": "out"
+          },
+          {
+            "item": "broom",
+            "orient": "out"
+          }
+        ],
+        "spread": "e90"
+      },
+      "sha256": "ac1c0eabf71895351e7e9e7febc4cb5c24d24fb293f4a07d1abf1cf193d5235c",
+      "expectedSha256": "ac1c0eabf71895351e7e9e7febc4cb5c24d24fb293f4a07d1abf1cf193d5235c",
+      "equal": true,
+      "winner": 0,
+      "duration": 33.55833333333333
+    },
+    {
+      "pair": "pan-broom",
+      "kind": "worst",
+      "url": "http://127.0.0.1:4330/?mine=pan-lux3d,hug,broom,hug,e90&seed=37",
+      "resolvedUrl": "http://127.0.0.1:4330/?mine=pan-lux3d,hug,broom,hug,e90&seed=37",
+      "seed": 37,
+      "mine": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "orient": "hug"
+          },
+          {
+            "item": "broom",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90"
+      },
+      "sha256": "5e0f1c6f7eaee1e41cd4ec6a3572635a3d4c0295784d0e96ee86e804c32bb82b",
+      "expectedSha256": "5e0f1c6f7eaee1e41cd4ec6a3572635a3d4c0295784d0e96ee86e804c32bb82b",
+      "equal": true,
+      "winner": 1,
+      "duration": 32.15
+    },
+    {
+      "pair": "scissors-pillow",
+      "kind": "best",
+      "url": "http://127.0.0.1:4330/?mine=scissors,out,pillow,hug,e180&seed=61",
+      "resolvedUrl": "http://127.0.0.1:4330/?mine=scissors,out,pillow,hug,e180&seed=61",
+      "seed": 61,
+      "mine": {
+        "parts": [
+          {
+            "item": "scissors",
+            "orient": "out"
+          },
+          {
+            "item": "pillow",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "sha256": "7363ed7fa7369e5f2f90461cf9001ba9231b424a59c3ced89630d075787246a3",
+      "expectedSha256": "7363ed7fa7369e5f2f90461cf9001ba9231b424a59c3ced89630d075787246a3",
+      "equal": true,
+      "winner": 0,
+      "duration": 33.891666666666666
+    },
+    {
+      "pair": "scissors-pillow",
+      "kind": "worst",
+      "url": "http://127.0.0.1:4330/?mine=scissors,out,pillow,hug,e90&seed=61",
+      "resolvedUrl": "http://127.0.0.1:4330/?mine=scissors,out,pillow,hug,e90&seed=61",
+      "seed": 61,
+      "mine": {
+        "parts": [
+          {
+            "item": "scissors",
+            "orient": "out"
+          },
+          {
+            "item": "pillow",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90"
+      },
+      "sha256": "59298eede0c75b5f71a33fb87b9b862817c5c5e7e5c65a2a79da020138f492d7",
+      "expectedSha256": "59298eede0c75b5f71a33fb87b9b862817c5c5e7e5c65a2a79da020138f492d7",
+      "equal": true,
+      "winner": 1,
+      "duration": 32.858333333333334
+    },
+    {
+      "pair": "lamp-slipper",
+      "kind": "best",
+      "url": "http://127.0.0.1:4330/?mine=lamp-lux3d,out,slipper,hug,e90&seed=18",
+      "resolvedUrl": "http://127.0.0.1:4330/?mine=lamp-lux3d,out,slipper,hug,e90&seed=18",
+      "seed": 18,
+      "mine": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "orient": "out"
+          },
+          {
+            "item": "slipper",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90"
+      },
+      "sha256": "6ed20379028e05ac259f3859c50975f1e6f3aa5a5c5c9f3c2684fdcff8027200",
+      "expectedSha256": "6ed20379028e05ac259f3859c50975f1e6f3aa5a5c5c9f3c2684fdcff8027200",
+      "equal": true,
+      "winner": 0,
+      "duration": 31.40833333333333
+    },
+    {
+      "pair": "lamp-slipper",
+      "kind": "worst",
+      "url": "http://127.0.0.1:4330/?mine=lamp-lux3d,out,slipper,out,e180&seed=18",
+      "resolvedUrl": "http://127.0.0.1:4330/?mine=lamp-lux3d,out,slipper,out,e180&seed=18",
+      "seed": 18,
+      "mine": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "orient": "out"
+          },
+          {
+            "item": "slipper",
+            "orient": "out"
+          }
+        ],
+        "spread": "e180"
+      },
+      "sha256": "09df6c20598f3c1e1e04284dd0b2a64da4b7a73410822d9373536a24f230c3c2",
+      "expectedSha256": "09df6c20598f3c1e1e04284dd0b2a64da4b7a73410822d9373536a24f230c3c2",
+      "equal": true,
+      "winner": 1,
+      "duration": 31
+    }
+  ],
+  "errors": [],
+  "scope": "URL parsing, real start click, complete simulated replay; no visual comprehension or phone acceptance"
+}
