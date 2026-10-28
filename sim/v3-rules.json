@@ -67,6 +67,7 @@
   "minimumImpulse": 0.001,
   "counterSpeedMultiplier": 2,
   "roleMassPower": 0.25,
+  "clashRelativeTolerance": 0.00001,
   "tipBonus": 0.3,
   "recoilDamageFraction": 0.03,
   "weakCritChance": 0.5,
@@ -100,6 +101,6 @@
     "blockDamage": 0.3,
     "blockRecoil": 0.3,
     "bounceRecoil": 2.6,
-    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "blockLead": 0.15}
+    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "blockLead": 0.15, "reactionJitter": 0.05}
   }
 }

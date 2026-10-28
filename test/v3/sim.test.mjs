@@ -106,7 +106,8 @@ test('same-step double break: less overkill wins, exact tie is a draw; reason ke
  assert.equal(why.target,1);assert.equal(why.attacker,0);
  assert.equal(r.decisive.eventIndex,r.events.indexOf(r.events.findLast(e=>e.t===ko.t&&e.target===1&&e.targetPart==='core'&&e.hpAfter===0)));
  const inputs=[];for(let step=60;step<7200;step+=552)inputs.push({step,side:0,action:'dash'});for(let step=300;step<7200;step+=624)inputs.push({step,side:0,action:'block'});inputs.sort((a,b)=>a.step-b.step);
- const detached=await simulateV3({fighters:[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:1,manual:{sides:['input','ai'],blockTime:.25,inputs}});
+ // Seed 2 retains the real two-detachment loss after seeded AI reaction/clash rules (seed 1 now loses with one part).
+ const detached=await simulateV3({fighters:[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:2,manual:{sides:['input','ai'],blockTime:.25,inputs}});
  const broken=detached.events.filter(e=>e.type==='break'&&e.target===0),whyBroken=detached.decisive.why,koBroken=detached.events.find(e=>e.type==='ko');
  assert.equal(whyBroken.target,0);assert.equal(whyBroken.attacker,1);assert.equal(broken.length,2);assert.equal(whyBroken.loserPartsLeft,0);
  assert.deepEqual(whyBroken.loserBroken.map(b=>b.item).sort(),['broom','pan-lux3d']);

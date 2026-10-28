@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createV3Match,simulateV3,loadV3Rules} from '../../../sim/v3.js';
+import {createV3Match,simulateV3,loadV3Rules,topStrikeRoles} from '../../../sim/v3.js';
 import {simulateWithRules} from '../variant.mjs';
 import {rotate} from '../../../sim/math.js';
 import {guardThresholdScenario} from './guard-threshold-fixture.mjs';
@@ -50,15 +50,16 @@ test('a guarded new contact during shared damage cooldown succeeds without damag
  const inputs=[{step:125,side:0,action:'block'},{step:126,side:0,action:'block'}];
  const r=await sim({fighters:bare,seed:3,manual:{sides:['input','input'],blockTime:.25,inputs}});
  const contact=r.events.find(e=>e.type==='contact'&&e.t===125/120),prior=r.events.find(e=>e.role==='attack'&&e.damage>0);
- assert.equal(contact.attacker,1);assert.ok(contact.t-prior.t<r.meta.rules.damageCooldown);
+ assert.equal(contact.attacker,null);assert.equal(contact.clash,true);assert.ok(contact.t-prior.t<r.meta.rules.damageCooldown);
  assert.ok(!r.events.some(e=>e.t===contact.t&&e.damage>0));
  const results=r.events.filter(e=>e.type==='blockResult'&&e.side===0);
  assert.equal(results.length,1);assert.equal(results[0].outcome,'perfect');assert.equal(results[0].damageApplied,false);
  assert.equal(results[0].resolvedStep,125);assert.equal(results[0].attacker,1);assert.deepEqual(results[0].point,contact.point);
  assert.equal(r.events.filter(e=>e.type==='block'&&e.side===0).length,1);
  assert.equal(JSON.stringify(r),JSON.stringify(await sim({fighters:bare,seed:3,manual:{sides:['input','input'],blockTime:.25,inputs:r.meta.manual.inputs}})));
- const attackerOnly=await sim({fighters:bare,seed:3,manual:{sides:['input','input'],inputs:[{step:125,side:1,action:'block'}]}});
- assert.equal(attackerOnly.events.find(e=>e.type==='blockResult'&&e.side===1).outcome,'empty');
+ // A genuinely one-sided aligned lunge does not let its own guard count as receiving a blow.
+ const attackerOnly=await run([dash,{step:44,side:0,action:'block'}]);
+ assert.equal(attackerOnly.events.find(e=>e.type==='blockResult'&&e.side===0).outcome,'empty');
 });
 test('a below-threshold touch does not consume the guard before a real impact in the same window',async()=>{
  const {samples,replay:r}=await guardThresholdScenario(),minimum=r.meta.rules.minimumImpulse;
@@ -107,4 +108,36 @@ test('invalid sensitivity value fails; automatic mode retains no manual state',a
  assert.equal(r.meta.manual,undefined);assert.equal(r.meta.rules.manual,undefined);
  assert.ok(!r.events.some(e=>['press','dash','block','blockResult'].includes(e.type)));
  const rules=await loadV3Rules();assert.equal(rules.manual.blockTime,.25);assert.equal(rules.manual.dashAlignment,.9);
+});
+
+test('relative score ties clash on both sides; real advantage and below-speed contacts retain their meaning',()=>{
+ const o={normal:[1,0,0],velocities:[[2,0,0],[-2.0000002,0,0]],tipRatios:[0,0],tipBonus:0,seed:3,minimumSpeed:.01};
+ const near=topStrikeRoles(o,1e-5);assert.equal(near.clash,true);assert.equal(near.attacker,null);
+ const advantage=topStrikeRoles({...o,velocities:[[2,0,0],[-2.02,0,0]]},1e-5);assert.equal(advantage.clash,false);assert.equal(advantage.attacker,1);
+ const slow=topStrikeRoles({...o,velocities:[[.001,0,0],[-.001,0,0]]},1e-5);assert.equal(slow.clash,false);assert.equal(slow.attacker,null);
+});
+test('a real head-on clash deals two capped main blows and both defenders can resolve one guard',async()=>{
+ const sim=await simulateWithRules({maxDuration:.6,top:{spinRate:0}});
+ const noGuard=await sim({fighters:bare,seed:3});
+ const contact=noGuard.events.find(e=>e.type==='contact'&&e.clash),step=Math.round(contact.t/noGuard.meta.rules.dt);
+ assert.equal(contact.attacker,null);
+ const hits=noGuard.events.filter(e=>e.t===contact.t&&e.damage>0);
+ assert.equal(hits.length,2);assert.deepEqual(hits.map(e=>e.target).sort(),[0,1]);
+ for(const hit of hits){assert.equal(hit.role,'attack');assert.equal(hit.roleMultiplier,1);assert.equal(hit.strikeAttacker,null);assert.equal(hit.clash,true);assert.ok(hit.damageBeforeHpClamp<=hit.damageCap);}
+ const guarded=await sim({fighters:bare,seed:3,manual:{sides:['input','input'],inputs:[0,1].map(side=>({step,side,action:'block'}))}});
+ const out=guarded.events.filter(e=>e.type==='blockResult');assert.equal(out.length,2);
+ for(const e of out){assert.equal(e.outcome,'perfect');assert.equal(e.clash,true);assert.equal(e.damageApplied,true);assert.equal(e.resolvedStep,step);}
+ for(const hit of guarded.events.filter(e=>e.damage>0)){assert.equal(hit.shield,true);assert.ok(hit.damageBeforeHpClamp<=hit.damageCap*guarded.meta.rules.manual.blockDamage);}
+});
+test('AI reaction delays are seeded, bounded, replayed, and carry with the profile on seat swap',async()=>{
+ const fighters=[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]}];
+ const manual={sides:['ai','ai'],blockTime:.25,aiSeeds:[123,456]};
+ const a=await simulateV3({fighters,mode:'A',seed:9,manual});
+ const presses=a.events.filter(e=>e.type==='press');assert.ok(presses.length>4);assert.ok(presses.some(e=>e.reactionSteps>0));
+ for(const e of presses){assert.ok(Number.isInteger(e.reactionSteps)&&e.reactionSteps>=0&&e.reactionSteps<=6);assert.equal(Math.round(e.t/a.meta.rules.dt)-e.decisionStep,e.reactionSteps);}
+ const again=await simulateV3({fighters,mode:'A',seed:9,manual:{...a.meta.manual}});assert.equal(JSON.stringify(a),JSON.stringify(again));
+ const b=await simulateV3({fighters,mode:'A',seed:9,manual:{...manual,aiSeeds:[456,123]}});
+ assert.deepEqual(b.meta.manual.aiSeeds,[456,123]);assert.deepEqual(a.initial,b.initial);
+ for(let side=0;side<2;side++)assert.equal(a.events.find(e=>e.type==='press'&&e.side===side).reactionSteps,b.events.find(e=>e.type==='press'&&e.side===1-side).reactionSteps);
+ await assert.rejects(createV3Match({fighters,seed:9,manual:{...manual,aiSeeds:[1,-1]}}),/aiSeeds/);
 });
