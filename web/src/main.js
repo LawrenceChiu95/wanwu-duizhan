@@ -3,10 +3,11 @@ import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels} from './models.js';
-import {Stage, TEAM, CORE_TRAVEL, CORE_RISE} from './stage.js';
+import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
 import {reasonLine, NAMES} from './reason.js';
+import {sfx} from './sfx.js';
 
 const $ = id => document.getElementById(id);
 const el = {
@@ -16,7 +17,7 @@ const el = {
   result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
   sheet: $('sheet'), sheetGrid: $('sheetGrid'), sheetTitle: $('sheetTitle'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
-  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn')
+  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), mute: $('muteBtn'), camSeg: $('camSeg')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
@@ -41,6 +42,10 @@ function showError(err) {
 }
 addEventListener('error', e => showError(e.error ?? e.message));
 addEventListener('unhandledrejection', e => showError(e.reason));
+// Sound starts on the first touch or key (browsers only allow audio after a user gesture).
+for (const type of ['pointerdown', 'touchend', 'keydown', 'click']) addEventListener(type, () => sfx.unlock(), {capture: true, passive: true});
+// Short buzzes on the big moments where the phone supports it (iOS ignores this).
+const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } catch { /* not allowed */ } };
 
 const isLux = id => id.endsWith('-lux3d');
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -97,6 +102,9 @@ async function main() {
   const fixedSeed = q.has('seed');
   // 自动 / 手动 (same loadout, same opponent); manual adds the 冲 / 挡 buttons.
   let control = q.get('play') === 'manual' ? 'manual' : 'auto', live = null;
+  // Fight camera: the new framing camera, or yesterday's chase camera (v4) to compare (?cam=v4, or the HUD toggle).
+  let camStyle = q.get('cam') === 'v4' ? 'v4' : 'new';
+  stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
   el.busy.hidden = true;
 
@@ -147,6 +155,9 @@ async function main() {
     stage.clearFx();
     overlay.clear();
     stage.setCameraMode('build');
+    stage.setFocusOn(null);
+    stage.setLookahead(null);
+    stage.showMe = false;
     stage.pose(previewState());
     el.hud.hidden = true;
     el.result.hidden = true;
@@ -215,8 +226,23 @@ async function main() {
     const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
-      const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2;
-      stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
+      const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
+      if (dash) {
+        // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
+        stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
+        stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
+        stage.ring(point, WHITE, 0.05, 1.0, 0.3);
+        overlay.screenFlash(0.32);
+        sfx.dashHit();
+        buzz(40);
+      } else {
+        // An ordinary knock: the same, scaled down.
+        stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
+        stage.impact(point, e.shield ? 0.1 : big ? 0.4 : 0.18, [WHITE, SPARK, TEAM[e.attacker]]);
+        sfx.hit(Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit: e.type === 'weak'});
+      }
+      // Yesterday's camera shook on every blow (no-op with the new camera).
+      stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
       stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
       stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
@@ -231,21 +257,29 @@ async function main() {
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
+      sfx.crunch();
+      buzz(25);
+      stage.shakeV4(0.8);
       overlay.number(new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8);
       // The camera never moves; only a piece or a core breaking jolts the picture a few px.
       stage.shake(4);
       overlay.screenFlash(0.25);
     } else if (e.type === 'dash') {
-      if (e.phase === 'charge') stage.charge(e.side, e.until - e.t);
-      else if (e.phase === 'go') stage.lunge(e.side, e.dir, rules.manual.dashTime);
+      if (e.phase === 'charge') { stage.charge(e.side, e.until - e.t); sfx.charge(e.until - e.t); }
+      else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
       else stage.endLunge(e.side);
     } else if (e.type === 'block') {
       stage.raiseShield(e.side, e.until - e.t);
+      sfx.ting();
     } else if (e.type === 'parry') {
-      // A lunge into a raised shield: it is bounced, and that should read at a glance.
-      stage.parry(e.target, point);
+      // A lunge into a raised shield: it is bounced, and that should read at a glance (white flash, a clang, a
+      // short slow motion from Playback, the lunger flung away trailing streaks).
+      stage.parry(e.target, point, e.attacker);
+      stage.punch(point, 7);
       overlay.callout(point, e.target, '弹开', {cls: 'parry'});
-      overlay.screenFlash(0.2);
+      overlay.screenFlash(0.45);
+      sfx.clang();
+      buzz([25, 40, 45]);
     } else if (e.type === 'ko') {
       // Every core that broke goes (both, when they break in the same instant).
       for (const i of e.targets ?? [e.target]) {
@@ -258,6 +292,9 @@ async function main() {
       }
       stage.shake(6);
       overlay.screenFlash(0.5);
+      sfx.ko();
+      buzz(70);
+      stage.shakeV4(1.1);
       overlay.showBanner('核心碎了', replay.meta.winner === 0 ? HEX[0] : '#ffffff', 1.3);
     }
     test.onEvent(e);
@@ -299,6 +336,8 @@ async function main() {
     stage.clearFx();
     overlay.clear();
     stage.setCameraMode('fight');
+    stage.setFocusOn(null);
+    stage.showMe = true;
     buildHud(r.meta.initial.map(f => f.definition));
     for (const h of hpView) Object.assign(h, {core: 1, chip: 1, since: 9});
     [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
@@ -310,11 +349,12 @@ async function main() {
     captionHold = 0;
     layout_();
     stage.pose(pb.state);
+    stage.setLookahead(lookahead());
     stage.updateCamera(0, true);
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
-    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'manual' ? '&play=manual' : ''}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'manual' ? '&play=manual' : ''}${camStyle === 'v4' ? '&cam=v4' : ''}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
@@ -327,6 +367,8 @@ async function main() {
     phase = 'result';
     const m = replay.meta;
     stage.setCameraMode('result');
+    stage.showMe = false;
+    stage.setLookahead(null);
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;
@@ -335,7 +377,8 @@ async function main() {
     setCaption(false);
     el.result.hidden = false;
     layout_();
-    if (m.winner !== null) stage.revealOnResult(m.winner, el.result.offsetTop);
+    // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
+    stage.setFocusOn(m.winner, el.result.offsetTop);
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -347,6 +390,8 @@ async function main() {
     overlay.clear();
     pb.slowEnabled = true;
     stage.setCameraMode('fight');
+    stage.setFocusOn(null);
+    stage.showMe = true;
     pb.seek(pb.replayFrom);
     replayEnd = 0;
     stage.pose(pb.state);
@@ -383,16 +428,35 @@ async function main() {
     if (!live || live.done || phase !== 'play') return;
     const c = live.match.control(0), left = action === 'dash' ? c.dashIn : c.blockIn;
     // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes instead.
-    if (left > rules.dt + 1e-9) { replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); test.denied++; return; }
+    if (left > rules.dt + 1e-9) { replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); test.denied++; sfx.deny(); return; }
     live.match.press(0, action);
+    sfx.click();
   }
   // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).
   function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
   for (const [btn, action] of [[el.dashBtn, 'dash'], [el.blockBtn, 'block']]) {
-    btn.addEventListener('pointerdown', ev => { ev.preventDefault(); press(action); });
+    // Real press state on touchdown: the button goes down and lights up until the finger lifts.
+    btn.addEventListener('pointerdown', ev => { ev.preventDefault(); btn.classList.add('down'); press(action); });
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave']) btn.addEventListener(type, () => btn.classList.remove('down'));
     btn.addEventListener('animationend', ev => { if (ev.animationName === 'padDeny') btn.classList.remove('deny'); else if (ev.animationName === 'padPop') btn.classList.remove('pop'); });
   }
-  addEventListener('keydown', ev => { if (ev.repeat) return; if (ev.code === 'KeyJ' || ev.code === 'Space') { ev.preventDefault(); press('dash'); } else if (ev.code === 'KeyK' || ev.code === 'ShiftLeft' || ev.code === 'ShiftRight') press('block'); });
+  const keyBtn = ev => ev.code === 'KeyJ' || ev.code === 'Space' ? el.dashBtn : ev.code === 'KeyK' || ev.code === 'ShiftLeft' || ev.code === 'ShiftRight' ? el.blockBtn : null;
+  addEventListener('keydown', ev => { if (ev.repeat) return; const b = keyBtn(ev); if (!b) return; if (b === el.dashBtn) ev.preventDefault(); b.classList.add('down'); press(b === el.dashBtn ? 'dash' : 'block'); });
+  addEventListener('keyup', ev => keyBtn(ev)?.classList.remove('down'));
+  // Sound on / off (remembered where the page may store it).
+  const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
+  el.mute.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
+  syncMute();
+  // 新镜头 / 昨天的镜头: switch at any time (a cut, then that camera carries on).
+  const syncCam = () => { for (const b of el.camSeg.querySelectorAll('[data-cam]')) b.setAttribute('aria-checked', String(b.dataset.cam === camStyle)); };
+  el.camSeg.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.cam === camStyle) return;
+    camStyle = b.dataset.cam;
+    stage.setCamStyle(camStyle);
+    syncCam();
+    try { const rest = location.search.slice(1).split('&').filter(p => p && !p.startsWith('cam=')); if (camStyle === 'v4') rest.push('cam=v4'); history.replaceState(null, '', `?${rest.join('&')}`); } catch { /* sandboxed viewer */ }
+  }));
+  syncCam();
   function updatePad() {
     if (!live || el.pad.hidden) return;
     const c = live.match.control(0), M = rules.manual;
@@ -416,6 +480,29 @@ async function main() {
   $('creditsClose').onclick = () => { el.credits.hidden = true; };
   el.credits.onclick = e => { if (e.target === el.credits) el.credits.hidden = true; };
 
+  // ---------- camera lookahead ----------
+  // Where each top will be 0.1 s from now: from the replay when it already has those frames (auto, and
+  // the few hundredths the live sim runs ahead), else carried on at its current velocity (live). Only for framing.
+  const AHEAD = [0.1], tmpV = new THREE.Vector3();
+  function lookahead() {
+    if (!pb) return null;
+    const fr = pb.r.frames, last = fr[fr.length - 1];
+    return pb.state.fighters.map((s, n) => AHEAD.map(dt => {
+      const t = pb.t + dt;
+      if (last.t >= t) {
+        const i = pb.frameIndex(t), A = fr[i], B = fr[Math.min(i + 1, fr.length - 1)], k = B.t > A.t ? (t - A.t) / (B.t - A.t) : 0;
+        return new THREE.Vector3().fromArray(A.fighters[n].pos).lerp(new THREE.Vector3().fromArray(B.fighters[n].pos), k);
+      }
+      // Live: a short, capped guess (a lunge would otherwise be carried on straight through the other top).
+      const from = last.t > pb.t ? new THREE.Vector3().fromArray(last.fighters[n].pos) : s.pos.clone();
+      const step = tmpV.copy(s.vel).multiplyScalar(Math.min(0.2, t - Math.max(pb.t, last.t)));
+      const p = from.add(step.clampLength(0, 0.45));
+      const d = Math.hypot(p.x, p.z);
+      if (d > CORE_TRAVEL) { p.x *= CORE_TRAVEL / d; p.z *= CORE_TRAVEL / d; }
+      return p;
+    }));
+  }
+
   // ---------- layout ----------
   function layout_() {
     const w = el.app.clientWidth, h = el.app.clientHeight;
@@ -435,7 +522,7 @@ async function main() {
     frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, denied: 0, nth: 1, seen: 0, speed: 1, safe: null,
     onEvent(e) {
       if (!this.freezeOn || this.pending >= 0) return;
-      const ok = this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
+      const ok = this.freezeOn === 'parry' ? e.type === 'parry' : this.freezeOn === 'dash-mine' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && e.attacker === 0 : this.freezeOn === 'dash-hit' || this.freezeOn === 'dash-core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.dash && !e.parry && e.damage > 0 && (this.freezeOn === 'dash-hit' || (e.targetPart === 'core' && e.attacker === 0)) : this.freezeOn === 'break' ? e.type === 'break' : this.freezeOn === 'hit' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' : this.freezeOn === 'core' ? (e.type === 'hit' || e.type === 'weak') && e.role === 'attack' && e.targetPart === 'core' : false;
       if (ok && ++this.seen >= this.nth) this.pending = this.freezeDelay;
     }
   };
@@ -444,16 +531,24 @@ async function main() {
     setControl(c) { control = c; syncBuild(); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
     // Safe-area audit: worst overflow per phase over every rendered frame (px > 0 means something was cut off).
-    trackSafe(speed = 1) { test.speed = speed; test.safe = {}; },
+    trackSafe(speed = 1) { test.speed = speed; test.safe = {}; test.frame = null; },
     safe: () => test.safe,
+    framing() {
+      const m = test.frame;
+      if (!m) return null;
+      const s = [...m.scale].sort((a, b) => a - b), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
+      return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
+    },
     setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
     stage,
     overlay,
+    // Framing camera parameters (tuning runs only).
+    cam: CAM,
     start,
     events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage})) ?? []
   };
@@ -485,6 +580,8 @@ async function main() {
       }
       simDt = pb.advance(dt, 1, onEvent);
       stage.pose(pb.state);
+      stage.setLookahead(lookahead());
+      stage.setPushV4(pb.pushAmount(pb.t));
       const slow = pb.slowAmount(pb.t);
       el.slowtag.classList.toggle('on', slow > 0.3);
       if (pb.inDecisive(pb.t)) { if (!el.caption.classList.contains('on')) setCaption(true); captionHold = 1.6; }
@@ -523,6 +620,8 @@ async function main() {
         f.quat.premultiply(new THREE.Quaternion().setFromAxisAngle(up, f.angularVelocity.length() * simDt * (f.hp > 0 ? 1 : drift)));
       }
       stage.pose(pb.state);
+      stage.setLookahead(null);
+      stage.setPushV4(phase === 'finale' ? pb.pushAmount(pb.end + finaleSim) : 0);
       el.slowtag.classList.toggle('on', phase === 'finale' && pb.slowAmount(v) > 0.3);
       // Manual: the decisive blow comes back as a slow replay before the result.
       if (phase === 'finale' && finaleAge > 1.4 && pb.slowFactor(v) > 0.99) {
@@ -534,6 +633,16 @@ async function main() {
     if (test.safe && dt > 0 && phase !== 'build' && phase !== 'computing') {
       const o = stage.safeOverflow(), cur = test.safe[phase];
       if (!cur || o.px > cur.px) test.safe[phase] = {...o, t: +(pb?.t ?? 0).toFixed(2), w: el.app.clientWidth};
+      // Framing audit (fight only): how often both tops keep 15 % of the width clear of every safe-area edge, and the
+      // scale (CSS px per metre at the aim point) the camera picked.
+      if (phase === 'play' && stage.cam.stat) {
+        const m = test.frame ??= {frames: 0, ok15: 0, core15: 0, minMargin: Infinity, scale: []};
+        m.frames++;
+        if (-o.px >= 0.15 * el.app.clientWidth) m.ok15++;
+        if (stage.coreMargin() >= 0.15 * el.app.clientWidth) m.core15++;
+        m.minMargin = Math.min(m.minMargin, -o.px);
+        m.scale.push(stage.cam.stat.pxPerMetre);
+      }
     }
     stage.render(dt, simDt);
     overlay.update(dt, true);

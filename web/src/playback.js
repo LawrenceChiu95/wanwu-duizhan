@@ -5,8 +5,14 @@ const SLOW = 0.25;
 // the hit last ~1 s on screen and the 0.35 s after it ~1.4 s, plus ramps. The camera push starts
 // earlier so it is already on the contact point when the hit lands.
 export const SLOW_BEFORE = 0.25, SLOW_AFTER = 0.35, RAMP = 0.1, PUSH_LEAD = 0.45;
-const HIT_STOP = {hit: 0.045, weak: 0.16, break: 0.14, ko: 0.24, parry: 0.12};
+const HIT_STOP = {hit: 0.045, weak: 0.16, break: 0.14, ko: 0.24, parry: 0.1};
 const DECISIVE_STOP = 0.3;
+// A landed lunge freezes the picture a beat longer than an ordinary knock.
+const DASH_STOP = 0.08;
+// A lunge bounced off a shield: after its freeze, play time runs at DILATE_SCALE for DILATE_TIME real seconds, easing back.
+// Like hit-stop this is play time only: live (manual), the sim is held at its small lead over what is shown, so it
+// slows down with it and a press still lands on the next physics step; the replay is unchanged.
+const DILATE_TIME = 0.4, DILATE_SCALE = 0.3;
 const CONTACT = new Set(['hit', 'weak']);
 
 /** Time of the KO. Nothing should come after it; anything that does is ignored. */
@@ -41,6 +47,7 @@ export class Playback {
     this.t = 0;
     this.cursor = 0;
     this.hold = 0;
+    this.dilate = 0;
     this.state = {
       fighters: replay.frames[0].fighters.map(f => ({pos: v3(), quat: q4(), vel: v3(), angularVelocity: v3(), hp: f.hp, maxHp: f.maxHp, parts: f.parts.map(p => ({alive: true, hp: p.hp, maxHp: p.maxHp}))}))
     };
@@ -78,7 +85,7 @@ export class Playback {
     this.t = Math.max(0, Math.min(t, this.end));
     this.cursor = this.events.findIndex(e => e.t > this.t);
     if (this.cursor < 0) this.cursor = this.events.length;
-    this.hold = 0;
+    this.hold = this.dilate = 0;
     this.sample(this.t);
   }
 
@@ -89,13 +96,16 @@ export class Playback {
       return 0;
     }
     const start = this.t;
-    let next = Math.min(this.end, this.t + realDt * speed * this.slowFactor(this.t));
+    let next = Math.min(this.end, this.t + realDt * speed * this.slowFactor(this.t) * this.dilateFactor());
+    if (this.dilate > 0) this.dilate = Math.max(0, this.dilate - realDt);
     const events = this.events;
     let stop = 0;
     while (this.cursor < events.length && events[this.cursor].t <= next) {
       const e = events[this.cursor++];
       onEvent(e);
-      stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+      const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
+      stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+      if (e.type === 'parry') this.dilate = DILATE_TIME;
       // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
       if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {
         next = e.t;
@@ -107,6 +117,14 @@ export class Playback {
     this.sample(this.t);
     return this.t - start;
   }
+
+  /** Play-time multiplier of the parry slow motion: DILATE_SCALE, easing back to 1 over its last 40 %. */
+  dilateFactor() {
+    if (this.dilate <= 0) return 1;
+    const k = Math.min(1, this.dilate / (DILATE_TIME * 0.4));
+    return DILATE_SCALE + (1 - DILATE_SCALE) * (1 - k * k * (3 - 2 * k));
+  }
+  get slowNow() { return this.dilate > 0; }
 
   get done() { return this.t >= this.end && this.cursor >= this.events.length && this.hold <= 0; }
 

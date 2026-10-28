@@ -27,6 +27,12 @@ export class Overlay {
       this.layer.append(svg);
       return {svg, track, arc, hp: 1, shown: 1};
     });
+    // 「你」 over the player's top (side 0, orange, in both modes): a plate with a chevron pointing down at it.
+    this.me = document.createElement('div');
+    this.me.className = 'me';
+    this.me.innerHTML = '<b>你</b><i></i>';
+    this.layer.append(this.me);
+    this.meShown = 0;
   }
 
   /** Floating word anchored to a world point, drifting up. */
@@ -119,6 +125,33 @@ export class Overlay {
       this.bannerEl.style.transform = `scale(${1.25 - 0.25 * ease(Math.min(1, t * 4))})`;
       if (t >= 1) this.banner.dur = 0;
     }
+    // 「你」: rides just above the player's top (above its pieces' reach), always on top of everything.
+    const me = stage.fighters[0];
+    const meOn = showRings && stage.showMe && me && me.dim < 0.6 && stage.project(me.center, p);
+    this.meShown += ((meOn ? 1 : 0) - this.meShown) * (1 - Math.exp(-dt * 12));
+    if (this.meShown > 0.02 && me && stage.project(me.center, p)) {
+      // Capped, so on a close camera (昨天的镜头) it stays by the player's core instead of landing on the other top;
+      // and slid sideways when the other core sits right where it would go.
+      const r = Math.min(64, stage.screenRadius(me.center, stage.reachOf(me) + 0.1) * 0.95);
+      let x = p.x;
+      const y = Math.max(stage.view.top + 34, p.y - r - 4), foe = stage.fighters[1], q = {x: 0, y: 0};
+      if (foe?.core.visible && stage.project(foe.center, q)) {
+        const fr = stage.screenRadius(foe.center, stage.coreRadius) + 4;
+        if (Math.abs(q.x - x) < 20 + fr && q.y > y - 44 - fr && q.y < y + fr) x = q.x + Math.sign(x - q.x || 1) * (20 + fr);
+      }
+      this.meDx = (this.meDx ?? 0) + (x - p.x - (this.meDx ?? 0)) * (1 - Math.exp(-dt * 14));
+      x = Math.min(W - 22, Math.max(22, p.x + this.meDx));
+      // A hit's plate wins over the marker for the moment it is up (they would otherwise pile on the same spot).
+      let under = false;
+      for (const c of this.calls) {
+        if (!stage.project(c.at, q)) continue;
+        const cx = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, q.x)), cy = q.y - c.base - c.lift;
+        if (Math.abs(cx - x) < c.w / 2 + 20 && cy > y - 46 && cy - c.h < y) { under = true; break; }
+      }
+      this.meCovered = (this.meCovered ?? 0) + ((under ? 1 : 0) - (this.meCovered ?? 0)) * (1 - Math.exp(-dt * 16));
+      this.me.style.opacity = (this.meShown * (1 - 0.85 * this.meCovered)).toFixed(3);
+      this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+    } else this.me.style.opacity = 0;
     // Life ring around each core: the core is the thing that must not break.
     this.rings.forEach((r, i) => {
       const f = stage.fighters[i];
