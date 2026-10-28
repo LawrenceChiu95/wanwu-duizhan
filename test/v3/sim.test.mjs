@@ -90,19 +90,27 @@ test('sustained real surface contact is reported and repeated rubbing is not a n
  for(const ep of r.meta.diagnostics.scrapeEpisodes)assert.ok(!r.events.some(e=>e.damage>0&&e.t>ep.start+.1+1e-8&&e.t<=ep.end+1e-8));
  await(await import('node:fs/promises')).writeFile(new URL('./contact-proof.json',import.meta.url),JSON.stringify({rules:r.meta.rules,diagnostics:r.meta.diagnostics,events:r.events},null,2)+'\n');
 });
-test('same-step double break: less overkill wins, exact tie is a draw, reason told from the decided loser (batch seed 228)',async()=>{
+test('same-step double break: less overkill wins, exact tie is a draw; reason keeps the decided loser and its broken parts',async()=>{
  assert.equal(doubleKoWinner([3,5]),0);assert.equal(doubleKoWinner([5,3]),1);assert.equal(doubleKoWinner([4,4]),null);assert.equal(doubleKoWinner([0,0]),null);
- // test/v3-top/batch.mjs 240 A, game 228: both cores broke in one step; the right side had already lost both items.
- const r=await simulateV3({fighters:[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'scissors',mount:'e90',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:228});
+ // v13 intentionally changed the opening, so old batch seed 228 is no longer a double KO.
+ // Keep both regressions: a controlled real same-step double KO, then a normal-rules KO after two detachments.
+ const {simulateWithRules}=await import('../v3-top/variant.mjs');
+ const double=await simulateWithRules({core:{hp:1},attachmentHp:.01,maxHitFraction:100000,recoilDamageFraction:.5});
+ const r=await double({fighters:[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'scissors',mount:'e90',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:0});
  const ko=r.events.find(e=>e.type==='ko');
  assert.equal(r.meta.reason,'double-ko');assert.deepEqual(ko.targets,[0,1]);
  const over=[0,1].map(i=>r.events.filter(e=>e.t===ko.t&&e.target===i&&e.targetPart==='core'&&e.damage>0).reduce((n,e)=>n+e.damageBeforeHpClamp-e.damage,0));
  assert.deepEqual(ko.overkill,over);assert.ok(over[0]<over[1]);
  assert.equal(r.meta.winner,0);assert.equal(ko.winner,0);assert.equal(ko.target,1);
- const why=r.decisive.why,broken=r.events.filter(e=>e.type==='break'&&e.target===1);
- assert.equal(why.target,1);assert.equal(why.attacker,0);assert.equal(broken.length,2);assert.equal(why.loserPartsLeft,0);
- assert.deepEqual(why.loserBroken.map(b=>b.item).sort(),['lamp-lux3d','pan-lux3d']);
+ const why=r.decisive.why;
+ assert.equal(why.target,1);assert.equal(why.attacker,0);
  assert.equal(r.decisive.eventIndex,r.events.indexOf(r.events.findLast(e=>e.t===ko.t&&e.target===1&&e.targetPart==='core'&&e.hpAfter===0)));
+ const inputs=[];for(let step=60;step<7200;step+=552)inputs.push({step,side:0,action:'dash'});for(let step=300;step<7200;step+=624)inputs.push({step,side:0,action:'block'});inputs.sort((a,b)=>a.step-b.step);
+ const detached=await simulateV3({fighters:[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:1,manual:{sides:['input','ai'],blockTime:.25,inputs}});
+ const broken=detached.events.filter(e=>e.type==='break'&&e.target===0),whyBroken=detached.decisive.why,koBroken=detached.events.find(e=>e.type==='ko');
+ assert.equal(whyBroken.target,0);assert.equal(whyBroken.attacker,1);assert.equal(broken.length,2);assert.equal(whyBroken.loserPartsLeft,0);
+ assert.deepEqual(whyBroken.loserBroken.map(b=>b.item).sort(),['broom','pan-lux3d']);
+ assert.equal(detached.decisive.eventIndex,detached.events.indexOf(detached.events.findLast(e=>e.t===koBroken.t&&e.target===0&&e.targetPart==='core'&&e.hpAfter===0)));
 });
 test('manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical',async()=>{
  const fighters=[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
@@ -123,8 +131,11 @@ test('manual mode: presses taken per fixed step and recorded; replaying the same
  assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
 });
 test('manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap',async()=>{
- const fighters=[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
- const r=await simulateV3({fighters,mode:'A',seed:3,manual:{sides:['ai','ai']}}),M=r.meta.rules.manual;
+ // The old AI seed 3 no longer parries after the opening/window changed. Keep every damage/recoil
+ // assertion, using explicit presses and zero spin so the timing fixture has a straight real impact.
+ const {simulateWithRules}=await import('../v3-top/variant.mjs');
+ const simulate=await simulateWithRules({top:{spinRate:0},initialGap:1});
+ const fighters=[{parts:[]},{parts:[]}],r=await simulate({fighters,mode:'A',seed:3,manual:{sides:['input','input'],inputs:[{step:1,side:0,action:'dash'},{step:44,side:1,action:'block'},{step:700,side:0,action:'dash'}]}}),M=r.meta.rules.manual;
  const parry=r.events.find(e=>e.type==='parry'),landed=r.events.find(e=>(e.type==='hit'||e.type==='weak')&&e.dash&&!e.shield&&e.role==='attack');
  assert.ok(parry,'a parry');assert.ok(landed,'a landed lunge');
  assert.ok(r.events.some(e=>e.type==='dash'&&e.phase==='end'&&e.outcome==='blocked'&&e.side===parry.attacker&&e.t===parry.t));
