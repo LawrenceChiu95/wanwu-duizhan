@@ -1,0 +1,16 @@
+{
+  "oldGames": 4800,
+  "newGames": 3600,
+  "cells": 36,
+  "seedsPerCell": 100,
+  "baselineLinksChecked": 3600,
+  "inputShaChecks": 7,
+  "baselineReplayChecks": 6,
+  "nice": 20,
+  "shippingFilesChanged": false,
+  "complete": {
+    "complete": 3600,
+    "seconds": 706.4491944590001,
+    "finished": "2026-10-28T14:39:12.248Z"
+  }
+}

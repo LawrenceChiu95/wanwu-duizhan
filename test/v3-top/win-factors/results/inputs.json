@@ -1,0 +1,173 @@
+{
+  "base": "e0566ee97a0c30b6ef6fa351fb9c112477476435",
+  "oldInputSha256": "e94d4a0c6153ed3224062ecfe9675e4290ca0a8c8d461b18641fe7003804c54f",
+  "fixtures": [
+    {
+      "id": "pan-broom/out-out-e180",
+      "pair": {
+        "id": "pan-broom",
+        "label": "Lux3D锅＋扫把",
+        "items": [
+          "pan-lux3d",
+          "broom"
+        ]
+      },
+      "layout": {
+        "id": "out-out-e180",
+        "orients": [
+          "out",
+          "out"
+        ],
+        "spread": "e180"
+      }
+    },
+    {
+      "id": "pan-broom/hug-hug-e90",
+      "pair": {
+        "id": "pan-broom",
+        "label": "Lux3D锅＋扫把",
+        "items": [
+          "pan-lux3d",
+          "broom"
+        ]
+      },
+      "layout": {
+        "id": "hug-hug-e90",
+        "orients": [
+          "hug",
+          "hug"
+        ],
+        "spread": "e90"
+      }
+    },
+    {
+      "id": "scissors-pillow/out-out-e180",
+      "pair": {
+        "id": "scissors-pillow",
+        "label": "剪刀＋枕头",
+        "items": [
+          "scissors",
+          "pillow"
+        ]
+      },
+      "layout": {
+        "id": "out-out-e180",
+        "orients": [
+          "out",
+          "out"
+        ],
+        "spread": "e180"
+      }
+    },
+    {
+      "id": "scissors-pillow/hug-hug-e90",
+      "pair": {
+        "id": "scissors-pillow",
+        "label": "剪刀＋枕头",
+        "items": [
+          "scissors",
+          "pillow"
+        ]
+      },
+      "layout": {
+        "id": "hug-hug-e90",
+        "orients": [
+          "hug",
+          "hug"
+        ],
+        "spread": "e90"
+      }
+    },
+    {
+      "id": "lamp-slipper/out-out-e180",
+      "pair": {
+        "id": "lamp-slipper",
+        "label": "Lux3D台灯＋拖鞋",
+        "items": [
+          "lamp-lux3d",
+          "slipper"
+        ]
+      },
+      "layout": {
+        "id": "out-out-e180",
+        "orients": [
+          "out",
+          "out"
+        ],
+        "spread": "e180"
+      }
+    },
+    {
+      "id": "lamp-slipper/hug-hug-e90",
+      "pair": {
+        "id": "lamp-slipper",
+        "label": "Lux3D台灯＋拖鞋",
+        "items": [
+          "lamp-lux3d",
+          "slipper"
+        ]
+      },
+      "layout": {
+        "id": "hug-hug-e90",
+        "orients": [
+          "hug",
+          "hug"
+        ],
+        "spread": "e90"
+      }
+    }
+  ],
+  "conditions": [
+    "idle",
+    "mash",
+    "initial",
+    "critical",
+    "ai-random",
+    "right-yaw"
+  ],
+  "seeds": 100,
+  "checks": [
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "baselineSha256": "25396a93a8bdd169d6537a80ffa96311fd6bda3ff96f70fa57358f508f1b754d",
+      "initialInvariants": true
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "baselineSha256": "f549e48bfa6be9ceb704f42bfcdd7e1782dac1ecbcf2a78913efff58b88adb3d",
+      "initialInvariants": true
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "baselineSha256": "0cceb93eda8aa243d3c659ea9c59d381245578d53add6ad1ff0ff492fadc455e",
+      "initialInvariants": true
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "baselineSha256": "e2fbfcb09e403aeb0181ebe1a0e110b44b44e67b22bec25b400a9e8d9a716762",
+      "initialInvariants": true
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "baselineSha256": "c7ba580e7287b1217f1a02f3dcc64912d9f852ad1f198add45433d3a6869ca12",
+      "initialInvariants": true
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "baselineSha256": "713b31ae79650e86fe7fd713a853d821f626a968bd0f9bec0c129bce45a4ceaf",
+      "initialInvariants": true
+    }
+  ],
+  "node": "v25.5.0",
+  "nice": "20",
+  "started": "2026-10-28T14:27:25.786Z",
+  "sources": {
+    "sim/v3.js": "ea9d96d71876c3a03fa8d049992bd36d626b5348f624a4e23545367027cc3e59",
+    "sim/v3-rules.json": "647c7fb22cd9d3eb1bd32cf821533500a184f4a86d1c1197a9fa6e56bff0c24b",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs": "02dc6a4e2fffc013bab08fbb44fa68f501d8303615e9afe4c7d89ad4eedda0d0",
+    "test/v3-top/win-factors/run.mjs": "f1638ff51c2b5437f6e4da9898229ba031ad33415dfb164b8261845ebb9bcae3",
+    "test/v3-top/win-factors/experiment.mjs": "b816c731d7c51bd037ccb5de7096bf453711714e958e1b14b50b0f4678259bce"
+  }
+}

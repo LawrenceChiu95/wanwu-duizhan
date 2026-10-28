@@ -1,0 +1,4844 @@
+{
+  "oldGames": 4800,
+  "newGames": 3600,
+  "originalInputSha256": "e94d4a0c6153ed3224062ecfe9675e4290ca0a8c8d461b18641fe7003804c54f",
+  "ranges": [
+    {
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "cells": [
+        {
+          "id": "out-out-e180",
+          "rate": 0.49
+        },
+        {
+          "id": "out-out-e90",
+          "rate": 0.68
+        },
+        {
+          "id": "out-hug-e180",
+          "rate": 0.69
+        },
+        {
+          "id": "out-hug-e90",
+          "rate": 0.49
+        },
+        {
+          "id": "hug-out-e180",
+          "rate": 0.56
+        },
+        {
+          "id": "hug-out-e90",
+          "rate": 0.46
+        },
+        {
+          "id": "hug-hug-e180",
+          "rate": 0.4
+        },
+        {
+          "id": "hug-hug-e90",
+          "rate": 0.44
+        }
+      ],
+      "rangePp": 28.999999999999993
+    },
+    {
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "cells": [
+        {
+          "id": "out-out-e180",
+          "rate": 0.24
+        },
+        {
+          "id": "out-out-e90",
+          "rate": 0.2
+        },
+        {
+          "id": "out-hug-e180",
+          "rate": 0.29
+        },
+        {
+          "id": "out-hug-e90",
+          "rate": 0.22
+        },
+        {
+          "id": "hug-out-e180",
+          "rate": 0.26
+        },
+        {
+          "id": "hug-out-e90",
+          "rate": 0.23
+        },
+        {
+          "id": "hug-hug-e180",
+          "rate": 0.34
+        },
+        {
+          "id": "hug-hug-e90",
+          "rate": 0.24
+        }
+      ],
+      "rangePp": 14.000000000000002
+    },
+    {
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "cells": [
+        {
+          "id": "out-out-e180",
+          "rate": 0.3
+        },
+        {
+          "id": "out-out-e90",
+          "rate": 0.39
+        },
+        {
+          "id": "out-hug-e180",
+          "rate": 0.48
+        },
+        {
+          "id": "out-hug-e90",
+          "rate": 0.35
+        },
+        {
+          "id": "hug-out-e180",
+          "rate": 0.26
+        },
+        {
+          "id": "hug-out-e90",
+          "rate": 0.25
+        },
+        {
+          "id": "hug-hug-e180",
+          "rate": 0.31
+        },
+        {
+          "id": "hug-hug-e90",
+          "rate": 0.39
+        }
+      ],
+      "rangePp": 23
+    },
+    {
+      "condition": "auto",
+      "pair": "pan-broom",
+      "cells": [
+        {
+          "id": "out-out-e180",
+          "rate": 0.46
+        },
+        {
+          "id": "out-out-e90",
+          "rate": 0.68
+        },
+        {
+          "id": "out-hug-e180",
+          "rate": 0.52
+        },
+        {
+          "id": "out-hug-e90",
+          "rate": 0.66
+        },
+        {
+          "id": "hug-out-e180",
+          "rate": 0.55
+        },
+        {
+          "id": "hug-out-e90",
+          "rate": 0.53
+        },
+        {
+          "id": "hug-hug-e180",
+          "rate": 0.57
+        },
+        {
+          "id": "hug-hug-e90",
+          "rate": 0.35
+        }
+      ],
+      "rangePp": 33.00000000000001
+    },
+    {
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "cells": [
+        {
+          "id": "out-out-e180",
+          "rate": 0.52
+        },
+        {
+          "id": "out-out-e90",
+          "rate": 0.43
+        },
+        {
+          "id": "out-hug-e180",
+          "rate": 0.55
+        },
+        {
+          "id": "out-hug-e90",
+          "rate": 0.24
+        },
+        {
+          "id": "hug-out-e180",
+          "rate": 0.54
+        },
+        {
+          "id": "hug-out-e90",
+          "rate": 0.41
+        },
+        {
+          "id": "hug-hug-e180",
+          "rate": 0.52
+        },
+        {
+          "id": "hug-hug-e90",
+          "rate": 0.38
+        }
+      ],
+      "rangePp": 31.000000000000007
+    },
+    {
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "cells": [
+        {
+          "id": "out-out-e180",
+          "rate": 0.38
+        },
+        {
+          "id": "out-out-e90",
+          "rate": 0.46
+        },
+        {
+          "id": "out-hug-e180",
+          "rate": 0.42
+        },
+        {
+          "id": "out-hug-e90",
+          "rate": 0.59
+        },
+        {
+          "id": "hug-out-e180",
+          "rate": 0.39
+        },
+        {
+          "id": "hug-out-e90",
+          "rate": 0.4
+        },
+        {
+          "id": "hug-hug-e180",
+          "rate": 0.46
+        },
+        {
+          "id": "hug-hug-e90",
+          "rate": 0.54
+        }
+      ],
+      "rangePp": 20.999999999999996
+    }
+  ],
+  "summary": [
+    {
+      "condition": "ai-ai",
+      "factor": "first-orient",
+      "groups": 12,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 5,
+      "minAbsDeltaPp": 2,
+      "maxAbsDeltaPp": 28.999999999999996,
+      "minSignedDeltaPp": -28.999999999999996,
+      "maxSignedDeltaPp": 7.000000000000001,
+      "medianFlipPp": 43.5,
+      "minFlipPp": 33,
+      "maxFlipPp": 54,
+      "approx95ExcludesZero": 4
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "second-orient",
+      "groups": 12,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 6.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 20,
+      "minSignedDeltaPp": -19,
+      "maxSignedDeltaPp": 20,
+      "medianFlipPp": 41.5,
+      "minFlipPp": 32,
+      "maxFlipPp": 51,
+      "approx95ExcludesZero": 5
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "spread",
+      "groups": 12,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 8.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 20,
+      "minSignedDeltaPp": -20,
+      "maxSignedDeltaPp": 19,
+      "medianFlipPp": 44.5,
+      "minFlipPp": 34,
+      "maxFlipPp": 54,
+      "approx95ExcludesZero": 2
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "items",
+      "groups": 24,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 19,
+      "minAbsDeltaPp": 0,
+      "maxAbsDeltaPp": 48,
+      "minSignedDeltaPp": -48,
+      "maxSignedDeltaPp": 19,
+      "medianFlipPp": 48.5,
+      "minFlipPp": 34,
+      "maxFlipPp": 66,
+      "approx95ExcludesZero": 16
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "idle",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 28.5,
+      "minAbsDeltaPp": 22,
+      "maxAbsDeltaPp": 38,
+      "minSignedDeltaPp": -38,
+      "maxSignedDeltaPp": -22,
+      "medianFlipPp": 35,
+      "minFlipPp": 24,
+      "maxFlipPp": 51,
+      "approx95ExcludesZero": 6
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "mash",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 3.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 7.000000000000001,
+      "minSignedDeltaPp": -7.000000000000001,
+      "maxSignedDeltaPp": 4,
+      "medianFlipPp": 43.5,
+      "minFlipPp": 38,
+      "maxFlipPp": 46,
+      "approx95ExcludesZero": 0
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "initial",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 3,
+      "minAbsDeltaPp": 0,
+      "maxAbsDeltaPp": 15,
+      "minSignedDeltaPp": -15,
+      "maxSignedDeltaPp": 3,
+      "medianFlipPp": 39,
+      "minFlipPp": 37,
+      "maxFlipPp": 55.00000000000001,
+      "approx95ExcludesZero": 1
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "critical",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 1,
+      "minAbsDeltaPp": 0,
+      "maxAbsDeltaPp": 2,
+      "minSignedDeltaPp": -2,
+      "maxSignedDeltaPp": 2,
+      "medianFlipPp": 3.5,
+      "minFlipPp": 2,
+      "maxFlipPp": 12,
+      "approx95ExcludesZero": 0
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "ai-random",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 6.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 20,
+      "minSignedDeltaPp": -20,
+      "maxSignedDeltaPp": 1,
+      "medianFlipPp": 43.5,
+      "minFlipPp": 30,
+      "maxFlipPp": 50,
+      "approx95ExcludesZero": 1
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "right-yaw",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 5.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 10,
+      "minSignedDeltaPp": -10,
+      "maxSignedDeltaPp": 6,
+      "medianFlipPp": 43,
+      "minFlipPp": 35,
+      "maxFlipPp": 51,
+      "approx95ExcludesZero": 0
+    },
+    {
+      "condition": "ai-ai",
+      "factor": "mash-vs-idle",
+      "groups": 6,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 31.5,
+      "minAbsDeltaPp": 17,
+      "maxAbsDeltaPp": 35,
+      "minSignedDeltaPp": 17,
+      "maxSignedDeltaPp": 35,
+      "medianFlipPp": 37.5,
+      "minFlipPp": 17,
+      "maxFlipPp": 49,
+      "approx95ExcludesZero": 6
+    },
+    {
+      "condition": "auto",
+      "factor": "first-orient",
+      "groups": 12,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 31,
+      "minSignedDeltaPp": -31,
+      "maxSignedDeltaPp": 14.000000000000002,
+      "medianFlipPp": 49.5,
+      "minFlipPp": 44,
+      "maxFlipPp": 61,
+      "approx95ExcludesZero": 3
+    },
+    {
+      "condition": "auto",
+      "factor": "second-orient",
+      "groups": 12,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 5,
+      "minAbsDeltaPp": 2,
+      "maxAbsDeltaPp": 19,
+      "minSignedDeltaPp": -19,
+      "maxSignedDeltaPp": 14.000000000000002,
+      "medianFlipPp": 47.5,
+      "minFlipPp": 39,
+      "maxFlipPp": 56.00000000000001,
+      "approx95ExcludesZero": 3
+    },
+    {
+      "condition": "auto",
+      "factor": "spread",
+      "groups": 12,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 13.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 31,
+      "minSignedDeltaPp": -31,
+      "maxSignedDeltaPp": 22,
+      "medianFlipPp": 48.5,
+      "minFlipPp": 42,
+      "maxFlipPp": 61,
+      "approx95ExcludesZero": 6
+    },
+    {
+      "condition": "auto",
+      "factor": "items",
+      "groups": 24,
+      "nPerGroup": 100,
+      "medianAbsDeltaPp": 11.5,
+      "minAbsDeltaPp": 1,
+      "maxAbsDeltaPp": 42,
+      "minSignedDeltaPp": -42,
+      "maxSignedDeltaPp": 35,
+      "medianFlipPp": 49,
+      "minFlipPp": 43,
+      "maxFlipPp": 60,
+      "approx95ExcludesZero": 9
+    }
+  ],
+  "comparisons": [
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e180->hug-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 56,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.56,
+      "deltaPp": 7.000000000000001,
+      "delta95Pp": [
+        -6.999971717143142,
+        20.999971717143143
+      ],
+      "gain": 29,
+      "loss": 22,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e90->hug-out-e90",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.46,
+      "deltaPp": -22,
+      "delta95Pp": [
+        -35.8116133245274,
+        -8.1883866754726
+      ],
+      "gain": 16,
+      "loss": 38,
+      "winStatusFlips": 54,
+      "flipRate": 0.54,
+      "flip95": [
+        0.44264860323368227,
+        0.6343919169097589
+      ],
+      "winnerChanged": 54
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-hug-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 69,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.69,
+      "bRate": 0.4,
+      "deltaPp": -28.999999999999996,
+      "delta95Pp": [
+        -40.91570324564957,
+        -17.084296754350426
+      ],
+      "gain": 8,
+      "loss": 37,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-hug-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 44,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.44,
+      "deltaPp": -5,
+      "delta95Pp": [
+        -18.753897519237846,
+        8.753897519237842
+      ],
+      "gain": 22,
+      "loss": 27,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e180->out-hug-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 69,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.69,
+      "deltaPp": 20,
+      "delta95Pp": [
+        7.541422167190932,
+        32.45857783280907
+      ],
+      "gain": 32,
+      "loss": 12,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e90->out-hug-e90",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 49,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.49,
+      "deltaPp": -19,
+      "delta95Pp": [
+        -32.56069126094785,
+        -5.4393087390521515
+      ],
+      "gain": 16,
+      "loss": 35,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-out-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 56,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.56,
+      "bRate": 0.4,
+      "deltaPp": -16,
+      "delta95Pp": [
+        -29.278763481437547,
+        -2.721236518562453
+      ],
+      "gain": 16,
+      "loss": 32,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-out-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 44,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.44,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -15.642000504976444,
+        11.642000504976444
+      ],
+      "gain": 23,
+      "loss": 25,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e180->out-out-e90",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 68,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.68,
+      "deltaPp": 19,
+      "delta95Pp": [
+        5.439308739052145,
+        32.560691260947856
+      ],
+      "gain": 35,
+      "loss": 16,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-hug-e180->out-hug-e90",
+      "n": 100,
+      "aWins": 69,
+      "bWins": 49,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.69,
+      "bRate": 0.49,
+      "deltaPp": -20,
+      "delta95Pp": [
+        -33.92911346856655,
+        -6.070886531433456
+      ],
+      "gain": 17,
+      "loss": 37,
+      "winStatusFlips": 54,
+      "flipRate": 0.54,
+      "flip95": [
+        0.44264860323368227,
+        0.6343919169097589
+      ],
+      "winnerChanged": 54
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-out-e180->hug-out-e90",
+      "n": 100,
+      "aWins": 56,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.56,
+      "bRate": 0.46,
+      "deltaPp": -10,
+      "delta95Pp": [
+        -22.917328428795702,
+        2.9173284287957015
+      ],
+      "gain": 17,
+      "loss": 27,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-hug-e180->hug-hug-e90",
+      "n": 100,
+      "aWins": 40,
+      "bWins": 44,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.4,
+      "bRate": 0.44,
+      "deltaPp": 4,
+      "delta95Pp": [
+        -9.624923093101462,
+        17.624923093101465
+      ],
+      "gain": 26,
+      "loss": 22,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e180->hug-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 26,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.26,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -9.812676635417104,
+        13.812676635417104
+      ],
+      "gain": 19,
+      "loss": 17,
+      "winStatusFlips": 36,
+      "flipRate": 0.36,
+      "flip95": [
+        0.2727122040140433,
+        0.4576459754839126
+      ],
+      "winnerChanged": 36
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e90->hug-out-e90",
+      "n": 100,
+      "aWins": 20,
+      "bWins": 23,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.2,
+      "bRate": 0.23,
+      "deltaPp": 3,
+      "delta95Pp": [
+        -8.300623742506303,
+        14.300623742506302
+      ],
+      "gain": 18,
+      "loss": 15,
+      "winStatusFlips": 33,
+      "flipRate": 0.33,
+      "flip95": [
+        0.24563122734128034,
+        0.4269465620490947
+      ],
+      "winnerChanged": 33
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-hug-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 29,
+      "bWins": 34,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.29,
+      "bRate": 0.34,
+      "deltaPp": 5,
+      "delta95Pp": [
+        -7.879723317186311,
+        17.879723317186315
+      ],
+      "gain": 24,
+      "loss": 19,
+      "winStatusFlips": 43,
+      "flipRate": 0.43,
+      "flip95": [
+        0.33733298524110106,
+        0.5278461045078768
+      ],
+      "winnerChanged": 43
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-hug-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 22,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.22,
+      "bRate": 0.24,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -10.45234698579128,
+        14.452346985791282
+      ],
+      "gain": 21,
+      "loss": 19,
+      "winStatusFlips": 40,
+      "flipRate": 0.4,
+      "flip95": [
+        0.3094012864324589,
+        0.4979974132089382
+      ],
+      "winnerChanged": 40
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e180->out-hug-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 29,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.29,
+      "deltaPp": 5,
+      "delta95Pp": [
+        -6.273119901927432,
+        16.273119901927434
+      ],
+      "gain": 19,
+      "loss": 14,
+      "winStatusFlips": 33,
+      "flipRate": 0.33,
+      "flip95": [
+        0.24563122734128034,
+        0.4269465620490947
+      ],
+      "winnerChanged": 33
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e90->out-hug-e90",
+      "n": 100,
+      "aWins": 20,
+      "bWins": 22,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.2,
+      "bRate": 0.22,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -9.136324040333642,
+        13.13632404033364
+      ],
+      "gain": 17,
+      "loss": 15,
+      "winStatusFlips": 32,
+      "flipRate": 0.32,
+      "flip95": [
+        0.23669147324999093,
+        0.41662618610452384
+      ],
+      "winnerChanged": 32
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-out-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 26,
+      "bWins": 34,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.26,
+      "bRate": 0.34,
+      "deltaPp": 8,
+      "delta95Pp": [
+        -4.668603360714667,
+        20.668603360714666
+      ],
+      "gain": 25,
+      "loss": 17,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-out-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 23,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.23,
+      "bRate": 0.24,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -10.65226747778034,
+        12.65226747778034
+      ],
+      "gain": 18,
+      "loss": 17,
+      "winStatusFlips": 35,
+      "flipRate": 0.35,
+      "flip95": [
+        0.26364248243097527,
+        0.44745556703112027
+      ],
+      "winnerChanged": 35
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e180->out-out-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 20,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.2,
+      "deltaPp": -4,
+      "delta95Pp": [
+        -15.45918289963438,
+        7.459182899634381
+      ],
+      "gain": 15,
+      "loss": 19,
+      "winStatusFlips": 34,
+      "flipRate": 0.34,
+      "flip95": [
+        0.25461520797348164,
+        0.43722271145275377
+      ],
+      "winnerChanged": 34
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-hug-e180->out-hug-e90",
+      "n": 100,
+      "aWins": 29,
+      "bWins": 22,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.29,
+      "bRate": 0.22,
+      "deltaPp": -7.000000000000001,
+      "delta95Pp": [
+        -20.14217576500876,
+        6.1421757650087585
+      ],
+      "gain": 19,
+      "loss": 26,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-out-e180->hug-out-e90",
+      "n": 100,
+      "aWins": 26,
+      "bWins": 23,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.26,
+      "bRate": 0.23,
+      "deltaPp": -3,
+      "delta95Pp": [
+        -15.287657271104257,
+        9.287657271104258
+      ],
+      "gain": 18,
+      "loss": 21,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-hug-e180->hug-hug-e90",
+      "n": 100,
+      "aWins": 34,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.34,
+      "bRate": 0.24,
+      "deltaPp": -10,
+      "delta95Pp": [
+        -22.30185992343262,
+        2.3018599234326182
+      ],
+      "gain": 15,
+      "loss": 25,
+      "winStatusFlips": 40,
+      "flipRate": 0.4,
+      "flip95": [
+        0.3094012864324589,
+        0.4979974132089382
+      ],
+      "winnerChanged": 40
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e180->hug-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 26,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.26,
+      "deltaPp": -4,
+      "delta95Pp": [
+        -16.741903509700006,
+        8.741903509700002
+      ],
+      "gain": 19,
+      "loss": 23,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e90->hug-out-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 25,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.25,
+      "deltaPp": -14.000000000000002,
+      "delta95Pp": [
+        -26.464805565181422,
+        -1.5351944348185833
+      ],
+      "gain": 14,
+      "loss": 28,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-hug-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 48,
+      "bWins": 31,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.48,
+      "bRate": 0.31,
+      "deltaPp": -17,
+      "delta95Pp": [
+        -30.663317254014054,
+        -3.3366827459859474
+      ],
+      "gain": 17,
+      "loss": 34,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "first-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-hug-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 35,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.35,
+      "bRate": 0.39,
+      "deltaPp": 4,
+      "delta95Pp": [
+        -9.042887453754755,
+        17.04288745375476
+      ],
+      "gain": 24,
+      "loss": 20,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e180->out-hug-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 48,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.48,
+      "deltaPp": 18,
+      "delta95Pp": [
+        6.056648187160669,
+        29.94335181283933
+      ],
+      "gain": 29,
+      "loss": 11,
+      "winStatusFlips": 40,
+      "flipRate": 0.4,
+      "flip95": [
+        0.3094012864324589,
+        0.4979974132089382
+      ],
+      "winnerChanged": 40
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e90->out-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.35,
+      "deltaPp": -4,
+      "delta95Pp": [
+        -17.624923093101465,
+        9.624923093101465
+      ],
+      "gain": 22,
+      "loss": 26,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-out-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 26,
+      "bWins": 31,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.26,
+      "bRate": 0.31,
+      "deltaPp": 5,
+      "delta95Pp": [
+        -7.574834577300201,
+        17.5748345773002
+      ],
+      "gain": 23,
+      "loss": 18,
+      "winStatusFlips": 41,
+      "flipRate": 0.41,
+      "flip95": [
+        0.3186731302113651,
+        0.5079856994658921
+      ],
+      "winnerChanged": 41
+    },
+    {
+      "factor": "second-orient",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-out-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 25,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.25,
+      "bRate": 0.39,
+      "deltaPp": 14.000000000000002,
+      "delta95Pp": [
+        1.8504909688922142,
+        26.149509031107787
+      ],
+      "gain": 27,
+      "loss": 13,
+      "winStatusFlips": 40,
+      "flipRate": 0.4,
+      "flip95": [
+        0.3094012864324589,
+        0.4979974132089382
+      ],
+      "winnerChanged": 40
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e180->out-out-e90",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.39,
+      "deltaPp": 9,
+      "delta95Pp": [
+        -2.850393336181804,
+        20.850393336181806
+      ],
+      "gain": 23,
+      "loss": 14,
+      "winStatusFlips": 37,
+      "flipRate": 0.37,
+      "flip95": [
+        0.28182360534324524,
+        0.4677947041905709
+      ],
+      "winnerChanged": 37
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-hug-e180->out-hug-e90",
+      "n": 100,
+      "aWins": 48,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.48,
+      "bRate": 0.35,
+      "deltaPp": -13,
+      "delta95Pp": [
+        -26.25975516631839,
+        0.25975516631838447
+      ],
+      "gain": 17,
+      "loss": 30,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-out-e180->hug-out-e90",
+      "n": 100,
+      "aWins": 26,
+      "bWins": 25,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.26,
+      "bRate": 0.25,
+      "deltaPp": -1,
+      "delta95Pp": [
+        -12.652267477780335,
+        10.652267477780336
+      ],
+      "gain": 17,
+      "loss": 18,
+      "winStatusFlips": 35,
+      "flipRate": 0.35,
+      "flip95": [
+        0.26364248243097527,
+        0.44745556703112027
+      ],
+      "winnerChanged": 35
+    },
+    {
+      "factor": "spread",
+      "condition": "ai-ai",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-hug-e180->hug-hug-e90",
+      "n": 100,
+      "aWins": 31,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.31,
+      "bRate": 0.39,
+      "deltaPp": 8,
+      "delta95Pp": [
+        -5.2670692797138585,
+        21.26706927971386
+      ],
+      "gain": 27,
+      "loss": 19,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-out-e180",
+      "label": "out-out-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.24,
+      "deltaPp": -25,
+      "delta95Pp": [
+        -37.26236749431596,
+        -12.737632505684044
+      ],
+      "gain": 10,
+      "loss": 35,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-out-e180",
+      "label": "out-out-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 30,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.3,
+      "deltaPp": -19,
+      "delta95Pp": [
+        -32.27145581290686,
+        -5.72854418709314
+      ],
+      "gain": 15,
+      "loss": 34,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-out-e180",
+      "label": "out-out-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 30,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.3,
+      "deltaPp": 6,
+      "delta95Pp": [
+        -5.4252698838667195,
+        17.42526988386672
+      ],
+      "gain": 20,
+      "loss": 14,
+      "winStatusFlips": 34,
+      "flipRate": 0.34,
+      "flip95": [
+        0.25461520797348164,
+        0.43722271145275377
+      ],
+      "winnerChanged": 34
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-out-e90",
+      "label": "out-out-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 20,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.2,
+      "deltaPp": -48,
+      "delta95Pp": [
+        -60.911318971187946,
+        -35.088681028812054
+      ],
+      "gain": 9,
+      "loss": 57,
+      "winStatusFlips": 66,
+      "flipRate": 0.66,
+      "flip95": [
+        0.5627772885472462,
+        0.7453847920265184
+      ],
+      "winnerChanged": 66
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-out-e90",
+      "label": "out-out-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.39,
+      "deltaPp": -28.999999999999996,
+      "delta95Pp": [
+        -41.550123505368376,
+        -16.449876494631617
+      ],
+      "gain": 10,
+      "loss": 39,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-out-e90",
+      "label": "out-out-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 20,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.2,
+      "bRate": 0.39,
+      "deltaPp": 19,
+      "delta95Pp": [
+        7.281318376630456,
+        30.71868162336954
+      ],
+      "gain": 29,
+      "loss": 10,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-hug-e180",
+      "label": "out-hug-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 69,
+      "bWins": 29,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.69,
+      "bRate": 0.29,
+      "deltaPp": -40,
+      "delta95Pp": [
+        -51.819244707448334,
+        -28.180755292551673
+      ],
+      "gain": 6,
+      "loss": 46,
+      "winStatusFlips": 52,
+      "flipRate": 0.52,
+      "flip95": [
+        0.4231657776522397,
+        0.615354482419481
+      ],
+      "winnerChanged": 52
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-hug-e180",
+      "label": "out-hug-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 69,
+      "bWins": 48,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.69,
+      "bRate": 0.48,
+      "deltaPp": -21,
+      "delta95Pp": [
+        -33.23702545225725,
+        -8.762974547742743
+      ],
+      "gain": 11,
+      "loss": 32,
+      "winStatusFlips": 43,
+      "flipRate": 0.43,
+      "flip95": [
+        0.33733298524110106,
+        0.5278461045078768
+      ],
+      "winnerChanged": 43
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-hug-e180",
+      "label": "out-hug-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 29,
+      "bWins": 48,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.29,
+      "bRate": 0.48,
+      "deltaPp": 19,
+      "delta95Pp": [
+        6.024225213378154,
+        31.975774786621848
+      ],
+      "gain": 33,
+      "loss": 14,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-hug-e90",
+      "label": "out-hug-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 22,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.22,
+      "deltaPp": -27,
+      "delta95Pp": [
+        -40.88866029710875,
+        -13.111339702891255
+      ],
+      "gain": 15,
+      "loss": 42,
+      "winStatusFlips": 57,
+      "flipRate": 0.57,
+      "flip95": [
+        0.47215389549212305,
+        0.6626670147588988
+      ],
+      "winnerChanged": 57
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-hug-e90",
+      "label": "out-hug-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.35,
+      "deltaPp": -14.000000000000002,
+      "delta95Pp": [
+        -28.480919664974124,
+        0.4809196649741221
+      ],
+      "gain": 21,
+      "loss": 35,
+      "winStatusFlips": 56,
+      "flipRate": 0.56,
+      "flip95": [
+        0.4622810465167699,
+        0.6532797336983921
+      ],
+      "winnerChanged": 56
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "out-hug-e90",
+      "label": "out-hug-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 22,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.22,
+      "bRate": 0.35,
+      "deltaPp": 13,
+      "delta95Pp": [
+        0.3390564763485787,
+        25.660943523651426
+      ],
+      "gain": 28,
+      "loss": 15,
+      "winStatusFlips": 43,
+      "flipRate": 0.43,
+      "flip95": [
+        0.33733298524110106,
+        0.5278461045078768
+      ],
+      "winnerChanged": 43
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-out-e180",
+      "label": "hug-out-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 56,
+      "bWins": 26,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.56,
+      "bRate": 0.26,
+      "deltaPp": -30,
+      "delta95Pp": [
+        -42.917328428795706,
+        -17.082671571204287
+      ],
+      "gain": 11,
+      "loss": 41,
+      "winStatusFlips": 52,
+      "flipRate": 0.52,
+      "flip95": [
+        0.4231657776522397,
+        0.615354482419481
+      ],
+      "winnerChanged": 52
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-out-e180",
+      "label": "hug-out-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 56,
+      "bWins": 26,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.56,
+      "bRate": 0.26,
+      "deltaPp": -30,
+      "delta95Pp": [
+        -43.50477655864731,
+        -16.49522344135269
+      ],
+      "gain": 13,
+      "loss": 43,
+      "winStatusFlips": 56,
+      "flipRate": 0.56,
+      "flip95": [
+        0.4622810465167699,
+        0.6532797336983921
+      ],
+      "winnerChanged": 56
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-out-e180",
+      "label": "hug-out-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 26,
+      "bWins": 26,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.26,
+      "bRate": 0.26,
+      "deltaPp": 0,
+      "delta95Pp": [
+        -12.766243366667021,
+        12.766243366667021
+      ],
+      "gain": 21,
+      "loss": 21,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-out-e90",
+      "label": "hug-out-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 23,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.23,
+      "deltaPp": -23,
+      "delta95Pp": [
+        -36.60639837604636,
+        -9.393601623953646
+      ],
+      "gain": 15,
+      "loss": 38,
+      "winStatusFlips": 53,
+      "flipRate": 0.53,
+      "flip95": [
+        0.4328885697009936,
+        0.6248918204065872
+      ],
+      "winnerChanged": 53
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-out-e90",
+      "label": "hug-out-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 25,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.25,
+      "deltaPp": -21,
+      "delta95Pp": [
+        -33.85559831671821,
+        -8.14440168328179
+      ],
+      "gain": 13,
+      "loss": 34,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-out-e90",
+      "label": "hug-out-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 23,
+      "bWins": 25,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.23,
+      "bRate": 0.25,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -9.479482619531293,
+        13.479482619531295
+      ],
+      "gain": 18,
+      "loss": 16,
+      "winStatusFlips": 34,
+      "flipRate": 0.34,
+      "flip95": [
+        0.25461520797348164,
+        0.43722271145275377
+      ],
+      "winnerChanged": 34
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-hug-e180",
+      "label": "hug-hug-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 40,
+      "bWins": 34,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.4,
+      "bRate": 0.34,
+      "deltaPp": -6,
+      "delta95Pp": [
+        -18.085462675496046,
+        6.085462675496044
+      ],
+      "gain": 16,
+      "loss": 22,
+      "winStatusFlips": 38,
+      "flipRate": 0.38,
+      "flip95": [
+        0.29097599252478734,
+        0.47790244704488916
+      ],
+      "winnerChanged": 38
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-hug-e180",
+      "label": "hug-hug-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 40,
+      "bWins": 31,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.4,
+      "bRate": 0.31,
+      "deltaPp": -9,
+      "delta95Pp": [
+        -22.955553689763747,
+        4.9555536897637475
+      ],
+      "gain": 21,
+      "loss": 30,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-hug-e180",
+      "label": "hug-hug-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 34,
+      "bWins": 31,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.34,
+      "bRate": 0.31,
+      "deltaPp": -3,
+      "delta95Pp": [
+        -16.77644952867616,
+        10.77644952867616
+      ],
+      "gain": 23,
+      "loss": 26,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-hug-e90",
+      "label": "hug-hug-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.24,
+      "deltaPp": -20,
+      "delta95Pp": [
+        -33.06666666666666,
+        -6.933333333333339
+      ],
+      "gain": 14,
+      "loss": 34,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-hug-e90",
+      "label": "hug-hug-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.39,
+      "deltaPp": -5,
+      "delta95Pp": [
+        -17.879723317186308,
+        7.879723317186309
+      ],
+      "gain": 19,
+      "loss": 24,
+      "winStatusFlips": 43,
+      "flipRate": 0.43,
+      "flip95": [
+        0.33733298524110106,
+        0.5278461045078768
+      ],
+      "winnerChanged": 43
+    },
+    {
+      "factor": "items",
+      "condition": "ai-ai",
+      "layout": "hug-hug-e90",
+      "label": "hug-hug-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.39,
+      "deltaPp": 15,
+      "delta95Pp": [
+        1.2461024807621568,
+        28.753897519237842
+      ],
+      "gain": 33,
+      "loss": 18,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e180->hug-out-e180",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 55,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.55,
+      "deltaPp": 9,
+      "delta95Pp": [
+        -4.674672599629962,
+        22.67467259962996
+      ],
+      "gain": 29,
+      "loss": 20,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e90->hug-out-e90",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 53,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.53,
+      "deltaPp": -15,
+      "delta95Pp": [
+        -27.879723317186304,
+        -2.120276682813693
+      ],
+      "gain": 15,
+      "loss": 30,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-hug-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 57,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.57,
+      "deltaPp": 5,
+      "delta95Pp": [
+        -9.307037189135741,
+        19.30703718913574
+      ],
+      "gain": 29,
+      "loss": 24,
+      "winStatusFlips": 53,
+      "flipRate": 0.53,
+      "flip95": [
+        0.4328885697009936,
+        0.6248918204065872
+      ],
+      "winnerChanged": 53
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-hug-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 66,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.66,
+      "bRate": 0.35,
+      "deltaPp": -31,
+      "delta95Pp": [
+        -45.121400909129505,
+        -16.878599090870495
+      ],
+      "gain": 15,
+      "loss": 46,
+      "winStatusFlips": 61,
+      "flipRate": 0.61,
+      "flip95": [
+        0.5120301704584073,
+        0.6998312599360558
+      ],
+      "winnerChanged": 61
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e180->out-hug-e180",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 52,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.52,
+      "deltaPp": 6,
+      "delta95Pp": [
+        -8.69372930225955,
+        20.693729302259552
+      ],
+      "gain": 31,
+      "loss": 25,
+      "winStatusFlips": 56,
+      "flipRate": 0.56,
+      "flip95": [
+        0.4622810465167699,
+        0.6532797336983921
+      ],
+      "winnerChanged": 56
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e90->out-hug-e90",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 66,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.66,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -15.642000504976444,
+        11.642000504976444
+      ],
+      "gain": 23,
+      "loss": 25,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-out-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 57,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.57,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -11.354526187662724,
+        15.354526187662723
+      ],
+      "gain": 24,
+      "loss": 22,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-out-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 53,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.53,
+      "bRate": 0.35,
+      "deltaPp": -18,
+      "delta95Pp": [
+        -32.0345754866654,
+        -3.9654245133345976
+      ],
+      "gain": 18,
+      "loss": 36,
+      "winStatusFlips": 54,
+      "flipRate": 0.54,
+      "flip95": [
+        0.44264860323368227,
+        0.6343919169097589
+      ],
+      "winnerChanged": 54
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-out-e180->out-out-e90",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 68,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.68,
+      "deltaPp": 22,
+      "delta95Pp": [
+        8.472256117687078,
+        35.527743882312926
+      ],
+      "gain": 37,
+      "loss": 15,
+      "winStatusFlips": 52,
+      "flipRate": 0.52,
+      "flip95": [
+        0.4231657776522397,
+        0.615354482419481
+      ],
+      "winnerChanged": 52
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:out-hug-e180->out-hug-e90",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 66,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.66,
+      "deltaPp": 14.000000000000002,
+      "delta95Pp": [
+        0.6338561275062604,
+        27.366143872493744
+      ],
+      "gain": 31,
+      "loss": 17,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-out-e180->hug-out-e90",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 53,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.53,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -14.760162755049535,
+        10.760162755049537
+      ],
+      "gain": 20,
+      "loss": 22,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "pan-broom",
+      "label": "pan-broom:hug-hug-e180->hug-hug-e90",
+      "n": 100,
+      "aWins": 57,
+      "bWins": 35,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.57,
+      "bRate": 0.35,
+      "deltaPp": -22,
+      "delta95Pp": [
+        -34.637936156787255,
+        -9.36206384321275
+      ],
+      "gain": 12,
+      "loss": 34,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e180->hug-out-e180",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.54,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -11.923540708404081,
+        15.92354070840408
+      ],
+      "gain": 26,
+      "loss": 24,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e90->hug-out-e90",
+      "n": 100,
+      "aWins": 43,
+      "bWins": 41,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.43,
+      "bRate": 0.41,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -15.060725922251086,
+        11.060725922251088
+      ],
+      "gain": 21,
+      "loss": 23,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-hug-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 52,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.52,
+      "deltaPp": -3,
+      "delta95Pp": [
+        -17.055296855526375,
+        11.055296855526375
+      ],
+      "gain": 24,
+      "loss": 27,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-hug-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 38,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.38,
+      "deltaPp": 14.000000000000002,
+      "delta95Pp": [
+        0.06531599992959658,
+        27.93468400007041
+      ],
+      "gain": 33,
+      "loss": 19,
+      "winStatusFlips": 52,
+      "flipRate": 0.52,
+      "flip95": [
+        0.4231657776522397,
+        0.615354482419481
+      ],
+      "winnerChanged": 52
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e180->out-hug-e180",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 55,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.55,
+      "deltaPp": 3,
+      "delta95Pp": [
+        -10.201096373201185,
+        16.201096373201185
+      ],
+      "gain": 24,
+      "loss": 21,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e90->out-hug-e90",
+      "n": 100,
+      "aWins": 43,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.43,
+      "bRate": 0.24,
+      "deltaPp": -19,
+      "delta95Pp": [
+        -30.718681623369537,
+        -7.281318376630462
+      ],
+      "gain": 10,
+      "loss": 29,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-out-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 54,
+      "bWins": 52,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.54,
+      "bRate": 0.52,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -16.470197027691146,
+        12.470197027691148
+      ],
+      "gain": 26,
+      "loss": 28,
+      "winStatusFlips": 54,
+      "flipRate": 0.54,
+      "flip95": [
+        0.44264860323368227,
+        0.6343919169097589
+      ],
+      "winnerChanged": 54
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-out-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 41,
+      "bWins": 38,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.41,
+      "bRate": 0.38,
+      "deltaPp": -3,
+      "delta95Pp": [
+        -16.491840257553953,
+        10.491840257553953
+      ],
+      "gain": 22,
+      "loss": 25,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-out-e180->out-out-e90",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 43,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.43,
+      "deltaPp": -9,
+      "delta95Pp": [
+        -22.67467259962996,
+        4.674672599629962
+      ],
+      "gain": 20,
+      "loss": 29,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:out-hug-e180->out-hug-e90",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.24,
+      "deltaPp": -31,
+      "delta95Pp": [
+        -43.673197040696685,
+        -18.32680295930332
+      ],
+      "gain": 10,
+      "loss": 41,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-out-e180->hug-out-e90",
+      "n": 100,
+      "aWins": 54,
+      "bWins": 41,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.54,
+      "bRate": 0.41,
+      "deltaPp": -13,
+      "delta95Pp": [
+        -27.65009035722127,
+        1.650090357221265
+      ],
+      "gain": 22,
+      "loss": 35,
+      "winStatusFlips": 57,
+      "flipRate": 0.57,
+      "flip95": [
+        0.47215389549212305,
+        0.6626670147588988
+      ],
+      "winnerChanged": 57
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "scissors-pillow",
+      "label": "scissors-pillow:hug-hug-e180->hug-hug-e90",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 38,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.38,
+      "deltaPp": -14.000000000000002,
+      "delta95Pp": [
+        -27.366143872493748,
+        -0.6338561275062549
+      ],
+      "gain": 17,
+      "loss": 31,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e180->hug-out-e180",
+      "n": 100,
+      "aWins": 38,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.38,
+      "bRate": 0.39,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -12.787711700619292,
+        14.787711700619294
+      ],
+      "gain": 25,
+      "loss": 24,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e90->hug-out-e90",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.4,
+      "deltaPp": -6,
+      "delta95Pp": [
+        -19.307954027724936,
+        7.307954027724936
+      ],
+      "gain": 20,
+      "loss": 26,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-hug-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 42,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.42,
+      "bRate": 0.46,
+      "deltaPp": 4,
+      "delta95Pp": [
+        -9.906809029167613,
+        17.906809029167615
+      ],
+      "gain": 27,
+      "loss": 23,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "first-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-hug-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 59,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.59,
+      "bRate": 0.54,
+      "deltaPp": -5,
+      "delta95Pp": [
+        -18.468811710351023,
+        8.468811710351023
+      ],
+      "gain": 21,
+      "loss": 26,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e180->out-hug-e180",
+      "n": 100,
+      "aWins": 38,
+      "bWins": 42,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.38,
+      "bRate": 0.42,
+      "deltaPp": 4,
+      "delta95Pp": [
+        -9.337080685521906,
+        17.337080685521908
+      ],
+      "gain": 25,
+      "loss": 21,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e90->out-hug-e90",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 59,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.59,
+      "deltaPp": 13,
+      "delta95Pp": [
+        -0.8326686952418283,
+        26.83266869524183
+      ],
+      "gain": 32,
+      "loss": 19,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-out-e180->hug-hug-e180",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.46,
+      "deltaPp": 7.000000000000001,
+      "delta95Pp": [
+        -6.434194874245039,
+        20.43419487424504
+      ],
+      "gain": 27,
+      "loss": 20,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "second-orient",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-out-e90->hug-hug-e90",
+      "n": 100,
+      "aWins": 40,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.4,
+      "bRate": 0.54,
+      "deltaPp": 14.000000000000002,
+      "delta95Pp": [
+        0.6338561275062576,
+        27.366143872493744
+      ],
+      "gain": 31,
+      "loss": 17,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-out-e180->out-out-e90",
+      "n": 100,
+      "aWins": 38,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.38,
+      "bRate": 0.46,
+      "deltaPp": 8,
+      "delta95Pp": [
+        -5.556398317899018,
+        21.556398317899017
+      ],
+      "gain": 28,
+      "loss": 20,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:out-hug-e180->out-hug-e90",
+      "n": 100,
+      "aWins": 42,
+      "bWins": 59,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.42,
+      "bRate": 0.59,
+      "deltaPp": 17,
+      "delta95Pp": [
+        1.9836662667654326,
+        32.01633373323457
+      ],
+      "gain": 39,
+      "loss": 22,
+      "winStatusFlips": 61,
+      "flipRate": 0.61,
+      "flip95": [
+        0.5120301704584073,
+        0.6998312599360558
+      ],
+      "winnerChanged": 61
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-out-e180->hug-out-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.4,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -12.787711700619292,
+        14.787711700619294
+      ],
+      "gain": 25,
+      "loss": 24,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "spread",
+      "condition": "auto",
+      "pair": "lamp-slipper",
+      "label": "lamp-slipper:hug-hug-e180->hug-hug-e90",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.54,
+      "deltaPp": 8,
+      "delta95Pp": [
+        -5.2670692797138585,
+        21.26706927971386
+      ],
+      "gain": 27,
+      "loss": 19,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-out-e180",
+      "label": "out-out-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 52,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.52,
+      "deltaPp": 6,
+      "delta95Pp": [
+        -7.013102332773388,
+        19.01310233277339
+      ],
+      "gain": 25,
+      "loss": 19,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-out-e180",
+      "label": "out-out-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 46,
+      "bWins": 38,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.46,
+      "bRate": 0.38,
+      "deltaPp": -8,
+      "delta95Pp": [
+        -20.97128826261752,
+        4.971288262617522
+      ],
+      "gain": 18,
+      "loss": 26,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-out-e180",
+      "label": "out-out-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 38,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.38,
+      "deltaPp": -14.000000000000002,
+      "delta95Pp": [
+        -27.65337357948614,
+        -0.3466264205138653
+      ],
+      "gain": 18,
+      "loss": 32,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-out-e90",
+      "label": "out-out-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 43,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.43,
+      "deltaPp": -25,
+      "delta95Pp": [
+        -37.87972331718631,
+        -12.12027668281369
+      ],
+      "gain": 12,
+      "loss": 37,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-out-e90",
+      "label": "out-out-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 68,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.68,
+      "bRate": 0.46,
+      "deltaPp": -22,
+      "delta95Pp": [
+        -35.23778857908852,
+        -8.762211420911473
+      ],
+      "gain": 14,
+      "loss": 36,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-out-e90",
+      "label": "out-out-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 43,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.43,
+      "bRate": 0.46,
+      "deltaPp": 3,
+      "delta95Pp": [
+        -11.055296855526375,
+        17.055296855526375
+      ],
+      "gain": 27,
+      "loss": 24,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-hug-e180",
+      "label": "out-hug-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 55,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.55,
+      "deltaPp": 3,
+      "delta95Pp": [
+        -10.201096373201187,
+        16.20109637320119
+      ],
+      "gain": 24,
+      "loss": 21,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-hug-e180",
+      "label": "out-hug-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 42,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.42,
+      "deltaPp": -10,
+      "delta95Pp": [
+        -23.789118825356393,
+        3.7891188253563914
+      ],
+      "gain": 20,
+      "loss": 30,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-hug-e180",
+      "label": "out-hug-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 42,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.42,
+      "deltaPp": -13,
+      "delta95Pp": [
+        -26.549240390203256,
+        0.5492403902032511
+      ],
+      "gain": 18,
+      "loss": 31,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-hug-e90",
+      "label": "out-hug-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 66,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.66,
+      "bRate": 0.24,
+      "deltaPp": -42,
+      "delta95Pp": [
+        -54.514515854427096,
+        -29.485484145572904
+      ],
+      "gain": 8,
+      "loss": 50,
+      "winStatusFlips": 58,
+      "flipRate": 0.58,
+      "flip95": [
+        0.4820648670304296,
+        0.6720161732564526
+      ],
+      "winnerChanged": 58
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-hug-e90",
+      "label": "out-hug-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 66,
+      "bWins": 59,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.66,
+      "bRate": 0.59,
+      "deltaPp": -7.000000000000001,
+      "delta95Pp": [
+        -20.719999999999995,
+        6.719999999999993
+      ],
+      "gain": 21,
+      "loss": 28,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "out-hug-e90",
+      "label": "out-hug-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 59,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.59,
+      "deltaPp": 35,
+      "delta95Pp": [
+        22.120276682813685,
+        47.879723317186304
+      ],
+      "gain": 45,
+      "loss": 10,
+      "winStatusFlips": 55,
+      "flipRate": 0.55,
+      "flip95": [
+        0.45244602997442135,
+        0.6438546202048803
+      ],
+      "winnerChanged": 55
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-out-e180",
+      "label": "hug-out-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.54,
+      "deltaPp": -1,
+      "delta95Pp": [
+        -14.503339803862819,
+        12.503339803862817
+      ],
+      "gain": 23,
+      "loss": 24,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-out-e180",
+      "label": "hug-out-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 55,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.55,
+      "bRate": 0.39,
+      "deltaPp": -16,
+      "delta95Pp": [
+        -29.278763481437554,
+        -2.7212365185624505
+      ],
+      "gain": 16,
+      "loss": 32,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-out-e180",
+      "label": "hug-out-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 54,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.54,
+      "bRate": 0.39,
+      "deltaPp": -15,
+      "delta95Pp": [
+        -29.57573741572347,
+        -0.4242625842765302
+      ],
+      "gain": 21,
+      "loss": 36,
+      "winStatusFlips": 57,
+      "flipRate": 0.57,
+      "flip95": [
+        0.47215389549212305,
+        0.6626670147588988
+      ],
+      "winnerChanged": 57
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-out-e90",
+      "label": "hug-out-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 53,
+      "bWins": 41,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.53,
+      "bRate": 0.41,
+      "deltaPp": -12,
+      "delta95Pp": [
+        -25.727068886037546,
+        1.7270688860375472
+      ],
+      "gain": 19,
+      "loss": 31,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-out-e90",
+      "label": "hug-out-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 53,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.53,
+      "bRate": 0.4,
+      "deltaPp": -13,
+      "delta95Pp": [
+        -26.25975516631839,
+        0.25975516631838447
+      ],
+      "gain": 17,
+      "loss": 30,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-out-e90",
+      "label": "hug-out-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 41,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.41,
+      "bRate": 0.4,
+      "deltaPp": -1,
+      "delta95Pp": [
+        -14.503339803862826,
+        12.503339803862822
+      ],
+      "gain": 23,
+      "loss": 24,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-hug-e180",
+      "label": "hug-hug-e180:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 57,
+      "bWins": 52,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.57,
+      "bRate": 0.52,
+      "deltaPp": -5,
+      "delta95Pp": [
+        -18.753897519237846,
+        8.753897519237846
+      ],
+      "gain": 22,
+      "loss": 27,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-hug-e180",
+      "label": "hug-hug-e180:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 57,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.57,
+      "bRate": 0.46,
+      "deltaPp": -11,
+      "delta95Pp": [
+        -25.71352239996056,
+        3.71352239996056
+      ],
+      "gain": 23,
+      "loss": 34,
+      "winStatusFlips": 57,
+      "flipRate": 0.57,
+      "flip95": [
+        0.47215389549212305,
+        0.6626670147588988
+      ],
+      "winnerChanged": 57
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-hug-e180",
+      "label": "hug-hug-e180:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 52,
+      "bWins": 46,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.52,
+      "bRate": 0.46,
+      "deltaPp": -6,
+      "delta95Pp": [
+        -19.307954027724936,
+        7.307954027724936
+      ],
+      "gain": 20,
+      "loss": 26,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-hug-e90",
+      "label": "hug-hug-e90:pan-broom->scissors-pillow",
+      "n": 100,
+      "aWins": 35,
+      "bWins": 38,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.35,
+      "bRate": 0.38,
+      "deltaPp": 3,
+      "delta95Pp": [
+        -9.90380321353892,
+        15.90380321353892
+      ],
+      "gain": 23,
+      "loss": 20,
+      "winStatusFlips": 43,
+      "flipRate": 0.43,
+      "flip95": [
+        0.33733298524110106,
+        0.5278461045078768
+      ],
+      "winnerChanged": 43
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-hug-e90",
+      "label": "hug-hug-e90:pan-broom->lamp-slipper",
+      "n": 100,
+      "aWins": 35,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.35,
+      "bRate": 0.54,
+      "deltaPp": 19,
+      "delta95Pp": [
+        5.7285441870931315,
+        32.271455812906865
+      ],
+      "gain": 34,
+      "loss": 15,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "items",
+      "condition": "auto",
+      "layout": "hug-hug-e90",
+      "label": "hug-hug-e90:scissors-pillow->lamp-slipper",
+      "n": 100,
+      "aWins": 38,
+      "bWins": 54,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.38,
+      "bRate": 0.54,
+      "deltaPp": 16,
+      "delta95Pp": [
+        1.0704853367295404,
+        30.929514663270464
+      ],
+      "gain": 38,
+      "loss": 22,
+      "winStatusFlips": 60,
+      "flipRate": 0.6,
+      "flip95": [
+        0.5020025867910618,
+        0.6905987135675411
+      ],
+      "winnerChanged": 60
+    },
+    {
+      "factor": "idle",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 18,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.18,
+      "deltaPp": -31,
+      "delta95Pp": [
+        -43.673197040696685,
+        -18.326802959303315
+      ],
+      "gain": 10,
+      "loss": 41,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "idle",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 6,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.06,
+      "deltaPp": -38,
+      "delta95Pp": [
+        -48.34137009073437,
+        -27.65862990926563
+      ],
+      "gain": 2,
+      "loss": 40,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "idle",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 2,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.02,
+      "deltaPp": -22,
+      "delta95Pp": [
+        -30.622560026705614,
+        -13.377439973294386
+      ],
+      "gain": 1,
+      "loss": 23,
+      "winStatusFlips": 24,
+      "flipRate": 0.24,
+      "flip95": [
+        0.16691325556948772,
+        0.33232336349814473
+      ],
+      "winnerChanged": 24
+    },
+    {
+      "factor": "idle",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 0,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0,
+      "deltaPp": -24,
+      "delta95Pp": [
+        -32.413000041422194,
+        -15.586999958577804
+      ],
+      "gain": 0,
+      "loss": 24,
+      "winStatusFlips": 24,
+      "flipRate": 0.24,
+      "flip95": [
+        0.16691325556948772,
+        0.33232336349814473
+      ],
+      "winnerChanged": 24
+    },
+    {
+      "factor": "idle",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 4,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.04,
+      "deltaPp": -26,
+      "delta95Pp": [
+        -35.896534645005694,
+        -16.10346535499431
+      ],
+      "gain": 3,
+      "loss": 29,
+      "winStatusFlips": 32,
+      "flipRate": 0.32,
+      "flip95": [
+        0.23669147324999093,
+        0.41662618610452384
+      ],
+      "winnerChanged": 32
+    },
+    {
+      "factor": "idle",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 7,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.07,
+      "deltaPp": -32,
+      "delta95Pp": [
+        -42.37882537484931,
+        -21.621174625150687
+      ],
+      "gain": 3,
+      "loss": 35,
+      "winStatusFlips": 38,
+      "flipRate": 0.38,
+      "flip95": [
+        0.29097599252478734,
+        0.47790244704488916
+      ],
+      "winnerChanged": 38
+    },
+    {
+      "factor": "mash",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 51,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.51,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -11.354526187662724,
+        15.354526187662723
+      ],
+      "gain": 24,
+      "loss": 22,
+      "winStatusFlips": 46,
+      "flipRate": 0.46,
+      "flip95": [
+        0.36560808309024106,
+        0.5573513967663177
+      ],
+      "winnerChanged": 46
+    },
+    {
+      "factor": "mash",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 41,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.41,
+      "deltaPp": -3,
+      "delta95Pp": [
+        -16.20109637320119,
+        10.201096373201187
+      ],
+      "gain": 21,
+      "loss": 24,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "mash",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 28,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.28,
+      "deltaPp": 4,
+      "delta95Pp": [
+        -8.741903509700002,
+        16.741903509700006
+      ],
+      "gain": 23,
+      "loss": 19,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "mash",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 17,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.17,
+      "deltaPp": -7.000000000000001,
+      "delta95Pp": [
+        -19.224334730199406,
+        5.224334730199404
+      ],
+      "gain": 16,
+      "loss": 23,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "mash",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 34,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.34,
+      "deltaPp": 4,
+      "delta95Pp": [
+        -8.117528167447723,
+        16.117528167447727
+      ],
+      "gain": 21,
+      "loss": 17,
+      "winStatusFlips": 38,
+      "flipRate": 0.38,
+      "flip95": [
+        0.29097599252478734,
+        0.47790244704488916
+      ],
+      "winnerChanged": 38
+    },
+    {
+      "factor": "mash",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.4,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -12.21284896522237,
+        14.212848965222372
+      ],
+      "gain": 23,
+      "loss": 22,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "initial",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 44,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.44,
+      "deltaPp": -5,
+      "delta95Pp": [
+        -19.57573741572347,
+        9.575737415723472
+      ],
+      "gain": 25,
+      "loss": 30,
+      "winStatusFlips": 55,
+      "flipRate": 0.55,
+      "flip95": [
+        0.45244602997442135,
+        0.6438546202048803
+      ],
+      "winnerChanged": 55
+    },
+    {
+      "factor": "initial",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 29,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.29,
+      "deltaPp": -15,
+      "delta95Pp": [
+        -27.87972331718631,
+        -2.1202766828136905
+      ],
+      "gain": 15,
+      "loss": 30,
+      "winStatusFlips": 45,
+      "flipRate": 0.45,
+      "flip95": [
+        0.3561453797951198,
+        0.5475539700255787
+      ],
+      "winnerChanged": 45
+    },
+    {
+      "factor": "initial",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 25,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.25,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -10.980657137842881,
+        12.98065713784288
+      ],
+      "gain": 19,
+      "loss": 18,
+      "winStatusFlips": 37,
+      "flipRate": 0.37,
+      "flip95": [
+        0.28182360534324524,
+        0.4677947041905709
+      ],
+      "winnerChanged": 37
+    },
+    {
+      "factor": "initial",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.24,
+      "deltaPp": 0,
+      "delta95Pp": [
+        -12.143119596518579,
+        12.143119596518579
+      ],
+      "gain": 19,
+      "loss": 19,
+      "winStatusFlips": 38,
+      "flipRate": 0.38,
+      "flip95": [
+        0.29097599252478734,
+        0.47790244704488916
+      ],
+      "winnerChanged": 38
+    },
+    {
+      "factor": "initial",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 33,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.33,
+      "deltaPp": 3,
+      "delta95Pp": [
+        -9.287657271104255,
+        15.287657271104255
+      ],
+      "gain": 21,
+      "loss": 18,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "initial",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 36,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.36,
+      "deltaPp": -3,
+      "delta95Pp": [
+        -15.287657271104251,
+        9.287657271104251
+      ],
+      "gain": 18,
+      "loss": 21,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "critical",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 50,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.5,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -2.406230773275364,
+        4.4062307732753645
+      ],
+      "gain": 2,
+      "loss": 1,
+      "winStatusFlips": 3,
+      "flipRate": 0.03,
+      "flip95": [
+        0.010254524024038925,
+        0.0845193642905276
+      ],
+      "winnerChanged": 3
+    },
+    {
+      "factor": "critical",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 42,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.42,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -8.812461546550729,
+        4.812461546550728
+      ],
+      "gain": 5,
+      "loss": 7,
+      "winStatusFlips": 12,
+      "flipRate": 0.12,
+      "flip95": [
+        0.06999406437019488,
+        0.19812099426711421
+      ],
+      "winnerChanged": 12
+    },
+    {
+      "factor": "critical",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 23,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.23,
+      "deltaPp": -1,
+      "delta95Pp": [
+        -4.406230773275368,
+        2.4062307732753676
+      ],
+      "gain": 1,
+      "loss": 2,
+      "winStatusFlips": 3,
+      "flipRate": 0.03,
+      "flip95": [
+        0.010254524024038925,
+        0.0845193642905276
+      ],
+      "winnerChanged": 3
+    },
+    {
+      "factor": "critical",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 26,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.26,
+      "deltaPp": 2,
+      "delta95Pp": [
+        -1.9199999999999977,
+        5.919999999999997
+      ],
+      "gain": 3,
+      "loss": 1,
+      "winStatusFlips": 4,
+      "flipRate": 0.04,
+      "flip95": [
+        0.01566330399154762,
+        0.0983707143588792
+      ],
+      "winnerChanged": 4
+    },
+    {
+      "factor": "critical",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 31,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.31,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -4.208072987432511,
+        6.208072987432511
+      ],
+      "gain": 4,
+      "loss": 3,
+      "winStatusFlips": 7,
+      "flipRate": 0.07,
+      "flip95": [
+        0.03431926106727268,
+        0.137495147390735
+      ],
+      "winnerChanged": 7
+    },
+    {
+      "factor": "critical",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.39,
+      "deltaPp": 0,
+      "delta95Pp": [
+        -2.78582269371331,
+        2.78582269371331
+      ],
+      "gain": 1,
+      "loss": 1,
+      "winStatusFlips": 2,
+      "flipRate": 0.02,
+      "flip95": [
+        0.00550196755016235,
+        0.07001179072854388
+      ],
+      "winnerChanged": 2
+    },
+    {
+      "factor": "ai-random",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 39,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.39,
+      "deltaPp": -10,
+      "delta95Pp": [
+        -23.789118825356393,
+        3.7891188253563914
+      ],
+      "gain": 20,
+      "loss": 30,
+      "winStatusFlips": 50,
+      "flipRate": 0.5,
+      "flip95": [
+        0.4038315303659956,
+        0.5961684696340044
+      ],
+      "winnerChanged": 50
+    },
+    {
+      "factor": "ai-random",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 24,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.24,
+      "deltaPp": -20,
+      "delta95Pp": [
+        -33.06666666666666,
+        -6.933333333333339
+      ],
+      "gain": 14,
+      "loss": 34,
+      "winStatusFlips": 48,
+      "flipRate": 0.48,
+      "flip95": [
+        0.384645517580519,
+        0.5768342223477603
+      ],
+      "winnerChanged": 48
+    },
+    {
+      "factor": "ai-random",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 25,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.25,
+      "deltaPp": 1,
+      "delta95Pp": [
+        -10.980657137842877,
+        12.980657137842877
+      ],
+      "gain": 19,
+      "loss": 18,
+      "winStatusFlips": 37,
+      "flipRate": 0.37,
+      "flip95": [
+        0.28182360534324524,
+        0.4677947041905709
+      ],
+      "winnerChanged": 37
+    },
+    {
+      "factor": "ai-random",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 20,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.2,
+      "deltaPp": -4,
+      "delta95Pp": [
+        -14.760634580063417,
+        6.760634580063418
+      ],
+      "gain": 13,
+      "loss": 17,
+      "winStatusFlips": 30,
+      "flipRate": 0.3,
+      "flip95": [
+        0.2189488529493276,
+        0.3958485463334666
+      ],
+      "winnerChanged": 30
+    },
+    {
+      "factor": "ai-random",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 29,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.29,
+      "deltaPp": -1,
+      "delta95Pp": [
+        -13.300282660790913,
+        11.300282660790913
+      ],
+      "gain": 19,
+      "loss": 20,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "ai-random",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 30,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.3,
+      "deltaPp": -9,
+      "delta95Pp": [
+        -22.674672599629965,
+        4.6746725996299645
+      ],
+      "gain": 20,
+      "loss": 29,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "right-yaw",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 49,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.49,
+      "bRate": 0.4,
+      "deltaPp": -9,
+      "delta95Pp": [
+        -22.955553689763743,
+        4.955553689763745
+      ],
+      "gain": 21,
+      "loss": 30,
+      "winStatusFlips": 51,
+      "flipRate": 0.51,
+      "flip95": [
+        0.4134801193402717,
+        0.6057800106955886
+      ],
+      "winnerChanged": 51
+    },
+    {
+      "factor": "right-yaw",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 44,
+      "bWins": 34,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.44,
+      "bRate": 0.34,
+      "deltaPp": -10,
+      "delta95Pp": [
+        -22.613348709068728,
+        2.6133487090687275
+      ],
+      "gain": 16,
+      "loss": 26,
+      "winStatusFlips": 42,
+      "flipRate": 0.42,
+      "flip95": [
+        0.3279838267435473,
+        0.5179351329695703
+      ],
+      "winnerChanged": 42
+    },
+    {
+      "factor": "right-yaw",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 23,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.23,
+      "deltaPp": -1,
+      "delta95Pp": [
+        -12.652267477780343,
+        10.652267477780345
+      ],
+      "gain": 17,
+      "loss": 18,
+      "winStatusFlips": 35,
+      "flipRate": 0.35,
+      "flip95": [
+        0.26364248243097527,
+        0.44745556703112027
+      ],
+      "winnerChanged": 35
+    },
+    {
+      "factor": "right-yaw",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 24,
+      "bWins": 22,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.24,
+      "bRate": 0.22,
+      "deltaPp": -2,
+      "delta95Pp": [
+        -13.812676635417102,
+        9.812676635417102
+      ],
+      "gain": 17,
+      "loss": 19,
+      "winStatusFlips": 36,
+      "flipRate": 0.36,
+      "flip95": [
+        0.2727122040140433,
+        0.4576459754839126
+      ],
+      "winnerChanged": 36
+    },
+    {
+      "factor": "right-yaw",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 30,
+      "bWins": 36,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.3,
+      "bRate": 0.36,
+      "deltaPp": 6,
+      "delta95Pp": [
+        -7.013102332773391,
+        19.01310233277339
+      ],
+      "gain": 25,
+      "loss": 19,
+      "winStatusFlips": 44,
+      "flipRate": 0.44,
+      "flip95": [
+        0.34672026630160796,
+        0.5377189534832302
+      ],
+      "winnerChanged": 44
+    },
+    {
+      "factor": "right-yaw",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 39,
+      "bWins": 44,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.39,
+      "bRate": 0.44,
+      "deltaPp": 5,
+      "delta95Pp": [
+        -8.468811710351025,
+        18.468811710351023
+      ],
+      "gain": 26,
+      "loss": 21,
+      "winStatusFlips": 47,
+      "flipRate": 0.47,
+      "flip95": [
+        0.3751081795934127,
+        0.5671114302990063
+      ],
+      "winnerChanged": 47
+    },
+    {
+      "factor": "mash-vs-idle",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/out-out-e180",
+      "label": "pan-broom/out-out-e180",
+      "n": 100,
+      "aWins": 18,
+      "bWins": 51,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.18,
+      "bRate": 0.51,
+      "deltaPp": 33,
+      "delta95Pp": [
+        20.83931753642923,
+        45.16068246357077
+      ],
+      "gain": 41,
+      "loss": 8,
+      "winStatusFlips": 49,
+      "flipRate": 0.49,
+      "flip95": [
+        0.3942199893044113,
+        0.5865198806597283
+      ],
+      "winnerChanged": 49
+    },
+    {
+      "factor": "mash-vs-idle",
+      "condition": "ai-ai",
+      "fixture": "pan-broom/hug-hug-e90",
+      "label": "pan-broom/hug-hug-e90",
+      "n": 100,
+      "aWins": 6,
+      "bWins": 41,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.06,
+      "bRate": 0.41,
+      "deltaPp": 35,
+      "delta95Pp": [
+        24.811731840945292,
+        45.1882681590547
+      ],
+      "gain": 37,
+      "loss": 2,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    },
+    {
+      "factor": "mash-vs-idle",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/out-out-e180",
+      "label": "scissors-pillow/out-out-e180",
+      "n": 100,
+      "aWins": 2,
+      "bWins": 28,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.02,
+      "bRate": 0.28,
+      "deltaPp": 26,
+      "delta95Pp": [
+        16.503653865881375,
+        35.496346134118625
+      ],
+      "gain": 28,
+      "loss": 2,
+      "winStatusFlips": 30,
+      "flipRate": 0.3,
+      "flip95": [
+        0.2189488529493276,
+        0.3958485463334666
+      ],
+      "winnerChanged": 30
+    },
+    {
+      "factor": "mash-vs-idle",
+      "condition": "ai-ai",
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "label": "scissors-pillow/hug-hug-e90",
+      "n": 100,
+      "aWins": 0,
+      "bWins": 17,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0,
+      "bRate": 0.17,
+      "deltaPp": 17,
+      "delta95Pp": [
+        9.600506705854714,
+        24.399493294145287
+      ],
+      "gain": 17,
+      "loss": 0,
+      "winStatusFlips": 17,
+      "flipRate": 0.17,
+      "flip95": [
+        0.10893566114059931,
+        0.25548004767601123
+      ],
+      "winnerChanged": 17
+    },
+    {
+      "factor": "mash-vs-idle",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/out-out-e180",
+      "label": "lamp-slipper/out-out-e180",
+      "n": 100,
+      "aWins": 4,
+      "bWins": 34,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.04,
+      "bRate": 0.34,
+      "deltaPp": 30,
+      "delta95Pp": [
+        19.76423382980497,
+        40.23576617019503
+      ],
+      "gain": 33,
+      "loss": 3,
+      "winStatusFlips": 36,
+      "flipRate": 0.36,
+      "flip95": [
+        0.2727122040140433,
+        0.4576459754839126
+      ],
+      "winnerChanged": 36
+    },
+    {
+      "factor": "mash-vs-idle",
+      "condition": "ai-ai",
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "label": "lamp-slipper/hug-hug-e90",
+      "n": 100,
+      "aWins": 7,
+      "bWins": 40,
+      "aDraws": 0,
+      "bDraws": 0,
+      "aRate": 0.07,
+      "bRate": 0.4,
+      "deltaPp": 33,
+      "delta95Pp": [
+        22.555951092810922,
+        43.44404890718908
+      ],
+      "gain": 36,
+      "loss": 3,
+      "winStatusFlips": 39,
+      "flipRate": 0.39,
+      "flip95": [
+        0.3001687400639441,
+        0.4879698295415926
+      ],
+      "winnerChanged": 39
+    }
+  ]
+}
