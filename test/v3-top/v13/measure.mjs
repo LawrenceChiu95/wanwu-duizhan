@@ -16,6 +16,7 @@ export async function measure(run){
   dashEnd:Object.fromEntries(['full','glance','miss','blocked'].map(k=>[k,events.filter(e=>e.type==='dash'&&e.phase==='end'&&e.side===side&&e.quality===k).length])),
   block:events.filter(e=>e.type==='block'&&e.side===side).length,
   perfect:events.filter(e=>e.type==='blockResult'&&e.side===side&&e.outcome==='perfect').length,
+  contactOnly:events.filter(e=>e.type==='blockResult'&&e.side===side&&e.outcome==='perfect'&&e.damageApplied===false).length,
   empty:events.filter(e=>e.type==='blockResult'&&e.side===side&&e.outcome==='empty').length
  }));
  const first=times[0]??null,medianGap=median(gaps),maxGap=gaps.length?Math.max(...gaps):null;

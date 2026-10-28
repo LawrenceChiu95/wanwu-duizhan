@@ -15,7 +15,7 @@ const paired=(a,b)=>{
 const metrics=xs=>({n:xs.length,pacePass:xs.filter(x=>x.pacePass).length,duration:{median:median(xs.map(x=>x.duration)),min:xs.length?Math.min(...xs.map(x=>x.duration)):null,max:xs.length?Math.max(...xs.map(x=>x.duration)):null},
  approach:median(xs.map(x=>x.approachMedian).filter(x=>x!==null)),separation:median(xs.map(x=>x.separationMedian).filter(x=>x!==null)),first:median(xs.map(x=>x.first).filter(x=>x!==null)),medianGap:median(xs.map(x=>x.medianGap).filter(x=>x!==null)),maxGap:xs.length?Math.max(...xs.map(x=>x.maxGap??0)):null,
  scrapeCount:xs.reduce((s,x)=>s+x.scrapeCount,0),scrapeSeconds:xs.reduce((s,x)=>s+x.scrapeDuration,0),rubs:xs.reduce((s,x)=>s+x.rubs,0),maxResidual:xs.length?Math.max(...xs.map(x=>x.residual)):null,
- actions:[0,1].map(i=>({press:mean(xs.map(x=>x.actions[i].press)),dash:mean(xs.map(x=>x.actions[i].dash)),perfect:mean(xs.map(x=>x.actions[i].perfect)),empty:mean(xs.map(x=>x.actions[i].empty)),dashEnd:Object.fromEntries(['full','glance','miss','blocked'].map(k=>[k,mean(xs.map(x=>x.actions[i].dashEnd[k]))]))})),
+ actions:[0,1].map(i=>({press:mean(xs.map(x=>x.actions[i].press)),dash:mean(xs.map(x=>x.actions[i].dash)),perfect:mean(xs.map(x=>x.actions[i].perfect)),contactOnly:mean(xs.map(x=>x.actions[i].contactOnly??0)),empty:mean(xs.map(x=>x.actions[i].empty)),dashEnd:Object.fromEntries(['full','glance','miss','blocked'].map(k=>[k,mean(xs.map(x=>x.actions[i].dashEnd[k]))]))})),
  failures:xs.filter(x=>!x.pacePass).map(x=>({seed:x.seed,duration:x.duration,first:x.first,medianGap:x.medianGap,maxGap:x.maxGap,reason:x.reason,replaySha256:x.replaySha256}))});
 const comparisons=[],fairness=[],swaps=[],feel=[],causal=[];
 for(const f of fixtures){

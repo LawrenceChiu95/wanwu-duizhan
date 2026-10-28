@@ -11,9 +11,9 @@
 ### 挡：短窗口，早按会空挡
 
 - 默认 `blockTime=0.25s`（30物理步），立即生效；`blockCooldown=5s` 不变，空挡也照扣。不另外加常驻防御或新的按键。另跑0.20/0.30敏感性；0.25不过15点先交冲突，不自行收窄。
-- 只在真实新接触开始、该方成为受击方且有正伤害时判成功；窗口内第一次命中标一次“完美挡”。窗口内减伤0.3、受击反冲0.3，来冲的一方反冲2.6，沿用原值；防御不凭空回血，不延长到下一次接触。
+- 按Elara c65e070d裁决，只要真实新接触开始且该方成为受击方便判成功，与共享伤害冷却是否允许扣血无关；窗口内第一次命中标一次“完美挡”。窗口内减伤0.3、受击反冲0.3，来冲的一方反冲2.6，沿用原值；防御不凭空回血，不延长到下一次接触。
 - 一次窗口只给一次成功结果；结束没有挡中便给“空挡”。不会把“没有遭到攻击”武断标成“按早了”。前端可让护盾合拢并熄灭，不能播成成功弹反。接触前按、接触同一步按、到期那一步、冷却中连按分别有边界测试。
-- 弹开仍须真实接触，不把擦着不扣血的持续段当新的成功。原 `parry` 只在实际冲被有效挡住时触发。
+- 弹开仍须真实接触，不把擦着不扣血的持续段当新的成功。原 `parry` 只在实际冲被有效挡住且有正伤害时触发。
 
 ### 冲：按下时锁方向，碰上还要对准
 
@@ -40,7 +40,7 @@
 | 事件 | 追加字段与触发点 | 前端用途 |
 |---|---|---|
 | `block` | 保留 `side,until`，加 `pressStep,windowSteps` | 护盾立即合拢、按实际挡窗消失，冷却独立走 |
-| `blockResult` | `side,outcome:'perfect'\|'empty',pressStep,resolvedStep,point?,attacker?`；一次防御只发一次 | 成功白光/弹开或空挡熄灭；空挡不冒充“必定按早” |
+| `blockResult` | `side,outcome:'perfect'\|'empty',pressStep,resolvedStep,point?,attacker?,damageApplied?`；一次防御只发一次 | 成功白光或空挡熄灭；damageApplied:false只给小号挡住反馈、不慢放；弹反仍认parry事件 |
 | `dash` charge/go | 追加 `pressStep,lockedDir`，go的 `dir` 就是锁定方向 | 蓄力时显示将要冲的方向，go沿该方向表现 |
 | `dash` end | 保留 `side,outcome,point?`，追加 `quality:'full'\|'glance'\|'miss'\|'blocked',alignment?,pressStep` | 正冲保留重打击，偏冲擦过，空冲收势；不是新增常驻说明 |
 | `hit/weak` | `dash` 仅正冲奖励为true；追加 `dashAttempt,dashQuality,alignment`；`shield/parry` 来自有效挡窗 | 偏冲不套满伤害的火花/重音；画面不自行判物理 |
