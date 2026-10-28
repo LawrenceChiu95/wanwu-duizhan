@@ -249,7 +249,8 @@ async function main() {
   const V13_FREEZE = {
     'aim-mine': e => e.type === 'dash' && e.phase === 'charge' && e.side === 0 && e.t > 1,
     'aim-foe': e => e.type === 'dash' && e.phase === 'charge' && e.side === 1 && e.t > 1,
-    perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.side === 0,
+    perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied !== false && e.side === 0,
+    held: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied === false && e.side === 0,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
     miss: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'miss' && e.side === 0,
     glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0
