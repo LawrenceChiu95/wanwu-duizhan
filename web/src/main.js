@@ -542,7 +542,7 @@ async function main() {
       const m = test.frame;
       if (!m) return null;
       const s = [...m.scale].sort((a, b) => a - b), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
-      return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
+      return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), sweptMinMarginLrPx: +m.sweptLr.toFixed(1), sweptMinMarginSafePx: +m.sweptSafe.toFixed(1), core15PctExact: +(100 * m.core15 / m.frames).toFixed(2), pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
     },
     setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
     stage,
@@ -636,8 +636,11 @@ async function main() {
       // Framing audit (fight only): how often both tops keep 15 % of the width clear of every safe-area edge, and the
       // scale (CSS px per metre at the aim point) the camera picked.
       if (phase === 'play' && stage.cam.stat) {
-        const m = test.frame ??= {frames: 0, ok15: 0, core15: 0, minMargin: Infinity, scale: []};
+        const m = test.frame ??= {frames: 0, ok15: 0, core15: 0, minMargin: Infinity, scale: [], sweptLr: Infinity, sweptSafe: Infinity};
         m.frames++;
+        const sm = stage.sweptMargin();
+        m.sweptLr = Math.min(m.sweptLr, sm.lr);
+        m.sweptSafe = Math.min(m.sweptSafe, sm.safe);
         if (-o.px >= 0.15 * el.app.clientWidth) m.ok15++;
         if (stage.coreMargin() >= 0.15 * el.app.clientWidth) m.core15++;
         m.minMargin = Math.min(m.minMargin, -o.px);
