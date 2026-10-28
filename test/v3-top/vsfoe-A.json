@@ -1,0 +1,1290 @@
+{
+ "foe": "pan-lux3d:out+lamp-lux3d:hug@e180",
+ "mean": 0.424,
+ "hist": {
+  "0": 20,
+  "1": 6,
+  "0.8333333333333334": 23,
+  "0.6666666666666666": 35,
+  "0.5": 50,
+  "0.3333333333333333": 64,
+  "0.16666666666666666": 42
+ },
+ "default": {
+  "k": "pan-lux3d:out+pillow:hug@e180",
+  "win": 0.6666666666666666,
+  "dur": 33.6
+ },
+ "top": [
+  {
+   "k": "broom:out+lamp-lux3d:out@e90",
+   "win": 1,
+   "dur": 34
+  },
+  {
+   "k": "broom:hug+pillow:out@e90",
+   "win": 1,
+   "dur": 34.2
+  },
+  {
+   "k": "lamp-lux3d:out+pillow:hug@e180",
+   "win": 1,
+   "dur": 32.9
+  },
+  {
+   "k": "pillow:out+broom:hug@e90",
+   "win": 1,
+   "dur": 34.2
+  },
+  {
+   "k": "pillow:hug+broom:out@e180",
+   "win": 1,
+   "dur": 35.5
+  },
+  {
+   "k": "pillow:hug+lamp-lux3d:out@e90",
+   "win": 1,
+   "dur": 35.4
+  },
+  {
+   "k": "pan-lux3d:out+broom:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 31
+  },
+  {
+   "k": "pan-lux3d:out+lamp-lux3d:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 33.5
+  }
+ ],
+ "bottom": [
+  {
+   "k": "slipper:out+scissors:out@e90",
+   "win": 0,
+   "dur": 23.3
+  },
+  {
+   "k": "slipper:out+scissors:hug@e180",
+   "win": 0,
+   "dur": 24.6
+  },
+  {
+   "k": "slipper:hug+scissors:out@e180",
+   "win": 0,
+   "dur": 22.5
+  },
+  {
+   "k": "slipper:hug+scissors:hug@e180",
+   "win": 0,
+   "dur": 23.6
+  },
+  {
+   "k": "pillow:hug+scissors:out@e180",
+   "win": 0,
+   "dur": 31.7
+  }
+ ],
+ "all": [
+  {
+   "k": "broom:out+lamp-lux3d:out@e90",
+   "win": 1,
+   "dur": 34
+  },
+  {
+   "k": "broom:hug+pillow:out@e90",
+   "win": 1,
+   "dur": 34.2
+  },
+  {
+   "k": "lamp-lux3d:out+pillow:hug@e180",
+   "win": 1,
+   "dur": 32.9
+  },
+  {
+   "k": "pillow:out+broom:hug@e90",
+   "win": 1,
+   "dur": 34.2
+  },
+  {
+   "k": "pillow:hug+broom:out@e180",
+   "win": 1,
+   "dur": 35.5
+  },
+  {
+   "k": "pillow:hug+lamp-lux3d:out@e90",
+   "win": 1,
+   "dur": 35.4
+  },
+  {
+   "k": "pan-lux3d:out+broom:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 31
+  },
+  {
+   "k": "pan-lux3d:out+lamp-lux3d:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 33.5
+  },
+  {
+   "k": "pan-lux3d:out+lamp-lux3d:hug@e180",
+   "win": 0.8333333333333334,
+   "dur": 32.5
+  },
+  {
+   "k": "pan-lux3d:out+slipper:hug@e90",
+   "win": 0.8333333333333334,
+   "dur": 33.2
+  },
+  {
+   "k": "pan-lux3d:out+pillow:hug@e90",
+   "win": 0.8333333333333334,
+   "dur": 31.6
+  },
+  {
+   "k": "pan-lux3d:hug+pillow:hug@e180",
+   "win": 0.8333333333333334,
+   "dur": 35.7
+  },
+  {
+   "k": "broom:out+pan-lux3d:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 33.3
+  },
+  {
+   "k": "broom:out+pan-lux3d:hug@e180",
+   "win": 0.8333333333333334,
+   "dur": 32.9
+  },
+  {
+   "k": "broom:hug+lamp-lux3d:hug@e180",
+   "win": 0.8333333333333334,
+   "dur": 34.5
+  },
+  {
+   "k": "broom:out+pillow:hug@e180",
+   "win": 0.8333333333333334,
+   "dur": 34.6
+  },
+  {
+   "k": "broom:out+pillow:hug@e90",
+   "win": 0.8333333333333334,
+   "dur": 33.6
+  },
+  {
+   "k": "broom:hug+pillow:out@e180",
+   "win": 0.8333333333333334,
+   "dur": 36.3
+  },
+  {
+   "k": "lamp-lux3d:hug+scissors:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 31.4
+  },
+  {
+   "k": "lamp-lux3d:out+pillow:hug@e90",
+   "win": 0.8333333333333334,
+   "dur": 31.8
+  },
+  {
+   "k": "lamp-lux3d:hug+pillow:out@e180",
+   "win": 0.8333333333333334,
+   "dur": 35.8
+  },
+  {
+   "k": "slipper:hug+pan-lux3d:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 28.7
+  },
+  {
+   "k": "slipper:hug+pillow:out@e180",
+   "win": 0.8333333333333334,
+   "dur": 35
+  },
+  {
+   "k": "pillow:out+pan-lux3d:out@e180",
+   "win": 0.8333333333333334,
+   "dur": 35
+  },
+  {
+   "k": "pillow:out+broom:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 33.5
+  },
+  {
+   "k": "pillow:hug+broom:out@e90",
+   "win": 0.8333333333333334,
+   "dur": 35.6
+  },
+  {
+   "k": "pillow:hug+broom:hug@e90",
+   "win": 0.8333333333333334,
+   "dur": 38.1
+  },
+  {
+   "k": "pillow:out+lamp-lux3d:out@e180",
+   "win": 0.8333333333333334,
+   "dur": 37.3
+  },
+  {
+   "k": "pillow:hug+slipper:hug@e180",
+   "win": 0.8333333333333334,
+   "dur": 32.2
+  },
+  {
+   "k": "pan-lux3d:hug+broom:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 33.6
+  },
+  {
+   "k": "pan-lux3d:hug+slipper:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 31.1
+  },
+  {
+   "k": "pan-lux3d:out+pillow:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 32.8
+  },
+  {
+   "k": "pan-lux3d:out+pillow:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 33.6
+  },
+  {
+   "k": "pan-lux3d:hug+pillow:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 31.8
+  },
+  {
+   "k": "broom:hug+pan-lux3d:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 32.7
+  },
+  {
+   "k": "broom:hug+lamp-lux3d:out@e180",
+   "win": 0.6666666666666666,
+   "dur": 33.8
+  },
+  {
+   "k": "broom:hug+scissors:out@e180",
+   "win": 0.6666666666666666,
+   "dur": 31.2
+  },
+  {
+   "k": "broom:hug+slipper:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 32.2
+  },
+  {
+   "k": "broom:hug+slipper:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 34.4
+  },
+  {
+   "k": "broom:out+pillow:out@e180",
+   "win": 0.6666666666666666,
+   "dur": 34.7
+  },
+  {
+   "k": "broom:out+pillow:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 35
+  },
+  {
+   "k": "broom:hug+pillow:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 37.5
+  },
+  {
+   "k": "lamp-lux3d:out+pan-lux3d:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 34.8
+  },
+  {
+   "k": "lamp-lux3d:out+broom:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 33.7
+  },
+  {
+   "k": "lamp-lux3d:out+scissors:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 29.4
+  },
+  {
+   "k": "lamp-lux3d:hug+slipper:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 34.1
+  },
+  {
+   "k": "lamp-lux3d:hug+pillow:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 33.7
+  },
+  {
+   "k": "scissors:out+lamp-lux3d:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 30.8
+  },
+  {
+   "k": "scissors:hug+lamp-lux3d:out@e180",
+   "win": 0.6666666666666666,
+   "dur": 28.7
+  },
+  {
+   "k": "slipper:out+broom:out@e180",
+   "win": 0.6666666666666666,
+   "dur": 32.8
+  },
+  {
+   "k": "slipper:hug+scissors:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 27.3
+  },
+  {
+   "k": "slipper:out+pillow:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 34.7
+  },
+  {
+   "k": "slipper:hug+pillow:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 32.4
+  },
+  {
+   "k": "pillow:out+pan-lux3d:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 35.8
+  },
+  {
+   "k": "pillow:out+pan-lux3d:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 35.9
+  },
+  {
+   "k": "pillow:hug+pan-lux3d:out@e180",
+   "win": 0.6666666666666666,
+   "dur": 32.2
+  },
+  {
+   "k": "pillow:out+lamp-lux3d:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 33.1
+  },
+  {
+   "k": "pillow:out+lamp-lux3d:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 33.2
+  },
+  {
+   "k": "pillow:out+lamp-lux3d:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 33
+  },
+  {
+   "k": "pillow:hug+lamp-lux3d:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 36
+  },
+  {
+   "k": "pillow:out+scissors:out@e90",
+   "win": 0.6666666666666666,
+   "dur": 30.6
+  },
+  {
+   "k": "pillow:out+scissors:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 31.7
+  },
+  {
+   "k": "pillow:hug+scissors:hug@e180",
+   "win": 0.6666666666666666,
+   "dur": 32.9
+  },
+  {
+   "k": "pillow:out+slipper:hug@e90",
+   "win": 0.6666666666666666,
+   "dur": 32.2
+  },
+  {
+   "k": "pan-lux3d:out+broom:hug@e180",
+   "win": 0.5,
+   "dur": 29.9
+  },
+  {
+   "k": "pan-lux3d:hug+broom:out@e180",
+   "win": 0.5,
+   "dur": 29.7
+  },
+  {
+   "k": "pan-lux3d:out+slipper:out@e90",
+   "win": 0.5,
+   "dur": 27.9
+  },
+  {
+   "k": "pan-lux3d:out+slipper:hug@e180",
+   "win": 0.5,
+   "dur": 30.7
+  },
+  {
+   "k": "pan-lux3d:hug+pillow:out@e180",
+   "win": 0.5,
+   "dur": 33
+  },
+  {
+   "k": "broom:out+pan-lux3d:out@e180",
+   "win": 0.5,
+   "dur": 33.7
+  },
+  {
+   "k": "broom:hug+pan-lux3d:out@e180",
+   "win": 0.5,
+   "dur": 32.4
+  },
+  {
+   "k": "broom:out+lamp-lux3d:hug@e90",
+   "win": 0.5,
+   "dur": 34.2
+  },
+  {
+   "k": "broom:hug+lamp-lux3d:out@e90",
+   "win": 0.5,
+   "dur": 33.6
+  },
+  {
+   "k": "broom:out+scissors:hug@e180",
+   "win": 0.5,
+   "dur": 27.6
+  },
+  {
+   "k": "lamp-lux3d:out+broom:hug@e90",
+   "win": 0.5,
+   "dur": 33.2
+  },
+  {
+   "k": "lamp-lux3d:hug+broom:out@e90",
+   "win": 0.5,
+   "dur": 34.4
+  },
+  {
+   "k": "lamp-lux3d:hug+broom:hug@e180",
+   "win": 0.5,
+   "dur": 34.6
+  },
+  {
+   "k": "lamp-lux3d:hug+broom:hug@e90",
+   "win": 0.5,
+   "dur": 33.6
+  },
+  {
+   "k": "lamp-lux3d:out+scissors:out@e180",
+   "win": 0.5,
+   "dur": 31.5
+  },
+  {
+   "k": "lamp-lux3d:out+slipper:out@e180",
+   "win": 0.5,
+   "dur": 30.9
+  },
+  {
+   "k": "lamp-lux3d:out+slipper:out@e90",
+   "win": 0.5,
+   "dur": 30.1
+  },
+  {
+   "k": "lamp-lux3d:out+slipper:hug@e180",
+   "win": 0.5,
+   "dur": 31.7
+  },
+  {
+   "k": "lamp-lux3d:hug+slipper:out@e180",
+   "win": 0.5,
+   "dur": 30.3
+  },
+  {
+   "k": "lamp-lux3d:out+pillow:out@e90",
+   "win": 0.5,
+   "dur": 34.5
+  },
+  {
+   "k": "scissors:out+pan-lux3d:hug@e90",
+   "win": 0.5,
+   "dur": 27.9
+  },
+  {
+   "k": "scissors:hug+pan-lux3d:hug@e180",
+   "win": 0.5,
+   "dur": 28.9
+  },
+  {
+   "k": "scissors:out+broom:out@e180",
+   "win": 0.5,
+   "dur": 31.4
+  },
+  {
+   "k": "scissors:out+broom:out@e90",
+   "win": 0.5,
+   "dur": 30.6
+  },
+  {
+   "k": "scissors:hug+broom:out@e180",
+   "win": 0.5,
+   "dur": 32.9
+  },
+  {
+   "k": "scissors:hug+broom:out@e90",
+   "win": 0.5,
+   "dur": 29.9
+  },
+  {
+   "k": "scissors:out+lamp-lux3d:out@e180",
+   "win": 0.5,
+   "dur": 26.6
+  },
+  {
+   "k": "scissors:out+pillow:out@e180",
+   "win": 0.5,
+   "dur": 34.2
+  },
+  {
+   "k": "scissors:out+pillow:hug@e180",
+   "win": 0.5,
+   "dur": 34.1
+  },
+  {
+   "k": "scissors:hug+pillow:out@e180",
+   "win": 0.5,
+   "dur": 31
+  },
+  {
+   "k": "scissors:hug+pillow:hug@e180",
+   "win": 0.5,
+   "dur": 31
+  },
+  {
+   "k": "slipper:out+pan-lux3d:out@e180",
+   "win": 0.5,
+   "dur": 28.6
+  },
+  {
+   "k": "slipper:out+broom:out@e90",
+   "win": 0.5,
+   "dur": 29.1
+  },
+  {
+   "k": "slipper:hug+broom:out@e180",
+   "win": 0.5,
+   "dur": 34.1
+  },
+  {
+   "k": "slipper:out+lamp-lux3d:out@e180",
+   "win": 0.5,
+   "dur": 32.3
+  },
+  {
+   "k": "slipper:hug+lamp-lux3d:out@e90",
+   "win": 0.5,
+   "dur": 28.4
+  },
+  {
+   "k": "slipper:hug+lamp-lux3d:hug@e180",
+   "win": 0.5,
+   "dur": 28.4
+  },
+  {
+   "k": "slipper:hug+lamp-lux3d:hug@e90",
+   "win": 0.5,
+   "dur": 30.9
+  },
+  {
+   "k": "slipper:out+pillow:hug@e90",
+   "win": 0.5,
+   "dur": 33.5
+  },
+  {
+   "k": "slipper:hug+pillow:out@e90",
+   "win": 0.5,
+   "dur": 31.8
+  },
+  {
+   "k": "pillow:out+pan-lux3d:hug@e180",
+   "win": 0.5,
+   "dur": 36.2
+  },
+  {
+   "k": "pillow:hug+pan-lux3d:hug@e180",
+   "win": 0.5,
+   "dur": 35.9
+  },
+  {
+   "k": "pillow:out+broom:out@e180",
+   "win": 0.5,
+   "dur": 35.3
+  },
+  {
+   "k": "pillow:out+broom:hug@e180",
+   "win": 0.5,
+   "dur": 36.3
+  },
+  {
+   "k": "pillow:hug+broom:hug@e180",
+   "win": 0.5,
+   "dur": 36.7
+  },
+  {
+   "k": "pillow:hug+lamp-lux3d:out@e180",
+   "win": 0.5,
+   "dur": 32.8
+  },
+  {
+   "k": "pillow:hug+scissors:out@e90",
+   "win": 0.5,
+   "dur": 31.9
+  },
+  {
+   "k": "pillow:out+slipper:hug@e180",
+   "win": 0.5,
+   "dur": 32.6
+  },
+  {
+   "k": "pillow:hug+slipper:out@e90",
+   "win": 0.5,
+   "dur": 31.9
+  },
+  {
+   "k": "pillow:hug+slipper:hug@e90",
+   "win": 0.5,
+   "dur": 30
+  },
+  {
+   "k": "pan-lux3d:out+broom:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 30.5
+  },
+  {
+   "k": "pan-lux3d:out+broom:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 33.9
+  },
+  {
+   "k": "pan-lux3d:hug+broom:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 35.6
+  },
+  {
+   "k": "pan-lux3d:hug+broom:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 32
+  },
+  {
+   "k": "pan-lux3d:out+lamp-lux3d:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 29.6
+  },
+  {
+   "k": "pan-lux3d:out+lamp-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 32.7
+  },
+  {
+   "k": "pan-lux3d:hug+lamp-lux3d:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 32.3
+  },
+  {
+   "k": "pan-lux3d:hug+lamp-lux3d:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 31.7
+  },
+  {
+   "k": "pan-lux3d:hug+lamp-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 27.9
+  },
+  {
+   "k": "pan-lux3d:hug+scissors:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 27.4
+  },
+  {
+   "k": "pan-lux3d:hug+slipper:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 31.2
+  },
+  {
+   "k": "pan-lux3d:hug+slipper:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 29.1
+  },
+  {
+   "k": "pan-lux3d:out+pillow:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 33.8
+  },
+  {
+   "k": "pan-lux3d:hug+pillow:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 34.6
+  },
+  {
+   "k": "broom:hug+pan-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 30.9
+  },
+  {
+   "k": "broom:hug+pan-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 36.1
+  },
+  {
+   "k": "broom:out+lamp-lux3d:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 32.1
+  },
+  {
+   "k": "broom:out+lamp-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 32.8
+  },
+  {
+   "k": "broom:hug+lamp-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 34.2
+  },
+  {
+   "k": "broom:out+scissors:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 31.9
+  },
+  {
+   "k": "broom:out+scissors:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 32.5
+  },
+  {
+   "k": "broom:out+slipper:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 31.9
+  },
+  {
+   "k": "broom:out+slipper:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 31.6
+  },
+  {
+   "k": "broom:out+slipper:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 28.7
+  },
+  {
+   "k": "broom:hug+slipper:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 31.7
+  },
+  {
+   "k": "broom:hug+pillow:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 35
+  },
+  {
+   "k": "lamp-lux3d:out+pan-lux3d:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 28
+  },
+  {
+   "k": "lamp-lux3d:out+pan-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 31.3
+  },
+  {
+   "k": "lamp-lux3d:out+pan-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 29.9
+  },
+  {
+   "k": "lamp-lux3d:hug+pan-lux3d:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 33.3
+  },
+  {
+   "k": "lamp-lux3d:hug+pan-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 33.2
+  },
+  {
+   "k": "lamp-lux3d:out+broom:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 30.8
+  },
+  {
+   "k": "lamp-lux3d:out+broom:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 32.5
+  },
+  {
+   "k": "lamp-lux3d:hug+broom:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 30.5
+  },
+  {
+   "k": "lamp-lux3d:out+scissors:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 31.3
+  },
+  {
+   "k": "lamp-lux3d:out+scissors:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 29.6
+  },
+  {
+   "k": "lamp-lux3d:hug+scissors:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 27.8
+  },
+  {
+   "k": "lamp-lux3d:hug+slipper:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 29.9
+  },
+  {
+   "k": "lamp-lux3d:out+pillow:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 34.4
+  },
+  {
+   "k": "lamp-lux3d:hug+pillow:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 37.4
+  },
+  {
+   "k": "scissors:out+pan-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 26.7
+  },
+  {
+   "k": "scissors:hug+pan-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 24.5
+  },
+  {
+   "k": "scissors:out+lamp-lux3d:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 27.8
+  },
+  {
+   "k": "scissors:out+lamp-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 27.8
+  },
+  {
+   "k": "scissors:hug+lamp-lux3d:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 31.7
+  },
+  {
+   "k": "scissors:hug+lamp-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 27.5
+  },
+  {
+   "k": "scissors:out+slipper:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 25.6
+  },
+  {
+   "k": "scissors:hug+slipper:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 21.6
+  },
+  {
+   "k": "scissors:out+pillow:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 32.1
+  },
+  {
+   "k": "scissors:out+pillow:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 28.7
+  },
+  {
+   "k": "scissors:hug+pillow:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 35.6
+  },
+  {
+   "k": "scissors:hug+pillow:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 31.4
+  },
+  {
+   "k": "slipper:out+pan-lux3d:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 29
+  },
+  {
+   "k": "slipper:out+broom:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 30.8
+  },
+  {
+   "k": "slipper:hug+broom:hug@e180",
+   "win": 0.3333333333333333,
+   "dur": 28.8
+  },
+  {
+   "k": "slipper:hug+lamp-lux3d:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 34.7
+  },
+  {
+   "k": "slipper:out+pillow:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 33
+  },
+  {
+   "k": "slipper:out+pillow:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 33.3
+  },
+  {
+   "k": "pillow:hug+pan-lux3d:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 36.7
+  },
+  {
+   "k": "pillow:hug+lamp-lux3d:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 33.3
+  },
+  {
+   "k": "pillow:out+scissors:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 31.6
+  },
+  {
+   "k": "pillow:hug+scissors:hug@e90",
+   "win": 0.3333333333333333,
+   "dur": 27.3
+  },
+  {
+   "k": "pillow:out+slipper:out@e90",
+   "win": 0.3333333333333333,
+   "dur": 34.1
+  },
+  {
+   "k": "pillow:hug+slipper:out@e180",
+   "win": 0.3333333333333333,
+   "dur": 32.6
+  },
+  {
+   "k": "pan-lux3d:out+scissors:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 29.9
+  },
+  {
+   "k": "pan-lux3d:out+scissors:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 28
+  },
+  {
+   "k": "pan-lux3d:hug+scissors:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 26.7
+  },
+  {
+   "k": "pan-lux3d:out+slipper:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 29
+  },
+  {
+   "k": "broom:out+pan-lux3d:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 36.5
+  },
+  {
+   "k": "broom:out+scissors:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 27.4
+  },
+  {
+   "k": "broom:hug+scissors:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 30
+  },
+  {
+   "k": "broom:hug+scissors:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 28.6
+  },
+  {
+   "k": "broom:hug+scissors:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 29.1
+  },
+  {
+   "k": "broom:out+slipper:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 32.1
+  },
+  {
+   "k": "broom:hug+slipper:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 32.3
+  },
+  {
+   "k": "lamp-lux3d:hug+scissors:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 28.3
+  },
+  {
+   "k": "lamp-lux3d:hug+scissors:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 27.7
+  },
+  {
+   "k": "lamp-lux3d:hug+slipper:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 30.9
+  },
+  {
+   "k": "lamp-lux3d:hug+pillow:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 35.4
+  },
+  {
+   "k": "scissors:out+pan-lux3d:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 28.2
+  },
+  {
+   "k": "scissors:out+pan-lux3d:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 27
+  },
+  {
+   "k": "scissors:hug+pan-lux3d:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 30.7
+  },
+  {
+   "k": "scissors:hug+pan-lux3d:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 24.6
+  },
+  {
+   "k": "scissors:out+broom:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 29.6
+  },
+  {
+   "k": "scissors:out+broom:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 31.8
+  },
+  {
+   "k": "scissors:hug+lamp-lux3d:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 29.1
+  },
+  {
+   "k": "scissors:out+slipper:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 25.1
+  },
+  {
+   "k": "scissors:out+slipper:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 25.9
+  },
+  {
+   "k": "scissors:hug+slipper:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 25.5
+  },
+  {
+   "k": "scissors:hug+slipper:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 21.4
+  },
+  {
+   "k": "scissors:hug+slipper:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 23.9
+  },
+  {
+   "k": "slipper:out+pan-lux3d:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 31.6
+  },
+  {
+   "k": "slipper:out+pan-lux3d:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 30
+  },
+  {
+   "k": "slipper:hug+pan-lux3d:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 31.4
+  },
+  {
+   "k": "slipper:hug+pan-lux3d:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 28.6
+  },
+  {
+   "k": "slipper:hug+pan-lux3d:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 26
+  },
+  {
+   "k": "slipper:out+broom:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 30.4
+  },
+  {
+   "k": "slipper:hug+broom:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 31.9
+  },
+  {
+   "k": "slipper:out+lamp-lux3d:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 31.8
+  },
+  {
+   "k": "slipper:out+lamp-lux3d:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 28.3
+  },
+  {
+   "k": "slipper:out+scissors:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 24.4
+  },
+  {
+   "k": "slipper:hug+scissors:out@e90",
+   "win": 0.16666666666666666,
+   "dur": 26.6
+  },
+  {
+   "k": "slipper:hug+pillow:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 30.8
+  },
+  {
+   "k": "pillow:hug+pan-lux3d:hug@e90",
+   "win": 0.16666666666666666,
+   "dur": 33.3
+  },
+  {
+   "k": "pillow:out+scissors:hug@e180",
+   "win": 0.16666666666666666,
+   "dur": 29.8
+  },
+  {
+   "k": "pillow:out+slipper:out@e180",
+   "win": 0.16666666666666666,
+   "dur": 29.6
+  },
+  {
+   "k": "pan-lux3d:hug+lamp-lux3d:hug@e180",
+   "win": 0,
+   "dur": 28.8
+  },
+  {
+   "k": "pan-lux3d:out+scissors:out@e90",
+   "win": 0,
+   "dur": 27
+  },
+  {
+   "k": "pan-lux3d:out+scissors:hug@e180",
+   "win": 0,
+   "dur": 25.1
+  },
+  {
+   "k": "pan-lux3d:hug+scissors:out@e180",
+   "win": 0,
+   "dur": 26.1
+  },
+  {
+   "k": "pan-lux3d:hug+scissors:hug@e90",
+   "win": 0,
+   "dur": 27.8
+  },
+  {
+   "k": "pan-lux3d:hug+slipper:out@e90",
+   "win": 0,
+   "dur": 28.4
+  },
+  {
+   "k": "lamp-lux3d:hug+pan-lux3d:out@e180",
+   "win": 0,
+   "dur": 30.8
+  },
+  {
+   "k": "lamp-lux3d:hug+pan-lux3d:hug@e180",
+   "win": 0,
+   "dur": 32.4
+  },
+  {
+   "k": "lamp-lux3d:out+slipper:hug@e90",
+   "win": 0,
+   "dur": 30.4
+  },
+  {
+   "k": "scissors:hug+broom:hug@e180",
+   "win": 0,
+   "dur": 26.7
+  },
+  {
+   "k": "scissors:hug+broom:hug@e90",
+   "win": 0,
+   "dur": 24.2
+  },
+  {
+   "k": "scissors:out+slipper:hug@e180",
+   "win": 0,
+   "dur": 23.8
+  },
+  {
+   "k": "slipper:hug+broom:hug@e90",
+   "win": 0,
+   "dur": 32
+  },
+  {
+   "k": "slipper:out+lamp-lux3d:hug@e90",
+   "win": 0,
+   "dur": 26.9
+  },
+  {
+   "k": "slipper:out+scissors:out@e180",
+   "win": 0,
+   "dur": 24.2
+  },
+  {
+   "k": "slipper:out+scissors:out@e90",
+   "win": 0,
+   "dur": 23.3
+  },
+  {
+   "k": "slipper:out+scissors:hug@e180",
+   "win": 0,
+   "dur": 24.6
+  },
+  {
+   "k": "slipper:hug+scissors:out@e180",
+   "win": 0,
+   "dur": 22.5
+  },
+  {
+   "k": "slipper:hug+scissors:hug@e180",
+   "win": 0,
+   "dur": 23.6
+  },
+  {
+   "k": "pillow:hug+scissors:out@e180",
+   "win": 0,
+   "dur": 31.7
+  }
+ ],
+ "seeds": 6
+}

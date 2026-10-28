@@ -6,9 +6,9 @@
       "right": "pot",
       "mode": "B",
       "seed": 1,
-      "sha256": "7653df6b7ecb9599b44f0ed0649913821c818ebd445062f8f229dff5ab250c5a",
-      "duration": 30.016666666666666,
-      "breaks": 3,
+      "sha256": "b1014d099bc0cf78105ad23990a816a6cfda75152bbfbb52b3056acda153f13a",
+      "duration": 28.599999999999998,
+      "breaks": 2,
       "schema": 3
     },
     {
@@ -16,9 +16,9 @@
       "right": "lamp-lux3d",
       "mode": "A",
       "seed": 3,
-      "sha256": "4809cbff928aa81dfc734ada623f9c459f35d7cb7512435a817d882101215d62",
-      "duration": 30.78333333333333,
-      "breaks": 2,
+      "sha256": "cbf261f60b002ab3a306e7c502ada6d5b0fa300d5ad0a1a96f58fde1db1b2c18",
+      "duration": 23.90833333333333,
+      "breaks": 0,
       "schema": 3
     },
     {
@@ -26,9 +26,9 @@
       "right": "scissors",
       "mode": "A",
       "seed": 1,
-      "sha256": "a4d5b8e4324df0a262adb9ac38ced5deb3fa400ae292ec1b1848efd2eb44623b",
-      "duration": 12.433333333333334,
-      "breaks": 0,
+      "sha256": "25fe5fc1d650dcd766d215fbb467ece12e38e9a10aab68abbd091c6206d278cf",
+      "duration": 22.966666666666665,
+      "breaks": 1,
       "schema": 3
     }
   ],

@@ -1,0 +1,487 @@
+{
+  "mode": "A",
+  "seeds": 4,
+  "pairs": [
+    [
+      "broom",
+      "pan-lux3d"
+    ],
+    [
+      "scissors",
+      "pillow"
+    ],
+    [
+      "lamp-lux3d",
+      "slipper"
+    ],
+    [
+      "pot",
+      "broom"
+    ],
+    [
+      "pillow",
+      "lamp"
+    ],
+    [
+      "slipper",
+      "scissors"
+    ]
+  ],
+  "guard": "out item at e0, pillow (or pan-lux3d) hugging at e180",
+  "method": {
+    "approach": "pre-impact approach speed along the contact normal at the first solver-impulse step of the contact run (impact-probe.mjs); runs older than 0.1 s are rubs, left out",
+    "separation": "d|COM0-COM1|/dt over 0.05-0.25 s after the hit"
+  },
+  "summary": {
+    "v1": {
+      "hits": 149,
+      "impacts": 149,
+      "rubs": 0,
+      "approach": {
+        "p25": 1.2038013737020081,
+        "median": 1.8597427622234792,
+        "p75": 2.356143825069875
+      },
+      "separation": {
+        "p25": 1.210036497578948,
+        "median": 1.7555545024677948,
+        "p75": 2.3156291360257177
+      }
+    },
+    "top": {
+      "hits": 549,
+      "impacts": 549,
+      "rubs": 0,
+      "approach": {
+        "p25": 4.144311407117494,
+        "median": 5.8132003042262035,
+        "p75": 7.082311137809562
+      },
+      "separation": {
+        "p25": 2.268405683168968,
+        "median": 3.348684888080367,
+        "p75": 4.387904341103572
+      }
+    },
+    "byGame": {
+      "approach": {
+        "notLower": 24,
+        "of": 24
+      },
+      "separation": {
+        "notLower": 24,
+        "of": 24
+      }
+    }
+  },
+  "rows": [
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 1,
+      "v1": {
+        "hits": 4,
+        "rubs": 0,
+        "approachMedian": 2.418636809889514,
+        "separationMedian": 1.1713372630400145
+      },
+      "top": {
+        "hits": 21,
+        "rubs": 0,
+        "approachMedian": 6.541738151281655,
+        "separationMedian": 4.3804934202732495
+      }
+    },
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 2,
+      "v1": {
+        "hits": 4,
+        "rubs": 0,
+        "approachMedian": 2.4283140717918457,
+        "separationMedian": 0.8853770547678821
+      },
+      "top": {
+        "hits": 20,
+        "rubs": 0,
+        "approachMedian": 6.193860186399248,
+        "separationMedian": 4.392812739252328
+      }
+    },
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 3,
+      "v1": {
+        "hits": 4,
+        "rubs": 0,
+        "approachMedian": 2.486421262140738,
+        "separationMedian": 0.968532007222976
+      },
+      "top": {
+        "hits": 26,
+        "rubs": 0,
+        "approachMedian": 6.186038471374008,
+        "separationMedian": 3.515450869335848
+      }
+    },
+    {
+      "a": "broom",
+      "b": "pan-lux3d",
+      "seed": 4,
+      "v1": {
+        "hits": 4,
+        "rubs": 0,
+        "approachMedian": 2.3231284067526086,
+        "separationMedian": 0.7413448181881912
+      },
+      "top": {
+        "hits": 22,
+        "rubs": 0,
+        "approachMedian": 5.758179858279485,
+        "separationMedian": 3.8883601747976937
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 1,
+      "v1": {
+        "hits": 8,
+        "rubs": 0,
+        "approachMedian": 1.4685712709879808,
+        "separationMedian": 2.0692036014563002
+      },
+      "top": {
+        "hits": 25,
+        "rubs": 0,
+        "approachMedian": 5.355629889718587,
+        "separationMedian": 3.021825253895664
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 2,
+      "v1": {
+        "hits": 8,
+        "rubs": 0,
+        "approachMedian": 1.6182116566454412,
+        "separationMedian": 1.6275653756628883
+      },
+      "top": {
+        "hits": 23,
+        "rubs": 0,
+        "approachMedian": 4.976253651845884,
+        "separationMedian": 3.6256105804847714
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 3,
+      "v1": {
+        "hits": 8,
+        "rubs": 0,
+        "approachMedian": 2.6883925584345456,
+        "separationMedian": 2.3156291360257177
+      },
+      "top": {
+        "hits": 22,
+        "rubs": 0,
+        "approachMedian": 5.560917952500175,
+        "separationMedian": 2.6758912599548745
+      }
+    },
+    {
+      "a": "scissors",
+      "b": "pillow",
+      "seed": 4,
+      "v1": {
+        "hits": 9,
+        "rubs": 0,
+        "approachMedian": 1.8597427622234792,
+        "separationMedian": 1.591821008659371
+      },
+      "top": {
+        "hits": 22,
+        "rubs": 0,
+        "approachMedian": 5.397490750852287,
+        "separationMedian": 2.7332465976218328
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 1,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 2.2539653850783026,
+        "separationMedian": 1.854113859407942
+      },
+      "top": {
+        "hits": 25,
+        "rubs": 0,
+        "approachMedian": 5.557828223916831,
+        "separationMedian": 3.324073580159994
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 2,
+      "v1": {
+        "hits": 5,
+        "rubs": 0,
+        "approachMedian": 1.2354542240703132,
+        "separationMedian": 1.9348991135255322
+      },
+      "top": {
+        "hits": 22,
+        "rubs": 0,
+        "approachMedian": 5.737430332778756,
+        "separationMedian": 3.547727699767694
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 3,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 2.0998371749510696,
+        "separationMedian": 2.372643099338154
+      },
+      "top": {
+        "hits": 24,
+        "rubs": 0,
+        "approachMedian": 6.106432828190254,
+        "separationMedian": 3.904354294246549
+      }
+    },
+    {
+      "a": "lamp-lux3d",
+      "b": "slipper",
+      "seed": 4,
+      "v1": {
+        "hits": 8,
+        "rubs": 0,
+        "approachMedian": 2.2005008184308883,
+        "separationMedian": 1.9143254860377636
+      },
+      "top": {
+        "hits": 18,
+        "rubs": 0,
+        "approachMedian": 6.737790263141709,
+        "separationMedian": 4.172656512772603
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 1,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 2.5452407609354073,
+        "separationMedian": 2.5082392057426737
+      },
+      "top": {
+        "hits": 25,
+        "rubs": 0,
+        "approachMedian": 6.9081984467758515,
+        "separationMedian": 3.407905316071649
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 2,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 2.287666640580081,
+        "separationMedian": 1.6296079052482764
+      },
+      "top": {
+        "hits": 23,
+        "rubs": 0,
+        "approachMedian": 5.795133889867522,
+        "separationMedian": 4.387904341103572
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 3,
+      "v1": {
+        "hits": 4,
+        "rubs": 0,
+        "approachMedian": 1.848051977701426,
+        "separationMedian": 2.0718113821635584
+      },
+      "top": {
+        "hits": 25,
+        "rubs": 0,
+        "approachMedian": 6.719947569985964,
+        "separationMedian": 4.135556978433444
+      }
+    },
+    {
+      "a": "pot",
+      "b": "broom",
+      "seed": 4,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 1.7341889212192103,
+        "separationMedian": 1.7555545024677948
+      },
+      "top": {
+        "hits": 21,
+        "rubs": 0,
+        "approachMedian": 6.6289945369386745,
+        "separationMedian": 3.5876384401046257
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 1,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 2.2021089468513417,
+        "separationMedian": 1.602169111782386
+      },
+      "top": {
+        "hits": 26,
+        "rubs": 0,
+        "approachMedian": 5.667914576398281,
+        "separationMedian": 3.15110030517622
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 2,
+      "v1": {
+        "hits": 6,
+        "rubs": 0,
+        "approachMedian": 1.4396505083270976,
+        "separationMedian": 1.6976528277186556
+      },
+      "top": {
+        "hits": 20,
+        "rubs": 0,
+        "approachMedian": 5.780321452033295,
+        "separationMedian": 3.1456767655508004
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 3,
+      "v1": {
+        "hits": 4,
+        "rubs": 0,
+        "approachMedian": 1.4121828816664548,
+        "separationMedian": 1.8674473725946328
+      },
+      "top": {
+        "hits": 25,
+        "rubs": 0,
+        "approachMedian": 6.227666672050738,
+        "separationMedian": 2.6635848005062184
+      }
+    },
+    {
+      "a": "pillow",
+      "b": "lamp",
+      "seed": 4,
+      "v1": {
+        "hits": 3,
+        "rubs": 0,
+        "approachMedian": 1.815011560699288,
+        "separationMedian": 1.210036497578948
+      },
+      "top": {
+        "hits": 28,
+        "rubs": 0,
+        "approachMedian": 5.463641649224373,
+        "separationMedian": 3.0760708078798302
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 1,
+      "v1": {
+        "hits": 10,
+        "rubs": 0,
+        "approachMedian": 2.084440519617808,
+        "separationMedian": 2.2169189075770177
+      },
+      "top": {
+        "hits": 22,
+        "rubs": 0,
+        "approachMedian": 6.437690448642635,
+        "separationMedian": 3.655138215386658
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 2,
+      "v1": {
+        "hits": 9,
+        "rubs": 0,
+        "approachMedian": 2.0349998295911433,
+        "separationMedian": 1.8682331529207652
+      },
+      "top": {
+        "hits": 21,
+        "rubs": 0,
+        "approachMedian": 5.3108808229578175,
+        "separationMedian": 3.3006177294631
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 3,
+      "v1": {
+        "hits": 8,
+        "rubs": 0,
+        "approachMedian": 2.036303028103741,
+        "separationMedian": 1.712484697645969
+      },
+      "top": {
+        "hits": 20,
+        "rubs": 0,
+        "approachMedian": 6.197707394516794,
+        "separationMedian": 2.660107549063917
+      }
+    },
+    {
+      "a": "slipper",
+      "b": "scissors",
+      "seed": 4,
+      "v1": {
+        "hits": 7,
+        "rubs": 0,
+        "approachMedian": 1.3909768832820184,
+        "separationMedian": 1.8930513691506785
+      },
+      "top": {
+        "hits": 23,
+        "rubs": 0,
+        "approachMedian": 5.141909817872282,
+        "separationMedian": 3.2793345763679027
+      }
+    }
+  ]
+}

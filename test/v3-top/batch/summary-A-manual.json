@@ -1,0 +1,241 @@
+{
+  "mode": "A",
+  "manual": true,
+  "games": 240,
+  "seconds": 43.3,
+  "rules": null,
+  "pass": 234,
+  "durationPass": 234,
+  "short": 5,
+  "long": 1,
+  "timeouts": 0,
+  "firstPass": 240,
+  "medianGapPass": 240,
+  "longestGapPass": 240,
+  "tailOver6": 0,
+  "duration": {
+    "p10": 22.9,
+    "median": 29.675,
+    "p90": 35.383
+  },
+  "first": {
+    "median": 0.358,
+    "max": 0.6
+  },
+  "medianGap": {
+    "median": 1.458,
+    "max": 1.692
+  },
+  "longestGap": {
+    "median": 1.825,
+    "max": 2.042
+  },
+  "hitsPerGame": 24,
+  "breaksPerGame": 2.12,
+  "gamesWithBreak": 227,
+  "coreHitShare": 0.497,
+  "scrape": {
+    "episodes": 35,
+    "seconds": 4.83,
+    "longest": 0.358
+  },
+  "slowDamage": 0,
+  "maxCorrectionPerStep": 0.02,
+  "maxPenetration": {
+    "median": 0.047,
+    "max": 0.089
+  },
+  "perGame": {
+    "presses": 16.97,
+    "dashes": 11.83,
+    "dashHits": 6.31,
+    "parries": 4.19,
+    "dashMiss": 1.34,
+    "blocks": 5.04
+  },
+  "dashDamageShare": 0.41,
+  "dashKoGames": 103,
+  "closingMedian": 5.204,
+  "spin": {
+    "median": 11.986,
+    "p10": 6.126
+  },
+  "rates": {
+    "foe": {
+      "games": 60,
+      "winRate": 0.617
+    },
+    "item:broom": {
+      "games": 148,
+      "winRate": 0.5
+    },
+    "item:broom:hug": {
+      "games": 75,
+      "winRate": 0.48
+    },
+    "item:broom:out": {
+      "games": 73,
+      "winRate": 0.521
+    },
+    "item:lamp-lux3d": {
+      "games": 194,
+      "winRate": 0.593
+    },
+    "item:lamp-lux3d:hug": {
+      "games": 133,
+      "winRate": 0.609
+    },
+    "item:lamp-lux3d:out": {
+      "games": 61,
+      "winRate": 0.557
+    },
+    "item:pan-lux3d": {
+      "games": 198,
+      "winRate": 0.561
+    },
+    "item:pan-lux3d:hug": {
+      "games": 71,
+      "winRate": 0.493
+    },
+    "item:pan-lux3d:out": {
+      "games": 127,
+      "winRate": 0.598
+    },
+    "item:pillow": {
+      "games": 137,
+      "winRate": 0.518
+    },
+    "item:pillow:hug": {
+      "games": 73,
+      "winRate": 0.493
+    },
+    "item:pillow:out": {
+      "games": 64,
+      "winRate": 0.547
+    },
+    "item:scissors": {
+      "games": 153,
+      "winRate": 0.346
+    },
+    "item:scissors:hug": {
+      "games": 87,
+      "winRate": 0.333
+    },
+    "item:scissors:out": {
+      "games": 66,
+      "winRate": 0.364
+    },
+    "item:slipper": {
+      "games": 130,
+      "winRate": 0.431
+    },
+    "item:slipper:hug": {
+      "games": 59,
+      "winRate": 0.593
+    },
+    "item:slipper:out": {
+      "games": 71,
+      "winRate": 0.296
+    },
+    "orients:hug+hug": {
+      "games": 107,
+      "winRate": 0.477
+    },
+    "orients:hug+out": {
+      "games": 284,
+      "winRate": 0.528
+    },
+    "orients:out+out": {
+      "games": 89,
+      "winRate": 0.438
+    },
+    "spread:e180": {
+      "games": 276,
+      "winRate": 0.504
+    },
+    "spread:e90": {
+      "games": 204,
+      "winRate": 0.495
+    }
+  },
+  "failures": [
+    {
+      "g": 14,
+      "seed": 15,
+      "a": "scissors/out+slipper/out@e90",
+      "b": "pan-lux3d/hug+lamp-lux3d/out@e180",
+      "duration": 16.4,
+      "first": 0.31666666666666665,
+      "medianGap": 1.38,
+      "longestGap": 1.76,
+      "tail": 0,
+      "reason": "ko",
+      "breaks": 1
+    },
+    {
+      "g": 18,
+      "seed": 19,
+      "a": "broom/out+slipper/hug@e90",
+      "b": "slipper/out+scissors/hug@e90",
+      "duration": 17.17,
+      "first": 0.39166666666666666,
+      "medianGap": 1.16,
+      "longestGap": 1.91,
+      "tail": 0,
+      "reason": "ko",
+      "breaks": 0
+    },
+    {
+      "g": 147,
+      "seed": 148,
+      "a": "lamp-lux3d/out+slipper/hug@e180",
+      "b": "pan-lux3d/out+lamp-lux3d/hug@e180",
+      "duration": 19.74,
+      "first": 0.36666666666666664,
+      "medianGap": 1.33,
+      "longestGap": 1.73,
+      "tail": 0,
+      "reason": "ko",
+      "breaks": 1
+    },
+    {
+      "g": 155,
+      "seed": 156,
+      "a": "lamp-lux3d/out+pan-lux3d/hug@e90",
+      "b": "pan-lux3d/out+lamp-lux3d/hug@e180",
+      "duration": 16.13,
+      "first": 0.3416666666666667,
+      "medianGap": 1.33,
+      "longestGap": 1.67,
+      "tail": 0,
+      "reason": "ko",
+      "breaks": 0
+    },
+    {
+      "g": 179,
+      "seed": 180,
+      "a": "scissors/hug+slipper/out@e180",
+      "b": "pan-lux3d/out+lamp-lux3d/hug@e180",
+      "duration": 14.53,
+      "first": 0.3416666666666667,
+      "medianGap": 1.48,
+      "longestGap": 1.73,
+      "tail": 0,
+      "reason": "ko",
+      "breaks": 0
+    },
+    {
+      "g": 204,
+      "seed": 205,
+      "a": "scissors/out+pan-lux3d/hug@e90",
+      "b": "broom/out+lamp-lux3d/hug@e180",
+      "duration": 44.5,
+      "first": 0.36666666666666664,
+      "medianGap": 1.45,
+      "longestGap": 1.83,
+      "tail": 0,
+      "reason": "ko",
+      "breaks": 4
+    }
+  ]
+}

@@ -1,11 +1,18 @@
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {ConvexGeometry} from 'three/addons/geometries/ConvexGeometry.js';
 import {instantiate} from './models.js';
 
 export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
 const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
-const HULL_MAT = new THREE.MeshBasicMaterial();
+const UP = new THREE.Vector3(0, 1, 0);
+
+// Fixed fight camera (Elara 98f93d28, after 远夏 5740feda: the following camera made him dizzy).
+// One pose for the whole fight: tilted down CAM_PITCH from horizontal, the player's top near (bottom), the
+// opponent far (top). No follow, no turn, no zoom; recomputed only when the screen size or the match changes.
+// CORE_TRAVEL: how far a core gets from the centre (240-game batch max 2.11 m); the drawn rim sits just outside.
+// CORE_RISE: how far a core leaves the spin plane (max 1.05 m).
+export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
+const CAM_PITCH = THREE.MathUtils.degToRad(60), CAM_YAW = Math.PI / 2, CAM_FOV = 28, FRAME_MARGIN = 6, SHAKE_TIME = 0.16, SLIDE_TIME = 0.8;
 
 function radialTexture(inner, outer) {
   const c = document.createElement('canvas');
@@ -34,59 +41,114 @@ function ringTexture() {
   g.stroke();
   return new THREE.CanvasTexture(c);
 }
+/** Core ball skin: dark metal in the team colour, a bright equator band and stripes that show the spin. */
+function coreTextures(color) {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 128;
+  const g = c.getContext('2d');
+  const base = color.clone().multiplyScalar(0.35);
+  g.fillStyle = `#${base.getHexString()}`;
+  g.fillRect(0, 0, 256, 128);
+  const e = document.createElement('canvas');
+  e.width = 256;
+  e.height = 128;
+  const ge = e.getContext('2d');
+  ge.fillStyle = '#000';
+  ge.fillRect(0, 0, 256, 128);
+  for (const ctx of [g, ge]) {
+    ctx.fillStyle = `#${color.getHexString()}`;
+    ctx.fillRect(0, 56, 256, 16); // equator band
+    ctx.fillStyle = '#ffffff';
+    for (let k = 0; k < 4; k++) ctx.fillRect(k * 64 + 4, 0, 10, 128); // meridian stripes
+  }
+  const map = new THREE.CanvasTexture(c), emissive = new THREE.CanvasTexture(e);
+  map.colorSpace = emissive.colorSpace = THREE.SRGBColorSpace;
+  return {map, emissive};
+}
 
-// Outer wall: the ring-out boundary, seen from inside as a faint grid. Redder as the safe zone shrinks.
-const wallShader = {
-  uniforms: {uDanger: {value: 0}},
+const backdropShader = {
   vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `uniform float uDanger; varying vec3 vP;
+  fragmentShader: `varying vec3 vP;
     void main(){
       float lat = asin(clamp(vP.y,-1.0,1.0)) / 3.14159265 * 12.0;
       float lon = atan(vP.z, vP.x) / 3.14159265 * 12.0;
-      // atan jumps at the seam; take the derivative of a copy whose seam is elsewhere.
       float lon2 = fract(lon / 24.0 + 0.5) * 24.0;
       vec2 g = abs(fract(vec2(lat, lon)) - 0.5);
       vec2 w = vec2(fwidth(lat), min(fwidth(lon), fwidth(lon2))) * 1.2;
       float meridian = (1.0 - smoothstep(0.0, w.y, 0.5 - g.y)) * smoothstep(0.12, 0.45, sqrt(1.0 - vP.y * vP.y));
       float line = max(1.0 - smoothstep(0.0, w.x, 0.5 - g.x), meridian);
-      // Linear values: they get brightened by the sRGB conversion below.
       float shade = 0.75 + 0.25 * vP.y;
-      vec3 base = mix(vec3(0.0035,0.005,0.011), vec3(0.03,0.002,0.006), 0.25 + 0.75 * uDanger) * shade;
-      vec3 lineCol = mix(vec3(0.02,0.05,0.11), vec3(0.16,0.012,0.025), 0.2 + 0.8 * uDanger);
-      gl_FragColor = vec4(base + lineCol * line, 1.0);
+      vec3 base = vec3(0.0035,0.005,0.011) * shade;
+      gl_FragColor = vec4(base + vec3(0.012,0.03,0.07) * line, 1.0);
       #include <colorspace_fragment>
     }`
 };
-// Safe zone: back faces dim whatever lies beyond the shell, front faces glow at the rim.
-const zoneBackShader = {
-  uniforms: {},
-  vertexShader: `void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `void main(){ gl_FragColor = vec4(0.004,0.006,0.012,0.7); }`
+// Faint rings in the spin plane around the pull centre: where "the middle" is, and how far apart they are.
+const planeShader = {
+  uniforms: {uRim: {value: ARENA_RIM}},
+  vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec2 vP; uniform float uRim;
+    void main(){
+      float r = length(vP);
+      float k = r / 0.5;
+      float ring = 1.0 - smoothstep(0.0, fwidth(k) * 1.5, abs(fract(k) - 0.5) * -1.0 + 0.5);
+      float inside = 1.0 - smoothstep(uRim - 0.02, uRim + 0.02, r);
+      float fade = 1.0 - smoothstep(0.6, uRim, r) * 0.45;
+      float centre = exp(-r * r * 18.0) * 0.3;
+      // The arena edge: a bright line with a soft glow inside it, so the whole stage reads as one dish.
+      float rimW = fwidth(r) * 1.5;
+      float rim = 1.0 - smoothstep(0.0, rimW + 0.012, abs(r - uRim));
+      float glow = exp(-max(0.0, uRim - r) * 5.0) * inside;
+      float bed = inside * 0.035;
+      gl_FragColor = vec4(vec3(0.25, 0.55, 1.0) * (ring * 0.1 * fade * inside + centre + bed + glow * 0.07) + vec3(0.45, 0.75, 1.0) * rim * 0.55, 1.0);
+      #include <colorspace_fragment>
+    }`
 };
-const zoneFrontShader = {
-  uniforms: {uTime: {value: 0}},
-  vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP;
-    void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; vP = position; gl_Position = projectionMatrix * mv; }`,
-  fragmentShader: `uniform float uTime; varying vec3 vN; varying vec3 vV; varying vec3 vP;
+// Shield bubble: bright rim, faint face, a slow ripple, additive.
+const shieldShader = {
+  vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vP = position; vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform vec3 uColor; uniform float uOpacity; uniform float uTime;
     void main(){
       float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
-      float rim = pow(f, 4.0);
-      float pulse = 0.85 + 0.15 * sin(uTime * 2.0);
-      vec3 c = vec3(0.3, 0.85, 1.0) * (rim * 0.55 * pulse + 0.004);
-      gl_FragColor = vec4(c, 1.0);
+      float rim = pow(f, 2.2);
+      float ripple = 0.5 + 0.5 * sin(vP.y * 60.0 - uTime * 9.0);
+      gl_FragColor = vec4(uColor * uOpacity * (rim * 1.5 + 0.12 + 0.12 * ripple * f), 1.0);
       #include <colorspace_fragment>
     }`
 };
 const particleShader = {
-  // World-sized sparks, capped on screen so close-ups don't turn into blobs.
   vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 color; varying vec3 vC; varying float vA; uniform float uScale; uniform float uMax;
     void main(){ vC = color; vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = min(uMax, aSize * uScale / max(0.05, -mv.z)); gl_Position = projectionMatrix * mv; }`,
   fragmentShader: `varying vec3 vC; varying float vA;
     void main(){ vec2 d = gl_PointCoord - 0.5; float r = dot(d,d) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(vC * vA * (1.0 - r) * 1.6, 1.0); }`
 };
+// Spin trail: a fan swept behind each part, in the body frame. out parts sweep a flat sector,
+// hugging parts a band of cylinder. Brightest at the part and at its outer edge.
+const fanShader = {
+  vertexShader: `attribute vec2 aFan; uniform float uTheta; uniform float uSpan; uniform float uR0; uniform float uR1; uniform float uY0; uniform float uY1; uniform float uHug;
+    varying vec2 vF;
+    void main(){
+      float ang = uTheta - aFan.x * uSpan;
+      float r = uHug > 0.5 ? uR1 : mix(uR0, uR1, aFan.y);
+      float y = uHug > 0.5 ? mix(uY0, uY1, aFan.y) : 0.5 * (uY0 + uY1);
+      vF = aFan;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(sin(ang) * r, y, cos(ang) * r, 1.0);
+    }`,
+  fragmentShader: `uniform vec3 uColor; uniform float uOpacity; uniform float uHug; varying vec2 vF;
+    void main(){
+      float along = pow(1.0 - vF.x, 1.25);
+      // Flat sector for an out part: faint inside, a bright streak where the tip passed.
+      float edge = smoothstep(0.86, 0.985, vF.y) * (1.0 - smoothstep(0.985, 1.0, vF.y));
+      float across = uHug > 0.5 ? 0.35 + 0.65 * (1.0 - abs(vF.y - 0.5) * 2.0) : 0.10 + 0.35 * vF.y * vF.y + 1.1 * edge;
+      float a = along * across * uOpacity;
+      vec3 col = mix(uColor, vec3(1.0), 0.45 * edge * pow(1.0 - vF.x, 3.0));
+      gl_FragColor = vec4(col * a, 1.0);
+    }`
+};
 
 class Particles {
-  constructor(scene, n = 420) {
+  constructor(scene, n = 520) {
     this.n = n;
     this.pos = new Float32Array(n * 3);
     this.col = new Float32Array(n * 3);
@@ -108,11 +170,12 @@ class Particles {
     scene.add(this.points);
     this.geo = g;
   }
-  burst(at, colors, count, speed, size, life) {
+  burst(at, colors, count, speed, size, life, drift) {
     for (let k = 0; k < count; k++) {
       const i = this.next;
       this.next = (this.next + 1) % this.n;
       tmp.randomDirection().multiplyScalar(speed * (0.35 + Math.random() * 0.9));
+      if (drift) tmp.add(drift);
       this.pos.set([at.x, at.y, at.z], i * 3);
       this.vel.set([tmp.x, tmp.y, tmp.z], i * 3);
       const c = colors[k % colors.length];
@@ -134,11 +197,11 @@ class Particles {
   clear() { this.life.fill(0); this.alpha.fill(0); this.geo.attributes.aAlpha.needsUpdate = true; }
 }
 
-/** Expanding billboard rings at impact points (crit / weak / ko). Driven by real time. */
+/** Expanding billboard rings at impact points. Driven by real time. */
 class Rings {
   constructor(scene) {
     const tex = ringTexture();
-    this.pool = Array.from({length: 8}, () => {
+    this.pool = Array.from({length: 10}, () => {
       const s = new THREE.Sprite(new THREE.SpriteMaterial({map: tex, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending}));
       s.visible = false;
       s.renderOrder = 6;
@@ -169,14 +232,25 @@ class Rings {
   clear() { for (const r of this.pool) r.s.visible = false; }
 }
 
-function itemRadius(item) {
-  return Math.hypot(...item.bounds.max.map((v, k) => (v - item.bounds.min[k]) / 2));
-}
+const fanGeometry = (() => {
+  // 24 steps along the sweep x 2 across.
+  const n = 24, pos = [], fan = [], index = [];
+  for (let i = 0; i <= n; i++) for (let j = 0; j <= 1; j++) { pos.push(0, 0, 0); fan.push(i / n, j); }
+  for (let i = 0; i < n; i++) { const a = i * 2, b = a + 1, c = a + 2, d = a + 3; index.push(a, c, b, b, c, d); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aFan', new THREE.Float32BufferAttribute(fan, 2));
+  g.setIndex(index);
+  return g;
+})();
 
 export class Stage {
-  constructor(canvas, rules) {
-    this.rules = rules;
-    this.items = new Map(rules.items.map(i => [i.id, i]));
+  /** layout(def) -> [{item, orient, offset, quat, theta, r0, r1, y0, y1}] for a fighter definition (body frame). */
+  constructor(canvas, {items, coreRadius, layout}) {
+    this.items = new Map(items.map(i => [i.id, i]));
+    this.coreRadius = coreRadius;
+    this.arenaRim = ARENA_RIM;
+    this.layout = layout;
     this.renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -185,16 +259,15 @@ export class Stage {
     this.scene.background = new THREE.Color('#070a12');
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.environmentIntensity = 0.4;
+    this.scene.environmentIntensity = 0.45;
     pmrem.dispose();
 
-    this.camera = new THREE.PerspectiveCamera(55, 390 / 844, 0.05, 60);
+    this.camera = new THREE.PerspectiveCamera(CAM_FOV, 390 / 844, 0.1, 240);
     this.scene.add(this.camera);
-    // Lights ride with the camera so every shape stays lit the same way while the view orbits.
-    this.scene.add(new THREE.HemisphereLight('#c9dcff', '#20121a', 0.7));
+    this.scene.add(new THREE.HemisphereLight('#c9dcff', '#20121a', 0.75));
     const key = new THREE.DirectionalLight('#fff4e6', 2.0);
     key.position.set(1.2, 1.6, 1.0);
-    const rim = new THREE.DirectionalLight('#a9c8ff', 1.8);
+    const rim = new THREE.DirectionalLight('#a9c8ff', 1.6);
     rim.position.set(-0.6, 0.8, -2.0);
     for (const l of [key, rim]) {
       const target = new THREE.Object3D();
@@ -203,279 +276,421 @@ export class Stage {
       l.target = target;
     }
 
-    const R = rules.arena.radius;
-    this.wall = new THREE.Mesh(new THREE.SphereGeometry(R, 72, 48), new THREE.ShaderMaterial({...wallShader, uniforms: THREE.UniformsUtils.clone(wallShader.uniforms), side: THREE.BackSide, depthWrite: false}));
-    this.wall.renderOrder = -2;
-    this.scene.add(this.wall);
-    const zoneGeo = new THREE.SphereGeometry(1, 64, 40);
-    this.zoneBack = new THREE.Mesh(zoneGeo, new THREE.ShaderMaterial({...zoneBackShader, side: THREE.BackSide, transparent: true, depthWrite: false}));
-    this.zoneBack.renderOrder = -1;
-    this.zoneFront = new THREE.Mesh(zoneGeo, new THREE.ShaderMaterial({...zoneFrontShader, uniforms: THREE.UniformsUtils.clone(zoneFrontShader.uniforms), side: THREE.FrontSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
-    this.zoneFront.renderOrder = 4;
-    this.scene.add(this.zoneBack, this.zoneFront);
+    const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.ShaderMaterial({...backdropShader, side: THREE.BackSide, depthWrite: false}));
+    back.renderOrder = -2;
+    this.scene.add(back);
+    const plane = new THREE.Mesh(new THREE.CircleGeometry(ARENA_RIM + 0.2, 128), new THREE.ShaderMaterial({...planeShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.y = -0.02;
+    plane.renderOrder = -1;
+    this.scene.add(plane);
 
     this.haloTex = radialTexture(0.9, 0.35);
+    this.coreGeo = new THREE.SphereGeometry(coreRadius, 40, 28);
+    this.shieldGeo = new THREE.SphereGeometry(coreRadius * 2.6, 40, 28);
+    this.coreTex = TEAM.map(coreTextures);
     this.particles = new Particles(this.scene);
     this.rings = new Rings(this.scene);
     this.fighters = [];
-    this.hullGeo = new Map();
+    this.debris = [];
     this.time = 0;
-
-    this.cam = {focus: new THREE.Vector3(), dist: 6, quat: new THREE.Quaternion(), shake: 0, push: 0, pushAt: new THREE.Vector3(), ready: false, turning: false};
-    this.view = {w: 390, h: 844, top: 70, bottom: 130, extra: 0, extraTarget: 0};
+    this.cam = {focus: new THREE.Vector3(), dist: 4, yaw: CAM_YAW, pitch: 0.95, ready: false, mode: 'fight', fixed: null, shakeAge: 1, shakeAmp: 0, offset: [0, 0], slide: null};
+    this.view = {w: 390, h: 844, top: 70, bottom: 130};
   }
 
   resize(w, h, top, bottom) {
     Object.assign(this.view, {w, h, top, bottom});
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
+    this.cam.fixed = null;
+    this.cam.slide = null;
     this.applyInsets();
     const dpr = this.renderer.getPixelRatio();
     this.particles.mat.uniforms.uScale.value = h * dpr / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
-    this.particles.mat.uniforms.uMax.value = 14 * dpr;
+    this.particles.mat.uniforms.uMax.value = 16 * dpr;
+  }
+  applyInsets() {
+    const {w, h, top, bottom} = this.view;
+    this.setOffset(0, (bottom - top) / 2);
+  }
+  /** Shifts the picture on screen (CSS px) without moving the camera: a pure 2D translation. */
+  setOffset(x, y) {
+    const {w, h} = this.view;
+    this.cam.offset = [x, y];
+    this.camera.setViewOffset(w, h, x, y, w, h);
+    this.camera.updateProjectionMatrix();
   }
 
-  /** Builds one fighter per definition: every part is its own model, plus a base for assemblies. */
+  disposeFighter(f) {
+    this.scene.remove(f.root, f.halo);
+    f.halo.material.dispose();
+    f.root.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); });
+  }
+
+  /** One fighter per definition: a body group (core ball, parts at their mounts, spin fans). */
   setFighters(definitions) {
-    for (const f of this.fighters) {
-      this.scene.remove(f.root);
-      f.root.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); });
-    }
-    this.fighters = definitions.map((def, i) => {
-      const uniforms = {uRim: {value: TEAM[i].clone()}, uFlash: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
-      const root = new THREE.Group();
-      const parts = def.parts.map(p => {
-        const obj = instantiate(p.item, uniforms);
-        root.add(obj);
-        return obj;
-      });
-      // Each part's collision hull, never drawn: aimAtHit casts its rays at these and samples their corners.
-      const hullPoints = def.parts.map(p => this.items.get(p.item).hull.map(v => new THREE.Vector3(...v)));
-      const hulls = def.parts.map((p, k) => {
-        if (!this.hullGeo.has(p.item)) this.hullGeo.set(p.item, new ConvexGeometry(hullPoints[k]));
-        return new THREE.Mesh(this.hullGeo.get(p.item), HULL_MAT);
-      });
-      let base = null;
-      if (def.parts.length > 1) {
-        const he = this.rules.arena.base.halfExtents;
-        const mat = new THREE.MeshStandardMaterial({color: '#3a4256', roughness: 0.6, metalness: 0.2});
-        base = new THREE.Mesh(new THREE.BoxGeometry(he[0] * 2, he[1] * 2, he[2] * 2), mat);
-        mat.onBeforeCompile = shader => { shader.uniforms.uRim = uniforms.uRim; shader.fragmentShader = 'uniform vec3 uRim;\n' + shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uRim * pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.2) * 1.5;'); };
-        root.add(base);
-      }
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({map: this.haloTex, color: TEAM[i], transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending}));
-      halo.renderOrder = 3;
-      root.add(halo);
-      this.scene.add(root);
-      const mounts = this.rules.arena.mounts;
-      const radius = Math.max(...def.parts.map(p => Math.hypot(...mounts[p.mount]) + itemRadius(this.items.get(p.item))));
-      return {root, parts, hulls, hullPoints, base, halo, uniforms, radius, center: new THREE.Vector3(), flash: 0, danger: 0, dim: 0, dimTarget: 0};
-    });
+    for (const f of this.fighters) this.disposeFighter(f);
+    this.clearDebris();
+    this.fighters = definitions.map((def, i) => this.buildFighter(def, i));
     this.cam.ready = false;
+    this.cam.fixed = null;
+  }
+  /** Rebuild one fighter in place (assembly edits), keeping its pose. */
+  replaceFighter(i, def) {
+    const old = this.fighters[i];
+    const f = this.buildFighter(def, i);
+    if (old) {
+      f.root.position.copy(old.root.position);
+      f.root.quaternion.copy(old.root.quaternion);
+      f.center.copy(old.center);
+      this.disposeFighter(old);
+    }
+    this.fighters[i] = f;
+  }
+  buildFighter(def, i) {
+    const team = TEAM[i];
+    const root = new THREE.Group();
+    const coreUniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
+    const coreMat = new THREE.MeshStandardMaterial({map: this.coreTex[i].map, emissiveMap: this.coreTex[i].emissive, emissive: new THREE.Color(1, 1, 1), emissiveIntensity: 0.9, metalness: 0.75, roughness: 0.3});
+    patchRim(coreMat, coreUniforms);
+    const core = new THREE.Mesh(this.coreGeo, coreMat);
+    root.add(core);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({map: this.haloTex, color: team, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending}));
+    halo.renderOrder = 3;
+    this.scene.add(halo);
+    const parts = this.layout(def).map(p => {
+      const uniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
+      const obj = instantiate(p.item, uniforms);
+      const holder = new THREE.Group();
+      holder.position.fromArray(p.offset);
+      holder.quaternion.fromArray(p.quat);
+      holder.add(obj);
+      root.add(holder);
+      const fan = new THREE.Mesh(fanGeometry, new THREE.ShaderMaterial({...fanShader, uniforms: {
+        uTheta: {value: p.theta}, uSpan: {value: 0}, uR0: {value: p.r0}, uR1: {value: p.r1}, uY0: {value: p.y0}, uY1: {value: p.y1}, uHug: {value: p.orient === 'hug' ? 1 : 0},
+        uColor: {value: team.clone().lerp(new THREE.Color('#ffffff'), 0.25)}, uOpacity: {value: 0.5}
+      }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide}));
+      fan.frustumCulled = false;
+      fan.renderOrder = 2;
+      root.add(fan);
+      // Framing extent: the model's own bounds about the spin axis (a model can reach past its collision hull).
+      root.updateMatrixWorld(true);
+      let reach = p.r1, y0 = p.y0, y1 = p.y1;
+      obj.traverse(o => {
+        if (!o.isMesh) return;
+        if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+        const bb = o.geometry.boundingBox;
+        for (let c = 0; c < 8; c++) {
+          const v = new THREE.Vector3(c & 1 ? bb.max.x : bb.min.x, c & 2 ? bb.max.y : bb.min.y, c & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld);
+          reach = Math.max(reach, Math.hypot(v.x, v.z)); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+        }
+      });
+      return {holder, obj, fan, uniforms, flash: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
+    });
+    this.scene.add(root);
+    const sweep = Math.max(this.coreRadius, ...parts.map(p => p.r1));
+    // Manual mode: shield bubble round the core (1 s), wind-up glow and the lunge's streak, all on the sim clock.
+    const shield = new THREE.Mesh(this.shieldGeo, new THREE.ShaderMaterial({...shieldShader, uniforms: {uColor: {value: new THREE.Color('#bff4ff').lerp(team, 0.25)}, uOpacity: {value: 0}, uTime: {value: 0}}, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
+    shield.visible = false;
+    shield.renderOrder = 4;
+    root.add(shield);
+    return {root, core, coreUniforms, halo, parts, sweep, shield, act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
   }
 
-  /** Applies one sampled replay state (world transforms). */
+  /** Applies one sampled replay state: body transform, angular speed about its up axis, alive flags, HP. */
   pose(state) {
     state.fighters.forEach((s, i) => {
       const f = this.fighters[i];
-      s.parts.forEach((p, k) => { f.parts[k].position.copy(p.pos); f.parts[k].quaternion.copy(p.quat); });
-      if (f.base) { f.base.position.copy(s.pos); f.base.quaternion.copy(s.quat); }
+      if (!f) return;
+      f.root.position.copy(s.pos);
+      f.root.quaternion.copy(s.quat);
       f.center.copy(s.pos);
+      tmp.copy(UP).applyQuaternion(s.quat);
+      f.spin = s.angularVelocity ? s.angularVelocity.dot(tmp) : 0;
+      s.parts.forEach((p, k) => {
+        const part = f.parts[k];
+        if (!part) return;
+        if (part.alive !== p.alive) { part.alive = p.alive; part.holder.visible = p.alive; part.fan.visible = p.alive; }
+        part.damage = 1 - p.hp / p.maxHp;
+      });
+      f.coreDamage = 1 - s.hp / s.maxHp;
+      if (f.coreAlive !== s.hp > 0) { f.coreAlive = s.hp > 0; f.dimTarget = f.coreAlive ? 0 : 1; }
     });
-    const a = this.rules.arena;
-    this.zoneBack.scale.setScalar(Math.max(state.zoneRadius, 0.001));
-    this.zoneFront.scale.setScalar(Math.max(state.zoneRadius, 0.001));
-    this.wall.material.uniforms.uDanger.value = 1 - (state.zoneRadius - a.zoneEndRadius) / (a.zoneStartRadius - a.zoneEndRadius);
-    this.zoneRadius = state.zoneRadius;
   }
 
-  // Shift the projection so the focus sits in the middle of the area between HUD and controls
-  // (plus any extra bottom panel such as the caption).
-  applyInsets() {
-    const {w, h, top, bottom, extra} = this.view;
-    this.camera.setViewOffset(w, h, 0, (bottom + extra - top) / 2, w, h);
-    this.camera.updateProjectionMatrix();
+  flashPart(i, partId, amount) {
+    const f = this.fighters[i];
+    if (!f) return;
+    if (partId === 'core') f.flash = Math.max(f.flash, amount);
+    else { const p = f.parts[Number(partId.split('-')[1])]; if (p) p.flash = Math.max(p.flash, amount); }
   }
-  /** Extra space covered at the bottom (CSS px); eased in updateCamera. */
-  setBottomPanel(px) { this.view.extraTarget = px; }
-
-  flashFighter(i, amount) { const f = this.fighters[i]; f.flash = Math.max(f.flash, amount); }
-  dimFighter(i) { this.fighters[i].dimTarget = 1; }
-  burst(point, colors, count, speed, size, life) { this.particles.burst(point, colors, count, speed, size, life); }
+  burst(point, colors, count, speed, size, life, drift) { this.particles.burst(point, colors, count, speed, size, life, drift); }
   ring(point, color, from, to, dur) { this.rings.spawn(point, color, from, to, dur); }
-  shake(amount) { this.cam.shake = Math.min(1.2, Math.max(this.cam.shake, amount)); }
-  /** 0..1: push the camera toward a point (decisive slow motion). */
-  setPush(amount, point) { this.cam.push = amount; if (point) this.cam.pushAt.copy(point); }
-  /**
-   * Replay cut: with the fighters posed at the hit, pick a side-on view of the contact that neither
-   * fighter blocks. Tries directions around the line between them (fighter 1 stays on top) and casts
-   * rays from each camera spot to the contact point and to the smaller fighter; prefers clear views,
-   * little tilt, and staying close to the current direction.
-   * The rays test the collision hulls (plus an assembly's base), not the render meshes: a Lux3D model
-   * has ~40k triangles, which froze the page for 2–3 s here.
-   */
-  aimAtHit(point) {
-    const [a, b] = this.fighters;
-    if (!a || !b) return;
-    const c = this.cam;
-    const n = new THREE.Vector3().subVectors(b.center, a.center);
-    if (n.lengthSq() < 1e-8) return;
-    n.normalize();
-    this.scene.updateMatrixWorld(true);
-    for (const f of [a, b]) f.hulls.forEach((h, k) => h.matrixWorld.copy(f.parts[k].matrixWorld));
-    const meshesOf = f => (f.base ? [...f.hulls, f.base] : f.hulls);
-    const all = [...meshesOf(a), ...meshesOf(b)];
-    const [small, big] = a.radius <= b.radius ? [a, b] : [b, a];
-    const bigMeshes = meshesOf(big);
-    const cur = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quat);
-    const e1 = cur.clone().addScaledVector(n, -cur.dot(n));
-    if (e1.lengthSq() < 1e-6) e1.set(1, 0, 0).addScaledVector(n, -n.x);
-    if (e1.lengthSq() < 1e-6) e1.set(0, 1, 0).addScaledVector(n, -n.y);
-    e1.normalize();
-    const e2 = new THREE.Vector3().crossVectors(n, e1);
-    const ray = new THREE.Raycaster();
-    const D = 1.1;
-    const blocked = (target, meshes, fwd, margin) => {
-      const from = target.clone().addScaledVector(fwd, -D);
-      ray.set(from, fwd);
-      ray.near = 0;
-      ray.far = D - margin;
-      return ray.intersectObjects(meshes, false).length > 0;
-    };
-    // The smaller fighter's hull corners (plus its centre): how much of it the big one hides.
-    const samples = [small.center.clone()];
-    small.hulls.forEach((h, k) => { for (const v of small.hullPoints[k]) samples.push(v.clone().applyMatrix4(h.matrixWorld)); });
-    const scoreOf = (fwd, tilt) => {
-      const hidden = samples.filter(p => blocked(p, bigMeshes, fwd, 0.01)).length / samples.length;
-      // The contact point sits on or a little inside the hulls, hence the wider margin.
-      return hidden * 8 + (blocked(point, all, fwd, 0.08) ? 3 : 0) + Math.abs(tilt) * 0.8 + (1 - fwd.dot(cur)) * 0.5;
-    };
-    // The current view competes too (as if untilted): if it already shows the contact, there is no cut.
-    let best = cur, bestScore = Math.abs(cur.dot(n)) < 0.9 ? scoreOf(cur, 0) : Infinity;
-    for (const tilt of [0, 0.4, -0.4, 0.8, -0.8, 1.15, -1.15]) {
-      for (let k = 0; k < 24; k++) {
-        const ang = (k / 24) * Math.PI * 2;
-        const fwd = e1.clone().multiplyScalar(Math.cos(ang)).addScaledVector(e2, Math.sin(ang))
-          .multiplyScalar(Math.cos(tilt)).addScaledVector(n, Math.sin(tilt)).normalize();
-        const score = scoreOf(fwd, tilt);
-        if (score < bestScore) { bestScore = score; best = fwd; }
-      }
-    }
-    if (best !== cur) {
-      tmpM.lookAt(new THREE.Vector3(), best, n);
-      c.quat.setFromRotationMatrix(tmpM);
-    }
-    c.turning = false;
-    c.locked = true; // the decisive shot holds: no orbiting until the next match
+  /** Manual mode: wind-up before a lunge (glow, a ring closing in, pressed down a little). */
+  charge(i, secs) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.charge = f.act.chargeLen = secs;
+    this.rings.spawn(f.center, TEAM[i].clone().lerp(new THREE.Color('#ffffff'), 0.3), 1.6, 0.25, secs);
   }
-  /** Jump focus and distance to the current pose (after a cut); orientation is kept. */
-  snapFocus() {
-    const [a, b] = this.fighters;
-    if (!a || !b) return;
-    this.cam.focus.addVectors(a.center, b.center).multiplyScalar(0.5);
-    this.cam.dist = -1;
+  /** The lunge itself: a burst behind and a streak while it flies. */
+  lunge(i, dir, secs) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.charge = 0;
+    f.act.dash = secs;
+    const back = f.center.clone().addScaledVector(new THREE.Vector3().fromArray(dir), -0.25);
+    this.burst(back, [TEAM[i], new THREE.Color('#ffffff'), TEAM[i]], 26, 1.2, 0.03, 0.4, new THREE.Vector3().fromArray(dir).multiplyScalar(-1.5));
+    this.ring(f.center, TEAM[i], 0.2, 0.9, 0.3);
   }
+  endLunge(i) { const f = this.fighters[i]; if (f) f.act.dash = 0; }
+  raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.shield.visible = true; } }
+  /** A lunge bounced off this shield: the bubble flares, a pale ring snaps out. */
+  parry(i, point) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.parry = 0.35;
+    this.ring(point, new THREE.Color('#e6fbff'), 0.1, 1.5, 0.45);
+    this.ring(f.center, new THREE.Color('#bff4ff'), 0.3, 1.1, 0.35);
+    this.burst(point, [new THREE.Color('#ffffff'), new THREE.Color('#bff4ff'), new THREE.Color('#9fe6ff')], 50, 2.6, 0.03, 0.5);
+  }
+  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0}); f.shield.visible = false; } }
+  /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
+  shake(px) { const c = this.cam; if (c.shakeAge < SHAKE_TIME && c.shakeAmp > px) return; c.shakeAge = 0; c.shakeAmp = px; }
+
+  /** A part breaks off: its model flies away from the break pose with the recorded velocity, tumbling and shrinking. */
+  breakPart(i, partIndex, e) {
+    const f = this.fighters[i];
+    const part = f?.parts[partIndex];
+    if (!part) return;
+    part.holder.updateWorldMatrix(true, false);
+    const piece = part.obj.clone(true);
+    const m = part.obj.matrixWorld.clone();
+    m.decompose(piece.position, piece.quaternion, piece.scale);
+    // Stays bright in the team colour while it falls away, so it reads as "theirs, gone".
+    this.scene.add(piece);
+    const vel = new THREE.Vector3().fromArray(e.velocity);
+    // A little extra outward kick so the piece clearly leaves the core.
+    const out = piece.position.clone().sub(f.center).setY(0);
+    if (out.lengthSq() > 1e-6) vel.addScaledVector(out.normalize(), 1.2);
+    const spinAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+    this.debris.push({piece, vel, spinAxis, spin: 6 + Math.random() * 6, age: 0, life: 1.6, scale0: piece.scale.x});
+    part.alive = false;
+    part.holder.visible = false;
+    part.fan.visible = false;
+    const at = piece.position.clone();
+    this.burst(at, [new THREE.Color('#ffffff'), TEAM[i], new THREE.Color('#ffd27a'), TEAM[i]], 70, 2.6, 0.03, 1.0, vel.clone().multiplyScalar(0.5));
+    this.ring(at, TEAM[i], 0.1, 1.4, 0.6);
+    this.ring(at, new THREE.Color('#ffffff'), 0.05, 0.7, 0.35);
+  }
+  /** The loser's core is gone: whatever is still mounted falls away. */
+  scatter(i) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.parts.forEach((p, k) => {
+      if (!p.alive) return;
+      p.holder.updateWorldMatrix(true, true);
+      const at = new THREE.Vector3().setFromMatrixPosition(p.obj.matrixWorld), out = at.clone().sub(f.center).setY(0.15).normalize();
+      this.breakPart(i, k, {velocity: out.multiplyScalar(1.6).toArray()});
+    });
+  }
+  clearDebris() { for (const d of this.debris) this.scene.remove(d.piece); this.debris = []; }
   clearFx() {
     this.particles.clear();
     this.rings.clear();
-    for (const f of this.fighters) { f.flash = 0; f.dim = f.dimTarget = 0; f.uniforms.uDim.value = 0; f.uniforms.uFlash.value = 0; }
-    this.cam.shake = 0;
+    this.clearDebris();
+    for (const f of this.fighters) {
+      f.flash = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
+      for (const p of f.parts) { p.flash = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
+    }
+    this.cam.shakeAge = SHAKE_TIME;
+    this.clearActs();
   }
 
-  /** Frames both fighters: opens with their line up the (tall) screen, then only orbits when they line up in depth. */
+  /** build: close on the player's top. fight / result: the one fixed pose over the whole arena. */
+  setCameraMode(mode) { if (mode !== this.cam.mode) { this.cam.mode = mode; this.cam.ready = false; this.cam.slide = null; } }
+  /**
+   * Result card up: if the winner's top sits under the card, slide the picture up once, just enough, over
+   * SLIDE_TIME (a picture translation, no turn, no zoom). Never past the HUD.
+   */
+  revealOnResult(i, cardTop) {
+    const f = this.fighters[i], c = this.cam, at = {x: 0, y: 0};
+    if (!f || !c.fixed || !this.project(f.center, at)) return;
+    let reach = this.coreRadius;
+    for (const p of f.parts) if (p.alive) reach = Math.max(reach, p.reach);
+    const r = this.screenRadius(f.center, reach), want = at.y + r - (cardTop - 10), room = at.y - r - this.view.top;
+    const by = Math.max(0, Math.min(want, room));
+    if (by > 0.5) c.slide = {by, age: 0};
+  }
+  /**
+   * The fixed pose: everything a top can reach (cores within CORE_TRAVEL of the centre and CORE_RISE of the
+   * plane, plus the longer top's piece reach and height) fits in the safe area (below the HUD, above the
+   * bottom controls) with a small margin. Depends only on the screen and the two loadouts.
+   */
+  /** Manual mode's buttons (px from the bottom). They sit in the room below the arena; only if it is not there does the arena make way. */
+  setPad(px) { if (px !== this.view.pad) { this.view.pad = px; this.cam.fixed = null; } }
+  frameArena() {
+    const {w, h, top, pad = 0} = this.view, c = this.cam;
+    let {bottom} = this.view;
+    let reach = this.coreRadius, rise = this.coreRadius;
+    for (const f of this.fighters) for (const p of f.parts) { reach = Math.max(reach, p.reach); rise = Math.max(rise, -p.y0, p.y1, p.reach); }
+    const R = Math.max(ARENA_RIM + 0.15, CORE_TRAVEL + reach), Y = CORE_RISE + rise;
+    const fwd = new THREE.Vector3(Math.sin(CAM_YAW) * Math.cos(CAM_PITCH), -Math.sin(CAM_PITCH), Math.cos(CAM_YAW) * Math.cos(CAM_PITCH));
+    const quat = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(), fwd, UP));
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(quat), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(quat);
+    const pts = [];
+    for (let k = 0; k < 48; k++) for (const y of [-Y, Y]) pts.push(new THREE.Vector3(Math.cos(k * Math.PI / 24) * R / Math.cos(Math.PI / 48), y, Math.sin(k * Math.PI / 24) * R / Math.cos(Math.PI / 48)));
+    const tanV = Math.tan(THREE.MathUtils.degToRad(CAM_FOV / 2)), tanH = tanV * w / h;
+    const uLim = tanH * (w - 2 * FRAME_MARGIN) / w, vLim = tanV * (h - top - bottom - 2 * FRAME_MARGIN) / h;
+    const span = D => {
+      let u = 0, v0 = Infinity, v1 = -Infinity;
+      for (const p of pts) { const d = tmp.copy(p).addScaledVector(fwd, D), z = d.dot(fwd); u = Math.max(u, Math.abs(d.dot(right) / z)); const v = d.dot(upv) / z; v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+      return {fit: Math.max(u / uLim, (v1 - v0) / 2 / vLim), vc: (v0 + v1) / 2, half: (v1 - v0) / 2};
+    };
+    let lo = R, hi = 500;
+    for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (span(mid).fit > 1) lo = mid; else hi = mid; }
+    // Centre the arena's picture in the safe area: the principal point goes where its middle should be.
+    const {vc, half} = span(hi), safeMid = top + (h - top - bottom) / 2;
+    if (pad > bottom && safeMid + half / tanV * h / 2 > h - pad - 4) { this.view.bottom = pad; this.frameArena(); this.view.bottom = bottom; return; }
+    c.fixed = {quat, pos: fwd.clone().multiplyScalar(-hi), offsetY: h / 2 - (safeMid + vc / tanV * h / 2), R, Y, dist: hi};
+  }
   updateCamera(dt, snap) {
     const [a, b] = this.fighters;
     if (!a || !b) return;
     const c = this.cam;
-    const axis = tmp.subVectors(b.center, a.center);
-    const d = axis.length();
-    const mid = tmp2.addVectors(a.center, b.center).multiplyScalar(0.5);
-    if (snap || !c.ready) {
-      // Opening shot: look across the line between them, slightly from above, fighter 1 on top.
-      const up = axis.clone().normalize();
-      const fwd = new THREE.Vector3(0.0, -0.35, -1).normalize();
-      fwd.addScaledVector(up, -fwd.dot(up)).normalize();
-      tmpM.lookAt(new THREE.Vector3(), fwd, up);
-      c.quat.setFromRotationMatrix(tmpM);
-      c.focus.copy(mid);
+    if (c.mode !== 'build') {
+      if (!c.fixed) this.frameArena();
       c.ready = true;
-      c.dist = -1;
-      c.locked = false;
-    }
-    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quat);
-    if (d > 0.35 && !c.locked) {
-      // Only orbit when the two start lining up along the view (one hiding the other), and then by
-      // the smallest rotation that brings their line back across the screen. No deliberate roll.
-      const n = axis.clone().divideScalar(d);
-      const along = Math.abs(fwd.dot(n));
-      if (!c.turning && along > 0.5) c.turning = true;
-      if (c.turning && along < 0.17) c.turning = false;
-      if (c.turning) {
-        const wantFwd = fwd.clone().addScaledVector(n, -fwd.dot(n)).normalize();
-        tmpQ.setFromUnitVectors(fwd, wantFwd);
-        const angle = Math.acos(THREE.MathUtils.clamp(fwd.dot(wantFwd), -1, 1));
-        const maxStep = THREE.MathUtils.degToRad(30) * dt;
-        const weight = THREE.MathUtils.smoothstep(d, 0.35, 1.0);
-        const k = Math.min(1 - Math.exp(-dt / 0.8), angle > 1e-5 ? maxStep / angle : 1) * weight;
-        c.quat.premultiply(new THREE.Quaternion().slerp(tmpQ, k)).normalize();
+      this.camera.quaternion.copy(c.fixed.quat);
+      this.camera.position.copy(c.fixed.pos);
+      // Shake: translation of the picture only, a few px, gone within SHAKE_TIME.
+      let sx = 0, sy = 0;
+      if (c.shakeAge < SHAKE_TIME) {
+        c.shakeAge += dt;
+        const k = Math.max(0, 1 - c.shakeAge / SHAKE_TIME), ph = c.shakeAge * 2 * Math.PI * 14;
+        sx = Math.round(Math.sin(ph) * c.shakeAmp * k);
+        sy = Math.round(Math.cos(ph * 0.8) * c.shakeAmp * 0.6 * k);
       }
+      let slide = 0;
+      if (c.slide) { c.slide.age = Math.min(SLIDE_TIME, c.slide.age + dt); const k = c.slide.age / SLIDE_TIME; slide = c.slide.by * k * k * (3 - 2 * k); }
+      const oy = c.fixed.offsetY + slide + sy;
+      if (c.offset[0] !== sx || c.offset[1] !== oy) this.setOffset(sx, oy);
+      return;
     }
-    const focus = mid.clone().lerp(c.pushAt, c.push * 0.85);
-    c.focus.lerp(focus, snap ? 1 : 1 - Math.exp(-dt / 0.18));
-
-    // Distance that keeps both bounding spheres inside the free area (with margin).
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(c.quat);
-    const upv = new THREE.Vector3(0, 1, 0).applyQuaternion(c.quat);
-    const fv = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quat);
-    const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
-    const tanH = tanV * this.camera.aspect;
-    if (Math.abs(this.view.extra - this.view.extraTarget) > 0.5) {
-      this.view.extra += (this.view.extraTarget - this.view.extra) * (snap ? 1 : 1 - Math.exp(-dt / 0.35));
-      this.applyInsets();
-    }
-    const freeV = tanV * (this.view.h - this.view.top - this.view.bottom - this.view.extra) / this.view.h;
-    let need = 1.0;
-    for (const f of this.fighters) {
-      const rel = f.center.clone().sub(c.focus);
-      const depth = rel.dot(fv);
-      need = Math.max(need,
-        (Math.abs(rel.dot(right)) + f.radius) / (tanH * 0.86) - depth,
-        (Math.abs(rel.dot(upv)) + f.radius) / (freeV * 0.86) - depth);
-    }
-    need = Math.max(c.push > 0 ? 0.7 : 1.0, need * (1 - c.push * 0.4));
-    if (c.dist < 0 || snap) c.dist = need;
-    // Zoom out quickly, zoom in gently — except while pushing in on the decisive hit.
-    else c.dist += (need - c.dist) * (1 - Math.exp(-dt / (need > c.dist ? 0.22 : c.push > 0.05 ? 0.3 : 0.9)));
-
-    this.camera.quaternion.copy(c.quat);
-    this.camera.position.copy(c.focus).addScaledVector(fv, -c.dist);
-    if (c.shake > 0.001) {
-      const s = c.shake * c.shake * 0.035 * c.dist;
-      this.camera.position.addScaledVector(right, (Math.random() - 0.5) * s).addScaledVector(upv, (Math.random() - 0.5) * s);
-      c.shake *= Math.exp(-dt * 9);
-    }
+    if (c.offset[0] !== 0 || c.offset[1] !== (this.view.bottom - this.view.top) / 2) this.applyInsets();
+    const axis = tmp.subVectors(b.center, a.center).setY(0);
+    c.yaw = axis.lengthSq() > 1e-6 ? Math.atan2(axis.x, axis.z) : CAM_YAW;
+    c.pitch = 0.6;
+    const fwd = new THREE.Vector3(Math.sin(c.yaw) * Math.cos(c.pitch), -Math.sin(c.pitch), Math.cos(c.yaw) * Math.cos(c.pitch));
+    tmpM.lookAt(new THREE.Vector3(), fwd, UP);
+    tmpQ.setFromRotationMatrix(tmpM);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(tmpQ), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(tmpQ);
+    const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)), tanH = tanV * this.camera.aspect;
+    const freeV = tanV * (this.view.h - this.view.top - this.view.bottom) / this.view.h;
+    // Assembly preview: close on the player's top, easing when its size changes.
+    const focus = tmp2.copy(a.center).lerp(b.center, 0.22);
+    if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
+    const rel = tmp.copy(a.center).sub(c.focus), depth = rel.dot(fwd), rx = a.sweep * 1.05, ry = a.sweep * (Math.sin(c.pitch) * 0.9 + 0.2);
+    const need = Math.max(1.6, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
+    if (snap || !c.ready) c.dist = need; else c.dist += (need - c.dist) * (1 - Math.exp(-dt / 0.45));
+    c.ready = true;
+    this.camera.quaternion.copy(tmpQ);
+    this.camera.position.copy(c.focus).addScaledVector(fwd, -c.dist);
   }
 
-  /** realDt drives camera and rings; simDt drives particles (slow motion and hit-stop apply). */
+  /** realDt drives camera, rings and glow; simDt drives particles and debris (slow motion applies). */
   render(realDt, simDt) {
     this.time += realDt;
-    this.zoneFront.material.uniforms.uTime.value = this.time;
     for (const f of this.fighters) {
-      f.flash *= Math.exp(-realDt * 14);
+      f.flash *= Math.exp(-realDt * 12);
       f.dim += (f.dimTarget - f.dim) * (1 - Math.exp(-realDt * 4));
-      f.uniforms.uFlash.value = f.flash;
-      f.uniforms.uDim.value = f.dim;
-      const outside = this.zoneRadius !== undefined && f.center.length() > this.zoneRadius;
-      f.danger += ((outside ? 0.55 + 0.45 * Math.sin(this.time * 12) : 0) - f.danger) * (1 - Math.exp(-realDt * 10));
-      f.uniforms.uDanger.value = Math.max(0, f.danger);
-      // Halo sits just behind the fighter so it reads as a backlight, not a fog over it.
-      f.halo.position.copy(f.center).addScaledVector(tmp.subVectors(f.center, this.camera.position).normalize(), f.radius * 0.9);
-      f.halo.scale.setScalar(f.radius * 2.8);
-      f.halo.material.opacity = 0.32 * (1 - f.dim * 0.8);
+      const danger = Math.max(0, (f.coreDamage ?? 0) - 0.5) * 2;
+      f.coreUniforms.uFlash.value = f.flash;
+      f.coreUniforms.uDim.value = f.dim;
+      f.coreUniforms.uDanger.value = danger * (0.5 + 0.5 * Math.sin(this.time * 10));
+      f.core.visible = f.dim < 0.98;
+      // Halo behind the core: makes the core readable from far away; it fades once the core is gone.
+      f.halo.position.copy(f.center).addScaledVector(tmp.subVectors(f.center, this.camera.position).normalize(), this.coreRadius * 1.2);
+      f.halo.scale.setScalar(this.coreRadius * 6.5);
+      f.halo.material.opacity = 0.55 * (1 - f.dim);
+      const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
+      for (const p of f.parts) {
+        p.flash *= Math.exp(-realDt * 12);
+        p.uniforms.uFlash.value = p.flash;
+        // Worn parts glow red, more and faster as they near breaking.
+        p.uniforms.uDanger.value = p.damage > 0.4 ? (p.damage - 0.4) / 0.6 * (0.55 + 0.45 * Math.sin(this.time * (6 + 10 * p.damage))) : 0;
+        p.fan.material.uniforms.uSpan.value = span;
+        p.fan.material.uniforms.uOpacity.value = 0.9 * Math.min(1, Math.max(0, Math.abs(f.spin) - 1) / 6);
+      }
+    }
+    for (const f of this.fighters) {
+      const a = f.act;
+      if (a.charge > 0) {
+        // Wind-up: the core brightens in pulses and the whole top sinks a little.
+        a.charge = Math.max(0, a.charge - simDt);
+        const k = 1 - a.charge / a.chargeLen;
+        f.coreUniforms.uFlash.value = Math.max(f.coreUniforms.uFlash.value, 0.25 + 0.5 * k * (0.6 + 0.4 * Math.sin(this.time * 40)));
+        f.root.position.y -= 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.2));
+      }
+      if (a.dash > 0) {
+        a.dash = Math.max(0, a.dash - simDt);
+        this.particles.burst(f.center, [TEAM[this.fighters.indexOf(f)], new THREE.Color('#ffffff')], 3, 0.15, 0.04, 0.32);
+      }
+      if (a.shield > 0 || a.parry > 0) {
+        a.shield = Math.max(0, a.shield - simDt);
+        a.parry = Math.max(0, a.parry - simDt);
+        const fade = Math.min(1, (a.shieldLen - a.shield) / 0.08, a.shield / 0.2);
+        f.shield.material.uniforms.uOpacity.value = Math.max(0.9 * fade, a.parry / 0.35 * 1.6);
+        f.shield.material.uniforms.uTime.value = this.time;
+        f.shield.visible = f.coreAlive;
+      } else f.shield.visible = false;
+    }
+    for (let k = this.debris.length - 1; k >= 0; k--) {
+      const d = this.debris[k];
+      d.age += simDt;
+      const t = d.age / d.life;
+      if (t >= 1) { this.scene.remove(d.piece); this.debris.splice(k, 1); continue; }
+      d.piece.position.addScaledVector(d.vel, simDt);
+      d.vel.multiplyScalar(Math.exp(-simDt * 0.8));
+      d.piece.quaternion.premultiply(tmpQ.setFromAxisAngle(d.spinAxis, d.spin * simDt));
+      d.piece.scale.setScalar(d.scale0 * (t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45));
     }
     this.particles.update(simDt);
     this.rings.update(realDt);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * Test aid: how far (CSS px) any visible core or mounted piece reaches outside the safe area (below the HUD,
+   * above the caption or result card, and above the 冲/挡 buttons in manual mode). Positive = cut off by that much;
+   * negative = the smallest margin left. Pieces use their mesh bounding boxes, so this errs on the side of reporting an overflow.
+   */
+  safeOverflow() {
+    const {w, h, top, pad = 0} = this.view, bottom = Math.max(this.view.bottom, pad);
+    this.scene.updateMatrixWorld();
+    this.camera.updateMatrixWorld();
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion), upv = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
+    let worst = {px: -Infinity, who: null};
+    const check = (q, who) => {
+      tmp.copy(q).project(this.camera);
+      const x = (tmp.x * 0.5 + 0.5) * w, y = (-tmp.y * 0.5 + 0.5) * h;
+      const o = Math.max(-x, x - w, top - y, y - (h - bottom));
+      if (o > worst.px) worst = {px: o, who};
+    };
+    this.fighters.forEach((f, i) => {
+      if (!f.core.visible) return;
+      for (const d of [right, upv]) for (const sgn of [1, -1]) check(tmp2.copy(f.center).addScaledVector(d, sgn * this.coreRadius), `${i}:core`);
+      f.parts.forEach((p, k) => {
+        if (!p.alive) return;
+        p.obj.traverse(o => {
+          if (!o.isMesh) return;
+          if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox;
+          for (let c = 0; c < 8; c++) check(new THREE.Vector3(c & 1 ? bb.max.x : bb.min.x, c & 2 ? bb.max.y : bb.min.y, c & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld), `${i}:${k}`);
+        });
+      });
+    });
+    return worst;
   }
 
   /** Screen position (CSS px) of a world point, or null when behind the camera. */
@@ -486,10 +701,27 @@ export class Stage {
     out.y = (-tmp.y * 0.5 + 0.5) * this.view.h;
     return out;
   }
-  /** Approximate on-screen radius (CSS px) of a fighter. */
-  screenRadius(i) {
-    const f = this.fighters[i];
-    const dist = Math.max(0.05, f.center.distanceTo(this.camera.position));
-    return f.radius / (dist * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) * this.view.h / 2;
+  /** On-screen radius (CSS px) of a sphere of the given world radius at a point. */
+  screenRadius(p, r) {
+    const dist = Math.max(0.05, p.distanceTo(this.camera.position));
+    return r / (dist * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) * this.view.h / 2;
   }
+}
+
+const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\n';
+const RIM_BODY = `#include <emissivemap_fragment>
+{
+  float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
+  float rim = pow(1.0 - facing, 3.0);
+  totalEmissiveRadiance += uRim * (rim * 1.1 + 0.015) * (1.0 - uDim * 0.8);
+  totalEmissiveRadiance += vec3(1.0) * uFlash * 1.6;
+  totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.35 + rim);
+}`;
+function patchRim(m, uniforms) {
+  m.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.fragmentShader = RIM_HEAD + shader.fragmentShader
+      .replace('#include <emissivemap_fragment>', RIM_BODY)
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - uDim * 0.8;');
+  };
 }

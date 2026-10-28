@@ -11,5 +11,9 @@ export default defineConfig({
   resolve: {alias: {'@dimforge/rapier3d-compat': rapier}},
   server: {fs: {allow: [repo]}, allowedHosts},
   preview: {allowedHosts},
-  build: {target: 'es2022', chunkSizeWarningLimit: 4000}
+  // Separate chunks so each Artifacts publish batch stays under the upload limit.
+  build: {target: 'es2022', chunkSizeWarningLimit: 5000, assetsInlineLimit: 0, rollupOptions: {output: {manualChunks(id) {
+    if (id.includes('rapier3d-compat')) return 'rapier';
+    if (id.includes('node_modules/three')) return 'three';
+  }}}}
 });

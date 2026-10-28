@@ -3,7 +3,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
 // Bundle the phone-sized GLBs in data/models (catalog `glb` paths are relative to the repo root).
 // data/lux3d holds the 17–20 MB originals and is deliberately not bundled.
-const urls = import.meta.glob('../../data/models/*.glb', {query: '?url', import: 'default', eager: true});
+// Only the six items the demo offers (pot and lamp are the textured Lux3D generations).
+const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../data/models/lamp-lux3d-mobile.glb', '../../data/models/broom.glb', '../../data/models/scissors.glb', '../../data/models/slipper.glb', '../../data/models/pillow.glb'], {query: '?url', import: 'default', eager: true});
 const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
