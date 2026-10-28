@@ -1,0 +1,224 @@
+{
+ "commit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+ "repo": "~/Projects/agent-copies.noindex/wanwu-duizhan-feel (branch opus/feel, worktree)",
+ "build": "PATH=/opt/homebrew/bin:$PATH npm run build (node 25.5.0), served with python3 -m http.server 4332 from web/dist",
+ "viewport": {
+  "w": 390,
+  "h": 844,
+  "dpr": 2
+ },
+ "rules": {
+  "shake": {
+   "mean_px_s": 40,
+   "worst_second_px_s": 150,
+   "opposite_halves_pct": 5,
+   "over30_s": 0.3
+  },
+  "core15_limit_px": 58.5
+ },
+ "sweep_margin": [
+  {
+   "mode": "auto",
+   "seed": 7,
+   "min_lr_px": 6.1,
+   "left": 6.1,
+   "right": 8.1,
+   "seconds": 44.4,
+   "frames": 419
+  },
+  {
+   "mode": "auto",
+   "seed": 37,
+   "min_lr_px": 6.1,
+   "left": 6.1,
+   "right": 6.1,
+   "seconds": 33.2,
+   "frames": 317
+  },
+  {
+   "mode": "auto",
+   "seed": 61,
+   "min_lr_px": 6.1,
+   "left": 6.1,
+   "right": 8.3,
+   "seconds": 40.6,
+   "frames": 386
+  },
+  {
+   "mode": "manual",
+   "seed": 7,
+   "min_lr_px": 6.1,
+   "note": "renderer sweptMinMarginLrPx over 2413 frames"
+  },
+  {
+   "mode": "manual",
+   "seed": 37,
+   "min_lr_px": 8.1,
+   "note": "renderer sweptMinMarginLrPx over 2228 frames"
+  }
+ ],
+ "core15": [
+  {
+   "metric": "core centre (code core15Pct)",
+   "scope": "play",
+   "seed": 7,
+   "frames": 768,
+   "pct": 100.0
+  },
+  {
+   "metric": "core outer edge",
+   "scope": "play",
+   "seed": 7,
+   "frames": 768,
+   "pct": 95.96,
+   "tightest_edge_px": 44.9
+  },
+  {
+   "metric": "code core15Pct, whole game",
+   "seed": 7,
+   "frames": 2569,
+   "pct": 100
+  },
+  {
+   "metric": "code core15Pct, whole game",
+   "mode": "manual",
+   "seed": 7,
+   "frames": 2413,
+   "pct": 99.9
+  },
+  {
+   "metric": "code core15Pct, whole game",
+   "mode": "manual",
+   "seed": 37,
+   "frames": 2228,
+   "pct": 99.33
+  }
+ ],
+ "diameter": [
+  {
+   "seed": 7,
+   "median": 111.5,
+   "min": 84.3,
+   "max": 182.5,
+   "px_per_metre_median": 109.6
+  },
+  {
+   "seed": 37,
+   "median": 134.6,
+   "min": 81.2,
+   "max": 185.1
+  },
+  {
+   "seed": 61,
+   "median": 104.6,
+   "min": 77.2,
+   "max": 181.8
+  },
+  {
+   "seed": 7,
+   "source": "repo top-size.mjs sweepRadiusX2Mine",
+   "p10": 91.5,
+   "median": 104.5,
+   "p90": 128.6,
+   "min": 84.3,
+   "max": 183.1
+  }
+ ],
+ "shake": [
+  {
+   "mode": "auto",
+   "seed": 7,
+   "method": "phase-correlation",
+   "mean": 5.69,
+   "worst_s": 11.65,
+   "opposite_pct": 0.0,
+   "over30_s": 0.0,
+   "pass": true
+  },
+  {
+   "mode": "auto",
+   "seed": 7,
+   "method": "blockmatch",
+   "mean": 1.91,
+   "worst_s": 5.42,
+   "opposite_pct": 0.0,
+   "over30_s": 0.0,
+   "pass": true
+  },
+  {
+   "mode": "manual",
+   "seed": 7,
+   "method": "phase-correlation",
+   "mean": 22.21,
+   "worst_s": 42.2,
+   "opposite_pct": 0.0,
+   "over30_s": 0.0,
+   "pass": false,
+   "pass_note": "only safe overflow +1.17px at t=0.85"
+  },
+  {
+   "mode": "manual",
+   "seed": 7,
+   "method": "blockmatch",
+   "mean": 11.52,
+   "worst_s": 27.6,
+   "opposite_pct": 3.8,
+   "over30_s": 0.0,
+   "pass": true
+  },
+  {
+   "mode": "manual",
+   "seed": 37,
+   "method": "phase-correlation",
+   "mean": 14.47,
+   "worst_s": 35.8,
+   "opposite_pct": 0.0,
+   "over30_s": 0.0,
+   "pass": true
+  },
+  {
+   "mode": "manual",
+   "seed": 37,
+   "method": "blockmatch",
+   "mean": 17.83,
+   "worst_s": 34.36,
+   "opposite_pct": 3.8,
+   "over30_s": 0.0,
+   "pass": true
+  }
+ ],
+ "ground_truth": {
+  "auto": {
+   "mean": 5.3,
+   "worst_s": 13.9
+  },
+  "manual": {
+   "mean": 27.35,
+   "worst_s": 46.1
+  }
+ },
+ "safe_overflow": [
+  {
+   "mode": "auto",
+   "seed": 7,
+   "play_px": -8.7,
+   "finale_px": -69.5,
+   "result_px": -88.9
+  },
+  {
+   "mode": "manual",
+   "seed": 7,
+   "play_px": 1.17,
+   "at_s": 0.85,
+   "who": "0:0"
+  },
+  {
+   "mode": "manual",
+   "seed": 37,
+   "play_px": -6.26,
+   "at_s": 0.76,
+   "who": "1:0"
+  }
+ ],
+ "mentioned_in_report": "报告 report.md；原始数据 shake-auto/、shake-manual/、shake-manual2/、edge_fix.json、core_when.json、run-all.log、run-more.log"
+}

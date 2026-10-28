@@ -1,0 +1,250 @@
+{
+  "kind": "preserved-existing-author-and-independent-remeasurement-receipts",
+  "sourceCommit": "7f48096d33a6f55a37685fbd74c044b766101cc0",
+  "files": [
+    {
+      "file": "camera/F_new_auto_hide/capture.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_auto_hide/capture.json",
+      "bytes": 1400,
+      "sha256": "1c49236478a77ac255e38a72b43a6c46cb5c62cd7bfdc6220bad65ac471dcdb5"
+    },
+    {
+      "file": "camera/F_new_auto_hide/motion.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_auto_hide/motion.json",
+      "bytes": 890,
+      "sha256": "61ff681df8ae0bbf7491888d8b1d50f9dd390122d4dc246a59a2b42a00c44646"
+    },
+    {
+      "file": "camera/F_new_auto_hide/motion-blockmatch.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_auto_hide/motion-blockmatch.json",
+      "bytes": 917,
+      "sha256": "af57e3594b79159a4a7be0dc6bed1c7cae1e10a92f54a5841e2d708811a144f0"
+    },
+    {
+      "file": "camera/F_new_man_hide/capture.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_man_hide/capture.json",
+      "bytes": 1516,
+      "sha256": "8ffb6e888cfcef31dd12085bb37562265c600b2ac9d7ff42ab51e661a348454c"
+    },
+    {
+      "file": "camera/F_new_man_hide/motion.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_man_hide/motion.json",
+      "bytes": 984,
+      "sha256": "b662d09fbb9c5dde17d93b3b336c63e50e4b3138797df0508ac8e00d685f5f9f"
+    },
+    {
+      "file": "camera/F_new_man_hide/motion-blockmatch.json",
+      "source": "/Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-feel/shots/sway/F_new_man_hide/motion-blockmatch.json",
+      "bytes": 1010,
+      "sha256": "cb03bc58dd871d4baf09ce69059d542dae3d9b92c8286d9f5acd5953af454971"
+    },
+    {
+      "file": "manual-390.json",
+      "source": "/tmp/feel-work/manual-shots/manual-390.json",
+      "bytes": 482,
+      "sha256": "508b11fc95f6ca40d5d5f2bc4db0761f29158522482422676b4b48a2dc764572"
+    },
+    {
+      "file": "tests-baseline.txt",
+      "source": "/tmp/feel-work/tests-baseline.txt",
+      "bytes": 2480,
+      "sha256": "112c02196597a1607349ab2f9fd62896d06b1bb50df0d7388c0220801da91c4f"
+    },
+    {
+      "file": "camera/G_new_auto_hide/capture.json",
+      "source": "/tmp/feel-work/sway/G_new_auto_hide/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1495,
+      "sha256": "ae2e6ffe1e247254ad1295ebb3ce2cb9163af651bb0613a62d9e665d9e455112"
+    },
+    {
+      "file": "camera/G_new_auto_hide/motion.json",
+      "source": "/tmp/feel-work/sway/G_new_auto_hide/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 975,
+      "sha256": "6177f099a5929de613dcde146765cb9bf66c9b6ff7d667c89f6e17bae1fa03b7"
+    },
+    {
+      "file": "camera/G_new_auto_hide/motion-blockmatch.json",
+      "source": "/tmp/feel-work/sway/G_new_auto_hide/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1001,
+      "sha256": "3f0ad4f65e2fc04b49bee4e7fc9f881146ef1d2980b6be22ff26a530551b6655"
+    },
+    {
+      "file": "camera/G_new_man_hide/capture.json",
+      "source": "/tmp/feel-work/sway/G_new_man_hide/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1615,
+      "sha256": "d03d00c1897b44cc33d2b0f0041d01c64a9de71aac6393a65767f187687743a0"
+    },
+    {
+      "file": "camera/G_new_man_hide/motion.json",
+      "source": "/tmp/feel-work/sway/G_new_man_hide/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1071,
+      "sha256": "5c59b40fdafb593bbb949ee05293c390133c829b5fa536229d276e6b1f627fb5"
+    },
+    {
+      "file": "camera/G_new_man_hide/motion-blockmatch.json",
+      "source": "/tmp/feel-work/sway/G_new_man_hide/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1098,
+      "sha256": "42abd56313ebf9304b11628d14f65719e77b3b572e6d8ac078ff96a404c1cffc"
+    },
+    {
+      "file": "camera/G_new_auto_hide42/capture.json",
+      "source": "/tmp/feel-work/sway/G_new_auto_hide42/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1500,
+      "sha256": "e297a0d9e4fac114a218373bbbea1b1d5ac4bdf26904e54c66b97fe28d14dd37"
+    },
+    {
+      "file": "camera/G_new_auto_hide42/motion.json",
+      "source": "/tmp/feel-work/sway/G_new_auto_hide42/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 976,
+      "sha256": "ef94002859bafddb04c2c34d1b5b3fec85b7122d0660a14b24a21c89e9029aae"
+    },
+    {
+      "file": "camera/G_new_auto_hide42/motion-blockmatch.json",
+      "source": "/tmp/feel-work/sway/G_new_auto_hide42/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1004,
+      "sha256": "078c71b4d5af98bf4ce132816377768bc4d3a2ae4cc69641ac4d3ed510abdd59"
+    },
+    {
+      "file": "camera/G_new_man_hide42/capture.json",
+      "source": "/tmp/feel-work/sway/G_new_man_hide42/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1602,
+      "sha256": "3fbc894198afaa2ca314db5398a42350c4ac565a0a882b853a8374677f68a4c1"
+    },
+    {
+      "file": "camera/G_new_man_hide42/motion.json",
+      "source": "/tmp/feel-work/sway/G_new_man_hide42/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1069,
+      "sha256": "282e5a7ff26e5e7a102b68f8465150135dbcdd6378d8838efad81aea4c3d6c08"
+    },
+    {
+      "file": "camera/G_new_man_hide42/motion-blockmatch.json",
+      "source": "/tmp/feel-work/sway/G_new_man_hide42/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "bytes": 1096,
+      "sha256": "75d30c7a5ea464080b54f6dd11211ceb55f088ee1fe1b0a91aee7fde8e21d43f"
+    },
+    {
+      "file": "wren-remeasurement/core_when.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/core_when.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 42546,
+      "sha256": "149e6759c107196026f83e770d3675629d01e8fb0455e0e529875ebf17739061"
+    },
+    {
+      "file": "wren-remeasurement/edge_fix.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/edge_fix.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 241,
+      "sha256": "4ad860aacca2b2877e897e57d5d89ac93c87f96c15eac5db77d4959bb5c11e24"
+    },
+    {
+      "file": "wren-remeasurement/shake-auto/capture.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-auto/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1516,
+      "sha256": "b1ae5631ede387ac5e9d8b3604553bea7c38b06e6e2a7b46c82f1abef6af803a"
+    },
+    {
+      "file": "wren-remeasurement/shake-auto/motion-blockmatch.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-auto/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1001,
+      "sha256": "cdfc56a6970646314a9e6badf1c75793a52e3db626b0c6fa7d32241c39805da9"
+    },
+    {
+      "file": "wren-remeasurement/shake-auto/motion.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-auto/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 972,
+      "sha256": "4d8147665608b1d92c2a638b33f046c11cb76253033b9aa5fa543abc171306a9"
+    },
+    {
+      "file": "wren-remeasurement/shake-manual/capture.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-manual/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1650,
+      "sha256": "69bba3947462d5b03efd5666e7fbcb90aba8ff22534489d5adce581bf36f74b3"
+    },
+    {
+      "file": "wren-remeasurement/shake-manual/motion-blockmatch.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-manual/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1106,
+      "sha256": "a3e2c2ba44a5ab713f8f05b421f03ff378ba13735940ff757b4494d79b8cd614"
+    },
+    {
+      "file": "wren-remeasurement/shake-manual/motion.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-manual/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1082,
+      "sha256": "d45fb76c3ddfdb54df3352939365b3406a2a591d3ff2121da431d556bf7ea3fb"
+    },
+    {
+      "file": "wren-remeasurement/shake-manual2/capture.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-manual2/capture.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1627,
+      "sha256": "22ff8b813731dfbdb12106599f1ba4796ad53faac77bcb9d5fb12fd0bd2ad8f2"
+    },
+    {
+      "file": "wren-remeasurement/shake-manual2/motion-blockmatch.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-manual2/motion-blockmatch.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1099,
+      "sha256": "f38cff62d8f00e1ba8c7a104d1d9a99f8bfd0090d5d8f227ed63c1c2ff089f76"
+    },
+    {
+      "file": "wren-remeasurement/shake-manual2/motion.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/shake-manual2/motion.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 1070,
+      "sha256": "03f8a9a6f232341dd6fb05420ab64c6151f2143df7e184648df1e1d354a49783"
+    },
+    {
+      "file": "wren-remeasurement/summary.json",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/summary.json",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 3939,
+      "sha256": "2f505e542ea43b61c1282cdcf80de1109fbfae8bc97fa8e649bdc918e9ca4ba0"
+    },
+    {
+      "file": "wren-remeasurement/report.md",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/report.md",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 5101,
+      "sha256": "15070ef1d2d79de3d9935686b655a4abf3edf561989fac7c6adc92488440df95"
+    },
+    {
+      "file": "wren-remeasurement/manifest.sha256",
+      "source": "/Users/lawrence/.slock/agents/7786aa12-7844-4bb6-aa41-2c30762a0aa5/work/edge-fix-1028/manifest.sha256",
+      "sourceCommit": "3a53ef482effb374267d9503360b0f0bbb43a38c",
+      "receiptMessage": "2031e28f-c824-4e03-8dab-15443e6b4440",
+      "bytes": 24708,
+      "sha256": "951ffbe918457a3011390564c758ec4948c0f1bc4cc9df7cd6c36ef1de43856b"
+    }
+  ]
+}

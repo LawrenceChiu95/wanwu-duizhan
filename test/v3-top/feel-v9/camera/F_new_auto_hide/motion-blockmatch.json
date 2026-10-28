@@ -1,0 +1,55 @@
+{
+ "method": "blockmatch",
+ "width": 390,
+ "height": 844,
+ "pairs": 79,
+ "span_s": 7.9,
+ "mean_px_s": 3.12,
+ "worst_second_px_s": 11.76,
+ "reversals": 3,
+ "opposite_halves_pct": 0.0,
+ "over30_s": 0.0,
+ "max_pair_px": 5.53,
+ "moving_pairs": 4,
+ "blocks_grid": 312,
+ "textured_blocks_mean": 216.3,
+ "textured_blocks_min": 197,
+ "pairs_with_thin_half": 0,
+ "safe": {
+  "play": {
+   "px": -4.999681460727018,
+   "who": "0:1",
+   "t": 30.55,
+   "w": 390
+  },
+  "finale": {
+   "px": -68.75069614742239,
+   "who": "0:1",
+   "t": 39.73,
+   "w": 390
+  },
+  "result": {
+   "px": -79.58427137814199,
+   "who": "0:1",
+   "t": 39.73,
+   "w": 390
+  }
+ },
+ "rim_overflow_px": null,
+ "frame": {
+  "frames": 2566,
+  "core15Pct": 99.8,
+  "ok15Pct": 87.5,
+  "minMarginPx": 5,
+  "pxPerMetre": {
+   "p10": 92.7,
+   "median": 109.6,
+   "p90": 135.2,
+   "min": 85.5,
+   "max": 177.3
+  }
+ },
+ "errors": [],
+ "runtime_s": 4.1,
+ "pass": true
+}

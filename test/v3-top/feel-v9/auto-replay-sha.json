@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "7f48096d33a6f55a37685fbd74c044b766101cc0",
+  "baselineMain": "e0566ee97a0c30b6ef6fa351fb9c112477476435",
+  "verification": "SHA256 of existing full replay cache bytes only; no simulation or browser rerun during read-only review",
+  "replays": [
+    {
+      "seed": 7,
+      "source": "/tmp/feel-work/replays/a7.json",
+      "bytes": 3113325,
+      "sha256": "b91d8a5c9363255b16a70dbf735584d870680cc73a2e18e4a5fac1aa25bc6b5c"
+    },
+    {
+      "seed": 42,
+      "source": "/tmp/feel-work/replays/a42.json",
+      "bytes": 2223052,
+      "sha256": "e71a0f074b0419012f43416d66b58924dfc9f4f80ab30bf0ccab7691210e96ec"
+    }
+  ]
+}
