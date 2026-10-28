@@ -21,7 +21,7 @@ npm --prefix web run dev
 
 ## 画面读什么
 
-接口真源是 [sim/v3.js](sim/v3.js)，完整字段见 [test/v3/INTERFACE.md](test/v3/INTERFACE.md)。`frames` 的 `pos/quat` 已是世界坐标；米 / 秒，Y 向上。按回放时间画，不用动画时间改物理。每个事件都有 `type, t`：
+当前规格见 [v3-top](test/v3-top/SPEC.md) 和 [v3](test/v3/SPEC.md)。接口真源是 [sim/v3.js](sim/v3.js)，完整字段见 [test/v3/INTERFACE.md](test/v3/INTERFACE.md)。`frames` 的 `pos/quat` 已是世界坐标；米 / 秒，Y 向上。按回放时间画，不用动画时间改物理。每个事件都有 `type, t`：
 
 | 事件 | 画面用的字段 |
 |---|---|
@@ -42,4 +42,4 @@ npm --prefix web run dev
 node --test --test-concurrency=1 test/prototype/sim.test.mjs test/v3/sim.test.mjs
 ```
 
-**镜头硬线**：Wren 实测平均移动 ≤40 px/秒、最差一秒 ≤150 px、上下反向 ≤5%，单帧移动 >30 px 的累计时长 ≤0.3 秒；全程看得见场地四角和双方陀螺。过测试不能代替这项实测，手机和电脑画面都要看。
+**镜头硬线**：Wren 实测平均移动 ≤40 px/秒、最差一秒 ≤150 px、上下反向 ≤5%，单帧移动 >30 px 的累计时长 ≤0.3 秒；全程看得见场地四角和双方陀螺。改了镜头的合并请求，由 Elara 叫 Wren 实测，过了才合；手机和电脑画面都要看。
