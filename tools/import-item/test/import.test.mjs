@@ -222,3 +222,12 @@ test('explicit concurrency rejection exposes its code; clearing only confirmed p
  assert.equal(g.calls.filter(c=>c.url.includes('/img-to-3d/task/create')).length,2);
  assert.equal((await readJson(file)).tasks['multimodal-to-image'],'image-id');
 });
+
+test('an explicitly selected pre-review photo run may change name/ID without repeating its paid image task',async()=>{
+ const s=await sandbox(),g=gateway({pollNetworkFailure:true});await assert.rejects(run(s,args(s),g),/Network request failed/);
+ const file=await s.state('test-pot'),state=await readJson(file);state.input={...state.input,id:'test-pot',name:'旧名字'};await saveJson(file,state);
+ const oldFolder=path.join(s.root,'.aholo','runs','legacy-run');await fs.rename(path.dirname(file),oldFolder);
+ const changed=[...args(s,'corrected-id'),'--run','legacy-run'];changed[changed.indexOf('--name')+1]='更正名字';await run(s,changed,g);
+ assert.equal(g.creates(),2);assert.equal(g.calls.filter(c=>c.url.includes('/multimodal-to-image/task/create')).length,1);
+ const final=await readJson(path.join(oldFolder,'state.json'));assert.equal(final.input.id,undefined);assert.equal(final.input.name,undefined);assert.equal(final.tasks['multimodal-to-image'],'image-id');
+});
