@@ -3,8 +3,9 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
 // Bundle the phone-sized GLBs in data/models (catalog `glb` paths are relative to the repo root).
 // data/lux3d holds the 17–20 MB originals and is deliberately not bundled.
-// Only the six items the demo offers (pot and lamp are the textured Lux3D generations).
-const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../data/models/lamp-lux3d-mobile.glb', '../../data/models/broom.glb', '../../data/models/scissors.glb', '../../data/models/slipper.glb', '../../data/models/pillow.glb'], {query: '?url', import: 'default', eager: true});
+// The six original items (pot and lamp are the textured Lux3D generations) plus everything the import script writes
+// to data/models/generated. Only URLs are bundled here; a model is fetched when a build first uses it.
+const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../data/models/lamp-lux3d-mobile.glb', '../../data/models/broom.glb', '../../data/models/scissors.glb', '../../data/models/slipper.glb', '../../data/models/pillow.glb', '../../data/models/generated/**/*.glb'], {query: '?url', import: 'default', eager: true});
 const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
@@ -19,17 +20,11 @@ export function loadModels(items) {
   }));
 }
 
-/** Items without a bundled GLB get a box from their bounds. */
+/** An item whose GLB is not bundled is an error (no stand-in box: it would look like the import worked). */
 async function loadOne(item) {
   {
     const url = urlFor(item.glb);
-    if (!url) {
-      console.warn(`No GLB for ${item.id} (${item.glb}); drawing its bounds box`);
-      const size = item.bounds.max.map((v, k) => v - item.bounds.min[k]);
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), new THREE.MeshStandardMaterial({color: 0x9aa4b8, roughness: 0.6}));
-      cache.set(item.id, mesh);
-      return;
-    }
+    if (!url) throw Error(`缺模型文件：${item.name ?? item.id}（${item.glb}）`);
     const gltf = await loader.loadAsync(url);
     gltf.scene.traverse(o => {
       if (!o.isMesh) return;
