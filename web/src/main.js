@@ -189,7 +189,9 @@ async function main() {
   function buildHud(defs) {
     defs.forEach((def, i) => {
       const box = el.hud.querySelector(`.s${i} .parts`);
-      box.innerHTML = def.parts.map(p => `<span class="pc">${ICON[p.orient]}<b>${esc(NAMES[p.item])}</b><span class="mini"><i></i></span></span>`).join('');
+      // Imported items often have three- or four-character names: those tags get the compact style (style.css .pc.long).
+      const fit = name => [...name].length > 3 ? ' long long4' : [...name].length > 2 ? ' long' : '';
+      box.innerHTML = def.parts.map(p => `<span class="pc${fit(NAMES[p.item])}">${ICON[p.orient]}<b>${esc(NAMES[p.item])}</b><span class="mini"><i></i></span></span>`).join('');
     });
   }
   function updateHud(dt, state) {

@@ -56,7 +56,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #flash { position: absolute; inset: 0; pointer-events: none; background: #fff; opacity: 0; mix-blend-mode: screen; }
 
 /* ---------- Fight HUD: a slanted name plate, the core bar, and two piece tags per side ---------- */
-#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 10px) 10px 14px; display: grid; grid-template-columns: 1fr 44px 1fr; align-items: start; gap: 6px; pointer-events: none;
+#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 10px) 10px 14px; display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); align-items: start; gap: 6px; pointer-events: none;
   background: linear-gradient(rgba(7, 9, 18, 0.96) 0%, rgba(7, 9, 18, 0.7) 65%, transparent); }
 .who { display: flex; margin-bottom: 6px; }
 .s1 .who { justify-content: flex-end; }
@@ -87,6 +87,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pc.gone .mini { visibility: hidden; }
 .pc.gone::after { content: "碎"; position: absolute; right: 8px; top: 50%; transform: translateY(-50%) rotate(-8deg); font-family: var(--display); font-size: 13px; color: #ff5a6e; }
 .s1 .pc.gone::after { right: auto; left: 8px; }
+/* Names longer than two characters (imported items such as 废土扫把) drop the orientation icon and shrink with the
+   screen, so name, bar and 碎 never overlap; 碎 takes the bar's place instead of sitting over the name. A tag's text
+   width is about 25vw - 35px, so three characters fit at 13px down to ~350 px and four at 12px on 390 (10px on 360);
+   below that the name is cut with an ellipsis. */
+.pc.long .ico { display: none; }
+.pc.long b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: clamp(9px, calc(8.3vw - 16.5px), 13px); }
+.pc.long .mini { min-width: 9px; }
+.pc.long4 b { font-size: clamp(9px, calc(6.25vw - 12.4px), 12px); }
+.pc.long.gone .mini { display: none; }
+.pc.long.gone::after { position: static; flex: none; margin-left: auto; transform: rotate(-8deg); }
+.s1 .pc.long.gone::after { margin-left: 0; margin-right: auto; }
 /* The blow just now, on the HUD: the striking piece lights in its side's colour, the piece or core bar hit flashes. */
 .pc.strike0 { background: var(--c0); color: #1a0900; }
 .pc.strike1 { background: var(--c1); color: #02101c; }
