@@ -6,7 +6,7 @@ import {loadModels} from './models.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
-import {reasonLine, NAMES} from './reason.js';
+import {reasonLine, NAMES, setNames} from './reason.js';
 import {sfx} from './sfx.js';
 
 const $ = id => document.getElementById(id);
@@ -21,8 +21,14 @@ const el = {
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
-// The six things on offer; pot and lamp are the textured Lux3D generations.
-const OFFER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillow'];
+// The original six keep this order (pot and lamp are the textured Lux3D generations); other catalog items follow.
+const ORDER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillow'];
+// Everything in the catalog except the drafts a comparisonBase replaces.
+const offerOf = items => {
+  const replaced = new Set(items.map(i => i.comparisonBase).filter(Boolean));
+  const rank = id => ORDER.includes(id) ? ORDER.indexOf(id) : ORDER.length;
+  return items.map(i => i.id).filter(id => !replaced.has(id)).sort((a, b) => rank(a) - rank(b));
+};
 // The computer's fixed build.
 const FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
 const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
@@ -82,6 +88,8 @@ async function main() {
   el.busy.hidden = false;
   const [items, rules] = await Promise.all([loadCatalog(), loadV3Rules()]);
   const byId = new Map(items.map(i => [i.id, i]));
+  setNames(items);
+  const OFFER = offerOf(items);
   const spec = id => { const it = byId.get(id); return `${Math.round(Math.max(...it.bounds.max.map((v, i) => v - it.bounds.min[i])) * 100)} cm · ${it.mass} kg`; };
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
@@ -121,7 +129,7 @@ async function main() {
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
   // Opponent tag on the build screen.
-  el.foeParts.innerHTML = FOE.parts.map(p => `<span>${NAMES[p.item]}${ICON[p.orient]}</span>`).join('');
+  el.foeParts.innerHTML = FOE.parts.map(p => `<span>${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
 
   // ---------- build preview: both tops spin slowly where the match will start ----------
   const previewState = () => {
@@ -181,7 +189,9 @@ async function main() {
   function buildHud(defs) {
     defs.forEach((def, i) => {
       const box = el.hud.querySelector(`.s${i} .parts`);
-      box.innerHTML = def.parts.map(p => `<span class="pc">${ICON[p.orient]}<b>${NAMES[p.item]}</b><span class="mini"><i></i></span></span>`).join('');
+      // Imported items often have three- or four-character names: those tags get the compact style (style.css .pc.long).
+      const fit = name => [...name].length > 3 ? ' long long4' : [...name].length > 2 ? ' long' : '';
+      box.innerHTML = def.parts.map(p => `<span class="pc${fit(NAMES[p.item])}">${ICON[p.orient]}<b>${esc(NAMES[p.item])}</b><span class="mini"><i></i></span></span>`).join('');
     });
   }
   function updateHud(dt, state) {
@@ -482,7 +492,7 @@ async function main() {
       b.type = 'button';
       b.className = id === mine.parts[k].item ? 'sel' : '';
       b.disabled = id === other;
-      b.innerHTML = `<b>${NAMES[id]}</b><small>${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${spec(id)}</small>${id === other ? '<span class="used">已装</span>' : ''}`;
+      b.innerHTML = `<b>${esc(NAMES[id])}</b><small>${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${spec(id)}</small>${id === other ? '<span class="used">已装</span>' : ''}`;
       b.onclick = () => { mine.parts[k].item = id; el.sheet.hidden = true; rebuildMine(); };
       el.sheetGrid.append(b);
     }

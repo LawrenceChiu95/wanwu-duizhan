@@ -3,3 +3,6 @@
 /.playwright-cli/
 /AGENTS.md
 /CLAUDE.md
+
+# Private importer inputs, task IDs and expiring asset URLs
+/.aholo/
