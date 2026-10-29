@@ -29,8 +29,8 @@ const offerOf = items => {
   const rank = id => ORDER.includes(id) ? ORDER.indexOf(id) : ORDER.length;
   return items.map(i => i.id).filter(id => !replaced.has(id)).sort((a, b) => rank(a) - rank(b));
 };
-// The computer's fixed build.
-const FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
+// The computer's default build; ?foe= can override it for measurements.
+const DEFAULT_FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
 const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
@@ -99,13 +99,19 @@ async function main() {
 
   const q = new URLSearchParams(location.search);
   const mode = q.get('mode') === 'B' ? 'B' : 'A';
-  const fromUrl = () => {
-    const p = (q.get('mine') ?? '').split(',');
-    if (p.length !== 5) return null;
+  const fromUrl = (key = 'mine') => {
+    if (!q.has(key)) return null;
+    const p = q.get(key).split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
-    return b.parts.every(x => OFFER.includes(x.item) && ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) ? b : null;
+    if (p.length === 5 && b.parts.every(x => OFFER.includes(x.item) && ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) && (key !== 'foe' || q.getAll(key).length === 1)) return b;
+    if (key === 'foe') {
+      el.busy.hidden = true;
+      throw Error('foe参数无效：格式为物品ID,out或hug,另一物品ID,out或hug,e180或e90；两件须是清单中不同的道具，foe只能出现一次');
+    }
+    return null;
   };
   const mine = structuredClone(fromUrl() ?? DEFAULT);
+  const FOE = structuredClone(fromUrl('foe') ?? DEFAULT_FOE);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
   // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).

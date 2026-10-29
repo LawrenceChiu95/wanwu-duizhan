@@ -1,0 +1,1 @@
+测试对手装法用 `?mine=pan-lux3d,out,pillow,hug,e180&foe=broom,out,pillow,hug,e180&seed=7`（锅+枕头对扫把+枕头）；`foe=物品ID,out或hug,另一物品ID,out或hug,e180或e90`，两件选清单中不同道具，`out`伸出/`hug`贴着、`e180`对面/`e90`挨着；省略`foe`保持原来的锅伸出+台灯贴着、对面，空值、错值或重复参数均明确报错。
