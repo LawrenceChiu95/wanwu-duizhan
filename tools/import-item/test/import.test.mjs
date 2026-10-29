@@ -36,11 +36,11 @@ async function sandbox() {
  await saveJson(path.join(root,'data/catalog.json'),{...base,items:structuredClone(originals)});
  const glb = path.join(root,'input.glb'), photo = path.join(root,'photo.png');
  await fs.writeFile(glb,model);await fs.writeFile(photo,image);
- return {root,glb,photo,state: id => path.join(root,'.aholo','runs',id,'state.json'),catalog:() => readJson(path.join(root,'data/catalog.json'))};
+ return {root,glb,photo,state: async id => {const runs=await fs.readdir(path.join(root,'.aholo','runs'));return path.join(root,'.aholo','runs',runs.includes(id)?id:runs.find(n=>n.startsWith('photo-')),'state.json');},catalog:() => readJson(path.join(root,'data/catalog.json'))};
 }
 const args = (s,id='test-pot',mode='photo') => [mode,`--${mode}`,s[mode==='photo'?'photo':'glb'],'--category','pot','--id',id,'--name','测试锅'];
 function gateway(options={}) {
- const calls=[];let failed=false,waiting=false;
+ const calls=[];let failed=false,waiting=false,rejected=false;
  const fetch = async (url, request) => {
   const u=new URL(url),route=u.pathname;
   const headers=new Headers(request.headers);
@@ -53,6 +53,7 @@ function gateway(options={}) {
    if(route.endsWith('/task/create')) {
     if(options.unknownCreate)throw Error('fake transport lost create reply with fake-key-never-persist');
     const payload=JSON.parse(request.body);
+    if(route.includes('img-to-3d')&&options.rejectMeshOnce&&!rejected){rejected=true;return Response.json({c:'GENERATION_CONCURRENCY_LIMIT_EXCEEDED',d:null});}
     if(route.includes('multimodal-to-image')){assert.equal(payload.img,'https://photo.example/upload.png');assert.ok(payload.prompt.includes('锅'));return reply('image-id');}
     assert.deepEqual(payload,{img:'https://photo.example/styled.png',version:'G1-Turbo',faceCount:100000,enablePbr:true,outputFormat:['zip','glb'],aiPredictSize:false});return reply('mesh-id');
    }
@@ -95,18 +96,20 @@ test('offline CLI needs no key: PBR/UV survive, used geometry is centered at cat
  const bytes=await fs.readFile(path.join(s.root,item.glb));assert.equal(sha256(bytes),item.source.normalizedSha256);
  const doc=await new NodeIO().readBinary(bytes),p=doc.getRoot().listMeshes()[0].listPrimitives()[0];
  assert.ok(p.getAttribute('TEXCOORD_0'));assert.equal(p.getMaterial().getMetallicFactor(),.35);assert.equal(p.getMaterial().getRoughnessFactor(),.7);
- const state=await readJson(s.state('offline'));assert.equal(Object.keys(state.timestamps).length,8);assert.ok(state.timestamps.inventory_ready);assert.ok(Object.entries(state.timestamps).filter(([k])=>k!=='inventory_ready').every(([,v])=>v===null));
+ const state=await readJson(await s.state('offline'));assert.equal(Object.keys(state.timestamps).length,8);assert.ok(state.timestamps.inventory_ready);assert.ok(Object.entries(state.timestamps).filter(([k])=>k!=='inventory_ready').every(([,v])=>v===null));
  const again=await run(s,args(s,'offline','glb'),null,{env:{}});assert.equal(again.alreadyImported,true);assert.deepEqual(await s.catalog(),catalog);
 });
 
 test('photo dispatch uses fake upload/image/model/download, exactly two paid creates and eight timestamps',async()=>{
  const s=await sandbox(),g=gateway({pendingOnce:true}),logs=[];
  const result=await run(s,args(s),g,{log:s=>logs.push(s)});assert.equal(g.creates(),2);assert.equal(g.downloads(),1);
- const state=await readJson(s.state('test-pot'));assert.ok(Object.values(state.timestamps).every(v=>!Number.isNaN(Date.parse(v))));
+ const state=await readJson(await s.state('test-pot'));assert.ok(Object.values(state.timestamps).every(v=>!Number.isNaN(Date.parse(v))));
  const publicFiles=JSON.stringify(await s.catalog())+logs.join('');const privateState=JSON.stringify(state);
  for(const secret of ['fake-key-never-persist','fake-upload-token'])assert.ok(!publicFiles.includes(secret)&&!privateState.includes(secret));
  assert.ok(!publicFiles.includes('signature=private-url'));assert.equal(result.triangles,4);
  const before=g.calls.length;assert.equal((await run(s,args(s),g,{env:{}})).alreadyImported,true);assert.equal(g.calls.length,before);
+ const renamed=args(s);renamed[renamed.indexOf('--name')+1]='改好名字的锅';await run(s,renamed,g,{env:{}});assert.equal((await s.catalog()).items.at(-1).name,'改好名字的锅');assert.equal(g.calls.length,before);
+ const newId=args(s,'renamed-pot');await run(s,newId,g,{env:{}});assert.equal(g.calls.length,before);assert.equal((await s.catalog()).items.at(-1).id,'renamed-pot');
 });
 
 test('large-photo block uploads use query init, sequential multipart chunks, and the same pipeline',async()=>{
@@ -119,7 +122,7 @@ test('large-photo block uploads use query init, sequential multipart chunks, and
 test('unknown creation persists pending; rerun makes no network request and never creates again',async()=>{
  const s=await sandbox(),g=gateway({unknownCreate:true});
  await assert.rejects(run(s,args(s),g),/Network request failed/);assert.equal(g.creates(),1);
- const state=await readJson(s.state('test-pot'));assert.equal(state.pending,'multimodal-to-image');
+ const state=await readJson(await s.state('test-pot'));assert.equal(state.pending,'multimodal-to-image');
  const before=g.calls.length;await assert.rejects(run(s,args(s),g),/Unconfirmed/);assert.equal(g.calls.length,before);assert.equal((await s.catalog()).items.length,8);
 });
 
@@ -159,7 +162,7 @@ test('existing IDs, changed run inputs and occupied locks cannot overwrite asset
  await run(s,args(s,'first','glb'),null,{env:{}});
  const changed=args(s,'first','glb');changed[changed.indexOf('--name')+1]='另一个名字';await assert.rejects(run(s,changed,g),/input changed/);assert.equal(g.calls.length,0);
  const folder=path.join(s.root,'.aholo','runs','locked');await fs.mkdir(folder,{recursive:true});await fs.mkdir(path.join(folder,'lock'));
- await assert.rejects(run(s,args(s,'locked'),g),/Lock already exists/);assert.equal(g.calls.length,0);
+ await assert.rejects(run(s,[...args(s,'locked'),'--run','locked'],g),/Lock already exists/);assert.equal(g.calls.length,0);
 });
 
 test('exclusive catalog lock rejects another writer while held and releases after failure',async()=>{
@@ -178,4 +181,44 @@ test('checked-in knife, pot, broom meet mobile budgets, original baselines and P
   assert.ok(item.hull.length>=4&&item.hull.length<=64);assert.ok(item.volume>0);assert.equal(item.mass,base.itemStandards[item.category].massKg);
   for(const texture of doc.getRoot().listTextures()){const meta=await sharp(texture.getImage()).metadata();assert.ok(meta.width<=512&&meta.height<=512);}
  }
+});
+
+// Width checks use rendered positions in world coordinates, independent of normalization metadata.
+async function endWidths(bytes) {
+ const doc=await new NodeIO().readBinary(bytes),points=[];
+ for(const node of doc.getRoot().listNodes())for(const p of node.getMesh()?.listPrimitives()??[]){const a=p.getAttribute('POSITION'),m=node.getWorldMatrix();for(const i of new Set(p.getIndices().getArray())){const v=a.getElement(i,[]);points.push([0,1,2].map(k=>m[k]*v[0]+m[k+4]*v[1]+m[k+8]*v[2]+m[k+12]));}}
+ const min=Math.min(...points.map(p=>p[2])),max=Math.max(...points.map(p=>p[2]));
+ return [-1,1].map(sign=>{const end=points.filter(p=>sign<0?p[2]<=min+(max-min)*.1:p[2]>=max-(max-min)*.1);return Math.max(...[0,1].map(k=>Math.max(...end.map(p=>p[k]))-Math.min(...end.map(p=>p[k]))));});
+}
+test('orientation follows category for either source sign; checked-in pot/broom heads and weak points face out',async()=>{
+ for(const rotate of [false,true])for(const category of ['pot','broom','scissors']){
+  const doc=await new NodeIO().readBinary(model);if(rotate)doc.getRoot().listNodes()[0].setRotation([0,1,0,0]);
+  const raw=Buffer.from(await new NodeIO().writeBinary(doc)),template=originals.find(i=>i.id===category);
+  const result=await prepareMesh(raw,template,base.itemStandards[category]),[minus,plus]=await endWidths(result.bytes);
+  assert.ok(category==='scissors'?plus<minus:plus>minus,`${category} source reversed=${rotate}`);
+  assert.ok(Math.abs(result.shape.weakPoint.pos[2]-result.shape.bounds.max[2])<1e-8);
+ }
+ for(const id of ['wasteland-pot','wasteland-broom','wasteland-knife']){
+  const item=base.items.find(i=>i.id===id),[minus,plus]=await endWidths(await fs.readFile(path.join(ROOT,item.glb)));
+  assert.ok(item.category==='scissors'?plus<minus:plus>minus,id);
+  assert.ok(Math.abs(item.weakPoint.pos[2]-item.bounds.max[2])<1e-8);
+ }
+});
+test('changing only name and ID after paid work starts resumes the same default run',async()=>{
+ const s=await sandbox(),g=gateway({pollNetworkFailure:true});await assert.rejects(run(s,args(s),g),/Network request failed/);
+ const file=await s.state('test-pot'),before=await readJson(file);assert.equal(before.tasks['multimodal-to-image'],'image-id');
+ const changed=args(s,'corrected-id');changed[changed.indexOf('--name')+1]='改名后的锅';await run(s,changed,g);
+ assert.equal(g.creates(),2);assert.equal((await fs.readdir(path.join(s.root,'.aholo','runs'))).length,1);
+ const item=(await s.catalog()).items.at(-1);assert.equal(item.id,'corrected-id');assert.equal(item.name,'改名后的锅');
+ const state=await readJson(file);assert.equal(state.tasks['multimodal-to-image'],'image-id');assert.equal(state.tasks['img-to-3d'],'mesh-id');
+});
+test('explicit concurrency rejection exposes its code; clearing only confirmed pending preserves paid image task',async()=>{
+ const s=await sandbox(),g=gateway({rejectMeshOnce:true});await assert.rejects(run(s,args(s),g),/GENERATION_CONCURRENCY_LIMIT_EXCEEDED/);
+ const file=await s.state('test-pot'),state=await readJson(file);assert.equal(state.pending,'img-to-3d');assert.equal(state.tasks['multimodal-to-image'],'image-id');
+ const count=g.calls.length;await assert.rejects(run(s,args(s),g),/Unconfirmed/);assert.equal(g.calls.length,count);
+ // Operator has verified in task history that the rejected mesh task was not created.
+ delete state.pending;await saveJson(file,state);await run(s,args(s),g);
+ assert.equal(g.calls.filter(c=>c.url.includes('/multimodal-to-image/task/create')).length,1);
+ assert.equal(g.calls.filter(c=>c.url.includes('/img-to-3d/task/create')).length,2);
+ assert.equal((await readJson(file)).tasks['multimodal-to-image'],'image-id');
 });

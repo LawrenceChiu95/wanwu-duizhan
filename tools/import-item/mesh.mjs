@@ -107,7 +107,16 @@ export async function prepareMesh(raw, template, standard) {
   const longest = spans.indexOf(length);
   // Pick a different axis even for symmetric bounds. Always a right-handed basis.
   const thinnest = [0, 1, 2].filter(i => i !== longest).sort((a, b) => spans[a] - spans[b] || a - b)[0];
-  const Y = [0, 0, 0], Z = [0, 0, 0]; Y[thinnest] = 1; Z[longest] = 1;
+  // Match the current category templates: knife tip out, pot bowl/broom head out.
+  // Compare the outer 10% at each end; source coordinate sign has no meaning.
+  const outwardEnd = {scissors: 'narrow', pot: 'wide', broom: 'wide'}[template.category];
+  const widths = [-1, 1].map(sign => {
+    const end = current.points.filter(p => sign < 0 ? p[longest] <= sourceBounds.min[longest] + length * .1 : p[longest] >= sourceBounds.max[longest] - length * .1);
+    const box = bounds(end);
+    return Math.max(...[0, 1, 2].filter(k => k !== longest).map(k => box.max[k] - box.min[k]));
+  });
+  const flip = outwardEnd === 'wide' ? widths[0] > widths[1] : outwardEnd === 'narrow' ? widths[0] < widths[1] : false;
+  const Y = [0, 0, 0], Z = [0, 0, 0]; Y[thinnest] = 1; Z[longest] = flip ? -1 : 1;
   const X = [Y[1] * Z[2] - Y[2] * Z[1], Y[2] * Z[0] - Y[0] * Z[2], Y[0] * Z[1] - Y[1] * Z[0]];
   const axes = [X, Y, Z], scale = standard.longSideMeters / length, center = sourceBounds.max.map((v, i) => (v + sourceBounds.min[i]) / 2);
   const matrix = Array(16).fill(0); matrix[15] = 1;
@@ -134,5 +143,5 @@ export async function prepareMesh(raw, template, standard) {
   try { volume = world.createCollider(descriptor.setMass(standard.massKg)).volume(); } finally { world.free(); }
   if (!(volume > 0) || !Number.isFinite(volume)) throw Error('Invalid hull volume');
   const weak = final.points.reduce((a, b) => b[2] > a[2] ? b : a);
-  return {bytes: output, shape: {hull, bounds: finalBounds, volume, weakPoint: {pos: weak, radius: template.weakPoint.radius}, normalization: {matrix, sourceBounds, sourceVertices: current.points.length}}, report: {sourceTriangles, triangles: final.triangles, vertices: final.points.length, textureSizes, materials: check.getRoot().listMaterials().length, bytes: output.length, sha256: sha256(output), hullPoints: hull.length, longSideMeters: measured}};
+  return {bytes: output, shape: {hull, bounds: finalBounds, volume, weakPoint: {pos: weak, radius: template.weakPoint.radius}, normalization: {matrix, sourceBounds, sourceVertices: current.points.length, ...(outwardEnd ? {outwardEnd} : {})}}, report: {sourceTriangles, triangles: final.triangles, vertices: final.points.length, textureSizes, materials: check.getRoot().listMaterials().length, bytes: output.length, sha256: sha256(output), hullPoints: hull.length, longSideMeters: measured}};
 }

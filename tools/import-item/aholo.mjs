@@ -16,7 +16,8 @@ async function limitedBody(response, limit) {
   return Buffer.concat(parts);
 }
 function unwrap(reply) {
-  if (String(reply?.c) !== '0') throw Error(`Aholo business error ${Number.isSafeInteger(Number(reply?.c)) ? Number(reply.c) : 'unknown'}; check the console. No new task was submitted automatically.`);
+  const code = String(reply?.c ?? 'unknown');
+  if (code !== '0') throw Error(`Aholo business error ${/^[A-Za-z0-9_-]{1,96}$/.test(code) ? code : 'unknown'}; check task history. No generation retry.`);
   return reply.d;
 }
 

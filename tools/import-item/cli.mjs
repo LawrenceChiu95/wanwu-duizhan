@@ -14,7 +14,8 @@ node tools/import-item/cli.mjs glb --glb <file.glb> --category <category> --id <
 node tools/import-item/cli.mjs photo --photo <photo.jpg|png> --category <category> --id <new-id> --name <name>
 Categories: ${CATEGORIES.join(', ')}. Optional: --prompt <file.txt>, --run <run-id>.
 photo reads AHOLO_API_KEY from the environment and creates PAID tasks. Unknown creation results STOP.
-Private state: .aholo/runs/<run-id>/state.json. Repeat the same command to resume; never clear pending blindly.`;
+Private state: .aholo/runs/<run-id>/state.json. photo defaults to a fingerprint of photo/prompt/category; glb defaults to id.
+Repeat to resume; name/id do not change a photo run. Never clear pending blindly.`;
 
 export function argumentsFor(argv) {
   if (!argv.length || argv.includes('--help')) return null;
@@ -30,7 +31,7 @@ export function argumentsFor(argv) {
   if (!slug(args.id) || (args.run !== undefined && !slug(args.run))) throw Error('id and run must be 1–48 lowercase letters, digits or hyphens, starting with a letter');
   if (!args.name?.trim() || [...args.name].length > 40 || /[\u0000-\u001f\u007f]/.test(args.name)) throw Error('name must be 1–40 visible characters');
   if (!args[mode] || args[mode === 'photo' ? 'glb' : 'photo'] || (mode === 'glb' && args.prompt)) throw Error('Supply only the input for the selected mode');
-  return {...args, name: args.name.trim(), run: args.run ?? args.id};
+  return {...args, name: args.name.trim(), run: args.run ?? (mode === 'glb' ? args.id : undefined)};
 }
 
 async function sourcePhoto(file) {
@@ -53,33 +54,45 @@ export async function runCli(argv, {repoRoot = ROOT, env = process.env, fetch, p
   const promptFile = args.mode === 'photo' ? (args.prompt ? path.resolve(args.prompt) : fileURLToPath(new URL(`./prompts/${args.category}.txt`, import.meta.url))) : null;
   const prompt = promptFile ? (await fs.readFile(promptFile, 'utf8')).trim() : null;
   if (promptFile && (!prompt || Buffer.byteLength(prompt) > 32000)) throw Error('Prompt is empty or exceeds 32 KiB');
-  const identity = {mode: args.mode, id: args.id, name: args.name, category: args.category, sourceSha256: sha256(raw), promptSha256: prompt ? sha256(prompt) : null};
-  const folder = path.join(root, '.aholo', 'runs', args.run); await fs.mkdir(folder, {recursive: true});
+  // Paid work depends on the photo, prompt and category, never catalog metadata.
+  const identity = {mode: args.mode, ...(args.mode === 'glb' ? {id: args.id, name: args.name} : {}), category: args.category, sourceSha256: sha256(raw), promptSha256: prompt ? sha256(prompt) : null};
+  const runId = args.run ?? `photo-${sha256(JSON.stringify(identity)).slice(0, 24)}`;
+  const folder = path.join(root, '.aholo', 'runs', runId); await fs.mkdir(folder, {recursive: true});
   return withLock(path.join(folder, 'lock'), async () => {
     const stateFile = path.join(folder, 'state.json');
     let state = await readJson(stateFile);
-    if (state && JSON.stringify(state.input) !== JSON.stringify(identity)) throw Error('Run input changed. Use a new run and a new item ID; do not reuse paid-task state');
+    const sameInput = state && (args.mode === 'photo' ? Object.keys(identity).every(k => state.input?.[k] === identity[k]) : JSON.stringify(state.input) === JSON.stringify(identity));
+    if (state && !sameInput) throw Error('Run input changed. Restore its original photo/model, prompt and category to resume; use a new run only for intentionally new work');
     state ??= {schemaVersion: 1, input: identity, tasks: {}, timestamps: timestamps()};
+    state.input = identity; // Also drops id/name from pre-review photo state when --run selects it.
     const save = () => saveJson(stateFile, state); await save();
     const catalog = await readJson(catalogFile);
     const existing = catalog.items.find(i => i.id === args.id);
-    if (existing && !(state.prepared && existing.source?.importRun === args.run && existing.source.normalizedSha256 === state.prepared.sha256 && existing.source.sourceSha256 === state.prepared.sourceSha256)) throw Error('Item ID already exists; original items are never overwritten');
+    if (existing && !(state.prepared && existing.source?.importRun === runId && existing.source.normalizedSha256 === state.prepared.sha256 && existing.source.sourceSha256 === state.prepared.sourceSha256)) throw Error('Item ID already exists; original items are never overwritten');
     const destination = path.join(root, 'data', 'models', 'generated', `${args.id}.glb`);
     if (existing) {
       if (sha256(await fs.readFile(destination)) !== existing.source.normalizedSha256) throw Error('Existing imported asset changed');
+      if (existing.name !== args.name) await withLock(path.join(root, '.aholo', 'catalog-lock'), async () => {
+        const current = await readJson(catalogFile), item = current.items.find(i => i.id === args.id);
+        if (JSON.stringify(item) !== JSON.stringify(existing)) throw Error('Imported item changed concurrently; name was not overwritten');
+        item.name = args.name; await saveJson(catalogFile, current);
+      });
       state.timestamps.inventory_ready ??= now(); await save();
-      const result = {id: args.id, alreadyImported: true, ...state.prepared}; log(JSON.stringify(result)); return result;
+      const result = {id: args.id, run: runId, alreadyImported: true, ...state.prepared}; log(JSON.stringify(result)); return result;
     }
     let model = raw;
     if (args.mode === 'photo') {
       const key = env.AHOLO_API_KEY?.trim();
       if (!key && !state.timestamps.download_finished) throw Error('Set AHOLO_API_KEY in the environment for photo mode; no key file is read');
-      const file = await photoToGlb({photo: raw, key, prompt, folder, state, save, fetch, pause, now}); model = await readGlb(file);
+      let file;
+      try { file = await photoToGlb({photo: raw, key, prompt, folder, state, save, fetch, pause, now}); }
+      catch (error) { throw Error(`Run ${runId}: ${error.message}`); }
+      model = await readGlb(file);
     }
     const prepared = await prepareMesh(model, template, standard);
     state.prepared = {...prepared.report, sourceSha256: sha256(model)}; await save();
     // Category properties are copied, never inferred from a generated mesh's appearance.
-    const item = {id: args.id, name: args.name, category: args.category, templateId: template.id, generated: true, glb: `data/models/generated/${args.id}.glb`, tag: template.tag, material: template.material, stats: structuredClone(template.stats), mass: standard.massKg, massBasis: 'category', standardLongSide: standard.longSideMeters, ...prepared.shape, source: {generator: args.mode === 'photo' ? 'Aholo G1-Turbo' : 'user-supplied GLB', license: 'LicenseRef-UserProvided', sourceSha256: sha256(model), normalizedSha256: prepared.report.sha256, importRun: args.run, preparation: {triangles: prepared.report.triangles, textureSizes: prepared.report.textureSizes}}};
+    const item = {id: args.id, name: args.name, category: args.category, templateId: template.id, generated: true, glb: `data/models/generated/${args.id}.glb`, tag: template.tag, material: template.material, stats: structuredClone(template.stats), mass: standard.massKg, massBasis: 'category', standardLongSide: standard.longSideMeters, ...prepared.shape, source: {generator: args.mode === 'photo' ? 'Aholo G1-Turbo' : 'user-supplied GLB', license: 'LicenseRef-UserProvided', sourceSha256: sha256(model), normalizedSha256: prepared.report.sha256, importRun: runId, preparation: {triangles: prepared.report.triangles, textureSizes: prepared.report.textureSizes}}};
     await withLock(path.join(root, '.aholo', 'catalog-lock'), async () => {
       const current = await readJson(catalogFile);
       if (current.items.some(i => i.id === args.id)) throw Error('Item ID was imported concurrently; no item overwritten');
@@ -92,7 +105,7 @@ export async function runCli(argv, {repoRoot = ROOT, env = process.env, fetch, p
       current.items.push(item); await saveJson(catalogFile, current);
     });
     state.timestamps.inventory_ready = now(); await save();
-    const result = {id: args.id, ...prepared.report}; log(JSON.stringify(result)); return result;
+    const result = {id: args.id, run: runId, ...prepared.report}; log(JSON.stringify(result)); return result;
   });
 }
 

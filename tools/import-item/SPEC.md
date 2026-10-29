@@ -26,15 +26,15 @@ photo 只从 AHOLO_API_KEY 环境变量取密钥；glb 不需要密钥。生成�
 1. 新项追加到现有 catalog.items，不替换已有 ID；原8条（含两个比较底稿）、原模型、规则与 sim/** 保持原样。--id 为小写字母/数字/连字符，撞 ID 或目标文件时报错，不能覆盖原六件。
 2. 由所选现有 category 的原件复制 tag/material/stats/mass/massBasis/standardLongSide；不是从外观自动推数值。新项记录 templateId、generated:true、name、category、来源哈希与处理参数；不设 comparisonBase，避免隐藏原物品。
 3. glb 写 data/models/generated/<id>.glb；路径是仓库相对正斜线，GLB 自包含。保留材质/UV，512贴图，目标10K、允许约10–15K三角面；在误差约束下仍明显超预算则显式失败，不静默输出大模型。
-4. 对减面后的最终网格等比例居中，最长轴映到游戏Z、薄轴到Y（若轴歧义保留确定的正交轴），按 category 统一最长边。以同一坐标系收26方向支撑点（最多64），Rapier 接受且体积为正后写入。
+4. 对减面后的最终网格等比例居中，最长轴映到游戏Z、薄轴到Y；按模板将刀/剪刀窄端、锅/扫把宽端朝+Z伸出（若轴歧义保留确定的正交轴），按 category 统一最长边。以同一坐标系收26方向支撑点（最多64），Rapier 接受且体积为正后写入。
 5. source 保存输入与最终GLB SHA、生成方式与来源说明，不放本机绝对路径、照片、Key、OUS凭证、供应商临时URL。状态和中间文件进根目录 .aholo/，忽略于git。
 6. 网页只读 catalog：有 comparisonBase 替代的底稿不进入选择列表，其余项均可选，因此现有六件和顺序保留、新项追加。模型 glob 包含 data/models 下新增GLB，只加载当前装配需要的资源；缺失资源须显式错误，不能拿灰盒当入库成功。名称来自 catalog，所有DOM写入须用 textContent 或转义；对战HUD、掉件、结算不能出现 undefined 或把新刀叫剪刀。
 
 ## 网络与恢复
 
 - photo：上传原照 → 改图 → 轮询成功 → G1-Turbo（100K、PBR、zip+glb、aiPredictSize:false）→ 轮询成功 → 下载本地 → 同一离线处理/入库函数。
-- 保存运行标识、输入/提示词哈希、品类/ID/名称和阶段。使用独占运行锁；每次收费创建前先持久化 pending，拿到 taskid 后才清 pending。创建超时或返回无法确定结果就停止，提示核查；重跑遇 pending 不自动再建任务。已知 taskid 只继续查该任务。
-- 下载或处理失败保留任务与下载状态，重跑不得重新生成。结果URL过期则明确停止并说明恢复位置；不自动收费重建。HTTP/业务失败输出安全阶段与状态码，不输出响应体、请求头、Key、OUS或临时URL。
+- 保存运行标识、输入/提示词哈希、品类/ID/名称和阶段。照片运行名默认由照片/提示词/品类指纹确定，显示名与物品ID不参与付费身份；显式--run继续复用旧状态。使用独占运行锁；每次收费创建前先持久化 pending，拿到 taskid 后才清 pending。创建超时或返回无法确定结果就停止，提示核查；重跑遇 pending 不自动再建任务。已知 taskid 只继续查该任务。
+- 下载或处理失败保留任务与下载状态，重跑不得重新生成。结果URL过期则明确停止并说明恢复位置；不自动收费重建。明确业务拒绝保留安全字符串错误码；控制台确认未建任务时只清pending、保留已成功taskid与原运行名。HTTP/业务失败输出安全阶段与状态码，不输出响应体、请求头、Key、OUS或临时URL。
 - API固定官方HTTPS网关，不提供把真实密钥发往任意地址的开关。测试用依赖注入假接口，验证同一编排入口。外部GLB只接受自包含静态模型，拒绝外部文件/网络URI、动画/骨骼和不支持的压缩，而不是自动访问任意路径。
 - 八个时间戳：upload_started、upload_finished、image_submit、image_success_observed、mesh_submit、mesh_success_observed、download_finished、inventory_ready。每个运行均有八键；glb模式不适用项为null。实际可用耗时截止inventory_ready，不宣称固定90秒。
 - 仓库写入前在独占目录锁下重读catalog并验证ID；准备文件与最终模型使用独占目标，catalog经同目录临时文件rename。崩溃最多留下未引用模型，不覆盖旧项；失败位置明确，不静默删除用户文件。
