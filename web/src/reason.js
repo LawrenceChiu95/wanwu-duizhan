@@ -1,5 +1,12 @@
 // One plain line (≤20 characters) for why the match ended, from the replay's decisive.why facts.
-export const NAMES = {'pan-lux3d': '锅', 'lamp-lux3d': '台灯', broom: '扫把', scissors: '剪刀', slipper: '拖鞋', pillow: '枕头', pot: '锅', lamp: '台灯'};
+// Short names from the catalog (the Lux3D tag is shown on its own); filled by setNames before the page draws anything.
+export const NAMES = {};
+export function setNames(items) {
+  for (const it of items) {
+    if (typeof it.name !== 'string' || !it.name.trim()) throw Error(`物品 ${it.id} 在 catalog 里没有名字`);
+    NAMES[it.id] = it.name.trim().replace(/（Lux3D）$/, '');
+  }
+}
 
 export function reasonLine(replay) {
   const {reason} = replay.meta, why = replay.decisive.why;
