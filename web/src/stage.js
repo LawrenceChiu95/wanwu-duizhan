@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {instantiate} from './models.js';
+import {KitchenPreview} from './kitchen.js';
 
 export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
+const TOP_DISPLAY_SCALE = 1.05 * 1.10 * 1.10;
 const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmp3 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
 const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 
@@ -542,7 +544,7 @@ export class Stage {
     this.coreRadius = coreRadius;
     this.arenaRim = ARENA_RIM;
     this.layout = layout;
-    this.renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance'});
+    this.renderer = new THREE.WebGLRenderer({canvas, antialias: false, powerPreference: 'high-performance'});
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -624,6 +626,7 @@ export class Stage {
     this.cam = {focus: new THREE.Vector3(), dist: 4, yaw: CAM_YAW, pitch: 0.95, ready: false, mode: 'fight', shakeAge: 1, shakeAmp: 0, offset: [0, 0],
       fv: new THREE.Vector3(), logD: 0, logDv: 0, goal: 0, hist: [], clock: 0, offY: 0, offYv: 0, punch: null, only: null, cardTop: null, ahead: null, stat: null};
     this.view = {w: 390, h: 844, top: 70, bottom: 130};
+    this.kitchen = new KitchenPreview(this, [back, plane, this.wall]);
   }
 
   resize(w, h, top, bottom) {
@@ -679,6 +682,7 @@ export class Stage {
     const coreMat = new THREE.MeshStandardMaterial({map: this.coreTex[i].map, emissiveMap: this.coreTex[i].emissive, emissive: new THREE.Color(1, 1, 1), emissiveIntensity: 0.9, metalness: 0.75, roughness: 0.3});
     patchRim(coreMat, coreUniforms);
     const core = new THREE.Mesh(this.coreGeo, coreMat);
+    core.scale.setScalar(0.7);
     root.add(core);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({map: this.haloTex, color: team, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending}));
     halo.renderOrder = 3;
@@ -686,6 +690,7 @@ export class Stage {
     const parts = this.layout(def).map(p => {
       const uniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
       const obj = instantiate(p.item, uniforms);
+      obj.scale.multiplyScalar(1.5);
       const holder = new THREE.Group();
       holder.position.fromArray(p.offset);
       holder.quaternion.fromArray(p.quat);
@@ -1056,6 +1061,8 @@ export class Stage {
     return D;
   }
   updateCamera(dt, snap) {
+    if (this.kitchen?.inspection) { this.kitchen.controls.update(); return; }
+    if (this.kitchen) { this.kitchen.updateBattleCamera(dt); return; }
     const [a, b] = this.fighters;
     if (!a || !b) return;
     const c = this.cam;
@@ -1158,7 +1165,7 @@ export class Stage {
       f.core.visible = f.dim < 0.98;
       // Halo behind the core: makes the core readable from far away; it fades once the core is gone.
       f.halo.position.copy(f.center).addScaledVector(tmp.subVectors(f.center, this.camera.position).normalize(), this.coreRadius * 1.2);
-      f.halo.scale.setScalar(this.coreRadius * 6.5);
+      f.halo.scale.setScalar(this.coreRadius * 6.5 * 0.7 * TOP_DISPLAY_SCALE);
       f.halo.material.opacity = 0.55 * (1 - f.dim);
       const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
       for (const p of f.parts) {
@@ -1189,7 +1196,7 @@ export class Stage {
         sxz *= 1 - 0.07 * a.pop;
         sy *= 1 + 0.2 * a.pop;
       }
-      f.root.scale.set(sxz, sy, sxz);
+      f.root.scale.set(sxz * TOP_DISPLAY_SCALE, sy * TOP_DISPLAY_SCALE, sxz * TOP_DISPLAY_SCALE);
       if (a.dash > 0) {
         a.dash = Math.max(0, a.dash - simDt);
         this.particles.burst(f.center, [TEAM[i], WHITE], 3, 0.15, 0.04, 0.32);

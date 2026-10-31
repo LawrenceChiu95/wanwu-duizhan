@@ -22,6 +22,16 @@ body { background: var(--bg); touch-action: manipulation; user-select: none; -we
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 [hidden] { display: none !important; }
+.kitchen-panel { position:fixed;right:12px;top:82px;z-index:60;width:218px;padding:10px 12px;background:rgba(18,24,20,.94);border:1px solid #697161;color:#e8e6d8;font:13px/1.5 var(--body);border-radius:4px;max-height:70vh;overflow:auto; }
+.kitchen-panel summary { cursor:pointer;list-style:none;color:#e8d269;font-weight:700; }
+.kitchen-panel p { margin:9px 0;font-size:12px;color:#bbc7b0; }
+.kitchen-panel button { display:block;width:100%;background:#414b37;padding:7px;margin:7px 0;text-align:center; }
+.kitchen-panel fieldset { padding:8px;border:1px solid #535d4b;margin:10px 0; }
+.kitchen-panel label { display:flex;align-items:center;justify-content:space-between;margin:6px 0; }
+.kitchen-panel input[type=number] { width:74px;background:#161b14;border:1px solid #67735b;padding:3px;color:white; }
+.kitchen-panel .kitchen-check { justify-content:flex-start;gap:6px; }
+.kitchen-panel small { display:block;color:#a2ae97;font-size:11px; }
+@media (max-width:600px) { .kitchen-panel:not([open]) { width:auto;font-size:11px;padding:6px 9px; } }
 
 /* Phone fills the screen; wider screens show the same portrait frame centred between two quiet side panels. */
 #app { position: relative; margin: 0 auto; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: var(--bg); }

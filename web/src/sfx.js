@@ -71,36 +71,40 @@ function voice(r, t) {
   };
 }
 
-// Granular crackle (~0.3 s of short band-passed bursts) over a low thud: something breaking off.
+// A sharp fracture followed by a short scatter of fragments.
 function crackle(v, t) {
+  v.noise(t, 0.012, 0.36, 'highpass', 3400, 2200, 0.7, 0.0006);
   for (let i = 0; i < 8; i++) {
-    const at = t + i * 0.034 + Math.random() * 0.018, f = 900 + Math.random() * 2800;
-    v.noise(at, 0.02 + Math.random() * 0.03, 0.32 * (1 - i / 11), 'bandpass', f, f * 0.75, 2.5);
+    const at = t + i * 0.022 + Math.random() * 0.012, f = 1600 + Math.random() * 3400;
+    v.noise(at, 0.016 + Math.random() * 0.025, 0.28 * (1 - i / 11), 'bandpass', f, f * 0.75, 2.5, 0.001);
   }
-  v.tone(t, 0.16, 0.3, 'sine', 130, 55);
+  v.tone(t, 0.1, 0.24, 'triangle', 180, 75, 0.08, 0.001);
 }
 
 /** The sounds. Each schedules its layers on voice v from v.t on. */
 const SOUNDS = {
-  // Two tops knocking: a filtered-noise click over two short plastic modes; louder, brighter and longer with intensity.
+  // Dry attack, a compact impact body and inharmonic metal modes; no long bass smear.
   hit(v, intensity = 0.5, {core = false, crit = false} = {}) {
-    const k = Math.min(1, Math.max(0, Number(intensity) || 0)), t = v.t, len = 0.07 + 0.1 * k, loud = 0.12 + 0.26 * k;
-    const f = 650 + 550 * k;
-    v.noise(t, len * 0.5, loud, 'bandpass', 1800 + 2600 * k, 1200 + 1200 * k, 1.1);
-    v.tone(t, len, loud * 0.7, 'triangle', f, f * 0.75);
-    v.tone(t, len * 0.6, loud * 0.3, 'sine', f * 2.7);
-    if (core) { v.tone(t, 0.12, 0.3, 'sine', 210, 90); v.noise(t, 0.05, 0.18, 'lowpass', 600); }
-    if (crit) { v.tone(t + 0.005, 0.28, 0.08, 'sine', 3150); v.tone(t + 0.005, 0.2, 0.05, 'sine', 4870); }
+    const k = Math.min(1, Math.max(0, Number(intensity) || 0)), t = v.t, loud = 0.12 + 0.2 * k;
+    v.noise(t, 0.009 + 0.006 * k, loud * 1.2, 'highpass', 4200, 2600, 0.7, 0.0005);
+    v.noise(t, 0.035 + 0.015 * k, loud * 0.85, 'bandpass', 2400 + 1500 * k, 950, 1.0, 0.0008);
+    v.tone(t, 0.045 + 0.025 * k, loud * 0.55, 'triangle', 1100 + 500 * k, 480, 0.035, 0.0008);
+    for (const [frequency, gain, duration] of [[1850, 0.35, 0.085], [3120, 0.23, 0.06], [4690, 0.12, 0.038]]) {
+      v.tone(t, duration, loud * gain, 'sine', frequency, frequency * 0.98, duration, 0.0007);
+    }
+    if (core) v.tone(t, 0.085, 0.22, 'triangle', 250, 95, 0.065, 0.001);
+    if (crit) { v.noise(t, 0.018, 0.2, 'highpass', 5600, 3500, 0.7, 0.0005); v.tone(t + 0.003, 0.13, 0.09, 'sine', 3800); }
   },
-  // The big one: a pitch drop with a sub under it, mid body that small phone speakers can still play, and a crack.
+  // Heavy strike: fast crack, audible mid punch, brief weight and metallic splinters.
   dashHit(v) {
     const t = v.t;
-    v.tone(t, 0.42, 0.5, 'sine', 140, 45, 0.25);
-    v.tone(t, 0.45, 0.3, 'sine', 58, 40, 0.3, 0.008);
-    v.tone(t, 0.3, 0.22, 'sine', 280, 90, 0.25); // the drop an octave up: heard as the same pitch where the sub is lost
-    v.tone(t, 0.22, 0.3, 'triangle', 360, 150, 0.2);
-    v.noise(t, 0.16, 0.5, 'bandpass', 300, 170, 0.9);
-    v.noise(t, 0.045, 0.35, 'highpass', 1800);
+    v.noise(t, 0.018, 0.5, 'highpass', 3800, 2000, 0.7, 0.0005);
+    v.noise(t, 0.065, 0.36, 'bandpass', 2600, 850, 1.0, 0.0008);
+    v.tone(t, 0.07, 0.23, 'sawtooth', 850, 210, 0.045, 0.001);
+    v.tone(t, 0.14, 0.35, 'triangle', 320, 105, 0.1, 0.001);
+    v.tone(t, 0.18, 0.28, 'sine', 110, 50, 0.13, 0.002);
+    v.tone(t, 0.11, 0.14, 'sine', 2350, 2200, 0.11, 0.0007);
+    v.tone(t + 0.004, 0.075, 0.09, 'sine', 4170, 3950, 0.075, 0.0007);
   },
   // Wind-up: a rising tone and a noise swell that peak at the launch, then let go quickly.
   charge(v, secs = 0.3) {
