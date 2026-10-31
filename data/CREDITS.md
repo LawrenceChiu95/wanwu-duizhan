@@ -31,3 +31,8 @@ Both variants retain their existing counterpart's catalog attack/defense/materia
 ## Font
 
 Display type: [Smiley Sans 得意黑](https://github.com/atelier-anchor/smiley-sans) — © 2022–2024 atelierAnchor, [SIL Open Font License 1.1](https://scripts.sil.org/OFL). Subset to the characters this page uses; the license fields are kept in the font file.
+
+
+## Approved user-generated knife and pot (2026-10-31)
+
+`knife-wired-v9` and `pot-wired-v9` were generated through Aholo image editing and G1-Turbo from user-provided photographs, then processed with the existing offline importer. The source images here are the generated references; private original photographs and credentials are excluded. Assets retain `LicenseRef-UserProvided`; no additional public license is granted. See [the asset record](../docs/art/approved-wired-v9/README.md) for prompt, model variants, measurements and validation scope.

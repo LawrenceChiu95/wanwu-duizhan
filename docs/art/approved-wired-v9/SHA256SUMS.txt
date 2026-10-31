@@ -1,0 +1,7 @@
+1e6a76aacd4480fcda59f557444fc9150c68509d01d99db0faa8ea09db7b4c14  docs/art/approved-wired-v9/prompt.txt
+304991cc46a5dea18d7f59e35daa9c68f6d42e1fbae11609c6a48a695818af18  docs/art/approved-wired-v9/reference-images/knife.png
+2e8c19cd116e66cf8c8f43b9f6723e1f712378b4c3a73ee62ec5549252c1bc72  docs/art/approved-wired-v9/reference-images/pot.png
+b7ddbce49a73ff19b0735e24a4d246f2d32d7e6b7517d0dfe0d55d7e6f8bcc93  docs/art/approved-wired-v9/source-models/knife.glb
+3b008ced4cd24c2281e5d4aac49b3c6b046b3ea58aac7a13a5c8867dc68d19f4  docs/art/approved-wired-v9/source-models/pot.glb
+7ffe5aea209b96028037c57897029c2a3d6132439b18212e7a75e89f70747560  data/models/generated/knife-wired-v9.glb
+61e1aa3bf158d6cc896c95ee26e4c7a93ab73c0c5228b1f47cbd8d47982aaad6  data/models/generated/pot-wired-v9.glb
