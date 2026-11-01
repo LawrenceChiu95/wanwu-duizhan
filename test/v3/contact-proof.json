@@ -62,6 +62,14 @@
         "broom": 0.9,
         "pillow": 0.75
       },
+      "orientPower": {
+        "out": 1.2,
+        "hug": 0.85
+      },
+      "orientReceive": {
+        "out": 1.15,
+        "hug": 0.85
+      },
       "damageRamp": [
         [
           0,
@@ -79,15 +87,7 @@
           40,
           1.8
         ]
-      ],
-      "orientPower": {
-        "out": 1.2,
-        "hug": 0.85
-      },
-      "orientReceive": {
-        "out": 1.15,
-        "hug": 0.85
-      }
+      ]
     },
     "initialGap": 0,
     "attraction": 6,
@@ -130,7 +130,7 @@
     ],
     "overlapIterations": 8,
     "overlapTolerance": 0.0005,
-    "arenaRadius": 2.4,
+    "arenaRadius": 2.2,
     "damageScale": {
       "A": 0.8,
       "B": 1

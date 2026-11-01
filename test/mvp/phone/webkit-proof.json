@@ -1,0 +1,81 @@
+{
+  "engine": "webkit",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "deviceScaleFactor": 1
+  },
+  "cam": "slow",
+  "duration": 28.866666666666667,
+  "firstDamage": 0.3833333333333333,
+  "diameters": [
+    {
+      "median": 185.16227430668243,
+      "min": 125.17619419287111
+    },
+    {
+      "median": 95.75086340470517,
+      "min": 66.61999035530425
+    }
+  ],
+  "samples": 1589,
+  "winner": 1,
+  "accepted": [
+    {
+      "step": 98,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 167,
+      "side": 0,
+      "action": "block"
+    }
+  ],
+  "byteEqual": true,
+  "replaySha256": "929fbee73f17dfa3582f9a38d89551aa4c459d74a1a32c3be4ee71152d630ba1",
+  "safe": {
+    "play": {
+      "px": -35.66825358142631,
+      "who": "0:1",
+      "t": 14.43,
+      "w": 390
+    },
+    "finale": {
+      "px": -70.25705172510573,
+      "who": "0:1",
+      "t": 28.87,
+      "w": 390
+    },
+    "replay": {
+      "px": -78.00492310580864,
+      "who": "0:1",
+      "t": 28.87,
+      "w": 390
+    },
+    "result": {
+      "px": -98.89890980907813,
+      "who": "1:0",
+      "t": 28.87,
+      "w": 390
+    }
+  },
+  "framing": {
+    "frames": 1662,
+    "core15Pct": 100,
+    "ok15Pct": 94.7,
+    "minMarginPx": 35.7,
+    "sweptMinMarginLrPx": 8.6,
+    "sweptMinMarginSafePx": 8.6,
+    "core15PctExact": 100,
+    "pxPerMetre": {
+      "p10": 79.3,
+      "median": 98.5,
+      "p90": 126.8,
+      "min": 67.2,
+      "max": 142.7
+    }
+  },
+  "errors": []
+}

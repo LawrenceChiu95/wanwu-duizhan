@@ -82,7 +82,7 @@
   "tierDamage": [10, 18, 26, 34],
   "overlapIterations": 8,
   "overlapTolerance": 0.0005,
-  "arenaRadius": 2.4,
+  "arenaRadius": 2.2,
   "damageScale": {
     "A": 0.8,
     "B": 1

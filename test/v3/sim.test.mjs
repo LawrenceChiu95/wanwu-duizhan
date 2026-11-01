@@ -108,7 +108,9 @@ test('same-step double break: less overkill wins, exact tie is a draw; reason ke
  // MVP shortens broom geometry and changes category/orient damage, so normal seed 2 no longer
  // loses after two detachments. A controlled high-core/low-part-HP fight keeps the same real
  // collision -> break -> later core KO -> loser-facts regression without asserting an old balance outcome.
- const afterBreaks=await simulateWithRules({core:{hp:500},attachmentHp:1});
+ // Keep this controlled trajectory's 2.4 m arena while the shipping radius is tuned;
+ // current-radius wall behavior and match outcomes are checked by MVP tests/batches.
+ const afterBreaks=await simulateWithRules({arenaRadius:2.4,core:{hp:500},attachmentHp:1});
  const detached=await afterBreaks({fighters:[{parts:[{item:'pan-lux3d',mount:'e90',orient:'out'},{item:'broom',mount:'e270',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e90',orient:'out'},{item:'lamp-lux3d',mount:'e270',orient:'hug'}]}],mode:'A',seed:2,manual:{sides:['ai','ai']}});
  const broken=detached.events.filter(e=>e.type==='break'&&e.target===1),whyBroken=detached.decisive.why,koBroken=detached.events.find(e=>e.type==='ko');
  assert.equal(detached.meta.reason,'ko');assert.equal(whyBroken.target,1);assert.equal(whyBroken.attacker,0);assert.equal(broken.length,2);assert.equal(whyBroken.loserPartsLeft,0);

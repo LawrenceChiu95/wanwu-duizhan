@@ -8,8 +8,9 @@ const bare={parts:[]},rules=await loadV3Rules(),catalog=await loadRules();
 test('physical fence bounces an outward core without creating fighter hits or HP loss',async()=>{
  const simulate=await simulateWithRules({maxDuration:2,initialGap:3.2,attraction:-10,thrust:0,speedLimit:8,top:{spinRate:0}});
  const r=await simulate({fighters:[bare,bare],mode:'A',seed:1,manual:{sides:['input','input'],inputs:[{step:1,side:0,action:'block'}]}});
- assert.ok(r.frames.some(fr=>fr.fighters.some(f=>Math.abs(f.pos[0])>2.15)),'reaches the wall');
- assert.ok(r.frames.some(fr=>fr.fighters.some(f=>Math.abs(f.pos[0])>2&&f.pos[0]*f.velocity[0]<-.1)),'solver reverses outward velocity');
+ const wall=rules.arenaRadius-rules.core.radius;
+ assert.ok(r.frames.some(fr=>fr.fighters.some(f=>Math.abs(f.pos[0])>wall-.1)),'reaches the wall');
+ assert.ok(r.frames.some(fr=>fr.fighters.some(f=>Math.abs(f.pos[0])>wall-.25&&f.pos[0]*f.velocity[0]<-.1)),'solver reverses outward velocity');
  for(const fr of r.frames)for(const f of fr.fighters){assert.ok(Math.hypot(f.pos[0],f.pos[2])+rules.core.radius<rules.arenaRadius+.012);assert.equal(f.core.hp,160);}
  assert.ok(!r.events.some(e=>['contact','hit','weak','parry','break'].includes(e.type)));assert.ok(r.events.filter(e=>e.type==='blockResult').every(e=>e.outcome==='empty'));
 });
