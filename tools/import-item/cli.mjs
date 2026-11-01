@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import sharp from 'sharp';
 import {readGlb, prepareMesh, sha256} from './mesh.mjs';
 import {photoToGlb} from './aholo.mjs';
+import {keepPicture, writeOrigin} from './origin.mjs';
 import {timestamps, readJson, saveJson, withLock} from './state.mjs';
 
 export const CATEGORIES = ['scissors', 'pot', 'broom', 'lamp', 'slipper', 'pillow'];
@@ -36,10 +36,7 @@ export function argumentsFor(argv) {
 
 async function sourcePhoto(file) {
   if ((await fs.stat(file)).size > 32 * 1024 * 1024) throw Error('Photo exceeds 32 MiB');
-  const bytes = await fs.readFile(file);
-  const meta = await sharp(bytes, {limitInputPixels: 64000000}).metadata();
-  if (!['jpeg', 'png'].includes(meta.format)) throw Error('Photo must be JPEG or PNG');
-  return bytes;
+  return fs.readFile(file);
 }
 
 /** CLI dispatch is also the isolated fake-interface test entry; production uses the defaults. */
@@ -81,13 +78,19 @@ export async function runCli(argv, {repoRoot = ROOT, env = process.env, fetch, p
       const result = {id: args.id, run: runId, alreadyImported: true, ...state.prepared}; log(JSON.stringify(result)); return result;
     }
     let model = raw;
+    let photo = raw;
+    if (args.mode === 'photo' && !state.photoUrl && !state.tasks['multimodal-to-image'] && !state.tasks['img-to-3d'] && !state.timestamps.download_finished && !state.pending) {
+      photo = await keepPicture(raw, path.join(folder, 'photo.jpg'));
+      state.photoSha256 = sha256(photo); state.photoFile = 'photo.jpg'; await save();
+    }
     if (args.mode === 'photo') {
       const key = env.AHOLO_API_KEY?.trim();
       if (!key && !state.timestamps.download_finished) throw Error('Set AHOLO_API_KEY in the environment for photo mode; no key file is read');
       let file;
-      try { file = await photoToGlb({photo: raw, key, prompt, folder, state, save, fetch, pause, now}); }
+      try { file = await photoToGlb({photo, key, prompt, folder, state, save, fetch, pause, now}); }
       catch (error) { throw Error(`Run ${runId}: ${error.message}`); }
-      model = await readGlb(file);
+      try { model = await readGlb(file); if (sha256(model) !== state.downloadSha256) throw Error('Downloaded GLB changed; restore the saved original'); }
+      catch (error) { throw Error(`${error.message}. Paid result kept at .aholo/runs/${runId}/model.glb; prepare it manually and use glb mode. No generation retry.`); }
     }
     const prepared = await prepareMesh(model, template, standard);
     state.prepared = {...prepared.report, sourceSha256: sha256(model)}; await save();
@@ -102,9 +105,14 @@ export async function runCli(argv, {repoRoot = ROOT, env = process.env, fetch, p
       await fs.mkdir(path.dirname(destination), {recursive: true});
       try { await fs.writeFile(destination, prepared.bytes, {flag: 'wx'}); }
       catch (e) { if (e.code !== 'EEXIST') throw e; if (sha256(await fs.readFile(destination)) !== state.prepared.sha256) throw Error('Destination model exists and differs; it was not overwritten'); }
+      if (args.mode === 'photo') {
+        const origin = await writeOrigin(root, args.id, folder, state, now);
+        if (origin) item.origin = origin;
+      }
+      state.timestamps.inventory_ready ??= now();
       current.items.push(item); await saveJson(catalogFile, current);
     });
-    state.timestamps.inventory_ready = now(); await save();
+    await save();
     const result = {id: args.id, run: runId, ...prepared.report}; log(JSON.stringify(result)); return result;
   });
 }
