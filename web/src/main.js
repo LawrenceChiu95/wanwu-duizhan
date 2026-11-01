@@ -6,7 +6,7 @@ import {loadModels, turntable, pictureUrl} from './models.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
-import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames} from './reason.js';
+import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
 
 const $ = id => document.getElementById(id);
@@ -225,7 +225,7 @@ async function main() {
       });
       overlay.setCoreHp(i, frac);
     });
-    el.clock.textContent = pb ? Math.floor(pb.t) : '0';
+    el.clock.textContent = pb ? wholeSeconds(pb.t) : '0';
   }
   // The same blow on the HUD: the striking piece lights in its side's colour, the piece (or core bar) hit flashes white.
   const hudChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .core .bar`) : el.hud.querySelectorAll(`.s${side} .pc`)[Number(part.split('-')[1])];
@@ -495,7 +495,7 @@ async function main() {
     stage.setLookahead(null);
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
-    el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${endLine(replay)}`;
+    el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
     el.whyLine.textContent = reasonLine(replay);
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
@@ -663,6 +663,7 @@ async function main() {
   // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).
   function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
   for (const [btn, action] of [[el.dashBtn, 'dash'], [el.blockBtn, 'block']]) {
+    btn.left = btn.querySelector('.left');
     // Real press state on touchdown: the button goes down and lights up until the finger lifts.
     btn.addEventListener('pointerdown', ev => { ev.preventDefault(); btn.classList.add('down'); press(action); });
     for (const type of ['pointerup', 'pointercancel', 'pointerleave']) btn.addEventListener(type, () => btn.classList.remove('down'));
@@ -694,6 +695,8 @@ async function main() {
       btn.classList.toggle('on', state === 'on');
       btn.classList.toggle('cooling', state === 'cooling');
       btn.classList.toggle('ready', state === 'ready');
+      const wait = state === 'cooling' ? String(Math.ceil(left - 1e-6)) : '';
+      if (btn.left.textContent !== wait) btn.left.textContent = wait;
       // Back from cooling: one pop so the thumb knows without looking twice.
       if (state === 'ready' && btn.dataset.state === 'cooling') replay_(btn, 'pop');
       btn.dataset.state = state;
