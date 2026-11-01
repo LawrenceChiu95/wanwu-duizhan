@@ -7,74 +7,74 @@
     "deviceScaleFactor": 1
   },
   "cam": "slow",
-  "duration": 34.9,
+  "duration": 32.84166666666667,
   "firstDamage": 0.3833333333333333,
   "diameters": [
     {
-      "median": 203.81978825111213,
-      "min": 131.08362544081322
+      "median": 201.03914520525652,
+      "min": 115.30875509534133
     },
     {
-      "median": 105.6537360032339,
-      "min": 66.87602920907865
+      "median": 110.6279465756278,
+      "min": 65.32774556024087
     }
   ],
-  "samples": 2095,
-  "winner": 0,
+  "samples": 1985,
+  "winner": 1,
   "accepted": [
     {
-      "step": 109,
+      "step": 93,
       "side": 0,
       "action": "dash"
     },
     {
-      "step": 184,
+      "step": 161,
       "side": 0,
       "action": "block"
     }
   ],
   "byteEqual": true,
-  "replaySha256": "cdc58c03fdcdb7ea60edc5be820d8af08da51c12aa43036c80253e6fcfb9fa24",
+  "replaySha256": "e457b9ae97ad00528d6d6a66f793e38b4b9e4b702894114b4326caf4301ce4fb",
   "safe": {
     "play": {
-      "px": -41.66310335731867,
+      "px": -39.22957134115194,
       "who": "0:1",
-      "t": 9.04,
+      "t": 0.83,
       "w": 390
     },
     "finale": {
-      "px": -60.69160411567589,
-      "who": "0:1",
-      "t": 34.9,
+      "px": -66.346626900185,
+      "who": "1:1",
+      "t": 32.84,
       "w": 390
     },
     "replay": {
-      "px": -85.44114135423871,
-      "who": "1:core",
-      "t": 33.73,
+      "px": -60.183105387440776,
+      "who": "1:0",
+      "t": 31.54,
       "w": 390
     },
     "result": {
-      "px": -109.10271167585873,
-      "who": "0:1",
-      "t": 34.9,
+      "px": -136.11562326498554,
+      "who": "1:1",
+      "t": 32.84,
       "w": 390
     }
   },
   "framing": {
-    "frames": 2207,
+    "frames": 2073,
     "core15Pct": 100,
-    "ok15Pct": 92.7,
-    "minMarginPx": 41.7,
-    "sweptMinMarginLrPx": -41.1,
-    "sweptMinMarginSafePx": -41.1,
+    "ok15Pct": 93.8,
+    "minMarginPx": 39.2,
+    "sweptMinMarginLrPx": -10,
+    "sweptMinMarginSafePx": -10,
     "core15PctExact": 100,
     "pxPerMetre": {
-      "p10": 81.3,
-      "median": 108.8,
-      "p90": 129.8,
-      "min": 68.8,
-      "max": 143.9
+      "p10": 82.2,
+      "median": 109.3,
+      "p90": 132.8,
+      "min": 64,
+      "max": 141.5
     }
   },
   "errors": []

@@ -8,20 +8,20 @@
     "kind": "timeout",
     "criterion": "core-hp-ratio",
     "coreRatios": [
-      0.9666853495413332,
-      0.9363764966016
+      0.9672037495413333,
+      0.95650952708352
     ],
     "partHp": [
-      47.53620000000001,
+      37.209949439999995,
       0
     ]
   },
   "caption": "时间到，左方核心剩血比例更多",
   "damageEvents": 78,
   "finalCoreHp": [
-    9666.853495413332,
-    9363.764966016
+    9672.037495413333,
+    9565.0952708352
   ],
   "eventIndex": null,
-  "replaySha256": "c4510026b1067dfa79488528e14df1bd5302f4fdb1f9fca3e23e61c1cb108adb"
+  "replaySha256": "5f2c21253680deae502a6485563462c98b23d2dfec5ad0b1505dc072b38e7db2"
 }
