@@ -93,12 +93,17 @@
 
   <button id="creditsBtn" class="link" type="button">素材署名</button>
 
-  <div id="sheet" hidden>
-    <div class="panel">
-      <div class="head"><b id="sheetTitle">换一件</b><button type="button" class="close" id="sheetClose" aria-label="关闭">×</button></div>
-      <div class="grid" id="sheetGrid"></div>
-    </div>
-  </div>
+  <!-- 角色库 (MVP 规格 §4-3): full screen, opened from a slot; tap a card to install it there. -->
+  <section id="library" hidden aria-label="角色库">
+    <header class="lhead">
+      <button type="button" class="back" id="libBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg>拼装</button>
+      <b>角色库</b>
+      <!-- 拍一件 (D2): hidden until the live photo flow is wired up (11-16). -->
+      <button type="button" class="shoot" id="shootBtn" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button>
+    </header>
+    <div class="lsub"><b id="libTitle"></b><span id="libCount"></span></div>
+    <div class="lgrid" id="libGrid"></div>
+  </section>
 
   <div id="credits" hidden>
     <div class="panel">
