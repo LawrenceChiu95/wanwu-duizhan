@@ -246,7 +246,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pad.cooling span { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
 .pad.cooling svg { display: none; }
 /* While cooling the icon gives way to the whole seconds still to wait (same 32px box, so the label does not move). */
-.pad .left { display: none; position: relative; min-width: 32px; font: inherit; font-size: 28px; opacity: 0.8; font-variant-numeric: tabular-nums; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.pad .left { display: none; position: relative; min-width: 32px; font: inherit; font-size: 28px; font-variant-numeric: tabular-nums; text-align: center; line-height: 36px; border-radius: 8px; background: rgba(6, 8, 14, 0.78); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18); }
 .pad.cooling .left { display: block; }
 .pad.ready::after { content: ""; position: absolute; top: 0; bottom: 0; width: 34%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: shine 2.2s ease-in-out infinite; }
 .pad.on { animation: padOn 0.16s ease-in-out infinite alternate; }
