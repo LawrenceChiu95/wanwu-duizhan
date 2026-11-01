@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
-import {loadModels, turntable} from './models.js';
+import {loadModels, turntable, pictureUrl} from './models.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
@@ -16,7 +16,10 @@ const el = {
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
   result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), statsList: $('statsList'), tipLine: $('tipLine'),
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'),
+  how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
+  howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
+  coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), mute: $('muteBtn'), camSeg: $('camSeg')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
@@ -173,6 +176,7 @@ async function main() {
     live?.match.free();
     live = null;
     el.pad.hidden = true;
+    hideCoach();
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
     overlay.clear(); lateNums = [];
@@ -314,6 +318,7 @@ async function main() {
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
+      coach(2);
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       sfx.crunch();
       buzz(25);
@@ -324,6 +329,7 @@ async function main() {
       stage.shake(4);
       overlay.screenFlash(0.25);
     } else if (e.type === 'dash') {
+      if (e.phase === 'charge' && e.side === 1) coach(1);
       if (e.phase === 'charge') {
         stage.charge(e.side, e.until - e.t);
         // 第 13 版: the direction is locked at the press; show it through the wind-up so both sides can read the lunge.
@@ -388,6 +394,33 @@ async function main() {
     test.onEvent(e);
   }
 
+  // ---------- 首局提示 ----------
+  // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
+  // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
+  const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件碎了，核心就露出来了', at: 'mid'}];
+  const COACH_KEY = 'wanwu-coach-seen';
+  const coachSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(COACH_KEY) ?? '[]')); } catch { return new Set(); } })();
+  if (q.get('coach') === 'again') coachSeen.clear();
+  let coachTimer = 0, coachSince = -Infinity;
+  function coach(n) {
+    if (control !== 'manual' || !live || coachSeen.has(n) || phase !== 'play') return;
+    // In order, and each up for at least two seconds: the opponent often winds up before the first line has been read.
+    if (n > 0) coach(0);
+    const wait = coachSince + 2 - performance.now() / 1000;
+    if (wait > 0) { setTimeout(() => coach(n), wait * 1000 + 50); return; }
+    coachSeen.add(n);
+    coachSince = performance.now() / 1000;
+    try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ }
+    // Numbered in the order they actually came up: lines 2 and 3 follow the match (a piece can break before a lunge).
+    el.coachTag.textContent = `${coachSeen.size}/3`;
+    el.coachText.textContent = COACH[n].text;
+    el.coach.dataset.at = COACH[n].at;
+    el.coach.hidden = false;
+    clearTimeout(coachTimer);
+    coachTimer = setTimeout(() => { el.coach.hidden = true; }, 3200);
+  }
+  function hideCoach() { clearTimeout(coachTimer); el.coach.hidden = true; }
+
   // ---------- match ----------
   let runId = 0;
   async function start() {
@@ -442,11 +475,13 @@ async function main() {
     stage.updateCamera(0, true);
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
+    setTimeout(() => coach(0), 400);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
     try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
+    hideCoach();
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
       overlay.clear(); lateNums = [];
@@ -495,7 +530,7 @@ async function main() {
   // 角色库: every item a card (3D turning, name, category, size and weight, where it came from). The other slot's item
   // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
-  const CAT = {pot: '锅', lamp: '台灯', scissors: '剪刀', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
+  const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
   const sourceOf = it => {
     if (it.origin) return {tag: null, line: null};
     if (isLux(it.id)) return {tag: 'Aholo 生成', line: '来源：照片生成'};
@@ -506,7 +541,7 @@ async function main() {
   function cardHtml(id, k) {
     const it = byId.get(id), src = sourceOf(it), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
     const badge = other ? '<span class="badge">已装</span>' : own ? '<span class="badge own">装着</span>' : '';
-    const corner = it.origin?.photo ? `<img class="photo" src="${esc(it.origin.photo)}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
+    const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(src.line)}</small>`;
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}">
@@ -518,7 +553,7 @@ async function main() {
   async function openLibrary(k) {
     const req = ++libReq;
     libSlot = k;
-    el.libTitle.textContent = `挑一件装到${k ? '第二件' : '第一件'}`;
+    el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
     el.libGrid.innerHTML = OFFER.map(id => cardHtml(id, k)).join('');
     el.libGrid.scrollTop = 0;
@@ -532,7 +567,7 @@ async function main() {
         rebuildMine();
       };
       const how = card.querySelector('[data-how]');
-      if (how) how.onclick = () => { /* 看它怎么来的: next step */ };
+      if (how) how.onclick = () => openHow(id);
     }
     // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it).
     for (const id of OFFER) {
@@ -546,6 +581,71 @@ async function main() {
   }
   function closeLibrary() { libReq++; el.library.hidden = true; }
   $('libBack').onclick = closeLibrary;
+
+  // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
+  // each step's real time beside it. The category is the one the player's pick fixed, not something a model guessed.
+  const STEPS = [{key: 'photo', name: '照片', play: 3}, {key: 'styled', name: '改成画风的图', play: 3}, {key: 'model', name: '3D 转起来', play: 4}];
+  const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(sec % 60)).padStart(2, '0')} 秒` : `${Math.round(sec)} 秒`;
+  let howItem = null, howT = 0, howTimer = 0, howReq = 0;
+  async function openHow(id) {
+    const it = byId.get(id), o = it?.origin;
+    if (!o) return;
+    howItem = id;
+    const secs = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds);
+    el.howTitle.textContent = `${NAMES[id]}是怎么来的`;
+    el.howCat.textContent = CAT[it.category] ?? it.category ?? '';
+    el.howSteps.innerHTML = STEPS.map((st, i) => {
+      const pic = st.key === 'model' ? '<i class="mini3d"></i>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
+      return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
+    }).join('');
+    el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${dur(secs.reduce((a, b) => a + b, 0))}` : '';
+    const other = mine.parts[1 - libSlot].item === id;
+    el.howEquip.disabled = other;
+    el.howEquip.querySelector('span').textContent = other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
+    el.howTurn.style.backgroundImage = '';
+    el.how.hidden = false;
+    playHow();
+    // The 3D step needs the model, which the 角色库 may not have loaded yet: it turns in once it arrives.
+    const req = ++howReq;
+    await loadModels([it]);
+    if (req !== howReq || el.how.hidden) return;
+    const strip = turntable(id, stage.renderer, stage.scene.environment, {size: 320});
+    el.howTurn.style.backgroundImage = strip ? `url(${strip.url})` : '';
+    const small = turntable(id, stage.renderer, stage.scene.environment);
+    el.howSteps.querySelector('.mini3d').style.backgroundImage = small ? `url(${small.url})` : '';
+  }
+  function playHow() {
+    howT = 0;
+    cancelAnimationFrame(howTimer);
+    let last = performance.now();
+    const total = STEPS.reduce((a, st) => a + st.play, 0), o = byId.get(howItem).origin;
+    const tick = now => {
+      howT = Math.min(total, howT + (now - last) / 1000);
+      last = now;
+      let at = 0, i = 0;
+      while (i < STEPS.length - 1 && howT >= at + STEPS[i].play) at += STEPS[i++].play;
+      const k = Math.min(1, (howT - at) / STEPS[i].play);
+      el.howBar.querySelectorAll('i').forEach((b, n) => b.style.setProperty('--fill', n < i ? 1 : n === i ? k : 0));
+      el.howSteps.querySelectorAll('li').forEach((li, n) => { li.classList.toggle('done', n < i || howT >= total); li.classList.toggle('now', n === i && howT < total); });
+      const key = STEPS[i].key, src = key === 'model' ? null : pictureUrl(key === 'photo' ? o.photo : o.styled);
+      if (src && el.howShot.getAttribute('src') !== src) el.howShot.src = src;
+      el.howShot.hidden = key === 'model';
+      el.howTurn.classList.toggle('on', key === 'model');
+      el.howNow.textContent = `第 ${i + 1} 步 · ${STEPS[i].name}`;
+      if (howT < total && !el.how.hidden) howTimer = requestAnimationFrame(tick);
+    };
+    howTimer = requestAnimationFrame(tick);
+  }
+  function closeHow() { howReq++; cancelAnimationFrame(howTimer); el.how.hidden = true; }
+  $('howBack').onclick = closeHow;
+  $('howReplay').onclick = playHow;
+  el.howEquip.onclick = () => {
+    if (mine.parts[1 - libSlot].item === howItem) return;
+    mine.parts[libSlot].item = howItem;
+    closeHow();
+    closeLibrary();
+    rebuildMine();
+  };
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
@@ -658,6 +758,8 @@ async function main() {
   window.__top = {
     press,
     setControl(c) { control = c; },
+    // Fixture for the 看它怎么来的 check until the generation script writes real records.
+    setOrigin(id, origin) { byId.get(id).origin = origin; },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
     status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),

@@ -6,6 +6,10 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 // The six original items (pot and lamp are the textured Lux3D generations) plus everything the import script writes
 // to data/models/generated. Only URLs are bundled here; a model is fetched when a build first uses it.
 const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../data/models/lamp-lux3d-mobile.glb', '../../data/models/broom.glb', '../../data/models/scissors.glb', '../../data/models/slipper.glb', '../../data/models/pillow.glb', '../../data/models/generated/**/*.glb'], {query: '?url', import: 'default', eager: true});
+// Generation records (item.origin, 看它怎么来的): the original photo and the styled image, kept under data/origins/<id>/.
+const originUrls = import.meta.glob('../../data/origins/**/*.{jpg,jpeg,png,webp}', {query: '?url', import: 'default', eager: true});
+/** A record's picture: a repo-relative path from the catalog (bundled above), or a data:/https: URL as it is. */
+export const pictureUrl = path => /^(data:|https?:)/.test(path) ? path : Object.entries(originUrls).find(([key]) => key.endsWith('/' + path))?.[1] ?? null;
 const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
@@ -78,15 +82,16 @@ export function instantiate(itemId, uniforms) {
  */
 const strips = new Map();
 export function turntable(itemId, renderer, environment, {frames = 24, size = 160} = {}) {
-  if (strips.has(itemId)) return strips.get(itemId);
+  const key = `${itemId}:${size}`;
+  if (strips.has(key)) return strips.get(key);
   const src = cache.get(itemId);
   if (!src) return null;
   const scene = new THREE.Scene();
   scene.environment = environment ?? null;
   scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x20242e, 1.6));
-  const key = new THREE.DirectionalLight(0xffffff, 2.2);
-  key.position.set(2, 3, 2.5);
-  scene.add(key);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  keyLight.position.set(2, 3, 2.5);
+  scene.add(keyLight);
   const obj = src.clone(true), spin = new THREE.Group();
   spin.add(obj);
   scene.add(spin);
@@ -126,6 +131,6 @@ export function turntable(itemId, renderer, environment, {frames = 24, size = 16
     target.dispose();
   }
   const strip = {url: canvas.toDataURL('image/png'), frames, size};
-  strips.set(itemId, strip);
+  strips.set(key, strip);
   return strip;
 }
