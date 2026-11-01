@@ -53,16 +53,16 @@
       <div class="slot" data-slot="0">
         <button type="button" class="item" data-pick="0"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
-          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
-          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着<em class="role def">守</em></button>
         </div>
         <p class="hint"></p>
       </div>
       <div class="slot" data-slot="1">
         <button type="button" class="item" data-pick="1"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
-          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
-          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着<em class="role def">守</em></button>
         </div>
         <p class="hint"></p>
       </div>
@@ -85,8 +85,12 @@
     <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
     <p class="why" id="whyLine"></p>
+    <!-- 结算 (MVP 规格 §4-7): up to three numbers from this match, then one tip from the rules below. -->
+    <ul class="stats" id="statsList"></ul>
+    <p class="tip" id="tipLine"></p>
     <div class="actions">
       <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
+      <button type="button" id="sameBtn" class="ghost">原样再来</button>
       <button type="button" id="againBtn" class="primary"><span>换个装法再打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>

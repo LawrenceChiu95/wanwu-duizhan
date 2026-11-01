@@ -6,7 +6,7 @@ import {loadModels, turntable} from './models.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
-import {reasonLine, NAMES, setNames} from './reason.js';
+import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames} from './reason.js';
 import {sfx} from './sfx.js';
 
 const $ = id => document.getElementById(id);
@@ -14,7 +14,7 @@ const el = {
   app: $('app'), canvas: $('view'), fx: $('fx'), flash: $('flash'), banner: $('banner'),
   caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
-  result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
+  result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), statsList: $('statsList'), tipLine: $('tipLine'),
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), mute: $('muteBtn'), camSeg: $('camSeg')
@@ -54,10 +54,12 @@ for (const type of ['pointerdown', 'touchend', 'keydown', 'click']) addEventList
 const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } catch { /* not allowed */ } };
 
 const isLux = id => id.endsWith('-lux3d');
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.parts[0].orient}, {item: b.parts[1].item, mount: b.spread, orient: b.parts[1].orient}]});
-const HINT = {out: '伸出去，转起来抡人', hug: '贴着核心，替它挡'};
+// R7 (伸出攻、贴着守): 伸出 hits harder and breaks sooner; 贴着 takes blows for the core and hits softer.
+const HINT = {out: '攻：撞人更疼，自己易碎', hug: '守：替核心挡，少掉血'};
 const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 
 function renderCredits(items) {
@@ -458,8 +460,11 @@ async function main() {
     stage.setLookahead(null);
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
-    el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;
+    el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${endLine(replay)}`;
     el.whyLine.textContent = reasonLine(replay);
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
+    el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
+    el.tipLine.textContent = tipLine(stats, m.winner);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false);
     el.result.hidden = false;
@@ -493,7 +498,7 @@ async function main() {
   const CAT = {pot: '锅', lamp: '台灯', scissors: '剪刀', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
   const sourceOf = it => {
     if (it.origin) return {tag: null, line: null};
-    if (isLux(it.id)) return {tag: 'Aholo 生成', line: '来源：照片生成，还没存生成记录'};
+    if (isLux(it.id)) return {tag: 'Aholo 生成', line: '来源：照片生成'};
     if (/^CC/.test(it.source?.license ?? '')) return {tag: 'CC 模型', line: `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`};
     return {tag: '3D 模型', line: '来源：只有 3D 模型'};
   };
@@ -597,6 +602,8 @@ async function main() {
   el.go.onclick = () => start();
   $('replayBtn').onclick = () => replaySlow();
   $('againBtn').onclick = () => showBuild();
+  // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
+  $('sameBtn').onclick = () => { showBuild(); start(); };
   $('creditsBtn').onclick = () => { el.credits.hidden = false; };
   $('creditsClose').onclick = () => { el.credits.hidden = true; };
   el.credits.onclick = e => { if (e.target === el.credits) el.credits.hidden = true; };
