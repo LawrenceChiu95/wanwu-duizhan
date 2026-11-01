@@ -217,6 +217,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes shine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
 
 /* ---------- Manual mode: two thumb buttons in the room below the arena ---------- */
+#coach { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 98px); z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  margin: 0 auto; width: max-content; max-width: calc(100% - 24px); padding: 8px 16px 9px; border-radius: 12px; background: rgba(8, 11, 22, 0.92); box-shadow: inset 0 0 0 1px var(--line), 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: none; animation: rise 0.25s ease-out both; }
+#coach .tag { font-size: 11px; color: var(--mute); }
+#coach b { font-size: 17px; font-weight: 700; }
+/* A small pointer down to the button the line is about. */
+#coach::after { content: ""; position: absolute; bottom: -7px; left: calc(50% - 7px); width: 14px; height: 14px; background: inherit; transform: rotate(45deg); box-shadow: 1px 1px 0 var(--line); }
+#coach[data-at="dash"] { margin-left: 0; } #coach[data-at="dash"]::after { left: 24%; }
+#coach[data-at="block"] { margin-right: 0; } #coach[data-at="block"]::after { left: auto; right: 24%; }
 #pad { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 18px); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; z-index: 2; }
 .pad { position: relative; height: 76px; display: flex; align-items: center; justify-content: center; gap: 10px; overflow: hidden; touch-action: none;
   font-family: var(--display); font-size: 36px; line-height: 1; letter-spacing: 0.04em; transition: filter 0.2s, transform 0.08s; }
@@ -336,6 +345,34 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .card .how { display: flex; align-items: center; gap: 5px; font-weight: 650; text-align: left; }
 .card .how svg { width: 12px; height: 12px; }
 .card .src { color: var(--mute); display: block; }
+/* ---------- 看它怎么来的 ---------- */
+#howView { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; overflow-y: auto; }
+.hstage { position: relative; flex: none; margin: 12px 14px 0; aspect-ratio: 1 / 0.9; max-height: 46vh; border-radius: 12px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.hshot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; animation: fade 0.35s ease-out both; }
+#howTurn { position: absolute; top: 50%; left: 50%; height: 92%; aspect-ratio: 1; transform: translate(-50%, -50%); background-repeat: no-repeat; background-size: 2400% 100%; opacity: 0; transition: opacity 0.35s; }
+#howTurn.on { opacity: 1; animation: turn 6s steps(24, jump-none) infinite; }
+.hcat { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mute); }
+.hcat b { font-size: 12px; line-height: 20px; padding: 0 8px; border-radius: 10px; color: #1a0900; background: var(--c0); }
+.hnow { position: absolute; left: 10px; bottom: 9px; font-size: 12px; color: var(--mute); }
+.hreplay { position: absolute; right: 8px; bottom: 6px; display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; background: var(--plate); box-shadow: inset 0 0 0 1px var(--line); }
+.hreplay svg { width: 13px; height: 13px; }
+.hbar { flex: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 10px 14px 4px; }
+.hbar i { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--c0) calc(var(--fill, 0) * 100%), rgba(255, 255, 255, 0.1) 0); }
+.hsteps { flex: none; list-style: none; margin: 0 14px; padding: 0; }
+.hsteps li { display: grid; grid-template-columns: 26px 1fr 40px auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); opacity: 0.45; transition: opacity 0.25s; }
+.hsteps li.done, .hsteps li.now { opacity: 1; }
+.hsteps .n { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--line); }
+.hsteps li.done .n { background: var(--ink); color: var(--bg); box-shadow: none; }
+.hsteps li.now .n { box-shadow: inset 0 0 0 2px var(--c0); color: var(--c0); }
+.hsteps b { font-size: 15px; font-weight: 650; }
+.hsteps img, .hsteps .mini3d { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: rgba(255, 255, 255, 0.05); }
+.hsteps .mini3d { display: block; background-repeat: no-repeat; background-size: 2400% 100%; }
+.hsteps .sec { font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; text-align: right; min-width: 52px; }
+.htotal { flex: none; margin: 10px 14px 0; font-size: 15px; }
+.htotal b { font-weight: 700; }
+.hfoot { flex: 1; display: flex; align-items: flex-end; padding: 14px 14px calc(env(safe-area-inset-bottom) + 18px); }
+.hfoot .go { width: 100%; }
+.hfoot .go:disabled { opacity: 0.45; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 #creditsBody { font-size: 13px; line-height: 1.55; color: #c7d2ea; }
 #creditsBody ul { margin: 0 0 10px; padding-left: 18px; }
