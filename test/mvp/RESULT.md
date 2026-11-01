@@ -4,7 +4,7 @@
 
 ## 已有检查
 
-- 原36机制检查加6项MVP规则，42/42。命令：`node --test --test-concurrency=1 test/prototype/sim.test.mjs test/v3/sim.test.mjs test/v3-top/v13/timing.test.mjs test/mvp/rules.test.mjs`。
+- 原36机制检查加7项MVP规则/超时整局，43/43。命令：`node --test --test-concurrency=1 test/prototype/sim.test.mjs test/v3/sim.test.mjs test/v3-top/v13/timing.test.mjs test/mvp/rules.test.mjs`。
 - 导入工具15/15（含实际GLB/凸包/弱点/尺寸/贴图检查），`npm test --prefix tools/import-item`。
 - `npm run build --prefix web`通过；无新增依赖。
 - 原V1固定轨迹保留原有八件几何单独重放当前V1引擎，当前catalog另验；V3两件先碎再KO改受控实碰夹具，原同一步双KO断言不动。原因见SPEC.md。没有更新老统计表来冒充新批量。
@@ -55,3 +55,18 @@ Chrome按键接受步107冲/141挡；WebKit55冲/132挡，实际点击时刻不�
 固定初始物理扫过直径仍为1.856741m/1.010000m，逐帧在各自球心测2×screenRadius，碎件后仍用初始半径作尺子。Chrome接受步109冲/184挡，WebKit98冲/167挡，所以两局时长不是同输入跨引擎对照。画面实体全局未出画（最小实体边距41.7/35.7px），理想扫过圆在Chrome局有出画；核心落在15%安全框的帧100%，包含全部挂件则92.7%/94.7%。不混用实体包围与扫过圆，也不宣称完整镜头验收通过。对手直径仍未到150px，保留原验收线，待Iris/Wren画面联调；非真实手机。
 
 截图已目视核对。完整原始证据留共享开发归档/MVP规则实施/phone-2.2m与browser-2.2m；本地4406本人服务已停，两个浏览器均已关。完整统计和Claude独立审查继续。
+
+## 正式三模式与择时：3000局（11-01 23:33完成）
+
+固定b8941f8，2.2m，Node22.18.0，六场景×100成对种子×五条件，959.047秒；3000行全部保留。正式验收三种模式分别600局：自动A中位29.375秒、自动B34.250秒、手动乱按27.500秒，均无超过45秒的局。所有3000局首次有效伤害≤0.4秒，无无伤局，开局实体均在墙内。择时对乱按的六场景胜率差依次12、23、24、16、38、15点，中位19.5点，达到15点。择时局长中位31.592秒、1/600超过45秒；不操作对照中位24.946秒，低于25秒，单列保留而不混入固定乱按的验收组。
+
+这轮通过局长、首伤与择时三项，不代表镜像、装法、强弱表或150px手机尺寸通过。原始sources指纹、逐局SHA与压缩全行在results-primary/；同样留共享归档primary3000。后续B1只补layout的计划和汇总，未改sim、数据、primary计划或本轮结果。
+
+## Claude审查裁决：B1与S3
+
+固定b8941f8独立只读审查实际claude-opus-5-5，工具禁用；原文见[规则审查报告](https://raft-artifacts.com/p/lawrence-workspace/wanwu-mvp-rule-review)。Elara94ea61ed裁决B1要改、S3并进，其余六建议task #17后延：
+
+- B1：primary完成后补第二件伸出↔贴着，layout六场景×100种子×四条件=2400局，18个单变量对比。不会拿仅翻第一件的12个对比当规格验收。
+- S3：完整60秒真实接触夹具，仅把双方核心血量设为10000以避免提前KO，其他物理、判定和计时沿当前规则；78次有效伤害，最终核心9666.853495/9363.764966，比例0.966685350/0.936376497，按比例判0方胜。meta、最终帧、唯一result事件、why、caption相符，无KO事件、不伪造致命一击；完整压缩回放及指纹在timeout-replay.json.gz、timeout-proof.json。它验终局接线，不能当发布数值平衡或页面超时证据。
+
+新增超时整局后原36加7项共43/43。B1/S3修后需Claude复核；未合PR10。

@@ -1,0 +1,27 @@
+{
+  "fixture": "real contacts for 60 seconds; core HP override 10000 only",
+  "seed": 0,
+  "mode": "A",
+  "duration": 60,
+  "winner": 0,
+  "why": {
+    "kind": "timeout",
+    "criterion": "core-hp-ratio",
+    "coreRatios": [
+      0.9666853495413332,
+      0.9363764966016
+    ],
+    "partHp": [
+      47.53620000000001,
+      0
+    ]
+  },
+  "caption": "时间到，左方核心剩血比例更多",
+  "damageEvents": 78,
+  "finalCoreHp": [
+    9666.853495413332,
+    9363.764966016
+  ],
+  "eventIndex": null,
+  "replaySha256": "c4510026b1067dfa79488528e14df1bd5302f4fdb1f9fca3e23e61c1cb108adb"
+}

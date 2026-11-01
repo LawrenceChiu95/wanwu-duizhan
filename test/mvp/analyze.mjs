@@ -12,7 +12,7 @@ if(['pilot','primary'].includes(manifest.stage)){
 }
 if(manifest.stage==='fair')summary.scenes=manifest.fixtures.map(f=>{const a=rows.filter(r=>r.plan.scene===f.id),scorePct=100*mean(a.map(r=>r.score));return {scene:f.id,n:a.length,pairedSeeds:new Set(a.map(r=>r.plan.seed)).size,scorePct,pass:scorePct>=45&&scorePct<=55&&new Set(a.map(r=>r.plan.seed)).size>=200};});
 if(manifest.stage==='layout'){
- summary.contrasts=manifest.fixtures.flatMap(f=>{const a=rows.filter(r=>r.plan.scene===f.id),base=mean(a.filter(r=>r.plan.change==='original').map(r=>r.score));return ['orient-first','spread'].map(change=>({scene:f.id,change,n:a.filter(r=>r.plan.change===change).length,deltaPoints:100*(mean(a.filter(r=>r.plan.change===change).map(r=>r.score))-base)}));});summary.medianAbsoluteDelta=median(summary.contrasts.map(r=>Math.abs(r.deltaPoints)));summary.pass=summary.medianAbsoluteDelta>=5;
+ summary.contrasts=manifest.fixtures.flatMap(f=>{const a=rows.filter(r=>r.plan.scene===f.id),base=mean(a.filter(r=>r.plan.change==='original').map(r=>r.score));return ['orient-first','orient-second','spread'].map(change=>({scene:f.id,change,n:a.filter(r=>r.plan.change===change).length,deltaPoints:100*(mean(a.filter(r=>r.plan.change===change).map(r=>r.score))-base)}));});summary.medianAbsoluteDelta=median(summary.contrasts.map(r=>Math.abs(r.deltaPoints)));summary.pass=summary.medianAbsoluteDelta>=5;
 }
 // Resample complete seed clusters; opponents and paired seats are not independent samples.
 // This interval describes seed uncertainty only, not coverage of all possible loadouts/strategies.

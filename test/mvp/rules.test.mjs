@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+import {gzipSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
 import {simulateV3,createV3Match,loadCatalog,loadV3Rules,tierDamage,timeoutVerdict} from '../../sim/v3.js';
 import {loadRules} from '../../sim/index.js';
 import {simulateWithRules} from '../v3-top/variant.mjs';
@@ -46,6 +49,24 @@ test('terminal result follows final guard resolution/frame and carries timeout f
  assert.equal(r.events.at(-2).type,'blockResult');assert.equal(r.events.at(-1).type,'result');assert.equal(r.events.filter(e=>e.type==='result').length,1);
  assert.equal(r.frames.at(-1).t,r.events.at(-1).t);assert.equal(r.meta.reason,'timeout');assert.equal(r.meta.winner,null);assert.equal(r.decisive.eventIndex,null);assert.equal(r.decisive.why.criterion,'draw');
  assert.deepEqual(r.events.at(-1),{t:r.meta.duration,type:'result',winner:null,reason:'timeout',why:r.decisive.why});
+});
+
+test('a full 60-second real-contact match awards timeout by final core ratios and emits consistent terminal facts',async()=>{
+ // Higher core HP keeps both cores alive through the real 60-second match; no HP/event injection.
+ const simulate=await simulateWithRules({core:{hp:10000}});
+ const r=await simulate({fighters:[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:0,manual:{sides:['ai','ai']}});
+ const final=r.frames.at(-1),ratios=final.fighters.map(f=>f.core.hp/f.core.maxHp),winner=ratios[0]>ratios[1]?0:1;
+ assert.equal(r.meta.duration,60);assert.equal(final.t,60);assert.equal(r.meta.reason,'timeout');
+ assert.ok(ratios.every(x=>x>0&&x<1));assert.notEqual(ratios[0],ratios[1]);assert.equal(r.meta.winner,winner);
+ assert.ok(r.events.some(e=>e.damage>0));assert.ok(!r.events.some(e=>e.type==='ko'));
+ assert.equal(r.decisive.why.kind,'timeout');assert.equal(r.decisive.why.criterion,'core-hp-ratio');assert.deepEqual(r.decisive.why.coreRatios,ratios);
+ assert.deepEqual(r.decisive.why.partHp,final.fighters.map(f=>f.parts.reduce((sum,p)=>sum+(p.alive?Math.max(0,p.hp):0),0)));
+ assert.equal(r.decisive.eventIndex,null);assert.equal(r.decisive.finishType,'timeout');
+ assert.equal(r.decisive.caption,`时间到，${winner===0?'左':'右'}方核心剩血比例更多`);
+ assert.equal(r.events.filter(e=>e.type==='result').length,1);assert.deepEqual(r.events.at(-1),{t:60,type:'result',winner,reason:'timeout',why:r.decisive.why});
+ const json=JSON.stringify(r),sha256=createHash('sha256').update(json).digest('hex');
+ await writeFile(new URL('./timeout-replay.json.gz',import.meta.url),gzipSync(json));
+ await writeFile(new URL('./timeout-proof.json',import.meta.url),JSON.stringify({fixture:'real contacts for 60 seconds; core HP override 10000 only',seed:0,mode:'A',duration:60,winner,why:r.decisive.why,caption:r.decisive.caption,damageEvents:r.events.filter(e=>e.damage>0).length,finalCoreHp:final.fighters.map(f=>f.core.hp),eventIndex:r.decisive.eventIndex,replaySha256:sha256},null,2)+'\n');
 });
 
 test('ready fires once at each used cooldown boundary before accepting the same-step press; replay stays identical',async()=>{

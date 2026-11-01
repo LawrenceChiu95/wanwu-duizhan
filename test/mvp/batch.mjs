@@ -15,7 +15,7 @@ const plan=[];
 const baseRadius=JSON.parse(await readFile(new URL('sim/v3-rules.json',root))).arenaRadius;
 if(stage==='pilot'||stage==='primary')for(const radius of stage==='pilot'?[2.4,2.2,2]:[baseRadius])for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const condition of ['autoA','autoB','manual','timing','idle'])plan.push({stage,radius,scene:f.id,seed,condition});
 if(stage==='fair')for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,scene:f.id,seed,swap});
-if(stage==='layout')for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const change of ['original','orient-first','spread'])plan.push({stage,radius:baseRadius,scene:f.id,seed,change});
+if(stage==='layout')for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const change of ['original','orient-first','orient-second','spread'])plan.push({stage,radius:baseRadius,scene:f.id,seed,change});
 const defaultItems=['scissors','lamp-lux3d','broom','pan-lux3d','slipper','pillow'];
 if(stage==='strength')for(let a=0;a<defaultItems.length;a++)for(let b=a;b<defaultItems.length;b++)for(const leftOrient of ['out','hug'])for(const rightOrient of ['out','hug'])for(let seed=0;seed<n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,left:defaultItems[a],right:defaultItems[b],leftOrient,rightOrient,seed,swap});
 let selection=null;
@@ -40,6 +40,7 @@ for(const p of plan){
  if(stage==='layout'){
   const def=structuredClone(f.definition);
   if(p.change==='orient-first')def.parts[0].orient=def.parts[0].orient==='out'?'hug':'out';
+  if(p.change==='orient-second')def.parts[1].orient=def.parts[1].orient==='out'?'hug':'out';
   if(p.change==='spread')def.parts[1].mount=def.parts[1].mount==='e180'?'e90':'e180';
   o={fighters:[def,foe],seed:p.seed,manual:{sides:['ai','ai']}};
  }
