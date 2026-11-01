@@ -50,3 +50,15 @@ photo 只从 AHOLO_API_KEY 环境变量取密钥；glb 不需要密钥。生成�
 ## 分支与状态
 
 实现基于第13版 a43931f，分支 sol/aholo-item-cli；PR先叠到 iris/v13，不把尚未获准合并的PR #5夹带进main。PR #6 独立合main，功能PR不会重复打包其30MB资料。任务 task #8；权威活状态仍为共享 HANDOFF.md「当前：Aholo生成与导入脚本」，不在本文件复制进度。
+
+## 生成回放与下载修复（2026-11-02，当前增量）
+
+来源：Elara dm:@Elara:39415ef1 / 1d6edba3，MVP规格 §6 11-02～03；task #9 只做下载跳转、校验失败丢结果两处，其余建议仍挪后。Sol 负责 tools/import-item/**，目标 mvp/base；不动 sim、现有 catalog/模型、Iris 的页面、付费身份指纹和 pending 防重复创建。只用合成图片、假接口、本地 HTTP 流与离线 GLB；不跑真实额度，不发布、不合 main。
+
+1. 结果下载与 API/上传分开：只有不带 Key/上传凭据的 GET 可跟随最多五次跳转；逐跳检查 HTTPS、无内嵌用户名密码，支持相对 Location。API/上传仍拒绝跳转。120秒下载超时保留，失败只重试下载。
+2. 下载流先写私有 model.glb.part，完整收到后改名 model.glb，记录 SHA 和 download_finished，再由原 GLB 校验/处理链读取。格式不支持或超过64MiB仍保留完整原件；中断保留收到的 .part，不误报完整。重复原命令复用同一任务和完整缓存，不因校验失败重下或重建；人工处理用离线入口。改图下载亦保留私有原始结果，再校验和净化。
+3. 原照和改图经已有 Sharp 解码、按 EXIF 方向旋正、重新编码成 PNG；默认去掉 EXIF/GPS/XMP/IPTC/内嵌缩略图。输入文件不改，付费身份仍由原始字节算。上传使用净化后的像素图。私有缓存留 .aholo，入库时拷两张净化图到 data/origins/<id>/{photo,styled}.png，已有不同内容不覆盖。
+4. catalog 新项的 origin={photo,styled,steps:[{key,seconds}]}：路径相对仓库根、正斜线。三段按约定 upload_started→image_submit、image_submit→mesh_submit、mesh_submit→inventory_ready；第三段含下载/处理/入库资产写盘，inventory_ready 为原子提交 catalog 的边界时间。保留原八时间戳，不把供应商内部完成时间当观测时间。旧记录缺图片或完整有序时间、GLB导入件均不造 origin，不补猜测数据；同一付费结果换 ID 复用首次完成时长。
+5. README 写清回放图会随 PR 提交、原始照片只留运行者手上，EXIF 去掉不等于画面本身没有敏感内容。提交前核对净化图片；不自动提交、不放临时 URL、绝对路径或密钥。真实照片回放等凡朔交素材后由 Iris 联验。
+
+验收：复现旧版 HTTP302失败、校验后无文件及缺 origin；当前覆盖安全跳转/拒绝降级、原生 fetch 相对跳转与中断续跑、坏/超64MiB原件保留、合成含GPS/方向原照与改图净化、三段耗时和离线不造回放，原 pending/已知任务/改名字ID续跑回归不变。完整工具 CI 在 Linux/Windows 跑，网页构建打包真实脚本输出的合成回放图，390宽回放三段可读；独立 Claude 只读审后交 Elara 裁决。

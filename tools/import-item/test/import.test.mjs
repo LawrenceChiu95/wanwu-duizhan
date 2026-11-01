@@ -46,7 +46,7 @@ function gateway(options={}) {
   const headers=new Headers(request.headers);
   calls.push({url,request});
   const reply = d => Response.json({c:0,d});
-  assert.equal(request.redirect,'error');
+  if(['https://api.aholo.ai','https://upload.example'].includes(u.origin))assert.equal(request.redirect,'error');
   if (u.origin==='https://api.aholo.ai') {
    assert.equal(headers.get('Authorization'),'fake-key-never-persist');
    if(route.endsWith('/asset/v1/token'))return Response.json({ousToken:'fake-upload-token',globalDomain:'https://upload.example',blockSize:options.blocks?64:1000000});
@@ -72,11 +72,14 @@ function gateway(options={}) {
     if(route.endsWith('/single/upload')||route.endsWith('/part')){assert.ok(request.body instanceof FormData);assert.ok((await request.body.get('file').arrayBuffer()).byteLength>0);if(route.endsWith('/part'))assert.ok(Number(request.body.get('block'))>=1);return reply({taskId:123});}
     if(route.endsWith('/status'))return reply({status:5,url:'https://photo.example/upload.png'});
    }
+   if(u.origin==='https://photo.example'){assert.equal(headers.has('ous-token-v2'),false);return new Response(options.styledImage ?? image);}
+   if(u.origin==='https://cdn.example'){assert.equal(headers.has('ous-token-v2'),false);return new Response(model);}
    if(u.origin==='https://result.example'){
     assert.equal(headers.has('ous-token-v2'),false);
     if(options.expired)return new Response('private-url fake-key-never-persist',{status:403});
     if(options.downloadFailure&&!failed){failed=true;throw Error('download interruption');}
-    return new Response(model);
+    if(options.redirect)return new Response(null,{status:302,headers:{location:options.redirect}});
+    return new Response(options.badModel ?? model);
    }
   }
   throw Error(`Unexpected fake route ${route}`);
@@ -91,7 +94,7 @@ test('offline CLI needs no key: PBR/UV survive, used geometry is centered at cat
  assert.ok(Math.abs(result.longSideMeters-.38)<1e-8);assert.equal(result.triangles,4);assert.ok(result.hullPoints>=4&&result.hullPoints<=64);
  assert.deepEqual(result.textureSizes,[[512,384]]);
  const catalog=await s.catalog();assert.deepEqual(catalog.items.slice(0,8),before.items);
- const item=catalog.items.at(-1);assert.deepEqual(item.stats,before.items.find(i=>i.id==='pot').stats);assert.equal(item.templateId,'pot');assert.equal(item.comparisonBase,undefined);
+ const item=catalog.items.at(-1);assert.deepEqual(item.stats,before.items.find(i=>i.id==='pot').stats);assert.equal(item.templateId,'pot');assert.equal(item.comparisonBase,undefined);assert.equal(item.origin,undefined);
  for(let k=0;k<3;k++)assert.ok(Math.abs(item.bounds.min[k]+item.bounds.max[k])<1e-8);
  const bytes=await fs.readFile(path.join(s.root,item.glb));assert.equal(sha256(bytes),item.source.normalizedSha256);
  const doc=await new NodeIO().readBinary(bytes),p=doc.getRoot().listMeshes()[0].listPrimitives()[0];
@@ -129,7 +132,7 @@ test('unknown creation persists pending; rerun makes no network request and neve
 test('interrupted poll resumes existing image task; download failure retries download without more creation',async()=>{
  const s=await sandbox(),g=gateway({pollNetworkFailure:true,downloadFailure:true});
  await assert.rejects(run(s,args(s),g),/Network request failed/);assert.equal(g.creates(),1);
- await assert.rejects(run(s,args(s),g),/Network request failed/);assert.equal(g.creates(),2);assert.equal(g.downloads(),1);
+ await assert.rejects(run(s,args(s),g),/Asset download failed/);assert.equal(g.creates(),2);assert.equal(g.downloads(),1);
  await run(s,args(s),g);assert.equal(g.creates(),2);assert.equal(g.downloads(),2);
 });
 
@@ -230,4 +233,60 @@ test('an explicitly selected pre-review photo run may change name/ID without rep
  const changed=[...args(s,'corrected-id'),'--run','legacy-run'];changed[changed.indexOf('--name')+1]='更正名字';await run(s,changed,g);
  assert.equal(g.creates(),2);assert.equal(g.calls.filter(c=>c.url.includes('/multimodal-to-image/task/create')).length,1);
  const final=await readJson(path.join(oldFolder,'state.json'));assert.equal(final.input.id,undefined);assert.equal(final.input.name,undefined);assert.equal(final.tasks['multimodal-to-image'],'image-id');
+});
+
+
+test('credential-free result downloads follow HTTPS CDN redirects; all task and upload calls still reject redirects',async()=>{
+ const s=await sandbox(),g=gateway({redirect:'https://cdn.example/ready.glb?private=signature'});
+ await run(s,args(s),g);assert.equal(g.creates(),2);
+ const downloads=g.calls.filter(c=>new URL(c.url).origin==='https://cdn.example');assert.equal(downloads.length,1);
+ assert.deepEqual(Object.keys(downloads[0].request.headers??{}),[]);assert.equal(downloads[0].request.redirect,'manual');
+ for(const redirect of ['http://cdn.example/ready.glb','https://user:password@cdn.example/ready.glb']){
+  const other=await sandbox(),bad=gateway({redirect});await assert.rejects(run(other,args(other),bad),/HTTPS/);assert.equal(bad.creates(),2);
+  assert.ok(!bad.calls.some(c=>c.url===redirect));
+ }
+});
+
+test('a downloaded result is durable before GLB validation; rerun keeps it without re-downloading or regenerating',async()=>{
+ const s=await sandbox(),bad=Buffer.from('provider-result-for-manual-recovery'),g=gateway({badModel:bad});
+ await assert.rejects(run(s,args(s),g),/GLB/);
+ const file=await s.state('test-pot'),state=await readJson(file),saved=path.join(path.dirname(file),'model.glb');
+ assert.deepEqual(await fs.readFile(saved),bad);assert.equal(state.downloadSha256,sha256(bad));assert.ok(state.timestamps.download_finished);
+ const count=g.calls.length;await assert.rejects(run(s,args(s),g,{env:{}}),/GLB/);assert.equal(g.calls.length,count);
+ assert.equal(g.creates(),2);assert.equal((await s.catalog()).items.length,8);
+});
+
+test('photo records strip metadata and orient pixels, retain styled image, and publish measured origin segments',async()=>{
+ const s=await sandbox();let tick=0;
+ const privatePhoto=await sharp({create:{width:80,height:40,channels:3,background:'#c12345'}}).jpeg().withMetadata({orientation:6,exif:{IFD0:{Artist:'private-camera-owner',ImageDescription:'private-GPS-location'},IFD3:{GPSLatitudeRef:'N',GPSLatitude:'51/1 30/1 0/1',GPSLongitudeRef:'E',GPSLongitude:'1/1 20/1 0/1'}}}).toBuffer();
+ const exif=(await sharp(privatePhoto).metadata()).exif;assert.ok(exif);assert.ok(exif.includes(Buffer.from([0x25,0x88])),'source fixture has GPS IFD');
+ const g=gateway({styledImage:privatePhoto});await fs.writeFile(s.photo,privatePhoto);
+ await run(s,args(s),g,{now:()=>new Date(Date.UTC(2026,10,2,0,0,tick++)).toISOString()});
+ const state=await readJson(await s.state('test-pot')),item=(await s.catalog()).items.at(-1),origin=item.origin;
+ assert.equal(state.input.sourceSha256,sha256(privatePhoto),'paid identity must remain based on original input');
+ for(const call of g.calls.filter(c=>c.request.body instanceof FormData)){const uploaded=Buffer.from(await call.request.body.get('file').arrayBuffer());assert.equal((await sharp(uploaded).metadata()).exif,undefined,'upload also excludes metadata');}
+ assert.deepEqual([origin.photo,origin.styled],['data/origins/test-pot/photo.png','data/origins/test-pot/styled.png']);
+ const original=await fs.readFile(path.join(s.root,origin.photo)),styled=await fs.readFile(path.join(s.root,origin.styled));
+ const meta=await sharp(original).metadata();assert.deepEqual([meta.width,meta.height],[40,80]);
+ for(const bytes of [original,styled]) {const m=await sharp(bytes).metadata();assert.equal(m.exif,undefined);assert.equal(m.xmp,undefined);assert.equal(m.iptc,undefined);assert.equal(m.orientation,undefined);assert.ok(!bytes.includes(Buffer.from('private-camera-owner')));assert.ok(!bytes.includes(Buffer.from('private-GPS-location')));}
+ assert.deepEqual(origin.steps,[['photo','upload_started','image_submit'],['styled','image_submit','mesh_submit'],['model','mesh_submit','inventory_ready']].map(([key,start,end])=>({key,seconds:(Date.parse(state.timestamps[end])-Date.parse(state.timestamps[start]))/1000})));
+ assert.equal(origin.steps.reduce((n,x)=>n+x.seconds,0),(Date.parse(state.timestamps.inventory_ready)-Date.parse(state.timestamps.upload_started))/1000);
+ const count=g.calls.length;await run(s,args(s,'another-pot'),g,{env:{}});assert.equal(g.calls.length,count);assert.deepEqual((await s.catalog()).items.at(-1).origin.steps,origin.steps);
+ assert.equal((await fs.readFile(s.photo)).equals(privatePhoto),true,'input photo is untouched');
+});
+
+
+test('cached photo run with incomplete historical timestamps gets no fabricated origin and does not use the network',async()=>{
+ const s=await sandbox(),g=gateway();await run(s,args(s),g);
+ const file=await s.state('test-pot'),state=await readJson(file);state.timestamps.image_submit=null;await saveJson(file,state);
+ const count=g.calls.length;await run(s,args(s,'legacy-pot'),g,{env:{}});assert.equal(g.calls.length,count);
+ assert.equal((await s.catalog()).items.at(-1).origin,undefined);
+});
+
+test('an oversized paid GLB is kept on disk while importer still enforces the 64MiB limit',async()=>{
+ const s=await sandbox(),oversized=Buffer.alloc(64*1024*1024+1),g=gateway({badModel:oversized});
+ await assert.rejects(run(s,args(s),g),/exceeds 64 MiB/);
+ const file=await s.state('test-pot'),saved=path.join(path.dirname(file),'model.glb');
+ assert.equal((await fs.stat(saved)).size,oversized.length);assert.equal((await readJson(file)).downloadSha256,sha256(oversized));
+ const count=g.calls.length;await assert.rejects(run(s,args(s),g,{env:{}}),/64 MiB/);assert.equal(g.calls.length,count);assert.equal(g.creates(),2);
 });
