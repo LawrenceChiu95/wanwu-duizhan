@@ -53,16 +53,16 @@
       <div class="slot" data-slot="0">
         <button type="button" class="item" data-pick="0"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
-          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
-          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着<em class="role def">守</em></button>
         </div>
         <p class="hint"></p>
       </div>
       <div class="slot" data-slot="1">
         <button type="button" class="item" data-pick="1"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
-          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
-          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着<em class="role def">守</em></button>
         </div>
         <p class="hint"></p>
       </div>
@@ -85,20 +85,29 @@
     <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
     <p class="why" id="whyLine"></p>
+    <!-- 结算 (MVP 规格 §4-7): up to three numbers from this match, then one tip from the rules below. -->
+    <ul class="stats" id="statsList"></ul>
+    <p class="tip" id="tipLine"></p>
     <div class="actions">
       <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
+      <button type="button" id="sameBtn" class="ghost">原样再来</button>
       <button type="button" id="againBtn" class="primary"><span>换个装法再打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>
 
   <button id="creditsBtn" class="link" type="button">素材署名</button>
 
-  <div id="sheet" hidden>
-    <div class="panel">
-      <div class="head"><b id="sheetTitle">换一件</b><button type="button" class="close" id="sheetClose" aria-label="关闭">×</button></div>
-      <div class="grid" id="sheetGrid"></div>
-    </div>
-  </div>
+  <!-- 角色库 (MVP 规格 §4-3): full screen, opened from a slot; tap a card to install it there. -->
+  <section id="library" hidden aria-label="角色库">
+    <header class="lhead">
+      <button type="button" class="back" id="libBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg>拼装</button>
+      <b>角色库</b>
+      <!-- 拍一件 (D2): hidden until the live photo flow is wired up (11-16). -->
+      <button type="button" class="shoot" id="shootBtn" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button>
+    </header>
+    <div class="lsub"><b id="libTitle"></b><span id="libCount"></span></div>
+    <div class="lgrid" id="libGrid"></div>
+  </section>
 
   <div id="credits" hidden>
     <div class="panel">

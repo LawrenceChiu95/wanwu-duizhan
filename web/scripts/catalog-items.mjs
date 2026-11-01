@@ -21,7 +21,7 @@ async function open() {
   const error = await page.$eval('#error', e => e.hidden ? null : e.textContent);
   return {page, logs, error};
 }
-const sheetLabels = page => page.$$eval('#sheetGrid button', bs => bs.map(b => ({name: b.querySelector('b').textContent, html: b.querySelector('b').innerHTML, disabled: b.disabled})));
+const sheetLabels = page => page.$$eval('#libGrid .card', cs => cs.map(c => ({name: c.querySelector('.nm b').textContent, html: c.querySelector('.nm b').innerHTML, disabled: c.querySelector('.pick').disabled})));
 const undefinedText = page => page.evaluate(() => document.body.innerText.includes('undefined'));
 
 // 1. The list as the picker shows it.
@@ -30,7 +30,7 @@ const undefinedText = page => page.evaluate(() => document.body.innerText.includ
   report.loadError = error;
   if (!error) {
     await tap(page, '[data-pick="0"]');
-    await page.waitForSelector('#sheet:not([hidden])');
+    await page.waitForSelector('#library:not([hidden])');
     await page.waitForTimeout(600);
     report.offer = await sheetLabels(page);
     report.originalOrderKept = JSON.stringify(report.offer.slice(0, 6).map(o => o.name)) === JSON.stringify(ORIGINAL);
@@ -42,15 +42,15 @@ const undefinedText = page => page.evaluate(() => document.body.innerText.includ
 const ids = idsArg ? idsArg.split(',') : null;
 const added = (report.offer ?? []).slice(6).map(o => o.name);
 
-// 2. Each added item: picked through the sheet, one full match.
+// 2. Each added item: picked in the 角色库, one full match.
 for (const name of ids ?? added) {
   const {page, logs} = await open();
   const m = {name, undefinedSeen: false};
   await tap(page, '[data-pick="0"]');
-  await page.waitForSelector('#sheet:not([hidden])');
-  const buttons = await page.$$('#sheetGrid button');
+  await page.waitForSelector('#library:not([hidden])');
+  const buttons = await page.$$('#libGrid .card .pick');
   let picked = false;
-  for (const b of buttons) if (await b.$eval('b', e => e.textContent) === name) { await (desk ? b.click() : b.tap()); picked = true; break; }
+  for (const b of buttons) if (await b.$eval('.nm b', e => e.textContent) === name) { await (desk ? b.click() : b.tap()); picked = true; break; }
   m.picked = picked;
   if (picked) {
     await page.waitForFunction(() => window.__top.status().phase === 'build');

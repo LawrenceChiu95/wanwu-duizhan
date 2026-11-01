@@ -71,3 +71,61 @@ export function instantiate(itemId, uniforms) {
   });
   return obj;
 }
+
+/**
+ * A turntable strip for the 角色库 cards: `frames` square views of the item turning once, side by side in one PNG.
+ * Rendered once per item with the page's own renderer (no second WebGL context) and played back as a CSS sprite.
+ */
+const strips = new Map();
+export function turntable(itemId, renderer, environment, {frames = 24, size = 160} = {}) {
+  if (strips.has(itemId)) return strips.get(itemId);
+  const src = cache.get(itemId);
+  if (!src) return null;
+  const scene = new THREE.Scene();
+  scene.environment = environment ?? null;
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x20242e, 1.6));
+  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  key.position.set(2, 3, 2.5);
+  scene.add(key);
+  const obj = src.clone(true), spin = new THREE.Group();
+  spin.add(obj);
+  scene.add(spin);
+  // Fit: centre the model; as it turns it sweeps a cylinder (its widest reach around the vertical axis by its height),
+  // seen a little from above, filling most of the square.
+  const box = new THREE.Box3().setFromObject(obj), center = box.getCenter(new THREE.Vector3());
+  obj.position.sub(center);
+  box.translate(center.negate());
+  const reach = Math.hypot(Math.max(-box.min.x, box.max.x), Math.max(-box.min.z, box.max.z)), half = (box.max.y - box.min.y) / 2;
+  const pitch = 0.42, camera = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
+  const extent = Math.max(reach, half * Math.cos(pitch) + reach * Math.sin(pitch));
+  const dist = extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch);
+  camera.position.set(0, dist * Math.sin(pitch), dist * Math.cos(pitch));
+  camera.lookAt(0, 0, 0);
+  const target = new THREE.WebGLRenderTarget(size, size, {samples: 4, colorSpace: THREE.SRGBColorSpace});
+  const canvas = document.createElement('canvas');
+  canvas.width = size * frames;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d'), pixels = new Uint8Array(size * size * 4), img = ctx.createImageData(size, size);
+  const old = {target: renderer.getRenderTarget(), color: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(), viewport: renderer.getViewport(new THREE.Vector4())};
+  try {
+    renderer.setClearColor(0x000000, 0);
+    for (let i = 0; i < frames; i++) {
+      spin.rotation.y = (i / frames) * Math.PI * 2;
+      renderer.setRenderTarget(target);
+      renderer.clear();
+      renderer.render(scene, camera);
+      renderer.readRenderTargetPixels(target, 0, 0, size, size, pixels);
+      // WebGL rows run bottom-up.
+      for (let y = 0; y < size; y++) img.data.set(pixels.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
+      ctx.putImageData(img, i * size, 0);
+    }
+  } finally {
+    renderer.setRenderTarget(old.target);
+    renderer.setClearColor(old.color, old.alpha);
+    renderer.setViewport(old.viewport);
+    target.dispose();
+  }
+  const strip = {url: canvas.toDataURL('image/png'), frames, size};
+  strips.set(itemId, strip);
+  return strip;
+}

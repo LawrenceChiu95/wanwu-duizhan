@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
-import {loadModels} from './models.js';
+import {loadModels, turntable} from './models.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
-import {reasonLine, NAMES, setNames} from './reason.js';
+import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames} from './reason.js';
 import {sfx} from './sfx.js';
 
 const $ = id => document.getElementById(id);
@@ -14,8 +14,8 @@ const el = {
   app: $('app'), canvas: $('view'), fx: $('fx'), flash: $('flash'), banner: $('banner'),
   caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
-  result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'),
-  sheet: $('sheet'), sheetGrid: $('sheetGrid'), sheetTitle: $('sheetTitle'),
+  result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), statsList: $('statsList'), tipLine: $('tipLine'),
+  library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), mute: $('muteBtn'), camSeg: $('camSeg')
 };
@@ -54,10 +54,12 @@ for (const type of ['pointerdown', 'touchend', 'keydown', 'click']) addEventList
 const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } catch { /* not allowed */ } };
 
 const isLux = id => id.endsWith('-lux3d');
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.parts[0].orient}, {item: b.parts[1].item, mount: b.spread, orient: b.parts[1].orient}]});
-const HINT = {out: '伸出去，转起来抡人', hug: '贴着核心，替它挡'};
+// R7 (伸出攻、贴着守): 伸出 hits harder and breaks sooner; 贴着 takes blows for the core and hits softer.
+const HINT = {out: '攻：撞人更疼，自己易碎', hug: '守：替核心挡，少掉血'};
 const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 
 function renderCredits(items) {
@@ -458,8 +460,11 @@ async function main() {
     stage.setLookahead(null);
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
-    el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${m.reason === 'timeout' ? '时间到' : m.reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了'}`;
+    el.resultMeta.textContent = `第 ${Math.round(m.duration)} 秒 · ${endLine(replay)}`;
     el.whyLine.textContent = reasonLine(replay);
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
+    el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
+    el.tipLine.textContent = tipLine(stats, m.winner);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false);
     el.result.hidden = false;
@@ -487,24 +492,61 @@ async function main() {
   }
 
   // ---------- controls ----------
-  let sheetSlot = 0;
-  function openSheet(k) {
-    sheetSlot = k;
-    el.sheetTitle.textContent = k ? '第二件' : '第一件';
-    el.sheetGrid.innerHTML = '';
-    const other = mine.parts[1 - k].item;
-    for (const id of OFFER) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = id === mine.parts[k].item ? 'sel' : '';
-      b.disabled = id === other;
-      b.innerHTML = `<b>${esc(NAMES[id])}</b><small>${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${spec(id)}</small>${id === other ? '<span class="used">已装</span>' : ''}`;
-      b.onclick = () => { mine.parts[k].item = id; el.sheet.hidden = true; rebuildMine(); };
-      el.sheetGrid.append(b);
-    }
-    el.sheet.hidden = false;
+  // 角色库: every item a card (3D turning, name, category, size and weight, where it came from). The other slot's item
+  // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
+  // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
+  const CAT = {pot: '锅', lamp: '台灯', scissors: '剪刀', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
+  const sourceOf = it => {
+    if (it.origin) return {tag: null, line: null};
+    if (isLux(it.id)) return {tag: 'Aholo 生成', line: '来源：照片生成'};
+    if (/^CC/.test(it.source?.license ?? '')) return {tag: 'CC 模型', line: `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`};
+    return {tag: '3D 模型', line: '来源：只有 3D 模型'};
+  };
+  let libSlot = 0, libReq = 0;
+  function cardHtml(id, k) {
+    const it = byId.get(id), src = sourceOf(it), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
+    const badge = other ? '<span class="badge">已装</span>' : own ? '<span class="badge own">装着</span>' : '';
+    const corner = it.origin?.photo ? `<img class="photo" src="${esc(it.origin.photo)}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
+    const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(src.line)}</small>`;
+    return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}" data-item="${esc(id)}">
+      <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}">
+        <span class="media"><i class="turn"></i>${corner}${badge}</span>
+        <span class="nm"><b>${esc(NAMES[id])}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span>
+        <small class="spec">${spec(id)}</small>
+      </button>${foot}</article>`;
   }
-  document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openSheet(Number(b.dataset.pick)); }; });
+  async function openLibrary(k) {
+    const req = ++libReq;
+    libSlot = k;
+    el.libTitle.textContent = `挑一件装到${k ? '第二件' : '第一件'}`;
+    el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
+    el.libGrid.innerHTML = OFFER.map(id => cardHtml(id, k)).join('');
+    el.libGrid.scrollTop = 0;
+    el.library.hidden = false;
+    for (const card of el.libGrid.querySelectorAll('.card')) {
+      const id = card.dataset.item;
+      card.querySelector('.pick').onclick = () => {
+        if (mine.parts[1 - libSlot].item === id) return;
+        mine.parts[libSlot].item = id;
+        closeLibrary();
+        rebuildMine();
+      };
+      const how = card.querySelector('[data-how]');
+      if (how) how.onclick = () => { /* 看它怎么来的: next step */ };
+    }
+    // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it).
+    for (const id of OFFER) {
+      await loadModels([byId.get(id)]);
+      if (req !== libReq || el.library.hidden) return;
+      const strip = turntable(id, stage.renderer, stage.scene.environment);
+      const turn = el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
+      if (strip && turn) { turn.style.backgroundImage = `url(${strip.url})`; turn.classList.add('on'); }
+      await nextPaint();
+    }
+  }
+  function closeLibrary() { libReq++; el.library.hidden = true; }
+  $('libBack').onclick = closeLibrary;
+  document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
   }));
@@ -557,11 +599,11 @@ async function main() {
       btn.dataset.state = state;
     }
   }
-  $('sheetClose').onclick = () => { el.sheet.hidden = true; };
-  el.sheet.onclick = e => { if (e.target === el.sheet) el.sheet.hidden = true; };
   el.go.onclick = () => start();
   $('replayBtn').onclick = () => replaySlow();
   $('againBtn').onclick = () => showBuild();
+  // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
+  $('sameBtn').onclick = () => { showBuild(); start(); };
   $('creditsBtn').onclick = () => { el.credits.hidden = false; };
   $('creditsClose').onclick = () => { el.credits.hidden = true; };
   el.credits.onclick = e => { if (e.target === el.credits) el.credits.hidden = true; };
