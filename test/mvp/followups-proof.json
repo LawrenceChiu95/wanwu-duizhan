@@ -1,0 +1,490 @@
+{
+  "baseline": "a13ba36",
+  "analysisOnly": true,
+  "notes": [
+    "Original compressed rows/manifests unchanged; early and final batches remain separate.",
+    "Old rows contain no attachment wall samples: missing is reported, never treated as zero penetration.",
+    "All-stage opening circle is conservative; it is not an exact hull intersection test."
+  ],
+  "batches": [
+    {
+      "source": "test/mvp/results-combo-check-r2",
+      "stage": "combo-check",
+      "planned": 1800,
+      "completed": 1800,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 1800,
+          "checked": 1800,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 2.031741358869812,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 1800,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "4ba143c00086a87d1cd82fda48d61767163c020f7e96053eeaedd48f543e1e78",
+      "manifestFingerprint": "332c8fa58915433bdd89bf5afc68ed5fe77d14809b6b46ef689de675a06de6eb"
+    },
+    {
+      "source": "test/mvp/results-combos-r2",
+      "stage": "combos",
+      "planned": 3600,
+      "completed": 3600,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 3600,
+          "checked": 3600,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 2.031741358869812,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 3600,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "7875ae35cb524a70701e61f4b6ddb6c5dff063681e2a9096781fd4b1d4fcbe24",
+      "manifestFingerprint": "2b116c5e29b79726ecdcd158b3a8feb9f1b7c5bc6965c3e01831ebe5a4bda818"
+    },
+    {
+      "source": "test/mvp/results-fair-r2",
+      "stage": "fair",
+      "planned": 2400,
+      "completed": 2400,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 2400,
+          "checked": 2400,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 2.031741358869812,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 2400,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "301186a24e2d99a2d8c4c821ff8e5cf90f1d90a89649f2b732f7e6f79f2fa64f",
+      "manifestFingerprint": "01585d53a59ccdc59dafce558e935a44a8ea781dda1a24da6b8b916094bdfb70"
+    },
+    {
+      "source": "test/mvp/results-layout-r2",
+      "stage": "layout",
+      "planned": 2400,
+      "completed": 2400,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 2400,
+          "checked": 2400,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 2400,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "494526e69d815cc1f7e9ef8fb193b118fac655d92122675f00bd9b5547639e7c",
+      "manifestFingerprint": "801cc47f00c6d6bd49dae2790a12127a9c340f88235fcb75104fb3ff30ab2bea"
+    },
+    {
+      "source": "test/mvp/results-layout-smoke",
+      "stage": "layout",
+      "planned": 24,
+      "completed": 24,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 24,
+          "checked": 24,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 24,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "b300d0eddbc5ba5566df861d4d5cb4da92a7d5d5fb9d7c9e0561708a49fe2c7b",
+      "manifestFingerprint": "7e6e2bb1bbd57f493ddeb9f7fc5e440d4121380149d5a563b85f773cb0dc59d8"
+    },
+    {
+      "source": "test/mvp/results-pilot",
+      "stage": "pilot",
+      "planned": 450,
+      "completed": 450,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.4,
+          "n": 150,
+          "checked": 150,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        },
+        {
+          "radius": 2.2,
+          "n": 150,
+          "checked": 150,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        },
+        {
+          "radius": 2,
+          "n": 150,
+          "checked": 150,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 450,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "timingSummary": [
+        {
+          "radius": 2.4,
+          "scenes": [
+            {
+              "scene": "pan-broom/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 0
+            },
+            {
+              "scene": "pan-broom/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 40
+            },
+            {
+              "scene": "scissors-pillow/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 60
+            },
+            {
+              "scene": "scissors-pillow/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 20
+            },
+            {
+              "scene": "lamp-slipper/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 40
+            },
+            {
+              "scene": "lamp-slipper/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": -60
+            }
+          ],
+          "medianDeltaPoints": 30,
+          "complete": true,
+          "pass": true,
+          "scope": "pilot signal only; not formal balance acceptance"
+        },
+        {
+          "radius": 2.2,
+          "scenes": [
+            {
+              "scene": "pan-broom/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 20
+            },
+            {
+              "scene": "pan-broom/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 20
+            },
+            {
+              "scene": "scissors-pillow/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 0
+            },
+            {
+              "scene": "scissors-pillow/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 60
+            },
+            {
+              "scene": "lamp-slipper/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 60
+            },
+            {
+              "scene": "lamp-slipper/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": -40
+            }
+          ],
+          "medianDeltaPoints": 20,
+          "complete": true,
+          "pass": true,
+          "scope": "pilot signal only; not formal balance acceptance"
+        },
+        {
+          "radius": 2,
+          "scenes": [
+            {
+              "scene": "pan-broom/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 40
+            },
+            {
+              "scene": "pan-broom/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 40
+            },
+            {
+              "scene": "scissors-pillow/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 40
+            },
+            {
+              "scene": "scissors-pillow/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 40
+            },
+            {
+              "scene": "lamp-slipper/out-out-e180",
+              "pairedSeeds": 5,
+              "deltaPoints": 20
+            },
+            {
+              "scene": "lamp-slipper/hug-hug-e90",
+              "pairedSeeds": 5,
+              "deltaPoints": 60
+            }
+          ],
+          "medianDeltaPoints": 40,
+          "complete": true,
+          "pass": true,
+          "scope": "pilot signal only; not formal balance acceptance"
+        }
+      ],
+      "compressedRowsSha256": "2deee7c2d78aa369c442eb61b531e2f5c203b443a27491164e30c47b3d98d0e3",
+      "manifestFingerprint": "d0069b0a4ddf7eade55ab12285f4038283d61cfe3143200b82ce671b8346f72a"
+    },
+    {
+      "source": "test/mvp/results-primary",
+      "stage": "primary",
+      "planned": 3000,
+      "completed": 3000,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 3000,
+          "checked": 3000,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 3000,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "timingSummary": [
+        {
+          "radius": 2.2,
+          "scenes": [
+            {
+              "scene": "pan-broom/out-out-e180",
+              "pairedSeeds": 100,
+              "deltaPoints": 12
+            },
+            {
+              "scene": "pan-broom/hug-hug-e90",
+              "pairedSeeds": 100,
+              "deltaPoints": 23
+            },
+            {
+              "scene": "scissors-pillow/out-out-e180",
+              "pairedSeeds": 100,
+              "deltaPoints": 24
+            },
+            {
+              "scene": "scissors-pillow/hug-hug-e90",
+              "pairedSeeds": 100,
+              "deltaPoints": 16
+            },
+            {
+              "scene": "lamp-slipper/out-out-e180",
+              "pairedSeeds": 100,
+              "deltaPoints": 38
+            },
+            {
+              "scene": "lamp-slipper/hug-hug-e90",
+              "pairedSeeds": 100,
+              "deltaPoints": 15
+            }
+          ],
+          "medianDeltaPoints": 19.5,
+          "complete": true,
+          "pass": true,
+          "scope": "primary paired-seed comparison"
+        }
+      ],
+      "compressedRowsSha256": "3a9e67dea4f04f1a7d1f844eebda86500c4909865252b80c7e0ce14933e752b0",
+      "manifestFingerprint": "9c042a12d4000f4169eb625f1c8564d45baf9a2d2a34fbac275abadbed154cea"
+    },
+    {
+      "source": "test/mvp/results-primary-r2",
+      "stage": "primary",
+      "planned": 3000,
+      "completed": 3000,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 3000,
+          "checked": 3000,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 1.8200560589964598,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 3000,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "timingSummary": [
+        {
+          "radius": 2.2,
+          "scenes": [
+            {
+              "scene": "pan-broom/out-out-e180",
+              "pairedSeeds": 100,
+              "deltaPoints": 8
+            },
+            {
+              "scene": "pan-broom/hug-hug-e90",
+              "pairedSeeds": 100,
+              "deltaPoints": 15
+            },
+            {
+              "scene": "scissors-pillow/out-out-e180",
+              "pairedSeeds": 100,
+              "deltaPoints": 24
+            },
+            {
+              "scene": "scissors-pillow/hug-hug-e90",
+              "pairedSeeds": 100,
+              "deltaPoints": 16
+            },
+            {
+              "scene": "lamp-slipper/out-out-e180",
+              "pairedSeeds": 100,
+              "deltaPoints": 38
+            },
+            {
+              "scene": "lamp-slipper/hug-hug-e90",
+              "pairedSeeds": 100,
+              "deltaPoints": 15
+            }
+          ],
+          "medianDeltaPoints": 15.5,
+          "complete": true,
+          "pass": true,
+          "scope": "primary paired-seed comparison"
+        }
+      ],
+      "compressedRowsSha256": "9c8377a3db0b3c7c5d95f5df0a9a71ba1ea1195a164ab2b1d3d29c7d929d8fd5",
+      "manifestFingerprint": "0fdac40e183120a2a51bf3c4331dd499efc1452d90947cf6ec9f39c404e585a6"
+    },
+    {
+      "source": "test/mvp/results-strength",
+      "stage": "strength",
+      "planned": 16800,
+      "completed": 16800,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 16800,
+          "checked": 16800,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 2.031741358869812,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 16800,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "e136c31ad546418784587b4443b7f89d839b1d8f136474cefadd9defa3108347",
+      "manifestFingerprint": "71483af75b1b588b078e316ab6235e04cd01137b4ce0f7d2635e0b96eaae9b30"
+    },
+    {
+      "source": "test/mvp/results-strength-r2",
+      "stage": "strength",
+      "planned": 16800,
+      "completed": 16800,
+      "complete": true,
+      "opening": [
+        {
+          "radius": 2.2,
+          "n": 16800,
+          "checked": 16800,
+          "missing": 0,
+          "initialOutside": 0,
+          "maxInitialOuter": 2.031741358869812,
+          "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+        }
+      ],
+      "walls": {
+        "checked": 0,
+        "missing": 16800,
+        "maxSampledPartExcess": null,
+        "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+      },
+      "compressedRowsSha256": "ed84af4638804f51b9be15fb34784bbf171c3788e3070aa1bda2e0d3856e1d65",
+      "manifestFingerprint": "4d66f8b19d1cf0b9aee9a79fc92a4de3cbceeaa6ae9d28e2b69226926b0cf605"
+    }
+  ]
+}

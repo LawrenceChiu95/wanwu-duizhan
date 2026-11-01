@@ -1,0 +1,39 @@
+{
+  "kind": "30-game primary one-seed measurement smoke only; not a balance rerun",
+  "wall": {
+    "checked": 30,
+    "missing": 0,
+    "maxSampledPartExcess": 0,
+    "measure": "live hull vertices against 64 wall inner planes at recorded frames; not a continuous-step bound"
+  },
+  "opening": [
+    {
+      "radius": 2.2,
+      "n": 30,
+      "checked": 30,
+      "missing": 0,
+      "initialOutside": 0,
+      "maxInitialOuter": 1.8200560589964598,
+      "measure": "initial center distance + fixed sweep radius; conservative circle envelope"
+    }
+  ],
+  "worst": {
+    "plan": {
+      "stage": "primary",
+      "radius": 2.2,
+      "scene": "pan-broom/out-out-e180",
+      "seed": 0,
+      "condition": "autoA"
+    },
+    "wall": {
+      "frames": 783,
+      "frameStride": 4,
+      "dt": 0.008333333333333333,
+      "liveVertices": 72843,
+      "maxPartSupport": 2.1892481226228826,
+      "maxPartExcess": 0,
+      "measure": "sampled live convex-hull vertices against 64 wall inner planes; intermediate physics steps not observed"
+    }
+  },
+  "manifestFingerprint": "00ee41b94e365fda37d9e423814255f4f0ba0f3b53b9f551456dabf3a029448e"
+}
