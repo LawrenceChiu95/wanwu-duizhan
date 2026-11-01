@@ -77,7 +77,7 @@ unset AHOLO_API_KEY
 - **创建任务结果不明（pending）**：立即停止，重跑也不会再次提交。去 Aholo 控制台按时间、照片和提示词确认任务。确实找到同一任务时，可把控制台 taskid 填入 `tasks` 对应的 `multimodal-to-image` 或 `img-to-3d` 键，再移除 `pending` 字段，保存后重复原命令。**没有查清就不能清 pending 重跑**。遇到明确拒绝（例如 `GENERATION_CONCURRENCY_LIMIT_EXCEEDED`）时会显示错误码；在控制台确认那一步确实没有建成任务后，**只移除 `pending` 字段，保留整份运行记录、`tasks`、已成功的改图taskid与原运行名**，再执行原命令。不要为重试建模换运行名，否则会丢掉已付费改图的续跑记录。只有确实要从头再付费生成时才另开运行。
 - **任务失败/取消、结果过期或没有可识别 GLB 链接**：停下核查控制台；不会自动再花额度。还能手动下载 GLB 时，另用离线入口和新 ID 导入。API 返回的 GLB 链接须在路径带 `.glb` 或明确标注格式，不能靠结果数组的第几个猜。
 - **下载跳转**：不带密钥的图片/GLB下载最多跟随5次 HTTPS 跳转，逐次检查地址；不接受转到 HTTP 或带用户名密码的地址，API和上传仍不跟随跳转。
-- **下载完整但校验/处理失败**：已付费的原件保留在 `.aholo/runs/<运行名>/model.glb`；超过64MiB或当前不支持的格式也保留。重复原命令不会重新下载或生成；可以用建模工具手动修好/减小一份副本，再以 `glb` 模式和新ID导入。不要删除运行记录或改成新照片运行来修格式问题。中断的下载保留为 `model.glb.part`，不是完整结果；重复命令只重下同一任务结果。改图原始下载同样留在 `styled-download`，校验失败先核对该文件，不重新生成。
+- **下载完整但校验/处理失败（首次和重跑都提示恢复路径）**：已付费的原件保留在 `.aholo/runs/<运行名>/model.glb`；超过64MiB或当前不支持的格式也保留。重复原命令不会重新下载或生成；可以用建模工具手动修好/减小一份副本，再以 `glb` 模式和新ID导入。不要删除运行记录或改成新照片运行来修格式问题。中断的下载保留为 `model.glb.part`，不是完整结果；重复命令只重下同一任务结果。改图原始下载同样留在 `styled-download`，校验失败先核对该文件，不重新生成。
 - **锁目录存在**：先确认没有另一个导入进程。同一运行的 `lock` 或 `.aholo/catalog-lock` 是空目录，异常退出可能留下；确认无人写入后只删除该空目录，再重复原命令。不要删状态、不要同时跑同一 ID。
 - **目标 GLB 已存在而内容不同**：不覆盖，选新 ID，或先人工核对它属于哪次导入。程序崩溃可能留下没有 catalog 引用的模型，保留供排查。
 
@@ -85,9 +85,9 @@ unset AHOLO_API_KEY
 
 ## 「看它怎么来的」记录
 
-照片模式会把原照按 EXIF 方向旋正，再重新编码成 PNG，去掉 EXIF、GPS、XMP、IPTC和内嵌缩略图；原输入文件不改，付费运行身份仍按原文件字节计算，上传使用净化图。改图结果也经同样净化。入库输出 `data/origins/<id>/photo.png` 和 `styled.png`。净化只去掉文件元数据，图片里拍到的人、地址或屏幕内容仍能看见；提交前亲自检查这两张图。
+照片模式会把原照按 EXIF 方向旋正、长边缩到最多1600像素（小图不放大），再以质量85编码成 JPEG，去掉 EXIF、GPS、XMP、IPTC和内嵌缩略图；原输入文件不改，付费运行身份仍按原文件字节计算，上传使用净化图。改图结果也经同样净化。入库输出 `data/origins/<id>/photo.jpg` 和 `styled.jpg`。净化只去掉文件元数据，图片里拍到的人、地址或屏幕内容仍能看见；提交前亲自检查这两张图。
 
-`catalog` 新条目的 `origin` 路径相对仓库根，`steps` 三段 `photo / styled / model` 的 `seconds` 分别读原八时间戳的 `upload_started→image_submit`、`image_submit→mesh_submit`、`mesh_submit→inventory_ready`。第三段含下载、模型处理和入库，`inventory_ready` 记在入库资产写完、原子提交 catalog 的边界；相加是该次实际可用耗时，失败后人工隔了一段再续跑也会计入，不冒充供应商内部生成耗时。同一付费结果换ID使用首次完成时长。GLB导入、缺图片或完整有序时间的旧运行不造回放；已有旧物品不自动补写或重新付费。
+`catalog` 新条目的 `origin` 路径相对仓库根，`steps` 三段 `photo / styled / model` 的 `seconds` 分别读原八时间戳的 `upload_started→image_submit`、`image_submit→mesh_submit`、`mesh_submit→inventory_ready`。第三段含下载、模型处理和入库，`inventory_ready` 记在入库资产写完、原子提交 catalog 的边界；相加是该次实际可用耗时，失败后人工隔了一段再续跑也会计入，不冒充供应商内部生成耗时。同一付费结果换ID使用首次完成时长。GLB导入、缺图片或完整有序时间的旧运行不造回放；已有旧物品不自动补写或重新付费。已知建模任务只续查该任务和下载GLB，不为补回放重新访问旧改图链接；旧运行缺图片时卡片只标来源。
 
 ## 跑完提交什么
 
@@ -102,7 +102,7 @@ git status --short
 git diff --cached --stat
 ```
 
-照片模式还要精确加上 `git add data/origins/my-pot/photo.png data/origins/my-pot/styled.png`，把ID换成实际值；GLB模式没有这两张图。确认暂存区只有预期模型、catalog和经检查的净化回放图，没有原输入照片/密钥/中间产物后再提交。如调整了提示词，也逐个指定相应文本，说明来源和授权。生成模型标记 `LicenseRef-UserProvided`，不是作者替你授予素材许可；上传照片和使用生成结果须有相应权利。
+照片模式还要精确加上 `git add data/origins/my-pot/photo.jpg data/origins/my-pot/styled.jpg`，把ID换成实际值；GLB模式没有这两张图。确认暂存区只有预期模型、catalog和经检查的净化回放图，没有原输入照片/密钥/中间产物后再提交。如调整了提示词，也逐个指定相应文本，说明来源和授权。生成模型标记 `LicenseRef-UserProvided`，不是作者替你授予素材许可；上传照片和使用生成结果须有相应权利。
 2. 不提交原输入照片（保留EXIF的文件）、100K 原始模型、ZIP、`.aholo/`、`node_modules/`、Key 或 `.env`。
 3. 本机检查（Windows PowerShell 把下面所有 `npm` 写成 `npm.cmd`；`node` 命令相同）：
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import {readGlb, sha256} from './mesh.mjs';
+import {sha256} from './mesh.mjs';
 import {keepPicture} from './origin.mjs';
 
 const BASE = 'https://api.aholo.ai/global';
@@ -83,13 +83,11 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
   };
   if (state.pending) throw Error(`Unconfirmed ${state.pending} creation. Check Aholo task history before resuming; no new task was submitted.`);
   const model = path.join(folder, 'model.glb');
-  if (state.timestamps.download_finished) {
-    const bytes = await readGlb(model);
-    if (sha256(bytes) !== state.downloadSha256) throw Error('Downloaded GLB changed; use the saved original or a new run');
-    return model;
-  }
+  // Validation belongs to the caller for both first download and cached reruns,
+  // so rejected paid files always receive the same manual-recovery instructions.
+  if (state.timestamps.download_finished) return model;
   const imageStage = 'multimodal-to-image', meshStage = 'img-to-3d';
-  if (!state.tasks[meshStage] || !state.styledSha256) {
+  if (!state.tasks[meshStage]) {
     if (!state.tasks[imageStage] && !state.tasks[meshStage]) {
       if (!state.photoUrl) {
         await stamp('upload_started');
@@ -127,7 +125,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
       if ((await fs.stat(styledFile)).size > 32 * 1024 * 1024) throw Error('Styled image exceeds 32 MiB; the result is kept in styled-download for manual recovery');
       const bytes = await fs.readFile(styledFile);
       if (sha256(bytes) !== state.styledDownloadSha256) throw Error('Saved styled download changed; restore it before importing');
-      state.styledSha256 = sha256(await keepPicture(bytes, path.join(folder, 'styled.png'))); await save();
+      state.styledSha256 = sha256(await keepPicture(bytes, path.join(folder, 'styled.jpg'))); state.styledFile = 'styled.jpg'; await save();
     }
     if (!state.tasks[meshStage]) await create(meshStage, {img: styled, version: 'G1-Turbo', faceCount: 100000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false}, 'mesh_submit');
   }

@@ -118,7 +118,8 @@ test('photo dispatch uses fake upload/image/model/download, exactly two paid cre
 test('large-photo block uploads use query init, sequential multipart chunks, and the same pipeline',async()=>{
  const s=await sandbox(),g=gateway({blocks:true});await run(s,args(s),g);
  const chunks=g.calls.filter(c=>new URL(c.url).pathname.endsWith('/part'));
- assert.equal(chunks.length,Math.ceil(image.length/64));
+ const uploaded=Buffer.concat(await Promise.all(chunks.map(async c=>Buffer.from(await c.request.body.get('file').arrayBuffer()))));
+ assert.equal(chunks.length,Math.ceil(uploaded.length/64));assert.equal((await sharp(uploaded).metadata()).format,'jpeg');
  assert.deepEqual(chunks.map(c=>Number(c.request.body.get('block'))),Array.from({length:chunks.length},(_,i)=>i+1));assert.equal(g.creates(),2);
 });
 
@@ -249,10 +250,10 @@ test('credential-free result downloads follow HTTPS CDN redirects; all task and 
 
 test('a downloaded result is durable before GLB validation; rerun keeps it without re-downloading or regenerating',async()=>{
  const s=await sandbox(),bad=Buffer.from('provider-result-for-manual-recovery'),g=gateway({badModel:bad});
- await assert.rejects(run(s,args(s),g),/GLB/);
+ await assert.rejects(run(s,args(s),g),/Paid result kept at .*model\.glb.*glb mode/);
  const file=await s.state('test-pot'),state=await readJson(file),saved=path.join(path.dirname(file),'model.glb');
  assert.deepEqual(await fs.readFile(saved),bad);assert.equal(state.downloadSha256,sha256(bad));assert.ok(state.timestamps.download_finished);
- const count=g.calls.length;await assert.rejects(run(s,args(s),g,{env:{}}),/GLB/);assert.equal(g.calls.length,count);
+ const count=g.calls.length;await assert.rejects(run(s,args(s),g,{env:{}}),/Paid result kept at .*model\.glb.*glb mode/);assert.equal(g.calls.length,count);
  assert.equal(g.creates(),2);assert.equal((await s.catalog()).items.length,8);
 });
 
@@ -265,10 +266,10 @@ test('photo records strip metadata and orient pixels, retain styled image, and p
  const state=await readJson(await s.state('test-pot')),item=(await s.catalog()).items.at(-1),origin=item.origin;
  assert.equal(state.input.sourceSha256,sha256(privatePhoto),'paid identity must remain based on original input');
  for(const call of g.calls.filter(c=>c.request.body instanceof FormData)){const uploaded=Buffer.from(await call.request.body.get('file').arrayBuffer());assert.equal((await sharp(uploaded).metadata()).exif,undefined,'upload also excludes metadata');}
- assert.deepEqual([origin.photo,origin.styled],['data/origins/test-pot/photo.png','data/origins/test-pot/styled.png']);
+ assert.deepEqual([origin.photo,origin.styled],['data/origins/test-pot/photo.jpg','data/origins/test-pot/styled.jpg']);
  const original=await fs.readFile(path.join(s.root,origin.photo)),styled=await fs.readFile(path.join(s.root,origin.styled));
  const meta=await sharp(original).metadata();assert.deepEqual([meta.width,meta.height],[40,80]);
- for(const bytes of [original,styled]) {const m=await sharp(bytes).metadata();assert.equal(m.exif,undefined);assert.equal(m.xmp,undefined);assert.equal(m.iptc,undefined);assert.equal(m.orientation,undefined);assert.ok(!bytes.includes(Buffer.from('private-camera-owner')));assert.ok(!bytes.includes(Buffer.from('private-GPS-location')));}
+ for(const bytes of [original,styled]) {const m=await sharp(bytes).metadata();assert.equal(m.format,'jpeg');assert.equal(m.exif,undefined);assert.equal(m.xmp,undefined);assert.equal(m.iptc,undefined);assert.equal(m.orientation,undefined);assert.ok(!bytes.includes(Buffer.from('private-camera-owner')));assert.ok(!bytes.includes(Buffer.from('private-GPS-location')));}
  assert.deepEqual(origin.steps,[['photo','upload_started','image_submit'],['styled','image_submit','mesh_submit'],['model','mesh_submit','inventory_ready']].map(([key,start,end])=>({key,seconds:(Date.parse(state.timestamps[end])-Date.parse(state.timestamps[start]))/1000})));
  assert.equal(origin.steps.reduce((n,x)=>n+x.seconds,0),(Date.parse(state.timestamps.inventory_ready)-Date.parse(state.timestamps.upload_started))/1000);
  const count=g.calls.length;await run(s,args(s,'another-pot'),g,{env:{}});assert.equal(g.calls.length,count);assert.deepEqual((await s.catalog()).items.at(-1).origin.steps,origin.steps);
@@ -281,6 +282,41 @@ test('cached photo run with incomplete historical timestamps gets no fabricated 
  const file=await s.state('test-pot'),state=await readJson(file);state.timestamps.image_submit=null;await saveJson(file,state);
  const count=g.calls.length;await run(s,args(s,'legacy-pot'),g,{env:{}});assert.equal(g.calls.length,count);
  assert.equal((await s.catalog()).items.at(-1).origin,undefined);
+});
+
+test('a known paid model resumes without image history or replay caches, even if the old photo cannot decode',async()=>{
+ const s=await sandbox(),g=gateway({downloadFailure:true});await assert.rejects(run(s,args(s),g),/Asset download failed/);
+ const file=await s.state('test-pot'),state=await readJson(file);
+ delete state.tasks['multimodal-to-image'];delete state.photoSha256;delete state.styledSha256;
+ // A legacy input is still its exact identity. It is not decoded or uploaded again.
+ const raw=Buffer.from('legacy input no longer supported by the image decoder');await fs.writeFile(s.photo,raw);state.input.sourceSha256=sha256(raw);
+ await saveJson(file,state);
+ const count=g.calls.length,creates=g.creates();await run(s,[...args(s),'--run',path.basename(path.dirname(file))],g);
+ assert.equal(g.creates(),creates);assert.equal(g.calls.length-count,2);
+ assert.ok(g.calls.slice(count).every(c=>c.url.includes('taskid=mesh-id')||new URL(c.url).origin==='https://result.example'));
+ const item=(await s.catalog()).items.at(-1);assert.equal(item.origin,undefined);assert.equal(item.source.generator,'Aholo G1-Turbo');
+});
+
+test('legacy PNG cache or missing cache never blocks the already paid model download',async()=>{
+ for(const missing of [false,true]) {
+  const s=await sandbox(),g=gateway({downloadFailure:true});await assert.rejects(run(s,args(s),g),/Asset download failed/);
+  const file=await s.state('test-pot'),folder=path.dirname(file),state=await readJson(file);
+  state.photoSha256=sha256(image);state.styledSha256=sha256(image);delete state.photoFile;delete state.styledFile;
+  if(!missing){await fs.writeFile(path.join(folder,'photo.png'),image);await fs.writeFile(path.join(folder,'styled.png'),image);}
+  await saveJson(file,state);const count=g.calls.length;await run(s,args(s),g);
+  assert.equal(g.calls.length-count,2);assert.equal(g.creates(),2);
+  const item=(await s.catalog()).items.at(-1);
+  if(missing)assert.equal(item.origin,undefined);else assert.equal((await sharp(await fs.readFile(path.join(s.root,item.origin.photo))).metadata()).format,'jpeg');
+ }
+});
+
+test('camera JPEG over 64MP is resized before upload and both replay images fit 1600 pixels',async()=>{
+ const s=await sandbox(),large=await sharp({create:{width:8192,height:8192,channels:3,background:'#936431'}}).jpeg().toBuffer();
+ await fs.writeFile(s.photo,large);const g=gateway({styledImage:large});await run(s,args(s),g);
+ const item=(await s.catalog()).items.at(-1);
+ for(const rel of [item.origin.photo,item.origin.styled]){const bytes=await fs.readFile(path.join(s.root,rel)),meta=await sharp(bytes).metadata();assert.equal(meta.format,'jpeg');assert.equal(Math.max(meta.width,meta.height),1600);assert.ok(bytes.length<200000);}
+ const upload=g.calls.find(c=>c.request.body instanceof FormData),bytes=Buffer.from(await upload.request.body.get('file').arrayBuffer()),meta=await sharp(bytes).metadata();
+ assert.equal(meta.format,'jpeg');assert.equal(Math.max(meta.width,meta.height),1600);assert.ok(bytes.length<large.length);
 });
 
 test('an oversized paid GLB is kept on disk while importer still enforces the 64MiB limit',async()=>{
