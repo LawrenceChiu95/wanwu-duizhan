@@ -1,3 +1,4 @@
+import v3Rules from '../../sim/v3-rules.json';
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {instantiate} from './models.js';
@@ -22,9 +23,9 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 // tops can be while the floor still moves under the sway limits (mean <=40 px/s, worst second <=150 px, top and bottom
 // halves opposite <=5 %). Bigger needs faster zooms, which those limits rule out (see RESULT/report).
 // The 2D picture offsets (shake on a break, a short punch on a big hit) only translate, a few px, never turn.
-// CORE_TRAVEL: how far a core gets from the centre (240-game batch max 2.11 m); the drawn rim sits just outside.
+// CORE_TRAVEL and the drawn rim share the simulation fence; keep a core radius inside it.
 // CORE_RISE: how far a core leaves the spin plane (max 1.05 m).
-export const CORE_TRAVEL = 2.2, ARENA_RIM = 2.4, CORE_RISE = 1.1;
+export const CORE_TRAVEL = v3Rules.arenaRadius - v3Rules.core.radius, ARENA_RIM = v3Rules.arenaRadius, CORE_RISE = 1.1;
 const FIZZLE_TIME = 0.32, AIM_FADE = 0.22;
 const GREY = new THREE.Color('#9aa3ad'), GREY_DARK = new THREE.Color('#5d646d');
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
