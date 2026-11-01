@@ -411,7 +411,8 @@ async function main() {
     coachSeen.add(n);
     coachSince = performance.now() / 1000;
     try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ }
-    el.coachTag.textContent = `首局提示 ${n + 1}/3`;
+    // Numbered in the order they actually came up: lines 2 and 3 follow the match (a piece can break before a lunge).
+    el.coachTag.textContent = `${coachSeen.size}/3`;
     el.coachText.textContent = COACH[n].text;
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
@@ -529,7 +530,7 @@ async function main() {
   // 角色库: every item a card (3D turning, name, category, size and weight, where it came from). The other slot's item
   // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
-  const CAT = {pot: '锅', lamp: '台灯', scissors: '剪刀', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
+  const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
   const sourceOf = it => {
     if (it.origin) return {tag: null, line: null};
     if (isLux(it.id)) return {tag: 'Aholo 生成', line: '来源：照片生成'};
@@ -540,7 +541,7 @@ async function main() {
   function cardHtml(id, k) {
     const it = byId.get(id), src = sourceOf(it), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
     const badge = other ? '<span class="badge">已装</span>' : own ? '<span class="badge own">装着</span>' : '';
-    const corner = it.origin?.photo ? `<img class="photo" src="${esc(it.origin.photo)}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
+    const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(src.line)}</small>`;
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}">
@@ -585,8 +586,8 @@ async function main() {
   // each step's real time beside it. The category is the one the player's pick fixed, not something a model guessed.
   const STEPS = [{key: 'photo', name: '照片', play: 3}, {key: 'styled', name: '改成画风的图', play: 3}, {key: 'model', name: '3D 转起来', play: 4}];
   const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(sec % 60)).padStart(2, '0')} 秒` : `${Math.round(sec)} 秒`;
-  let howItem = null, howT = 0, howTimer = 0;
-  function openHow(id) {
+  let howItem = null, howT = 0, howTimer = 0, howReq = 0;
+  async function openHow(id) {
     const it = byId.get(id), o = it?.origin;
     if (!o) return;
     howItem = id;
@@ -601,12 +602,17 @@ async function main() {
     const other = mine.parts[1 - libSlot].item === id;
     el.howEquip.disabled = other;
     el.howEquip.querySelector('span').textContent = other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
+    el.howTurn.style.backgroundImage = '';
+    el.how.hidden = false;
+    playHow();
+    // The 3D step needs the model, which the 角色库 may not have loaded yet: it turns in once it arrives.
+    const req = ++howReq;
+    await loadModels([it]);
+    if (req !== howReq || el.how.hidden) return;
     const strip = turntable(id, stage.renderer, stage.scene.environment, {size: 320});
     el.howTurn.style.backgroundImage = strip ? `url(${strip.url})` : '';
     const small = turntable(id, stage.renderer, stage.scene.environment);
     el.howSteps.querySelector('.mini3d').style.backgroundImage = small ? `url(${small.url})` : '';
-    el.how.hidden = false;
-    playHow();
   }
   function playHow() {
     howT = 0;
@@ -630,7 +636,7 @@ async function main() {
     };
     howTimer = requestAnimationFrame(tick);
   }
-  function closeHow() { cancelAnimationFrame(howTimer); el.how.hidden = true; }
+  function closeHow() { howReq++; cancelAnimationFrame(howTimer); el.how.hidden = true; }
   $('howBack').onclick = closeHow;
   $('howReplay').onclick = playHow;
   el.howEquip.onclick = () => {
