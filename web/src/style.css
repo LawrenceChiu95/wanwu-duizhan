@@ -244,7 +244,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pad.cooling { color: #f4f7ff; background: #10141e; filter: none; }
 .pad.cooling .cd { opacity: 1; }
 .pad.cooling span { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
-.pad.cooling svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9)); }
+.pad.cooling svg { display: none; }
+/* While cooling the icon gives way to the whole seconds still to wait (same 32px box, so the label does not move). */
+.pad .left { display: none; position: relative; min-width: 32px; font: inherit; font-size: 28px; opacity: 0.8; font-variant-numeric: tabular-nums; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+.pad.cooling .left { display: block; }
 .pad.ready::after { content: ""; position: absolute; top: 0; bottom: 0; width: 34%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: shine 2.2s ease-in-out infinite; }
 .pad.on { animation: padOn 0.16s ease-in-out infinite alternate; }
 /* Touchdown: the button sinks and lights from inside until the finger lifts (the cooldown fill and the deny shake stay as they are). */
@@ -390,6 +393,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .bhead span { display: none; }
   .pad { height: 66px; font-size: 30px; }
   .pad svg { width: 26px; height: 26px; }
+  .pad .left { min-width: 26px; font-size: 26px; }
   .call b { font-size: 20px; }
   .call em { font-size: 14px; }
   .call.parry b { font-size: 24px; }
