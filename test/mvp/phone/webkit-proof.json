@@ -7,74 +7,74 @@
     "deviceScaleFactor": 1
   },
   "cam": "slow",
-  "duration": 28.866666666666667,
+  "duration": 31.566666666666666,
   "firstDamage": 0.3833333333333333,
   "diameters": [
     {
-      "median": 185.16227430668243,
-      "min": 125.17619419287111
+      "median": 214.03132644966092,
+      "min": 139.57258411458628
     },
     {
-      "median": 95.75086340470517,
-      "min": 66.61999035530425
+      "median": 110.11247381080751,
+      "min": 76.11842043047814
     }
   ],
-  "samples": 1589,
+  "samples": 1901,
   "winner": 1,
   "accepted": [
     {
-      "step": 98,
+      "step": 90,
       "side": 0,
       "action": "dash"
     },
     {
-      "step": 167,
+      "step": 159,
       "side": 0,
       "action": "block"
     }
   ],
   "byteEqual": true,
-  "replaySha256": "929fbee73f17dfa3582f9a38d89551aa4c459d74a1a32c3be4ee71152d630ba1",
+  "replaySha256": "7005a1fd456f73e46780efef3d2d50d33ee1b4026b2c673c6d8f7125d3050df2",
   "safe": {
     "play": {
-      "px": -35.66825358142631,
+      "px": -37.692307076345344,
       "who": "0:1",
-      "t": 14.43,
+      "t": 0.83,
       "w": 390
     },
     "finale": {
-      "px": -70.25705172510573,
-      "who": "0:1",
-      "t": 28.87,
+      "px": -52.08342050579884,
+      "who": "1:0",
+      "t": 31.57,
       "w": 390
     },
     "replay": {
-      "px": -78.00492310580864,
-      "who": "0:1",
-      "t": 28.87,
+      "px": -43.31227831066161,
+      "who": "1:1",
+      "t": 30.27,
       "w": 390
     },
     "result": {
-      "px": -98.89890980907813,
+      "px": -125.4960194358548,
       "who": "1:0",
-      "t": 28.87,
+      "t": 31.57,
       "w": 390
     }
   },
   "framing": {
-    "frames": 1662,
+    "frames": 1989,
     "core15Pct": 100,
-    "ok15Pct": 94.7,
-    "minMarginPx": 35.7,
-    "sweptMinMarginLrPx": 8.6,
-    "sweptMinMarginSafePx": 8.6,
+    "ok15Pct": 95.7,
+    "minMarginPx": 37.7,
+    "sweptMinMarginLrPx": 9.1,
+    "sweptMinMarginSafePx": 9.1,
     "core15PctExact": 100,
     "pxPerMetre": {
-      "p10": 79.3,
-      "median": 98.5,
-      "p90": 126.8,
-      "min": 67.2,
-      "max": 142.7
+      "p10": 94.4,
+      "median": 113,
+      "p90": 129.3,
+      "min": 76.2,
+      "max": 146.9
     }
   },
   "errors": []

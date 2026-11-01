@@ -1,0 +1,624 @@
+{
+  "stage": "combo-check",
+  "planned": 1800,
+  "completed": 1800,
+  "complete": true,
+  "combos": [
+    {
+      "combo": [
+        "scissors",
+        "lamp-lux3d"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "hug",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 51.66666666666667,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 43.33333333333333,
+          "upper95": 60,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "hug",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 51.66666666666667,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 43.33333333333333,
+            "upper95": 60,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "scissors",
+        "broom"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 45,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 39.99999999999999,
+          "upper95": 50.83333333333333,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 45,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 39.99999999999999,
+            "upper95": 50.83333333333333,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "scissors",
+        "pan-lux3d"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 48.333333333333336,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 40.833333333333336,
+          "upper95": 56.66666666666666,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 48.333333333333336,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 40.833333333333336,
+            "upper95": 56.66666666666666,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "scissors",
+        "slipper"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "hug",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 43.333333333333336,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 33.333333333333336,
+          "upper95": 53.33333333333334,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "hug",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 43.333333333333336,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 33.333333333333336,
+            "upper95": 53.33333333333334,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "scissors",
+        "pillow"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "hug",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 44.166666666666664,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 35.833333333333336,
+          "upper95": 52.5,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "hug",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 44.166666666666664,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 35.833333333333336,
+            "upper95": 52.5,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "lamp-lux3d",
+        "broom"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 57.49999999999999,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 49.16666666666666,
+          "upper95": 65.83333333333334,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 57.49999999999999,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 49.16666666666666,
+            "upper95": 65.83333333333334,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "lamp-lux3d",
+        "pan-lux3d"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 67.5,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 60,
+          "upper95": 74.99999999999999,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 67.5,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 60,
+            "upper95": 74.99999999999999,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": true,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "lamp-lux3d",
+        "slipper"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "hug",
+          "rightOrient": "hug",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 46.666666666666664,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 39.166666666666664,
+          "upper95": 54.16666666666667,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "hug",
+            "rightOrient": "hug",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 46.666666666666664,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 39.166666666666664,
+            "upper95": 54.16666666666667,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "lamp-lux3d",
+        "pillow"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 70,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 61.66666666666667,
+          "upper95": 77.50000000000001,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 70,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 61.66666666666667,
+            "upper95": 77.50000000000001,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": true,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "broom",
+        "pan-lux3d"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 57.49999999999999,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 50,
+          "upper95": 65.83333333333333,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 57.49999999999999,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 50,
+            "upper95": 65.83333333333333,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "broom",
+        "slipper"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 53.333333333333336,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 46.666666666666664,
+          "upper95": 60,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 53.333333333333336,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 46.666666666666664,
+            "upper95": 60,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "broom",
+        "pillow"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 76.66666666666667,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 68.33333333333333,
+          "upper95": 85,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 76.66666666666667,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 68.33333333333333,
+            "upper95": 85,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": true,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "pan-lux3d",
+        "slipper"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "out",
+          "rightOrient": "out",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 64.16666666666667,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 55.833333333333336,
+          "upper95": 72.5,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "out",
+            "rightOrient": "out",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 64.16666666666667,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 55.833333333333336,
+            "upper95": 72.5,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "pan-lux3d",
+        "pillow"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "hug",
+          "rightOrient": "out",
+          "spread": "e180"
+        },
+        "n": 120,
+        "scorePct": 74.16666666666667,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 65,
+          "upper95": 83.33333333333334,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "hug",
+            "rightOrient": "out",
+            "spread": "e180"
+          },
+          "n": 120,
+          "scorePct": 74.16666666666667,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 65,
+            "upper95": 83.33333333333334,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": true,
+      "selectionOnly": false,
+      "holdout": true
+    },
+    {
+      "combo": [
+        "slipper",
+        "pillow"
+      ],
+      "best": {
+        "layout": {
+          "leftOrient": "hug",
+          "rightOrient": "out",
+          "spread": "e90"
+        },
+        "n": 120,
+        "scorePct": 61.66666666666667,
+        "interval": {
+          "seedClusters": 20,
+          "lower95": 53.33333333333334,
+          "upper95": 69.16666666666667,
+          "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+        }
+      },
+      "choices": [
+        {
+          "layout": {
+            "leftOrient": "hug",
+            "rightOrient": "out",
+            "spread": "e90"
+          },
+          "n": 120,
+          "scorePct": 61.66666666666667,
+          "interval": {
+            "seedClusters": 20,
+            "lower95": 53.33333333333334,
+            "upper95": 69.16666666666667,
+            "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+          }
+        }
+      ],
+      "flag": false,
+      "selectionOnly": false,
+      "holdout": true
+    }
+  ],
+  "scope": "Evaluate the previously selected layout on disjoint seeds 1000..; small sample warning applies."
+}

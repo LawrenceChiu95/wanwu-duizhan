@@ -1,0 +1,118 @@
+{
+  "stage": "layout",
+  "planned": 2400,
+  "completed": 2400,
+  "complete": true,
+  "contrasts": [
+    {
+      "scene": "pan-broom/out-out-e180",
+      "change": "orient-first",
+      "n": 100,
+      "deltaPoints": -9.999999999999998
+    },
+    {
+      "scene": "pan-broom/out-out-e180",
+      "change": "orient-second",
+      "n": 100,
+      "deltaPoints": -3.9999999999999982
+    },
+    {
+      "scene": "pan-broom/out-out-e180",
+      "change": "spread",
+      "n": 100,
+      "deltaPoints": 16.000000000000004
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "change": "orient-first",
+      "n": 100,
+      "deltaPoints": 21.999999999999996
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "change": "orient-second",
+      "n": 100,
+      "deltaPoints": 15.999999999999998
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "change": "spread",
+      "n": 100,
+      "deltaPoints": -2.0000000000000018
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "change": "orient-first",
+      "n": 100,
+      "deltaPoints": 0
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "change": "orient-second",
+      "n": 100,
+      "deltaPoints": -3.0000000000000027
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "change": "spread",
+      "n": 100,
+      "deltaPoints": -6
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "change": "orient-first",
+      "n": 100,
+      "deltaPoints": -11.000000000000002
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "change": "orient-second",
+      "n": 100,
+      "deltaPoints": 20.999999999999996
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "change": "spread",
+      "n": 100,
+      "deltaPoints": -2.0000000000000018
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "change": "orient-first",
+      "n": 100,
+      "deltaPoints": -15.999999999999998
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "change": "orient-second",
+      "n": 100,
+      "deltaPoints": 1.0000000000000009
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "change": "spread",
+      "n": 100,
+      "deltaPoints": 3.0000000000000027
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "change": "orient-first",
+      "n": 100,
+      "deltaPoints": 12.999999999999995
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "change": "orient-second",
+      "n": 100,
+      "deltaPoints": 0.9999999999999953
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "change": "spread",
+      "n": 100,
+      "deltaPoints": -7.0000000000000036
+    }
+  ],
+  "medianAbsoluteDelta": 6.500000000000002,
+  "pass": true
+}
