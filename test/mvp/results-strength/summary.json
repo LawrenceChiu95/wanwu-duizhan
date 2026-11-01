@@ -1,0 +1,632 @@
+{
+  "stage": "strength",
+  "planned": 16800,
+  "completed": 16800,
+  "complete": true,
+  "items": [
+    {
+      "item": "scissors",
+      "vs": [
+        {
+          "foe": "scissors",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 68
+            },
+            {
+              "orient": "hug",
+              "scorePct": 32
+            }
+          ]
+        },
+        {
+          "foe": "lamp-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 23.75
+            },
+            {
+              "orient": "hug",
+              "scorePct": 25.5
+            }
+          ]
+        },
+        {
+          "foe": "broom",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 18.25
+            },
+            {
+              "orient": "hug",
+              "scorePct": 14.75
+            }
+          ]
+        },
+        {
+          "foe": "pan-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 22.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 20.75
+            }
+          ]
+        },
+        {
+          "foe": "slipper",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 50
+            },
+            {
+              "orient": "hug",
+              "scorePct": 22.25
+            }
+          ]
+        },
+        {
+          "foe": "pillow",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 39.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 39.25
+            }
+          ]
+        }
+      ],
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 37
+        },
+        {
+          "orient": "hug",
+          "scorePct": 25.75
+        }
+      ],
+      "best": {
+        "orient": "out",
+        "scorePct": 37
+      },
+      "interval": {
+        "seedClusters": 100,
+        "lower95": 35.499999999999986,
+        "upper95": 38.64583333333333,
+        "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+      },
+      "pass": true
+    },
+    {
+      "item": "lamp-lux3d",
+      "vs": [
+        {
+          "foe": "scissors",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 77.75
+            },
+            {
+              "orient": "hug",
+              "scorePct": 73
+            }
+          ]
+        },
+        {
+          "foe": "lamp-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 59.75
+            },
+            {
+              "orient": "hug",
+              "scorePct": 40.25
+            }
+          ]
+        },
+        {
+          "foe": "broom",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 59.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 43
+            }
+          ]
+        },
+        {
+          "foe": "pan-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 61.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 47.5
+            }
+          ]
+        },
+        {
+          "foe": "slipper",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 66.25
+            },
+            {
+              "orient": "hug",
+              "scorePct": 56.75
+            }
+          ]
+        },
+        {
+          "foe": "pillow",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 51
+            },
+            {
+              "orient": "hug",
+              "scorePct": 35.75
+            }
+          ]
+        }
+      ],
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 62.625
+        },
+        {
+          "orient": "hug",
+          "scorePct": 49.375
+        }
+      ],
+      "best": {
+        "orient": "out",
+        "scorePct": 62.625
+      },
+      "interval": {
+        "seedClusters": 100,
+        "lower95": 60.854166666666664,
+        "upper95": 64.4375,
+        "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+      },
+      "pass": true
+    },
+    {
+      "item": "broom",
+      "vs": [
+        {
+          "foe": "scissors",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 91.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 75.5
+            }
+          ]
+        },
+        {
+          "foe": "lamp-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 65.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 32
+            }
+          ]
+        },
+        {
+          "foe": "broom",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 67.75
+            },
+            {
+              "orient": "hug",
+              "scorePct": 32.25
+            }
+          ]
+        },
+        {
+          "foe": "pan-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 64
+            },
+            {
+              "orient": "hug",
+              "scorePct": 33.75
+            }
+          ]
+        },
+        {
+          "foe": "slipper",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 70.75
+            },
+            {
+              "orient": "hug",
+              "scorePct": 51
+            }
+          ]
+        },
+        {
+          "foe": "pillow",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 66.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 18.25
+            }
+          ]
+        }
+      ],
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 71
+        },
+        {
+          "orient": "hug",
+          "scorePct": 40.458333333333336
+        }
+      ],
+      "best": {
+        "orient": "out",
+        "scorePct": 71
+      },
+      "interval": {
+        "seedClusters": 100,
+        "lower95": 69.16666666666669,
+        "upper95": 72.79166666666669,
+        "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+      },
+      "pass": false
+    },
+    {
+      "item": "pan-lux3d",
+      "vs": [
+        {
+          "foe": "scissors",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 73.25
+            },
+            {
+              "orient": "hug",
+              "scorePct": 83.5
+            }
+          ]
+        },
+        {
+          "foe": "lamp-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 50.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 40.5
+            }
+          ]
+        },
+        {
+          "foe": "broom",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 55.25
+            },
+            {
+              "orient": "hug",
+              "scorePct": 47
+            }
+          ]
+        },
+        {
+          "foe": "pan-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 54.75
+            },
+            {
+              "orient": "hug",
+              "scorePct": 45.25
+            }
+          ]
+        },
+        {
+          "foe": "slipper",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 65
+            },
+            {
+              "orient": "hug",
+              "scorePct": 72.25
+            }
+          ]
+        },
+        {
+          "foe": "pillow",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 57.49999999999999
+            },
+            {
+              "orient": "hug",
+              "scorePct": 46.5
+            }
+          ]
+        }
+      ],
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 59.375
+        },
+        {
+          "orient": "hug",
+          "scorePct": 55.833333333333336
+        }
+      ],
+      "best": {
+        "orient": "out",
+        "scorePct": 59.375
+      },
+      "interval": {
+        "seedClusters": 100,
+        "lower95": 57.29166666666667,
+        "upper95": 61.31249999999998,
+        "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+      },
+      "pass": true
+    },
+    {
+      "item": "slipper",
+      "vs": [
+        {
+          "foe": "scissors",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 67.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 60.25
+            }
+          ]
+        },
+        {
+          "foe": "lamp-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 32
+            },
+            {
+              "orient": "hug",
+              "scorePct": 45
+            }
+          ]
+        },
+        {
+          "foe": "broom",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 36.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 41.75
+            }
+          ]
+        },
+        {
+          "foe": "pan-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 31.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 31.25
+            }
+          ]
+        },
+        {
+          "foe": "slipper",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 55.00000000000001
+            },
+            {
+              "orient": "hug",
+              "scorePct": 45
+            }
+          ]
+        },
+        {
+          "foe": "pillow",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 52.25
+            },
+            {
+              "orient": "hug",
+              "scorePct": 38
+            }
+          ]
+        }
+      ],
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 45.791666666666664
+        },
+        {
+          "orient": "hug",
+          "scorePct": 43.541666666666664
+        }
+      ],
+      "best": {
+        "orient": "out",
+        "scorePct": 45.791666666666664
+      },
+      "interval": {
+        "seedClusters": 100,
+        "lower95": 44.104166666666664,
+        "upper95": 47.52083333333334,
+        "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+      },
+      "pass": true
+    },
+    {
+      "item": "pillow",
+      "vs": [
+        {
+          "foe": "scissors",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 60.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 60.75000000000001
+            }
+          ]
+        },
+        {
+          "foe": "lamp-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 67.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 45.75
+            }
+          ]
+        },
+        {
+          "foe": "broom",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 62.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 52.75
+            }
+          ]
+        },
+        {
+          "foe": "pan-lux3d",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 56.99999999999999
+            },
+            {
+              "orient": "hug",
+              "scorePct": 39
+            }
+          ]
+        },
+        {
+          "foe": "slipper",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 62.5
+            },
+            {
+              "orient": "hug",
+              "scorePct": 47.25
+            }
+          ]
+        },
+        {
+          "foe": "pillow",
+          "orient": [
+            {
+              "orient": "out",
+              "scorePct": 55.50000000000001
+            },
+            {
+              "orient": "hug",
+              "scorePct": 44.5
+            }
+          ]
+        }
+      ],
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 60.916666666666664
+        },
+        {
+          "orient": "hug",
+          "scorePct": 48.333333333333336
+        }
+      ],
+      "best": {
+        "orient": "out",
+        "scorePct": 60.916666666666664
+      },
+      "interval": {
+        "seedClusters": 100,
+        "lower95": 59.08333333333336,
+        "upper95": 62.625,
+        "method": "percentile bootstrap, 2000 resamples of whole seed clusters; fixed opponent pool"
+      },
+      "pass": true
+    }
+  ]
+}

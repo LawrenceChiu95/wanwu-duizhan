@@ -1,0 +1,146 @@
+{
+  "stage": "fair",
+  "n": 200,
+  "sources": {
+    "sim/v3.js": "4b5164065bc4cf05ce088821a84e2010c9e2cb645240f211aebea231540d5d13",
+    "sim/v3-rules.json": "f01f6e6294dab517cf5daf7f0a53b3185efc8c6844da9875b906daa8e160f724",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "data/catalog.json": "1264ee9408577a47451b7055f4423d338374ed441e61518470c89ebc11247f9d",
+    "data/item-standards.json": "342620876a9443709643d7b2cd8cf601f3c564db524813d1c58baede9b68cf2b",
+    "test/v3-top/v13/experiment.mjs": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+    "test/v3-top/variant.mjs": "a1ca42512be4129eb5ce6347328bb388add7bf2b63cf7933779c3767918257a0",
+    "test/mvp/batch.mjs": "3fba0fdecad17e59a498405faa1f1c0b53ef522b983f7fc4f8338fbc3616ee5e",
+    "test/mvp/analyze.mjs": "22a902baa6bf43d86a26bbf67cd99528774517e6f93517493835991c11def834"
+  },
+  "fixtures": [
+    {
+      "id": "pan-broom/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "broom",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pan-broom/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "broom",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scissors-pillow/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "scissors",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "pillow",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scissors-pillow/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "scissors",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "pillow",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lamp-slipper/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "slipper",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lamp-slipper/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "slipper",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    }
+  ],
+  "foe": {
+    "parts": [
+      {
+        "item": "pan-lux3d",
+        "mount": "e0",
+        "orient": "out"
+      },
+      {
+        "item": "lamp-lux3d",
+        "mount": "e180",
+        "orient": "hug"
+      }
+    ]
+  },
+  "defaultItems": [
+    "scissors",
+    "lamp-lux3d",
+    "broom",
+    "pan-lux3d",
+    "slipper",
+    "pillow"
+  ],
+  "selection": null,
+  "r8Protocol": "one attachment per top; out/hug; equal weight opponents and their two orientations; paired AI streams swapped; report per-own-orient average and take maximum",
+  "planned": 2400,
+  "fingerprint": "01585d53a59ccdc59dafce558e935a44a8ea781dda1a24da6b8b916094bdfb70"
+}

@@ -1,0 +1,272 @@
+{
+  "complete": true,
+  "count": 3840,
+  "wallSeconds": 491.137,
+  "screenOnly": true,
+  "summary": [
+    {
+      "power": 0.5,
+      "hp": 1.1,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 62.083333333333336,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 85
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 46.25
+            },
+            {
+              "foe": "broom",
+              "scorePct": 66.25
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 60
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 53.75
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 61.25000000000001
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 32.916666666666664,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 58.75
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 27.500000000000004
+            },
+            {
+              "foe": "broom",
+              "scorePct": 33.75
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 17.5
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 45
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "power": 0.4,
+      "hp": 1.1,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 56.875,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 82.5
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 40
+            },
+            {
+              "foe": "broom",
+              "scorePct": 65
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 47.5
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 47.5
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 58.75
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 30.208333333333332,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 55.00000000000001
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 22.5
+            },
+            {
+              "foe": "broom",
+              "scorePct": 32.5
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 15
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 41.25
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "power": 0.4,
+      "hp": 1.3,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 56.458333333333336,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 85
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 43.75
+            },
+            {
+              "foe": "broom",
+              "scorePct": 57.49999999999999
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 50
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 43.75
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 58.75
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 29.166666666666668,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 57.49999999999999
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 18.75
+            },
+            {
+              "foe": "broom",
+              "scorePct": 33.75
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 13.750000000000002
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 35
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 16.25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "power": 0.3,
+      "hp": 1.3,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 53.125,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 75
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 40
+            },
+            {
+              "foe": "broom",
+              "scorePct": 60
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 50
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 41.25
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 52.5
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 25.624999999999996,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 51.24999999999999
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 13.750000000000002
+            },
+            {
+              "foe": "broom",
+              "scorePct": 25
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 13.750000000000002
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 33.75
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 16.25
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

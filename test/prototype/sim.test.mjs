@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {simulateHistorical} from './historical-sim.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import crypto from 'node:crypto';
@@ -10,7 +11,7 @@ const f=item=>({parts:[{item,mount:'core',rot:[0,0,0]}]});
 const digest=r=>crypto.createHash('sha256').update(JSON.stringify(r)).digest('hex');
 const c=await loadRules();
 test('six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass',async()=>{
- const all=await loadCatalog(),items=all.filter(i=>!i.generated);assert.deepEqual(items,JSON.parse(await readFile(new URL('./original-catalog-items.json',import.meta.url))));assert.equal(items.length,8);assert.equal(items.filter(i=>!i.comparisonBase).length,6);
+ const all=await loadCatalog(),items=all.filter(i=>!i.generated);const original=JSON.parse(await readFile(new URL('./original-catalog-items.json',import.meta.url)));assert.deepEqual(items.filter(i=>i.id!=='broom'),original.filter(i=>i.id!=='broom'));const broom=items.find(i=>i.id==='broom'),oldBroom=original.find(i=>i.id==='broom');assert.equal(broom.standardLongSide,.8);assert.equal(broom.mass,oldBroom.mass);assert.deepEqual(broom.hull,oldBroom.hull.map(v=>v.map(x=>x*(.8/1.2000000000000002))));assert.equal(items.length,8);assert.equal(items.filter(i=>!i.comparisonBase).length,6);
  for(const i of items){assert.ok(i.hull.length>=4&&i.hull.length<=64);assert.ok(i.hull.flat().every(Number.isFinite));assert.equal(i.massBasis,'category');assert.equal(i.mass,c.itemStandards[i.category].massKg);assert.ok(i.mass>0);assert.equal(i.standardLongSide,c.itemStandards[i.category].longSideMeters);assert.ok(Math.abs(Math.max(...i.bounds.max.map((v,k)=>v-i.bounds.min[k]))-i.standardLongSide)<1e-6);const glb=await readFile(new URL('../../'+i.glb,import.meta.url));assert.equal(glb.readUInt32LE(0),0x46546c67);assert.equal(crypto.createHash('sha256').update(glb).digest('hex'),i.source.normalizedSha256);if(!i.comparisonBase)assert.ok(['CC0-1.0','CC-BY-3.0'].includes(i.source.license));else{const base=items.find(b=>b.id===i.comparisonBase);assert.deepEqual(i.stats,base.stats);assert.equal(i.tag,base.tag);assert.equal(i.material,base.material);assert.notDeepEqual(i.hull,base.hull);}}
  const classes={scissors:'sharp',lamp:'blunt',broom:'rod',pot:'blunt',slipper:'soft',pillow:'soft'};for(const [id,tag] of Object.entries(classes))assert.equal(items.find(i=>i.id===id).tag,tag);
  for(const tag of Object.values(classes))assert.ok(Object.values(c.matchups).some(targets=>targets[tag]>1),'every class has a counter');
@@ -43,7 +44,7 @@ test('162 unique layouts, same-seed contact reversal and timeout percentage deci
  const rows=JSON.parse(await readFile(new URL('./layouts/rounds.json',import.meta.url)));
  const reversal=findReversal(rows);assert.ok(reversal);assert.equal(reversal.win.winner,0);assert.equal(reversal.loss.winner,1);assert.notEqual(reversal.win.layout,reversal.loss.layout);
  const timeout=rows.find(r=>r.reason==='timeout');
- if(timeout){const layout=layouts.find(l=>l.id===timeout.layout),r=await simulate({fighters:[layout.fighter,layouts[0].fighter],mode:timeout.mode,seed:timeout.seed});assert.equal(r.meta.reason,'timeout');{const hp=r.frames.at(-1).fighters.map(x=>x.hp/x.maxHp);assert.equal(r.meta.winner,hp[0]===hp[1]?null:hp[0]>hp[1]?0:1);assert.match(r.decisive.caption,/时间到/);}}
+ if(timeout){const layout=layouts.find(l=>l.id===timeout.layout),r=await simulateHistorical({fighters:[layout.fighter,layouts[0].fighter],mode:timeout.mode,seed:timeout.seed});assert.equal(r.meta.reason,'timeout');{const hp=r.frames.at(-1).fighters.map(x=>x.hp/x.maxHp);assert.equal(r.meta.winner,hp[0]===hp[1]?null:hp[0]>hp[1]?0:1);assert.match(r.decisive.caption,/时间到/);}}
 });
 test('compound COM follows layout; world part transforms and per-part hit identity',async()=>{
  const a={parts:[{item:'broom',mount:'front',rot:[0,0,0]},{item:'pot',mount:'top',rot:[0,0,0]},{item:'pillow',mount:'side',rot:[0,0,0]}]};
@@ -79,7 +80,7 @@ test('recorded real impacts: critical exceeds ordinary cap, missed weakpoint sta
  const proof=JSON.parse(await readFile(new URL('./batch/mechanics-evidence.json',import.meta.url)));
  assert.ok(proof.criticalOverNormalCap>0);assert.ok(proof.weakContacts>proof.weakTriggered);
  for(const [kind,example] of [['critical',proof.critical],['missed',proof.missed],['counter',proof.counterRoleChange]]){
-  const r=await simulate({fighters:[f(example.left),f(example.right)],mode:example.mode,seed:example.seed});
+  const r=await simulateHistorical({fighters:[f(example.left),f(example.right)],mode:example.mode,seed:example.seed});
   const event=r.events.find(e=>e.t===example.event.t&&e.attacker===example.event.attacker);assert.deepEqual(event,example.event);
   if(kind==='critical'){assert.ok(event.damage>c.arena.maxHitFraction*c.arena.fighterHp);assert.ok(event.damage<=.4*c.arena.fighterHp);assert.equal(event.type,'weak');}
   if(kind==='missed'){assert.equal(event.weakContact,true);assert.equal(event.weak,false);assert.ok(event.criticalRoll>=event.criticalChance);assert.ok(event.damage<=c.arena.maxHitFraction*c.arena.fighterHp);}
@@ -101,7 +102,7 @@ test('review regressions: timeout highlights, simultaneous decision, zone orderi
  const proof=JSON.parse(await readFile(new URL('./batch/mechanics-evidence.json',import.meta.url)));
  for(const key of ['timeout','simultaneous','speed','zone']){
   const example=proof.review[key];assert.ok(example,'missing actual '+key+' example');
-  const r=await simulate({fighters:[f(example.left),f(example.right)],mode:example.mode,seed:example.seed});
+  const r=await simulateHistorical({fighters:[f(example.left),f(example.right)],mode:example.mode,seed:example.seed});
   const hits=r.events.filter(e=>e.item),main=hits.filter(e=>e.role==='attack'),criticalRng=random(example.seed^0x9e3779b9);
   assert.equal(summarize(r).crit,main.filter(e=>e.weak).length);
   for(const e of hits){

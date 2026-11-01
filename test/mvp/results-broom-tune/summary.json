@@ -1,0 +1,203 @@
+{
+  "complete": true,
+  "count": 2880,
+  "wallSeconds": 341.687,
+  "screenOnly": true,
+  "summary": [
+    {
+      "power": 0.8,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 68.95833333333333,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 90
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 55.00000000000001
+            },
+            {
+              "foe": "broom",
+              "scorePct": 66.25
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 67.5
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 66.25
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 68.75
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 37.291666666666664,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 75
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 31.25
+            },
+            {
+              "foe": "broom",
+              "scorePct": 28.749999999999996
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 23.75
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 53.75
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 11.25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "power": 0.7,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 66.875,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 88.75
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 52.5
+            },
+            {
+              "foe": "broom",
+              "scorePct": 63.74999999999999
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 67.5
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 62.5
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 66.25
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 34.166666666666664,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 67.5
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 28.749999999999996
+            },
+            {
+              "foe": "broom",
+              "scorePct": 23.75
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 22.5
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 51.24999999999999
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 11.25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "power": 0.6,
+      "orientations": [
+        {
+          "orient": "out",
+          "scorePct": 64.16666666666667,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 86.25
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 50
+            },
+            {
+              "foe": "broom",
+              "scorePct": 65
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 65
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 58.75
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 60
+            }
+          ]
+        },
+        {
+          "orient": "hug",
+          "scorePct": 32.708333333333336,
+          "vs": [
+            {
+              "foe": "scissors",
+              "scorePct": 62.5
+            },
+            {
+              "foe": "lamp-lux3d",
+              "scorePct": 27.500000000000004
+            },
+            {
+              "foe": "broom",
+              "scorePct": 26.25
+            },
+            {
+              "foe": "pan-lux3d",
+              "scorePct": 21.25
+            },
+            {
+              "foe": "slipper",
+              "scorePct": 48.75
+            },
+            {
+              "foe": "pillow",
+              "scorePct": 10
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

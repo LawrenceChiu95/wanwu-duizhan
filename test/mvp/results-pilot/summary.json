@@ -1,0 +1,337 @@
+{
+  "stage": "pilot",
+  "planned": 450,
+  "completed": 450,
+  "complete": true,
+  "groups": [
+    {
+      "radius": 2.4,
+      "condition": "autoA",
+      "n": 30,
+      "durationMedian": 32.108333333333334,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 1.9776902321525012,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.4,
+      "condition": "autoB",
+      "n": 30,
+      "durationMedian": 38.96666666666667,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.136298251193039,
+      "durationPass": false,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.4,
+      "condition": "manual",
+      "n": 30,
+      "durationMedian": 27.59166666666667,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.4061029505769014,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.4,
+      "condition": "timing",
+      "n": 30,
+      "durationMedian": 33.891666666666666,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.375,
+      "firstDamageWorst": 0.4,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.4040373561360537,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.4,
+      "condition": "idle",
+      "n": 30,
+      "durationMedian": 24.40416666666667,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.4029017140395768,
+      "durationPass": false,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "autoA",
+      "n": 30,
+      "durationMedian": 29.058333333333334,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.0106635249080154,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "autoB",
+      "n": 30,
+      "durationMedian": 35.05833333333333,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.0106635249080154,
+      "durationPass": false,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "manual",
+      "n": 30,
+      "durationMedian": 26.633333333333333,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.205706349482888,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "timing",
+      "n": 30,
+      "durationMedian": 31.479166666666664,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.375,
+      "firstDamageWorst": 0.4,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.2055723159895315,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "idle",
+      "n": 30,
+      "durationMedian": 24.433333333333334,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.182259457649074,
+      "durationPass": false,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2,
+      "condition": "autoA",
+      "n": 30,
+      "durationMedian": 33.1,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 1.9888891978393741,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2,
+      "condition": "autoB",
+      "n": 30,
+      "durationMedian": 40.99166666666667,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 1.9888891978393741,
+      "durationPass": false,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2,
+      "condition": "manual",
+      "n": 30,
+      "durationMedian": 29.170833333333334,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.0065765999195233,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2,
+      "condition": "timing",
+      "n": 30,
+      "durationMedian": 31.475,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.375,
+      "firstDamageWorst": 0.4,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.0011767448102575,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2,
+      "condition": "idle",
+      "n": 30,
+      "durationMedian": 25.84166666666667,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.000779257984958,
+      "durationPass": true,
+      "firstDamagePass": true
+    }
+  ],
+  "timing": [
+    {
+      "scene": "pan-broom/out-out-e180",
+      "byRadius": [
+        {
+          "radius": 2.4,
+          "deltaPoints": 0
+        },
+        {
+          "radius": 2.2,
+          "deltaPoints": 20
+        },
+        {
+          "radius": 2,
+          "deltaPoints": 40
+        }
+      ]
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "byRadius": [
+        {
+          "radius": 2.4,
+          "deltaPoints": 40
+        },
+        {
+          "radius": 2.2,
+          "deltaPoints": 20
+        },
+        {
+          "radius": 2,
+          "deltaPoints": 40
+        }
+      ]
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "byRadius": [
+        {
+          "radius": 2.4,
+          "deltaPoints": 60.00000000000001
+        },
+        {
+          "radius": 2.2,
+          "deltaPoints": 0
+        },
+        {
+          "radius": 2,
+          "deltaPoints": 40
+        }
+      ]
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "byRadius": [
+        {
+          "radius": 2.4,
+          "deltaPoints": 20
+        },
+        {
+          "radius": 2.2,
+          "deltaPoints": 60
+        },
+        {
+          "radius": 2,
+          "deltaPoints": 40
+        }
+      ]
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "byRadius": [
+        {
+          "radius": 2.4,
+          "deltaPoints": 40
+        },
+        {
+          "radius": 2.2,
+          "deltaPoints": 60
+        },
+        {
+          "radius": 2,
+          "deltaPoints": 19.999999999999996
+        }
+      ]
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "byRadius": [
+        {
+          "radius": 2.4,
+          "deltaPoints": -60.00000000000001
+        },
+        {
+          "radius": 2.2,
+          "deltaPoints": -40
+        },
+        {
+          "radius": 2,
+          "deltaPoints": 60
+        }
+      ]
+    }
+  ]
+}

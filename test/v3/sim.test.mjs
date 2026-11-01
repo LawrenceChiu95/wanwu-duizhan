@@ -105,13 +105,17 @@ test('same-step double break: less overkill wins, exact tie is a draw; reason ke
  const why=r.decisive.why;
  assert.equal(why.target,1);assert.equal(why.attacker,0);
  assert.equal(r.decisive.eventIndex,r.events.indexOf(r.events.findLast(e=>e.t===ko.t&&e.target===1&&e.targetPart==='core'&&e.hpAfter===0)));
- const inputs=[];for(let step=60;step<7200;step+=552)inputs.push({step,side:0,action:'dash'});for(let step=300;step<7200;step+=624)inputs.push({step,side:0,action:'block'});inputs.sort((a,b)=>a.step-b.step);
- // Seed 2 retains the real two-detachment loss after seeded AI reaction/clash rules (seed 1 now loses with one part).
- const detached=await simulateV3({fighters:[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'broom',mount:'e180',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:2,manual:{sides:['input','ai'],blockTime:.25,inputs}});
- const broken=detached.events.filter(e=>e.type==='break'&&e.target===0),whyBroken=detached.decisive.why,koBroken=detached.events.find(e=>e.type==='ko');
- assert.equal(whyBroken.target,0);assert.equal(whyBroken.attacker,1);assert.equal(broken.length,2);assert.equal(whyBroken.loserPartsLeft,0);
- assert.deepEqual(whyBroken.loserBroken.map(b=>b.item).sort(),['broom','pan-lux3d']);
- assert.equal(detached.decisive.eventIndex,detached.events.indexOf(detached.events.findLast(e=>e.t===koBroken.t&&e.target===0&&e.targetPart==='core'&&e.hpAfter===0)));
+ // MVP shortens broom geometry and changes category/orient damage, so normal seed 2 no longer
+ // loses after two detachments. A controlled high-core/low-part-HP fight keeps the same real
+ // collision -> break -> later core KO -> loser-facts regression without asserting an old balance outcome.
+ // Keep this controlled trajectory's 2.4 m arena while the shipping radius is tuned;
+ // current-radius wall behavior and match outcomes are checked by MVP tests/batches.
+ const afterBreaks=await simulateWithRules({arenaRadius:2.4,core:{hp:500},attachmentHp:1});
+ const detached=await afterBreaks({fighters:[{parts:[{item:'pan-lux3d',mount:'e90',orient:'out'},{item:'broom',mount:'e270',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e90',orient:'out'},{item:'lamp-lux3d',mount:'e270',orient:'hug'}]}],mode:'A',seed:2,manual:{sides:['ai','ai']}});
+ const broken=detached.events.filter(e=>e.type==='break'&&e.target===1),whyBroken=detached.decisive.why,koBroken=detached.events.find(e=>e.type==='ko');
+ assert.equal(detached.meta.reason,'ko');assert.equal(whyBroken.target,1);assert.equal(whyBroken.attacker,0);assert.equal(broken.length,2);assert.equal(whyBroken.loserPartsLeft,0);
+ assert.deepEqual(whyBroken.loserBroken.map(b=>b.item).sort(),['lamp-lux3d','pan-lux3d']);
+ assert.equal(detached.decisive.eventIndex,detached.events.indexOf(detached.events.findLast(e=>e.t===koBroken.t&&e.target===1&&e.targetPart==='core'&&e.hpAfter===0)));
 });
 test('manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical',async()=>{
  const fighters=[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];

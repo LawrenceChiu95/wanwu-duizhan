@@ -53,14 +53,22 @@
       "itemPower": {
         "scissors": 1.6,
         "slipper": 1.35,
-        "broom": 0.9,
+        "broom": 0.48,
         "pillow": 0.8
       },
       "itemHp": {
         "scissors": 1.4,
         "slipper": 1.3,
-        "broom": 0.9,
+        "broom": 1.1,
         "pillow": 0.75
+      },
+      "orientPower": {
+        "out": 1.2,
+        "hug": 0.85
+      },
+      "orientReceive": {
+        "out": 1.15,
+        "hug": 0.85
       },
       "damageRamp": [
         [
@@ -122,7 +130,7 @@
     ],
     "overlapIterations": 8,
     "overlapTolerance": 0.0005,
-    "arenaRadius": 4.2,
+    "arenaRadius": 2.2,
     "damageScale": {
       "A": 0.8,
       "B": 1
@@ -147,6 +155,10 @@
     "maxScrapeDuration": 2
   },
   "events": [
+    {
+      "t": 0,
+      "type": "start"
+    },
     {
       "t": 0.008333333333333333,
       "type": "contact",
@@ -330,6 +342,24 @@
         ]
       ],
       "recoilSpeed": 0
+    },
+    {
+      "t": 2,
+      "type": "result",
+      "winner": null,
+      "reason": "timeout",
+      "why": {
+        "kind": "timeout",
+        "criterion": "draw",
+        "coreRatios": [
+          1,
+          1
+        ],
+        "partHp": [
+          0,
+          0
+        ]
+      }
     }
   ]
 }
