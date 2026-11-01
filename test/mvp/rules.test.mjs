@@ -3,26 +3,39 @@ import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {gzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
-import {simulateV3,createV3Match,loadCatalog,loadV3Rules,tierDamage,timeoutVerdict} from '../../sim/v3.js';
+import {simulateV3,createV3Match,loadCatalog,loadV3Rules,tierDamage,timeoutVerdict,itemAxes} from '../../sim/v3.js';
 import {loadRules} from '../../sim/index.js';
+import {rotate} from '../../sim/math.js';
 import {simulateWithRules} from '../v3-top/variant.mjs';
 const bare={parts:[]},rules=await loadV3Rules(),catalog=await loadRules();
 
 test('physical fence bounces an outward core without creating fighter hits or HP loss',async()=>{
- const simulate=await simulateWithRules({maxDuration:2,initialGap:3.2,attraction:-10,thrust:0,speedLimit:8,top:{spinRate:0}});
+ const simulate=await simulateWithRules({maxDuration:2,frameStride:1,initialGap:2*(rules.arenaRadius-2*rules.core.radius-.08),attraction:-10,thrust:0,speedLimit:8,top:{spinRate:0}});
  const r=await simulate({fighters:[bare,bare],mode:'A',seed:1,manual:{sides:['input','input'],inputs:[{step:1,side:0,action:'block'}]}});
  const wall=rules.arenaRadius-rules.core.radius;
  assert.ok(r.frames.some(fr=>fr.fighters.some(f=>Math.abs(f.pos[0])>wall-.1)),'reaches the wall');
  assert.ok(r.frames.some(fr=>fr.fighters.some(f=>Math.abs(f.pos[0])>wall-.25&&f.pos[0]*f.velocity[0]<-.1)),'solver reverses outward velocity');
+ const guard=r.events.find(e=>e.type==='block'&&e.side===0);assert.ok(guard);
+ const bounce=r.frames.find((fr,i)=>i>0&&fr.t>=guard.t&&fr.t<=guard.until&&Math.abs(fr.fighters[0].pos[0])>wall-.012&&r.frames[i-1].fighters[0].pos[0]*r.frames[i-1].fighters[0].velocity[0]>0&&fr.fighters[0].pos[0]*fr.fighters[0].velocity[0]<0);
+ assert.ok(bounce,'the guarded fighter must actually bounce while its shield is active');
  for(const fr of r.frames)for(const f of fr.fighters){assert.ok(Math.hypot(f.pos[0],f.pos[2])+rules.core.radius<rules.arenaRadius+.012);assert.equal(f.core.hp,160);}
  assert.ok(!r.events.some(e=>['contact','hit','weak','parry','break'].includes(e.type)));assert.ok(r.events.filter(e=>e.type==='blockResult').every(e=>e.outcome==='empty'));
 });
 
 test('category stats agree for original and generated assets, while mounting keeps per-item outward ends',async()=>{
- const items=await loadCatalog(),m=await createV3Match({fighters:[{parts:[{item:'scissors',mount:'e0',orient:'out'}]},{parts:[{item:'wasteland-knife',mount:'e0',orient:'out'}]}],seed:0});
- try{assert.equal(m.initial[0].parts[0].maxHp,m.initial[1].parts[0].maxHp);assert.equal(m.initial[0].parts[0].maxHp,84);}finally{m.free();}
+ const items=await loadCatalog(),generated=items.filter(i=>i.generated);assert.ok(generated.length>=3);
  const args={mode:'B',impulse:3,target:items.find(i=>i.id==='pillow'),materials:catalog.materials,matchups:catalog.matchups,maxHp:10000,rules};
- assert.equal(tierDamage({...args,attacker:items.find(i=>i.id==='scissors')}).damage,tierDamage({...args,attacker:items.find(i=>i.id==='wasteland-knife')}).damage);
+ for(const item of generated){
+  const template=items.find(i=>i.id===item.category);assert.ok(template,`${item.id}: category template`);
+  for(const key of ['material','tag','stats'])assert.deepEqual(item[key],template[key],`${item.id}: ${key}`);
+  const m=await createV3Match({fighters:[{parts:[{item:template.id,mount:'e0',orient:'out'}]},{parts:[{item:item.id,mount:'e0',orient:'out'}]}],seed:0});
+  try{
+   assert.equal(m.initial[0].parts[0].maxHp,m.initial[1].parts[0].maxHp,`${item.id}: category HP`);
+   const f=m.initial[1],p=f.parts[0],axis=[0,0,0];axis[itemAxes(item).long]=rules.top.outEnd[item.id]??1;
+   const direction=rotate(p.quat,axis);assert.ok(direction.reduce((sum,v,i)=>sum+v*(p.pos[i]-f.pos[i]),0)>0,`${item.id}: its configured normalized end points outward`);
+  }finally{m.free();}
+  assert.equal(tierDamage({...args,attacker:item}).damage,tierDamage({...args,attacker:template}).damage,`${item.id}: category B damage`);
+ }
  assert.equal(rules.top.outEnd.broom,-1);assert.equal(rules.top.outEnd['pan-lux3d'],-1);
 });
 

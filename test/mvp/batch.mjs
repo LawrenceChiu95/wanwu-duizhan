@@ -2,14 +2,16 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile,appendFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {simulateV3} from '../../sim/v3.js';
+import {simulateV3,loadCatalog} from '../../sim/v3.js';
+import {measureWalls} from './walls.mjs';
+const catalog=await loadCatalog();
 import {simulateWithRules} from '../v3-top/variant.mjs';
 import {fixtures,foe,options} from '../v3-top/v13/experiment.mjs';
 const hash=x=>createHash('sha256').update(x).digest('hex'),root=new URL('../../',import.meta.url);
 const stage=process.env.MVP_STAGE??'pilot',n=Number(process.env.MVP_SEEDS??(stage==='pilot'?5:stage==='fair'?200:stage==='combos'?5:stage==='combo-check'?20:100));
 assert.ok(['pilot','primary','fair','layout','strength','combos','combo-check'].includes(stage));assert.ok(Number.isInteger(n)&&n>0);
 const out=new URL(process.env.MVP_OUT??`./results-${stage}/`,import.meta.url);await mkdir(out,{recursive:true});
-const files=['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','data/catalog.json','data/item-standards.json','test/v3-top/v13/experiment.mjs','test/v3-top/variant.mjs','test/mvp/batch.mjs','test/mvp/analyze.mjs'];
+const files=['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','data/catalog.json','data/item-standards.json','test/v3-top/v13/experiment.mjs','test/v3-top/variant.mjs','test/mvp/batch.mjs','test/mvp/analyze.mjs','test/mvp/walls.mjs'];
 const sources=Object.fromEntries(await Promise.all(files.map(async f=>[f,hash(await readFile(new URL(f,root)))])));
 const plan=[];
 const baseRadius=JSON.parse(await readFile(new URL('sim/v3-rules.json',root))).arenaRadius;
@@ -48,7 +50,7 @@ for(const p of plan){
  if(stage==='combos'||stage==='combo-check')o={fighters:[{parts:[{item:p.combo[0],mount:'e0',orient:p.leftOrient},{item:p.combo[1],mount:p.spread,orient:p.rightOrient}]},fixtures.find(f=>f.id===p.opponent).definition],seed:p.seed,manual:{sides:['ai','ai']}};
  if(p.swap!==undefined){const profiles=[(p.seed^0x243f6a88)>>>0,(p.seed^0xb7e15162)>>>0];o.manual.aiSeeds=p.swap?profiles.reverse():profiles;}
  const begin=performance.now(),r=await simulators.get(p.radius)(o),damage=r.events.filter(e=>e.damage>0),score=r.meta.winner===0?1:r.meta.winner===null?.5:0;
- const row={plan:p,score,winner:r.meta.winner,reason:r.meta.reason,duration:r.meta.duration,firstDamage:damage[0]?.t??null,hits:damage.length,replaySha256:hash(JSON.stringify(r)),initialOuter:r.meta.initial.map(f=>Math.hypot(f.pos[0],f.pos[2])+f.sweepRadius),maxCoreRadius:Math.max(...r.frames.flatMap(fr=>fr.fighters.map(f=>Math.hypot(f.pos[0],f.pos[2])+r.meta.rules.core.radius))),penetration:r.meta.diagnostics.maxResidualPenetration,scrape:r.meta.diagnostics.scrapeDuration,wallMs:performance.now()-begin};
+ const row={plan:p,score,winner:r.meta.winner,reason:r.meta.reason,duration:r.meta.duration,firstDamage:damage[0]?.t??null,hits:damage.length,replaySha256:hash(JSON.stringify(r)),initialOuter:r.meta.initial.map(f=>Math.hypot(f.pos[0],f.pos[2])+f.sweepRadius),maxCoreRadius:Math.max(...r.frames.flatMap(fr=>fr.fighters.map(f=>Math.hypot(f.pos[0],f.pos[2])+r.meta.rules.core.radius))),wall:measureWalls(r,catalog),penetration:r.meta.diagnostics.maxResidualPenetration,scrape:r.meta.diagnostics.scrapeDuration,wallMs:performance.now()-begin};
  await appendFile(recordFile,JSON.stringify(row)+'\n');count++;
  if(count%25===0){await writeFile(new URL('progress.json',out),JSON.stringify({status:'running',count,total:plan.length,at:new Date().toISOString(),wallSeconds:(Date.now()-started)/1000},null,2)+'\n');console.log(`${stage} ${count}/${plan.length}`);}
 }
