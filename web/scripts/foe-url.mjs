@@ -7,9 +7,9 @@ import {simulateV3} from '../../sim/v3.js';
 
 const [base = 'http://127.0.0.1:4330/', out = '/tmp/foe-url'] = process.argv.slice(2);
 await mkdir(out, {recursive: true});
-const browser = await chromium.launch({channel: 'chromium'});
+const browser = await chromium.launch({channel: 'chrome'});
 const ctx = await browser.newContext({viewport: {width: 390, height: 844}, deviceScaleFactor: 2, isMobile: true, hasTouch: true});
-const report = {matches: [], rejected: []};
+const report = {browser: browser.version(), matches: [], rejected: [], faults: []};
 const sha = value => createHash('sha256').update(value).digest('hex');
 const def = (first, orient, second, other, mount) => ({parts: [{item: first, mount: 'e0', orient}, {item: second, mount, orient: other}]});
 const mine = def('pan-lux3d', 'out', 'pillow', 'hug', 'e180');
@@ -19,6 +19,7 @@ try {
   for (const c of [
     {name: 'default', query: 'play=auto', expected: defaults, labels: ['锅', '台灯']},
     {name: 'pot-v-broom', query: 'play=auto&foe=broom,out,pillow,hug,e180', expected: def('broom', 'out', 'pillow', 'hug', 'e180'), labels: ['扫把', '枕头']},
+    {name: 'custom', query: 'play=auto&mine=wasteland-knife,out,wasteland-pot,hug,e90&foe=wasteland-broom,hug,wasteland-pot,out,e90', own: def('wasteland-knife', 'out', 'wasteland-pot', 'hug', 'e90'), expected: def('wasteland-broom', 'hug', 'wasteland-pot', 'out', 'e90'), labels: ['废土扫把', '废土锅']},
     {name: 'generated-manual', query: 'play=manual&foe=wasteland-broom,hug,wasteland-pot,out,e90', expected: def('wasteland-broom', 'hug', 'wasteland-pot', 'out', 'e90'), labels: ['废土扫把', '废土锅']}
   ]) {
     const page = await ctx.newPage(), errors = [];
@@ -26,6 +27,8 @@ try {
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto(`${base}?seed=7&${c.query}`);
     await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 60000});
+    assert.equal(await page.$eval('#goBtn', b => b.disabled), false);
+    assert.equal(await page.$eval('#error', e => e.hidden), true);
     assert.deepEqual(await page.$$eval('#foeParts span', spans => spans.map(s => s.textContent)), c.labels);
     await page.waitForTimeout(400);
     await page.screenshot({path: `${out}/${c.name}-build.png`});
@@ -46,37 +49,86 @@ try {
     }
     await page.waitForFunction(() => window.__top.status().phase === 'result', null, {timeout: 120000});
     const raw = await page.evaluate(() => window.__top.replayJson()), replay = JSON.parse(raw);
-    assert.deepEqual(replay.meta.initial.map(f => f.definition), [mine, c.expected]);
+    assert.deepEqual(replay.meta.initial.map(f => f.definition), [c.own ?? mine, c.expected]);
     assert.equal(await page.evaluate(() => document.body.innerText.includes('undefined')), false);
     assert.deepEqual(errors, []);
     let nodeSha = null;
     if (c.query.startsWith('play=auto')) {
-      const node = JSON.stringify(await simulateV3({fighters: [mine, c.expected], mode: 'A', seed: 7}));
+      const node = JSON.stringify(await simulateV3({fighters: [c.own ?? mine, c.expected], mode: 'A', seed: 7}));
       assert.equal(raw, node); nodeSha = sha(node);
     } else assert.ok(replay.meta.manual.inputs.length > 0);
     await writeFile(`${out}/${c.name}-replay.json`, raw);
     await page.screenshot({path: `${out}/${c.name}-result.png`});
     report.matches.push({name: c.name, definitions: replay.meta.initial.map(f => f.definition), duration: replay.meta.duration, replaySha256: sha(raw), nodeSha256: nodeSha, errors});
+    await page.tap('#againBtn');
+    assert.equal(await page.evaluate(() => window.__top.status().phase), 'build');
+    assert.equal(await page.$eval('#goBtn', b => b.disabled), false);
     await page.close();
   }
 
-  for (const query of [
-    'foe=', 'foe=broom,out', 'foe=missing,out,pillow,hug,e180',
-    'foe=broom,out,broom,hug,e180', 'foe=broom,wrong,pillow,hug,e180',
-    'foe=broom,out,pillow,wrong,e180', 'foe=broom,out,pillow,hug,e45',
-    'foe=broom,out,pillow,hug,e180,extra', 'foe=broom,out,pillow,hug,e180&foe=broom,out,pillow,hug,e90'
+  const valid = 'broom,out,pillow,hug,e180';
+  for (const key of ['mine', 'foe']) for (const value of [
+    '', 'broom,out', 'missing,out,pillow,hug,e180', 'pot,out,pillow,hug,e180',
+    'broom,out,broom,hug,e180', 'broom,wrong,pillow,hug,e180',
+    'broom,out,pillow,wrong,e180', 'broom,out,pillow,hug,e45',
+    'broom,out,pillow,hug,e180,extra', `${valid}&${key}=broom,out,pillow,hug,e90`,
+    `${valid}&${key}=${valid}`, `${valid}&${key}=`
   ]) {
+    const query = `${key}=${value}`;
     const page = await ctx.newPage();
     await page.goto(`${base}?seed=7&${query}`);
     await page.waitForSelector('#error:not([hidden])', {timeout: 60000});
     const error = await page.$eval('#error', e => e.textContent);
-    assert.match(error, /foe参数无效/);
+    assert.ok(error.includes(`${key}参数无效`));
     assert.equal(await page.$eval('#busy', e => e.hidden), true);
+    assert.equal(await page.$eval('#goBtn', b => b.disabled), true);
+    await page.$eval('#goBtn', b => b.click());
     assert.equal(await page.evaluate(() => Boolean(window.__top)), false);
-    report.rejected.push({query, error});
-    if (query === 'foe=') await page.screenshot({path: `${out}/invalid.png`});
+    report.rejected.push({query, error, disabled: true, initialized: false});
+    if (value === '') await page.screenshot({path: `${out}/invalid-${key}.png`});
     await page.close();
   }
+
+  // A fatal error after initialization must also block the start entry point.
+  const page = await ctx.newPage();
+  await page.goto(`${base}?seed=7`);
+  await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 60000});
+  await page.evaluate(async () => {
+    window.dispatchEvent(new ErrorEvent('error', {error: new Error('fixture-after-ready')}));
+    document.getElementById('goBtn').click();
+    await window.__top.start();
+  });
+  assert.equal(await page.$eval('#goBtn', b => b.disabled), true);
+  assert.equal(await page.$eval('#busy', e => e.hidden), true);
+  assert.equal(await page.evaluate(() => window.__top.status().phase), 'build');
+  await page.screenshot({path: `${out}/error-after-ready.png`});
+  await page.reload();
+  await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 60000});
+  assert.equal(await page.$eval('#goBtn', b => b.disabled), false);
+  assert.equal(await page.$eval('#error', e => e.hidden), true);
+  report.faults.push({case: 'after-ready', blocked: true, reloadRecovered: true});
+  await page.close();
+
+  // Complete catalog loading after an error: showBuild must not reopen start.
+  const loading = await ctx.newPage();
+  let release, requested;
+  const gate = new Promise(resolve => { release = resolve; });
+  const catalogRequested = new Promise(resolve => { requested = resolve; });
+  await loading.route('**/data/catalog.json', async route => { requested(); await gate; await route.continue(); });
+  const nav = loading.goto(`${base}?seed=7`);
+  await catalogRequested;
+  assert.equal(await loading.$eval('#goBtn', b => b.disabled), true);
+  await loading.evaluate(() => window.dispatchEvent(new ErrorEvent('error', {error: new Error('fixture-during-load')})));
+  release();
+  await nav;
+  await loading.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 60000});
+  assert.equal(await loading.$eval('#goBtn', b => b.disabled), true);
+  assert.equal(await loading.$eval('#error', e => e.hidden), false);
+  await loading.evaluate(() => window.__top.start());
+  assert.equal(await loading.evaluate(() => window.__top.status().phase), 'build');
+  await loading.screenshot({path: `${out}/error-during-load.png`});
+  report.faults.push({case: 'during-load', blockedAfterReady: true});
+  await loading.close();
   await writeFile(`${out}/result.json`, JSON.stringify(report, null, 2));
-  console.log(JSON.stringify({matches: report.matches.length, rejected: report.rejected.length, errors: []}));
+  console.log(JSON.stringify({matches: report.matches.length, rejected: report.rejected.length, faults: report.faults.length, errors: []}));
 } finally {await browser.close();}
