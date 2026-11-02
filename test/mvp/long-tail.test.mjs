@@ -25,10 +25,11 @@ test('independent six-scene timing panel meets whole-panel long-tail proportions
   // Keep every completed row even if a simulation or an assertion fails.
   t.diagnostic(JSON.stringify({panel,sources,rows}));
  }
- const count=group=>({n:group.length,over45:group.filter(r=>r.duration>45).length,at60:group.filter(r=>r.duration>=60).length});
+ const count=group=>({n:group.length,over45:group.filter(r=>r.duration>45).length,at60:group.filter(r=>r.duration>=60).length,endings:Object.fromEntries(['ko','double-ko','timeout'].map(reason=>{const n=group.filter(r=>r.reason===reason).length;return [reason,{n,pct:100*n/group.length}];}))});
  const total=count(rows),scenes=sceneIds.map(scene=>({scene,...count(rows.filter(r=>r.scene===scene))}));
  t.diagnostic(JSON.stringify({total,scenes,scope:'Fixed A/timing regression panel; not full balance or mirror acceptance.'}));
+ const longGames=JSON.stringify(rows.filter(r=>r.duration>45).map(({scene,seed,duration})=>({scene,seed,duration})));
  assert.equal(total.n,600);
- assert.ok(total.over45*200<=total.n,`${total.over45}/${total.n} exceed 45s; whole-panel limit is 0.5%`);
- assert.ok(total.at60*10000<=total.n,`${total.at60}/${total.n} reach 60s; whole-panel limit is 0.01%`);
+ assert.ok(total.over45*200<=total.n,`${total.over45}/${total.n} exceed 45s; whole-panel limit is 0.5%; games: ${longGames}`);
+ assert.ok(total.at60*10000<=total.n,`${total.at60}/${total.n} reach 60s; whole-panel limit is 0.01%; games: ${longGames}`);
 });
