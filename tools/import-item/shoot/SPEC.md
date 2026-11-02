@@ -18,3 +18,17 @@
 - 请求级 `server` 的 retry 改为 same，表示可以重发原请求；建任务仍重用原 clientKey，不能新建一次付费操作。其余新增请求码和 clientKey 格式写入 README/接口补充，前端按码说白话，原 error.message 只进日志。
 - 静态页面和资源允许查询串，API 仍拒绝未约定参数；不改 Host、Origin、路径和扩展名边界。README 给出 target 为 127.0.0.1、changeOrigin=true 的具体 Vite 代理配置。
 - 验证：不同 id 的同一模型与原内置件，所有槽位/两种装法变换相同，同种子回放只替换物品身份后逐字节相同；缺朝向拒绝；真实 HTTP 核静态 query、API query、server retry、附加错误码。原 HTTP/runtime/历史回归和受影响完整检查复跑。五屏接线/真机画面仍由 Iris 另验。
+
+## task #53：真生成收费前的持久性收口
+
+仍只假生成，不启真接口。先接task52的固定版本；本轮不改web、物理或数值。
+
+- busy/fromJob与可再生成父任务只可产生一个子任务，消耗记录与新job/key在同一原子存盘里提交。同key重发先返回原子任务；换key再用父任务报not-allowed，不能再收费。
+- jobs/keys从JSON读出后转为无原型字典；新建同样无原型，允许格式合法的__proto__/constructor/toString等key，不靠逐个黑名单。回归直接核存盘keys里的那条记录与job/id/收费。
+- runner始终收住内部拒绝并锁住后续请求（503），close在finally释放目录锁；磁盘修好后正常重启续已知任务，不在损坏存储上继续提交。用实际保存路径故障证明不挂死、可释放重开。
+- 两个真实子进程硬退出检查点：pending已落盘但尚未假记账；假记账已落盘但providerId尚未返回/保存。父测试确认磁盘检查点后SIGKILL，重启都转unknown-submit，假账分别0/1且不增加。
+- HTTP补过大照片、超像素、坏multipart/重复photo；静态服务补编码穿越、目录符号链接越界。临时目录、合成照片、随机本机端口，不占正式数据。
+- README明确PID复用/权限不足/不完整锁不能自动恢复；只核实本服务不在后移除对应空锁，不停同事进程、不删任务文件。
+- 完整导入及runtime检查串行nice20；独立Claude只读最新完整diff，交Elara裁决后才能合base。
+
+- Elara6fe0eb01并入第8–11条：启动拒绝缺outEnd的旧入库件并释放锁、不隐式补字段；README写升级前归档并清空旧假数据。存盘503须先修存储重启，接口约定同server连续三次失败改提示后台问题（界面归Iris task56）；JSON超限及retry带body为bad-request；回放对照替换前明确核新id出现且原回放无此id。新增HTTP限流读取保留错误响应连接，不改鉴权/来源限制。

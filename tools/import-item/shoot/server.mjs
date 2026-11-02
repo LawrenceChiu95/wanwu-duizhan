@@ -6,9 +6,14 @@ import {fileURLToPath} from 'node:url';
 import {openJobs, apiError, MAX_PHOTO, REPO} from './jobs.mjs';
 
 const TYPES = {'.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.woff2': 'font/woff2'};
-async function body(req, limit) {
+async function body(req, limit, code = 'bad-request') {
   const chunks = []; let size = 0;
-  for await (const chunk of req) { size += chunk.length; if (size > limit) throw apiError('photo-invalid', 'Request too large', 413); chunks.push(chunk); }
+  // Leave the request alive on rejection so the client receives the JSON error.
+  for await (const chunk of req.iterator({destroyOnReturn: false})) {
+    size += chunk.length;
+    if (size > limit) { req.resume(); throw apiError(code, 'Request too large', 413); }
+    chunks.push(chunk);
+  }
   return Buffer.concat(chunks);
 }
 function fields(value, allowed) {
@@ -37,7 +42,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
         let input;
         const type = req.headers['content-type'] ?? '';
         if (type.startsWith('multipart/form-data;')) {
-          const bytes = await body(req, MAX_PHOTO + 65536);
+          const bytes = await body(req, MAX_PHOTO + 65536, 'photo-invalid');
           let data;
           try { data = await new Request(origin, {method: 'POST', headers: {'content-type': type}, body: bytes}).formData(); }
           catch { throw apiError('photo-invalid', 'Malformed photo form'); }
