@@ -9,7 +9,7 @@ export function setNames(items) {
     NAMES[it.id] = it.name.trim().replace(/（Lux3D）$/, '');
     const scores = ratingOf(it)?.scores;
     const offense = scores && Math.max(scores.attack, scores.range);
-    PREFERRED_ORIENT[it.id] = !scores || scores.durability === offense ? null : scores.durability > offense ? 'hug' : 'out';
+    PREFERRED_ORIENT[it.id] = !scores || Math.abs(scores.durability - offense) <= 5 ? null : scores.durability > offense ? 'hug' : 'out';
   }
 }
 
@@ -92,9 +92,10 @@ export function tipLine(s, winner) {
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
   if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;
-  if (mine?.orient === 'out') return PREFERRED_ORIENT[mine.item] === 'hug'
-    ? `先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`
-    : `${NAMES[mine.item] ?? '伸出的件'}先碎了，试试在对手冲来时按挡`;
+  if (mine?.orient === 'out') {
+    if (PREFERRED_ORIENT[mine.item] === 'hug') return `先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`;
+    if (s.perfect < 2) return `${NAMES[mine.item] ?? '伸出的件'}先碎了，试试在对手冲来时按挡`;
+  }
   if (s.missed >= 3 && s.missed >= s.presses / 2) return '冲空多，等它靠近再冲';
   if (s.blocked >= 2) return '冲进了它的挡，等它挡完再冲';
   if (s.landed === 0) return '一次没冲中，离近一点再按冲';
