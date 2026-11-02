@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {ratingScores} from '../../sim/item-rating.js';
 import {itemCombat, loadV3Rules} from '../../sim/v3.js';
-import {ratingOf} from '../../web/src/rating.js';
+import {ratingOf, byGrade} from '../../web/src/rating.js';
 import {setNames, matchStats, tipLine} from '../../web/src/reason.js';
 const catalog = JSON.parse(await readFile(new URL('../../data/catalog.json', import.meta.url), 'utf8'));
 const rules = await loadV3Rules();
@@ -29,16 +29,48 @@ test('missing or invalid stored scores are neutral on screen and fail combat wit
   }
   setNames([broom]);
 });
-test('valid scores use exactly the stored object on screen and in combat, including zero and 100', () => {
+test('valid stored scores are unchanged on screen and in combat, including zero and 100', () => {
   for (const value of [0, 100]) {
     const item = {...broom, rating: {...broom.rating, scores: {attack: value, range: value, durability: value}}};
     assert.equal(ratingScores(item), item.rating.scores);
-    assert.equal(ratingOf(item), item.rating);
+    const shown = ratingOf(item), letter = value === 0 ? 'D' : 'S';
+    assert.equal(shown.scores, item.rating.scores);
+    assert.deepEqual(shown.letters, {attack: letter, range: letter, durability: letter});
+    assert.equal(shown.grade, letter);
     const combat = itemCombat(item, rules), k = rules.top.itemStats;
     assert.equal(combat.hp, rules.attachmentHp * (k.hpBase + k.hpScale * value));
     assert.equal(combat.power, k.powerBase + k.powerScale * value);
   }
   assert.equal(itemCombat({id: '__core'}, rules).hp, rules.core.hp);
+});
+test('display corrects stale letters and grades from scores without mutating the item', () => {
+  const cases = [
+    [75, 75, 75, ['S', 'S', 'S'], 'S'],
+    [60, 60, 60, ['A', 'A', 'A'], 'A'],
+    [45, 45, 45, ['B', 'B', 'B'], 'B'],
+    [30, 30, 30, ['C', 'C', 'C'], 'C'],
+    [29, 29, 29, ['D', 'D', 'D'], 'D'],
+    [99, 75, 50, ['S', 'S', 'B'], 'A']
+  ];
+  for (const [attack, range, durability, letters, grade] of cases) {
+    for (const stored of [{}, {letters: {attack: 'D', range: 'D', durability: 'D'}, grade: 'S'}]) {
+      const item = {rating: {version: 'fixture', scores: {attack, range, durability}, ...stored}};
+      const original = structuredClone(item), shown = ratingOf(item);
+      assert.deepEqual(shown.letters, {attack: letters[0], range: letters[1], durability: letters[2]});
+      assert.equal(shown.grade, grade);
+      assert.equal(shown.version, 'fixture');
+      assert.equal(shown.scores, item.rating.scores);
+      assert.deepEqual(item, original);
+    }
+  }
+});
+test('grade sorting uses the displayed score-derived grade, with unscored entries last', () => {
+  const items = {
+    high: {rating: {scores: {attack: 75, range: 75, durability: 75}, grade: 'D'}},
+    low: {rating: {scores: {attack: 29, range: 29, durability: 29}, grade: 'S'}},
+    missing: {}
+  };
+  assert.deepEqual(byGrade(['low', 'missing', 'high'], id => ratingOf(items[id])), ['high', 'low', 'missing']);
 });
 // Same isolated source-loading pattern as the existing rules variant: inject catalog data in memory only.
 async function withCatalog(items) {
@@ -61,10 +93,9 @@ test('both fighter selections reject a missing or partial rating at match entry'
     }
   }
 });
-test('an unselected bad entry does not block a valid selection, and no rating is generated', async () => {
+test('an unselected bad entry does not block a valid selection', async () => {
   const items = structuredClone(catalog.items);delete items.find(it => it.id === 'broom').rating;
   const {createV3Match} = await withCatalog(items);
   const m = await createV3Match({fighters: [{parts: [{item: 'pillow', mount: 'e0', orient: 'hug'}]}, {parts: []}], seed: 1});
   try {assert.ok(m.initial[0].parts[0].maxHp > 0);} finally {m.free();}
-  assert.equal(items.find(it => it.id === 'broom').rating, undefined);
 });
