@@ -588,22 +588,21 @@ async function main() {
   }
 
   // ---------- controls ----------
-  // 角色库: every item a card (3D turning, name, category, size and weight, where it came from). The other slot's item
+  // 角色库: every item a card (3D turning, name, category, size and weight, where it came from at the foot). The other slot's item
   // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
   const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
-  const sourceOf = it => {
-    if (it.origin) return {tag: null, line: null};
-    if (isLux(it.id)) return {tag: 'Aholo 生成', line: '来源：照片生成'};
-    if (/^CC/.test(it.source?.license ?? '')) return {tag: 'CC 模型', line: `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`};
-    return {tag: '3D 模型', line: '来源：只有 3D 模型'};
+  const sourceLine = it => {
+    if (isLux(it.id)) return '来源：照片生成';
+    if (/^CC/.test(it.source?.license ?? '')) return `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`;
+    return '来源：只有 3D 模型';
   };
   let libSlot = 0, libReq = 0;
   function cardHtml(id, k) {
-    const it = byId.get(id), src = sourceOf(it), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
+    const it = byId.get(id), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
     const badge = other ? '<span class="badge">已装</span>' : own ? '<span class="badge own">装着</span>' : '';
-    const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
-    const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(src.line)}</small>`;
+    const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : '';
+    const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
     const r = rate(id), grade = r?.grade;
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
