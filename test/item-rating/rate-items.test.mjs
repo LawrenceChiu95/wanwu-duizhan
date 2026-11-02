@@ -29,6 +29,6 @@ test('rating rewrite shares importer lock and preserves a newly added item',asyn
  assert.deepEqual(rows.map(i=>i.id),JSON.parse(designs).items.map(i=>i.id));
  assert.equal(rows.length,9);assert.ok(!rows.some(i=>i.id===added.id));
  for(const item of source.items)assert.deepEqual(after.items.find(i=>i.id===item.id),{...item,rating:rateItem(item,source.materials)});
- assert.deepEqual(await readdir(path.join(root,'data')),['catalog.json','default-item-designs.json']);
+ assert.deepEqual((await readdir(path.join(root,'data'))).sort(),['catalog.json','default-item-designs.json']);
  assert.deepEqual(await readdir(path.join(root,'.aholo')),[]);
 });
