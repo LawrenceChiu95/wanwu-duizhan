@@ -347,15 +347,15 @@ async function main() {
       stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
-        overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak', dash: e.dash && !e.parry});
-        if (!core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry) overlay.callout(point, e.target, '护住', {cls: 'block'});
+        // 护住 (the hit landed on a hugging piece) rides in the same plate: two plates on one spot piled up (Elara 11-02 a788037f).
+        overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak', dash: e.dash && !e.parry, guard: !core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry});
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
       }
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
-      coach(2);
+      coach(2, stage.fighters[e.target]?.def.parts[Number(e.targetPart.split('-')[1])]?.orient);
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       sfx.crunch();
       buzz(25);
@@ -435,28 +435,40 @@ async function main() {
   // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
   // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
   const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件碎了，核心就露出来了', at: 'mid'}];
+  // Line 3 says what the broken piece took with it, in the result line's words (Elara 11-02 a788037f).
+  const BROKE_LINE = {out: '伸出去的件碎了，就没了攻击', hug: '贴着的件碎了，核心就没了遮挡'};
   const COACH_KEY = 'wanwu-coach-seen';
   const coachSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(COACH_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('coach') === 'again') coachSeen.clear();
-  let coachTimer = 0, coachSince = -Infinity;
-  function coach(n) {
+  // Line 1 stays up until the player first presses 冲 (Elara 11-02 a788037f: it went by before it could be read); a line
+  // waiting behind it comes once 冲 is pressed or after COACH_HOLD s. Lines 2 and 3 stay COACH_HOLD s each.
+  const COACH_HOLD = 3;
+  let coachTimer = 0, coachSince = -Infinity, coachFirstUp = false;
+  function coach(n, orient) {
     if (control !== 'manual' || !live || coachSeen.has(n) || phase !== 'play') return;
-    // In order, and each up for at least two seconds: the opponent often winds up before the first line has been read.
     if (n > 0) coach(0);
-    const wait = coachSince + 2 - performance.now() / 1000;
-    if (wait > 0) { setTimeout(() => coach(n), wait * 1000 + 50); return; }
+    const wait = coachSince + COACH_HOLD - performance.now() / 1000;
+    if (wait > 0) { setTimeout(() => coach(n, orient), wait * 1000 + 50); return; }
     coachSeen.add(n);
     coachSince = performance.now() / 1000;
+    coachFirstUp = n === 0;
     try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ }
     // Numbered in the order they actually came up: lines 2 and 3 follow the match (a piece can break before a lunge).
     el.coachTag.textContent = `${coachSeen.size}/3`;
-    el.coachText.textContent = COACH[n].text;
+    el.coachText.textContent = n === 2 && BROKE_LINE[orient] ? BROKE_LINE[orient] : COACH[n].text;
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
     clearTimeout(coachTimer);
-    coachTimer = setTimeout(() => { el.coach.hidden = true; }, 3200);
+    if (!coachFirstUp) coachTimer = setTimeout(() => { el.coach.hidden = true; }, (COACH_HOLD + 1.2) * 1000);
   }
-  function hideCoach() { clearTimeout(coachTimer); el.coach.hidden = true; }
+  // The first 冲: line 1 has done its job; it goes, and whatever waits behind it may come now.
+  function coachDashed() {
+    if (!coachFirstUp) return;
+    coachFirstUp = false;
+    coachSince = -Infinity;
+    el.coach.hidden = true;
+  }
+  function hideCoach() { clearTimeout(coachTimer); coachFirstUp = false; el.coach.hidden = true; }
 
   // ---------- match ----------
   let runId = 0;
@@ -697,6 +709,7 @@ async function main() {
     // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes instead.
     if (left > rules.dt + 1e-9) { replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); test.denied++; sfx.deny(); return; }
     live.match.press(0, action);
+    if (action === 'dash') coachDashed();
     sfx.click();
   }
   // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).

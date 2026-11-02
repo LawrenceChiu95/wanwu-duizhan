@@ -49,7 +49,7 @@ export class Overlay {
    * thin pin so it does not sit on the tops (about half a metre up, in screen px). Plates that would land on one another
    * stack upward, so a quick exchange stays readable; each is gone within CALL_TIME.
    */
-  callout(point, side, name, {crit = false, dash = false, cls = ''} = {}) {
+  callout(point, side, name, {crit = false, dash = false, cls = '', guard = false} = {}) {
     const el = document.createElement('div');
     el.className = `call t${side} ${cls}${dash ? ' dash' : ''}`;
     if (dash) { const em = document.createElement('em'); em.textContent = '冲'; el.append(em); }
@@ -57,6 +57,8 @@ export class Overlay {
     b.textContent = name;
     el.append(b);
     if (crit) { const em = document.createElement('em'); em.textContent = '暴击'; el.append(em); }
+    // 护住: the hit landed on the other side's hugging piece; said in the same plate so two plates never pile on one spot.
+    if (guard) { const em = document.createElement('em'); em.className = 'guard'; em.textContent = '护住'; el.append(em); }
     this.layer.append(el);
     const at = new THREE.Vector3().copy(point), w = el.offsetWidth, h = el.offsetHeight, p = this.stage.project(at, {x: 0, y: 0});
     const base = Math.max(18, Math.round(this.stage.screenRadius(at, 0.55)));
@@ -68,7 +70,7 @@ export class Overlay {
         const q = this.stage.project(c.at, {x: 0, y: 0});
         if (!q || Math.abs(q.x - p.x) >= (w + c.w) / 2 + 4) continue;
         const bottom = p.y - base - lift, top = bottom - h, cbottom = q.y - c.base - c.lift, ctop = cbottom - c.h;
-        if (top < cbottom + 3 && bottom > ctop - 3) { lift = p.y - base - ctop + 3; moved = true; }
+        if (top < cbottom + 6 && bottom > ctop - 6) { lift = p.y - base - ctop + 6; moved = true; }
       }
     }
     // The pin runs from the contact point up to the lowest plate only (a lifted plate would have it cross the others).
@@ -168,15 +170,18 @@ export class Overlay {
       }
       this.meDx = (this.meDx ?? 0) + (x - p.x - (this.meDx ?? 0)) * (1 - Math.exp(-dt * 14));
       x = Math.min(W - 22, Math.max(22, p.x + this.meDx));
-      // A hit's plate wins over the marker for the moment it is up (they would otherwise pile on the same spot).
+      // A hit's plate wins over the marker for the moment it is up: the marker steps out of the way entirely (a faint one
+      // behind a plate still read as two labels on top of each other, Elara 11-02 a788037f). Boxes with 6 px to spare.
+      const mw = (this.meW ??= this.me.offsetWidth || 40) / 2 + 6, mh = (this.meH ??= this.me.offsetHeight || 32) + 6;
       let under = false;
       for (const c of this.calls) {
         if (!stage.project(c.at, q)) continue;
         const cx = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, q.x)), cy = q.y - c.base - c.lift;
-        if (Math.abs(cx - x) < c.w / 2 + 20 && cy > y - 46 && cy - c.h < y) { under = true; break; }
+        if (Math.abs(cx - x) < c.w / 2 + mw && cy > y - mh && cy - c.h < y + 6) { under = true; break; }
       }
-      this.meCovered = (this.meCovered ?? 0) + ((under ? 1 : 0) - (this.meCovered ?? 0)) * (1 - Math.exp(-dt * 16));
-      this.me.style.opacity = (this.meShown * (1 - 0.85 * this.meCovered)).toFixed(3);
+      // Out of the way at once; back in over a few frames.
+      this.meCovered = under ? 1 : (this.meCovered ?? 0) * Math.exp(-dt * 16);
+      this.me.style.opacity = (this.meShown * (1 - this.meCovered)).toFixed(3);
       this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
     } else this.me.style.opacity = 0;
     // Life ring around each core: the core is the thing that must not break.

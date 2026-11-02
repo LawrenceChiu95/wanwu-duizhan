@@ -270,6 +270,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes padDenyFlash { to { opacity: 0; } }
 @keyframes padOn { to { filter: brightness(1.35) drop-shadow(0 0 22px rgba(255, 255, 255, 0.6)); } }
 .call.dash em { background: #fff; color: #1a0900; }
+.call em.guard { background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); letter-spacing: 0.08em; }
 .call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
 .call.parry b { font-size: 28px; }
 
@@ -307,6 +308,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 
 .link { position: absolute; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 5px); font-size: 10px; color: var(--mute); opacity: 0.7; padding: 2px 0; }
 #pad:not([hidden]) ~ .link { display: none; }
+/* The 决胜 caption runs along the bottom; the credits link steps aside while it is up (Elara 11-02 a788037f). */
+#caption.on ~ .link { opacity: 0; pointer-events: none; }
 
 /* ---------- Sheets ---------- */
 #credits, #foeSheet { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }

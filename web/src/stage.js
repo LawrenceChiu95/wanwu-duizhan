@@ -1138,17 +1138,49 @@ export class Stage {
     // Assembly preview: close on the player's top, easing when its size changes.
     const focus = tmp2.copy(a.center).lerp(b.center, 0.22);
     if (snap || !c.ready) c.focus.copy(focus); else c.focus.lerp(focus, 1 - Math.exp(-dt / 0.2));
-    const rel = tmp.copy(a.center).sub(c.focus), depth = rel.dot(fwd), rx = a.sweep * 1.05, ry = a.sweep * (Math.sin(c.pitch) * 0.9 + 0.2);
-    const need = Math.max(1.6, (Math.abs(rel.dot(right)) + rx) / (tanH * 0.95) - depth, (Math.abs(rel.dot(upv)) + ry) / (freeV * 0.95) - depth);
+    // Fitted on the top's swept cylinder (its pieces' reach and their height, sampled around), not its reach alone: two
+    // hugging pieces stand tall on a small reach and ran into the 你的陀螺 panel (Elara 11-02 a788037f).
+    let R = this.coreRadius, y0 = -this.coreRadius, y1 = this.coreRadius;
+    for (const p of a.parts) { R = Math.max(R, p.reach); y0 = Math.min(y0, p.y0); y1 = Math.max(y1, p.y1); }
+    R = Math.max(R, a.sweep) / Math.cos(Math.PI / 12);
+    let need = 1.6;
+    for (let k = 0; k < 12; k++) for (const y of [y0, y1]) {
+      const d = tmp.set(Math.cos(k * Math.PI / 6) * R, y, Math.sin(k * Math.PI / 6) * R).add(a.center).sub(c.focus), z = d.dot(fwd);
+      need = Math.max(need, Math.abs(d.dot(right)) / (tanH * 0.95) - z, Math.abs(d.dot(upv)) / (freeV * 0.95) - z);
+    }
     if (snap || !c.ready) c.dist = need; else c.dist += (need - c.dist) * (1 - Math.exp(-dt / 0.45));
     c.ready = true;
     this.camera.quaternion.copy(tmpQ);
     this.camera.position.copy(c.focus).addScaledVector(fwd, -c.dist);
   }
 
+  /**
+   * Assembly preview: a piece of the player's top passing between the camera and its core turns see-through, so the core
+   * is never hidden behind a pillow (Elara 11-02 a788037f). Build only; everywhere else every piece is drawn solid.
+   */
+  fadeFront(f, on) {
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion).setY(0).normalize(), d = new THREE.Vector3();
+    for (const p of f.parts) {
+      let op = 1;
+      if (on) {
+        p.holder.getWorldPosition(d).sub(f.center).setY(0);
+        const n = d.length(), front = n > 1e-4 ? -d.dot(fwd) / n : 0, k = Math.min(1, Math.max(0, (front - 0.3) / 0.45));
+        op = +(1 - 0.7 * k * k * (3 - 2 * k)).toFixed(2);
+      }
+      if (op === (p.op ?? 1)) continue;
+      const flip = (op < 1) !== ((p.op ?? 1) < 1);
+      p.op = op;
+      p.obj.traverse(o => {
+        if (!o.isMesh) return;
+        for (const m of [o.material].flat()) { m.opacity = op; if (flip) { m.transparent = op < 1; m.depthWrite = op >= 1; m.needsUpdate = true; } }
+      });
+    }
+  }
+
   /** realDt drives camera, rings and glow; simDt drives particles and debris (slow motion applies). */
   render(realDt, simDt) {
     this.time += realDt;
+    if (this.fighters[0]) this.fadeFront(this.fighters[0], this.cam.mode === 'build');
     for (const f of this.fighters) {
       f.flash *= Math.exp(-realDt * 12);
       f.dim += (f.dimTarget - f.dim) * (1 - Math.exp(-realDt * 4));
