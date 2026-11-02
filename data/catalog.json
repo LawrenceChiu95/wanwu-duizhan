@@ -289,6 +289,20 @@
           1
         ],
         "sourceVertices": 360
+      },
+      "rating": {
+        "version": "rating-v1:24-25-49:75-60-45-30-0",
+        "scores": {
+          "attack": 24,
+          "range": 25,
+          "durability": 49
+        },
+        "letters": {
+          "attack": "D",
+          "range": "D",
+          "durability": "B"
+        },
+        "grade": "C"
       }
     },
     {
@@ -499,6 +513,20 @@
           1
         ],
         "sourceVertices": 8150
+      },
+      "rating": {
+        "version": "rating-v1:52-56-57:75-60-45-30-0",
+        "scores": {
+          "attack": 52,
+          "range": 56,
+          "durability": 57
+        },
+        "letters": {
+          "attack": "B",
+          "range": "B",
+          "durability": "B"
+        },
+        "grade": "B"
       }
     },
     {
@@ -694,6 +722,20 @@
           1
         ],
         "sourceVertices": 359
+      },
+      "rating": {
+        "version": "rating-v1:37-100-56:75-60-45-30-0",
+        "scores": {
+          "attack": 37,
+          "range": 100,
+          "durability": 56
+        },
+        "letters": {
+          "attack": "C",
+          "range": "S",
+          "durability": "B"
+        },
+        "grade": "A"
       }
     },
     {
@@ -899,6 +941,20 @@
           1
         ],
         "sourceVertices": 490
+      },
+      "rating": {
+        "version": "rating-v1:100-48-100:75-60-45-30-0",
+        "scores": {
+          "attack": 100,
+          "range": 48,
+          "durability": 100
+        },
+        "letters": {
+          "attack": "S",
+          "range": "B",
+          "durability": "S"
+        },
+        "grade": "S"
       }
     },
     {
@@ -1069,6 +1125,20 @@
           1
         ],
         "sourceVertices": 484
+      },
+      "rating": {
+        "version": "rating-v1:17-35-37:75-60-45-30-0",
+        "scores": {
+          "attack": 17,
+          "range": 35,
+          "durability": 37
+        },
+        "letters": {
+          "attack": "D",
+          "range": "C",
+          "durability": "C"
+        },
+        "grade": "D"
       }
     },
     {
@@ -1189,6 +1259,20 @@
           1
         ],
         "sourceVertices": 142
+      },
+      "rating": {
+        "version": "rating-v1:20-75-98:75-60-45-30-0",
+        "scores": {
+          "attack": 20,
+          "range": 75,
+          "durability": 98
+        },
+        "letters": {
+          "attack": "D",
+          "range": "S",
+          "durability": "S"
+        },
+        "grade": "A"
       }
     },
     {
@@ -1402,7 +1486,21 @@
       "category": "pot",
       "standardLongSide": 0.38,
       "massBasis": "category",
-      "comparisonBase": "pot"
+      "comparisonBase": "pot",
+      "rating": {
+        "version": "rating-v1:100-48-100:75-60-45-30-0",
+        "scores": {
+          "attack": 100,
+          "range": 48,
+          "durability": 100
+        },
+        "letters": {
+          "attack": "S",
+          "range": "B",
+          "durability": "S"
+        },
+        "grade": "S"
+      }
     },
     {
       "id": "lamp-lux3d",
@@ -1615,7 +1713,21 @@
       "category": "lamp",
       "standardLongSide": 0.45,
       "massBasis": "category",
-      "comparisonBase": "lamp"
+      "comparisonBase": "lamp",
+      "rating": {
+        "version": "rating-v1:52-56-57:75-60-45-30-0",
+        "scores": {
+          "attack": 52,
+          "range": 56,
+          "durability": 57
+        },
+        "letters": {
+          "attack": "B",
+          "range": "B",
+          "durability": "B"
+        },
+        "grade": "B"
+      }
     },
     {
       "id": "wasteland-knife",
@@ -1814,6 +1926,20 @@
             ]
           ]
         }
+      },
+      "rating": {
+        "version": "rating-v1:24-25-49:75-60-45-30-0",
+        "scores": {
+          "attack": 24,
+          "range": 25,
+          "durability": 49
+        },
+        "letters": {
+          "attack": "D",
+          "range": "D",
+          "durability": "B"
+        },
+        "grade": "C"
       }
     },
     {
@@ -2009,6 +2135,20 @@
             ]
           ]
         }
+      },
+      "rating": {
+        "version": "rating-v1:100-48-100:75-60-45-30-0",
+        "scores": {
+          "attack": 100,
+          "range": 48,
+          "durability": 100
+        },
+        "letters": {
+          "attack": "S",
+          "range": "B",
+          "durability": "S"
+        },
+        "grade": "S"
       }
     },
     {
@@ -2204,6 +2344,20 @@
             ]
           ]
         }
+      },
+      "rating": {
+        "version": "rating-v1:37-100-56:75-60-45-30-0",
+        "scores": {
+          "attack": 37,
+          "range": 100,
+          "durability": 56
+        },
+        "letters": {
+          "attack": "C",
+          "range": "S",
+          "durability": "B"
+        },
+        "grade": "A"
       }
     }
   ]

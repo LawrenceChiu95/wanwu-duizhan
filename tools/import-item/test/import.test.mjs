@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import {runCli} from '../cli.mjs';
 import {prepareMesh, validateGlb, sha256} from '../mesh.mjs';
 import {timestamps, readJson, saveJson, withLock} from '../state.mjs';
+import {rateItem} from '../../../sim/item-rating.js';
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const base = JSON.parse(await fs.readFile(path.join(ROOT, 'data/catalog.json'), 'utf8'));
 const originalIds = ['scissors','lamp','broom','pot','slipper','pillow','pan-lux3d','lamp-lux3d'];
@@ -94,7 +95,7 @@ test('offline CLI needs no key: PBR/UV survive, used geometry is centered at cat
  assert.ok(Math.abs(result.longSideMeters-.38)<1e-8);assert.equal(result.triangles,4);assert.ok(result.hullPoints>=4&&result.hullPoints<=64);
  assert.deepEqual(result.textureSizes,[[512,384]]);
  const catalog=await s.catalog();assert.deepEqual(catalog.items.slice(0,8),before.items);
- const item=catalog.items.at(-1);assert.deepEqual(item.stats,before.items.find(i=>i.id==='pot').stats);assert.equal(item.templateId,'pot');assert.equal(item.comparisonBase,undefined);assert.equal(item.origin,undefined);
+ const item=catalog.items.at(-1);assert.deepEqual(item.stats,before.items.find(i=>i.id==='pot').stats);assert.equal(item.templateId,'pot');assert.equal(item.comparisonBase,undefined);assert.equal(item.origin,undefined);assert.deepEqual(item.rating,rateItem(item,catalog.materials));
  for(let k=0;k<3;k++)assert.ok(Math.abs(item.bounds.min[k]+item.bounds.max[k])<1e-8);
  const bytes=await fs.readFile(path.join(s.root,item.glb));assert.equal(sha256(bytes),item.source.normalizedSha256);
  const doc=await new NodeIO().readBinary(bytes),p=doc.getRoot().listMeshes()[0].listPrimitives()[0];
