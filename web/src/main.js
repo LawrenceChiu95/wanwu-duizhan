@@ -15,6 +15,7 @@ const el = {
   caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
   result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), statsList: $('statsList'), tipLine: $('tipLine'),
+  foeSheet: $('foeSheet'), foeList: $('foeList'),
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'),
   how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
   howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'),
@@ -34,6 +35,16 @@ const offerOf = items => {
 };
 // The computer's default build; ?foe= can override it for measurements.
 const DEFAULT_FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
+// 换个对手 (MVP 规格 §4-2; Elara 11-02 470a4546): the computer's builds to pick from, strong to weak by Sol's R8 two-piece
+// check (test/mvp/results-combo-check-r2: each pair at its best layout against a fixed pool of opponents). The default first.
+const FOES = [
+  {level: '默认', build: DEFAULT_FOE},
+  {level: '强', rank: 'hi', build: {parts: [{item: 'broom', orient: 'out'}, {item: 'pillow', orient: 'out'}], spread: 'e90'}},
+  {level: '偏强', rank: 'hi', build: {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'slipper', orient: 'out'}], spread: 'e90'}},
+  {level: '中', rank: 'mid', build: {parts: [{item: 'broom', orient: 'out'}, {item: 'slipper', orient: 'out'}], spread: 'e180'}},
+  {level: '弱', rank: 'lo', build: {parts: [{item: 'scissors', orient: 'out'}, {item: 'slipper', orient: 'hug'}], spread: 'e180'}}
+];
+const SPREAD = {e180: '对面', e90: '挨着'};
 const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
@@ -114,7 +125,7 @@ async function main() {
     throw Error(`${key}参数无效：格式为物品ID,out或hug,另一物品ID,out或hug,e180或e90；两件须是清单中不同的道具，${key}只能出现一次`);
   };
   const mine = structuredClone(fromUrl() ?? DEFAULT);
-  const FOE = structuredClone(fromUrl('foe') ?? DEFAULT_FOE);
+  let FOE = structuredClone(fromUrl('foe') ?? DEFAULT_FOE);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
   // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).
@@ -137,8 +148,35 @@ async function main() {
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
-  // Opponent tag on the build screen.
-  el.foeParts.innerHTML = FOE.parts.map(p => `<span>${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
+  // Opponent tag on the build screen, and 换个对手: a sheet of the computer's builds; the pick stays for the next rounds.
+  const sameBuild = (x, y) => x.spread === y.spread && x.parts.every((p, i) => p.item === y.parts[i].item && p.orient === y.parts[i].orient);
+  const partsHtml = b => b.parts.map(p => `<span>${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
+  function renderFoe() { el.foeParts.innerHTML = partsHtml(FOE); }
+  renderFoe();
+  let foeReq = 0;
+  // Only on the build screen: once 开打 is pressed this round's opponent is fixed, so 原样再来 fights the same one (Sol B1).
+  function openFoes() {
+    if (phase !== 'build') return;
+    el.foeList.innerHTML = FOES.map((f, i) => `<button type="button" class="frow" role="radio" data-foe="${i}" aria-checked="${sameBuild(f.build, FOE)}">
+      <span class="lvl${f.rank ? ' ' + f.rank : ''}">${f.level}</span><span class="fparts">${partsHtml(f.build)}</span><small>${SPREAD[f.build.spread]}</small></button>`).join('');
+    for (const row of el.foeList.querySelectorAll('[data-foe]')) row.onclick = () => setFoe(FOES[Number(row.dataset.foe)].build);
+    el.foeSheet.hidden = false;
+  }
+  async function setFoe(b) {
+    el.foeSheet.hidden = true;
+    if (phase !== 'build' || sameBuild(b, FOE)) return;
+    const req = ++foeReq;
+    FOE = structuredClone(b);
+    renderFoe();
+    layout_();
+    await loadModels(FOE.parts.map(p => byId.get(p.item)));
+    if (req !== foeReq || phase !== 'build') return;
+    stage.replaceFighter(1, toDef(FOE));
+    stage.pose(previewState());
+  }
+  $('foeBtn').onclick = openFoes;
+  $('foeClose').onclick = () => { el.foeSheet.hidden = true; };
+  el.foeSheet.onclick = e => { if (e.target === el.foeSheet) el.foeSheet.hidden = true; };
 
   // ---------- build preview: both tops spin slowly where the match will start ----------
   const previewState = () => {
@@ -189,6 +227,7 @@ async function main() {
     el.foe.hidden = false;
     setCaption(false);
     el.go.disabled = !el.error.hidden;
+    $('foeBtn').disabled = !el.error.hidden;
     [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
     syncBuild();
     layout_();
@@ -427,6 +466,8 @@ async function main() {
     if (!fixedSeed) seed = randomSeed();
     phase = 'computing';
     el.go.disabled = true;
+    el.foeSheet.hidden = true;
+    $('foeBtn').disabled = true;
     el.busyText.textContent = '计算中';
     el.busy.hidden = false;
     await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)));
@@ -763,7 +804,7 @@ async function main() {
     setOrigin(id, origin) { byId.get(id).origin = origin; },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
@@ -777,7 +818,7 @@ async function main() {
       const m = test.frame;
       if (!m) return null;
       const s = [...m.scale].sort((a, b) => a - b), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
-      return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), sweptMinMarginLrPx: +m.sweptLr.toFixed(1), sweptMinMarginSafePx: +m.sweptSafe.toFixed(1), core15PctExact: +(100 * m.core15 / m.frames).toFixed(2), pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
+      return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), sweptMinMarginLrPx: +m.sweptLr.toFixed(1), sweptMinMarginSafePx: +m.sweptSafe.toFixed(1), core15PctExact: +(100 * m.core15 / m.frames).toFixed(2), outSecs: +m.out.toFixed(2), outRunMaxSecs: +m.outRunMax.toFixed(2), offLrSecs: +m.offLr.toFixed(2), offLrAt: m.offLrAt ?? [], pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
     },
     setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
     stage,
@@ -873,7 +914,7 @@ async function main() {
       // Framing audit (fight only): how often both tops keep 15 % of the width clear of every safe-area edge, and the
       // scale (CSS px per metre at the aim point) the camera picked.
       if (phase === 'play' && stage.cam.stat) {
-        const m = test.frame ??= {frames: 0, ok15: 0, core15: 0, minMargin: Infinity, scale: [], sweptLr: Infinity, sweptSafe: Infinity};
+        const m = test.frame ??= {frames: 0, ok15: 0, core15: 0, minMargin: Infinity, scale: [], sweptLr: Infinity, sweptSafe: Infinity, lastT: null, out: 0, outRun: 0, outRunMax: 0, offLr: 0};
         m.frames++;
         const sm = stage.sweptMargin();
         m.sweptLr = Math.min(m.sweptLr, sm.lr);
@@ -881,6 +922,12 @@ async function main() {
         if (-o.px >= 0.15 * el.app.clientWidth) m.ok15++;
         if (stage.coreMargin() >= 0.15 * el.app.clientWidth) m.core15++;
         m.minMargin = Math.min(m.minMargin, -o.px);
+        // 出画 (MVP 规格 §7): match seconds with a core or mounted piece past the safe area, the longest such stretch, and
+        // seconds with a swept circle past the screen's left or right edge (Wren's 10-29 measure).
+        const dT = m.lastT == null ? 0 : Math.max(0, pb.t - m.lastT);
+        m.lastT = pb.t;
+        if (o.px > 0) { m.out += dT; m.outRun += dT; m.outRunMax = Math.max(m.outRunMax, m.outRun); } else m.outRun = 0;
+        if (sm.lr < 0) { m.offLr += dT; (m.offLrAt ??= []).push(+pb.t.toFixed(2)); }
         m.scale.push(stage.cam.stat.pxPerMetre);
       }
     }
