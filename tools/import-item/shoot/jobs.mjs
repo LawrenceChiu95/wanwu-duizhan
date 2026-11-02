@@ -16,7 +16,7 @@ const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regen
 export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
-const keyValid = key => typeof key === 'string' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
+const keyValid = key => typeof key === 'string' && key !== '__proto__' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
 const publicJob = record => copy(record.job);
 
 // A directory lock has only an empty PID subdirectory; stale ownership can be

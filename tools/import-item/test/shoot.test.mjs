@@ -141,3 +141,15 @@ test('explicit local dev proxy Origin works; arbitrary origins still fail', asyn
  assert.equal((await fetch(app.url + '/api/shoot/quota', {headers: {origin: 'http://localhost:5174'}})).status, 403);
  await assert.rejects(startShootServer({port: 0, directory: await directory(), frontendOrigin: 'https://external.invalid'}), /local HTTP/);
 });
+
+
+test('prototype key is rejected on repeated submits without creating or charging a job', async t => {
+ const app = await instance(t);
+ for (let i = 0; i < 2; i++) {
+  const result = await create(app.url, '__proto__');
+  assert.equal(result.status, 400); assert.equal(result.error.code, 'key-conflict');
+ }
+ assert.equal((await request(app.url, 'quota')).used, 0);
+ assert.deepEqual((await request(app.url, 'items')).items, []);
+ assert.deepEqual((await readJson(path.join(app.jobs.directory, 'state.json'), {jobs: {}})).jobs, {});
+});
