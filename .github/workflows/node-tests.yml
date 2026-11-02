@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix sim
-      - run: node --test --test-concurrency=1 test/prototype/sim.test.mjs test/v3/sim.test.mjs test/v3-top/v13/timing.test.mjs test/mvp/rules.test.mjs test/mvp/analyze.test.mjs test/mvp/walls.test.mjs test/item-rating/rating.test.mjs
+      - run: node --test --test-concurrency=1 test/prototype/sim.test.mjs test/v3/sim.test.mjs test/v3-top/v13/timing.test.mjs test/mvp/rules.test.mjs test/mvp/analyze.test.mjs test/mvp/walls.test.mjs test/item-rating/rating.test.mjs test/result-advice/tips.test.mjs
       - run: npm ci --prefix web
       - run: npm run build --prefix web
   import-tool:
