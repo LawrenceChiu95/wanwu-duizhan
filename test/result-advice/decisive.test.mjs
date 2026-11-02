@@ -43,8 +43,40 @@ function ko(why) {
 test('actual lethal attachment or recoil takes priority over a previously broken attachment', () => {
   const broken = {loserBroken: [{item: 'pillow', orient: 'hug'}], loserPartsLeft: 1};
   assert.equal(reasonLine(ko({...broken, attackerItem: 'pan-lux3d'})), '对手的锅撞碎了你的核心');
-  assert.equal(reasonLine(ko({...broken, attackerItem: 'pan-lux3d', role: 'recoil'})), '你的核心撞上对手的锅，先碎了');
-  assert.equal(reasonLine(ko({...broken, role: 'recoil'})), '你的核心撞上对手的核心，先碎了');
+  assert.equal(reasonLine(ko({...broken, attackerItem: 'pan-lux3d', role: 'recoil'})), '你的核心撞上对手的锅，你的核心先碎了');
+  assert.equal(reasonLine(ko({...broken, role: 'recoil'})), '你的核心撞上对手的核心，你的核心先碎了');
+  assert.equal(reasonLine(ko({attacker: 0, target: 1, attackerItem: 'broom', role: 'recoil'})), '对手的核心撞上你的扫把，对手的核心先碎了');
+});
+
+test('damaged winner never displays full HP; exact full HP and lower rounding remain accurate', () => {
+  for (const [ratio, shown] of [[.9949, '99'], [.995, '99'], [.999999, '99'], [1, '100'], [.985, '99'], [.9849, '98']]) {
+    assert.equal(reasonLine(ko({partsLeft: [1, 0], coreRatios: [0, ratio]})), `对手的核心撞碎了你的核心\n对手的核心还剩${shown}%血`);
+  }
+  const mine = ko({attacker: 0, target: 1, partsLeft: [0, 1], coreRatios: [.999, 0]});
+  mine.meta.winner = 0;
+  assert.equal(reasonLine(mine), '你的核心撞碎了对手的核心\n你的核心还剩99%血');
+});
+
+test('legacy recoil reads the lethal event at a nonzero index and the stored terminal frame', () => {
+  const replay = ko({attackerItem: 'pan-lux3d'});
+  delete replay.decisive.why.role;
+  replay.decisive.eventIndex = 2;
+  replay.events = [{role: 'attack'}, {role: 'attack'}, {role: 'recoil'}, {type: 'result', role: 'attack'}];
+  replay.frames = [{fighters: [
+    {core: {hp: 0, maxHp: 100}, parts: [{alive: true}, {alive: false}]},
+    {core: {hp: 99.9, maxHp: 100}, parts: [{alive: false}, {alive: false}]}
+  ]}];
+  assert.equal(reasonLine(replay), '你的核心撞上对手的锅，你的核心先碎了\n对手的核心还剩99%血');
+  replay.decisive.why.role = 'attack';
+  assert.equal(reasonLine(replay), '对手的锅撞碎了你的核心\n对手的核心还剩99%血', 'an explicit new role takes precedence over the legacy event');
+});
+
+test('unknown lethal item names use a generic object name for either side and recoil', () => {
+  const unknown = 'not-in-this-catalog';
+  assert.equal(reasonLine(ko({attackerItem: unknown})), '对手的道具撞碎了你的核心');
+  assert.equal(reasonLine(ko({attackerItem: unknown, role: 'recoil'})), '你的核心撞上对手的道具，你的核心先碎了');
+  assert.equal(reasonLine(ko({attacker: 0, target: 1, attackerItem: unknown})), '你的道具撞碎了对手的核心');
+  assert.equal(reasonLine(ko({attacker: 0, target: 1, attackerItem: unknown, role: 'recoil'})), '对手的核心撞上你的道具，对手的核心先碎了');
 });
 
 test('ordinary KO does not invent a remaining-HP comparison; tiny positive HP is not displayed as zero', () => {
