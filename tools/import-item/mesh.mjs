@@ -93,10 +93,22 @@ export async function prepareMesh(raw, template, standard) {
     compactPrimitive(primitive);
   }
   const textureSizes = [];
+  // Colour textures with nothing transparent in them are stored as JPEG (task #42: as PNGs they were most of a 废土
+  // model's 1.4–1.7 MB; side by side the JPEGs looked the same). Textures with transparency and data textures (normal,
+  // metallic-roughness, occlusion) stay PNG: JPEG's blocks would show on alpha edges and bend normals.
+  // Transparent: used by a blended or masked material, or alpha below 250 anywhere (the 废土 generations carry stray
+  // 254s in an alpha channel their opaque materials ignore).
+  const materials = doc.getRoot().listMaterials();
+  const colour = new Set(materials.flatMap(m => [m.getBaseColorTexture(), m.getEmissiveTexture()]).filter(Boolean));
+  const data = new Set(materials.flatMap(m => [m.getNormalTexture(), m.getMetallicRoughnessTexture(), m.getOcclusionTexture()]).filter(Boolean));
+  const blended = new Set(materials.filter(m => m.getAlphaMode() !== 'OPAQUE').map(m => m.getBaseColorTexture()).filter(Boolean));
+  const solid = async png => { const {channels} = await sharp(png).stats(); return channels.length !== 4 && channels.length !== 2 || channels.at(-1).min >= 250; };
   for (const texture of doc.getRoot().listTextures()) {
     if (!texture.getImage()) throw Error('Texture has no embedded image');
-    const {data, info} = await sharp(texture.getImage(), {limitInputPixels: 4096 * 4096}).resize(512, 512, {fit: 'inside', withoutEnlargement: true}).png().toBuffer({resolveWithObject: true});
-    texture.setImage(new Uint8Array(data)).setMimeType('image/png');
+    const {data: png, info} = await sharp(texture.getImage(), {limitInputPixels: 4096 * 4096}).resize(512, 512, {fit: 'inside', withoutEnlargement: true}).png().toBuffer({resolveWithObject: true});
+    const jpeg = colour.has(texture) && !data.has(texture) && !blended.has(texture) && await solid(png);
+    const bytes = jpeg ? await sharp(png).removeAlpha().jpeg({quality: 85, mozjpeg: true, chromaSubsampling: '4:2:0'}).toBuffer() : png;
+    texture.setImage(new Uint8Array(bytes)).setMimeType(jpeg ? 'image/jpeg' : 'image/png');
     textureSizes.push([info.width, info.height]);
   }
   const current = geometry(doc);
