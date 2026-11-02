@@ -74,6 +74,13 @@ const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } 
 const isLux = id => id.endsWith('-lux3d');
 // Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+// The result reason as HTML: 谁撞碎了谁 on the first row, 剩血 on its own row after reasonLine's \n; item names and 核心 are
+// kept whole so a narrow phone never breaks one across two lines (Elara 8d91d2fa).
+const reasonHtml = text => {
+  const words = [...new Set([...Object.values(NAMES), '核心'])].sort((a, b) => b.length - a.length).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`(${words.join('|')})`);
+  return text.split('\n').map(row => `<span class="row">${row.split(re).map((t, i) => i % 2 ? `<span class="w">${esc(t)}</span>` : esc(t)).join('')}</span>`).join('');
+};
 const nextPaint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.parts[0].orient}, {item: b.parts[1].item, mount: b.spread, orient: b.parts[1].orient}]});
 // R7 (伸出攻、贴着守): 伸出 hits harder and breaks sooner; 贴着 takes blows for the core and hits softer.
@@ -290,7 +297,7 @@ async function main() {
     }
   }
   function setCaption(on, text) {
-    if (text !== undefined) el.captionText.textContent = text;
+    if (text !== undefined) el.captionText.innerHTML = reasonHtml(text);
     el.caption.classList.toggle('on', on);
   }
 
@@ -555,7 +562,7 @@ async function main() {
     el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
-    el.whyLine.textContent = reasonLine(replay);
+    el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">对手</span>${builds[1]}`;
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
@@ -867,6 +874,8 @@ async function main() {
     setControl(c) { control = c; },
     // Fixture for the 看它怎么来的 check until the generation script writes real records.
     setOrigin(id, origin) { byId.get(id).origin = origin; },
+    // Fixture for the 结算 layout check: any reasonLine text (e.g. from a stored replay) through the card's own rendering.
+    setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
     status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),

@@ -287,6 +287,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #result.win .winner { background: linear-gradient(100deg, #fff1e0, var(--c0) 55%, var(--c0d)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(255, 138, 61, 0.35)); }
 #result.lose .winner { color: #dfe7f7; }
 .why { margin: 8px 0 14px; font-size: 16px; line-height: 1.45; font-weight: 600; color: #dfe7f7; text-wrap: balance; }
+.why .row, #caption .row { display: block; }
+.why .row + .row { font-weight: 500; color: #b6c2da; }
+.why .w, #caption .w { white-space: nowrap; }
 .seg .role { font-family: var(--body); font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 15px; padding: 0 3px; margin-left: 1px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
 .seg button[aria-checked="true"] .role { background: rgba(0, 0, 0, 0.22); }
 /* Narrow phones: the word 攻 / 守 says it, the out / hug picture gives way. */
