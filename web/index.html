@@ -42,6 +42,7 @@
 
   <header id="foe">
     <span class="vs">VS</span><span class="label">对手</span><span id="foeParts"></span>
+    <button type="button" class="swap" id="foeBtn" aria-label="换个对手"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5" /><path d="M20 16H6l3.5 3.5" /></svg><span>换个对手</span></button>
   </header>
 
   <div id="banner" aria-live="polite"></div>
@@ -130,6 +131,15 @@
     <div class="htotal"><b id="howTotal"></b></div>
     <div class="hfoot"><button type="button" class="go" id="howEquip"><span>装上它</span></button></div>
   </section>
+
+  <!-- 换个对手 (MVP 规格 §4-2): the computer's builds, strong to weak. -->
+  <div id="foeSheet" hidden>
+    <div class="panel">
+      <div class="head"><b>换个对手</b><button type="button" class="close" id="foeClose" aria-label="关闭">×</button></div>
+      <p class="fsub">强弱按电脑拿这套装法、对一批固定对手的胜率排</p>
+      <div id="foeList" role="radiogroup" aria-label="对手"></div>
+    </div>
+  </div>
 
   <div id="credits" hidden>
     <div class="panel">
