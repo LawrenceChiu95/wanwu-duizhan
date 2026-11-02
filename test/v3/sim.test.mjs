@@ -29,6 +29,8 @@ test('authored wasteland broom and pot finish with finite physics in both modes'
   for(const [side,id]of ['wasteland-broom','wasteland-pot'].entries()){
    assert.equal(r.meta.initial[side].parts[0].item,id);
    assert.equal(r.meta.initial[side].definition.parts[0].item,id);
+   const expectedMass=rules.core.mass+r.meta.initial[side].definition.parts.reduce((sum,p)=>sum+catalog.find(item=>item.id===p.item).mass,0);
+   assert.ok(Math.abs(r.frames[0].fighters[side].mass-expectedMass)<1e-5,`${mode} ${id}: rigid-body mass must include the core and both authored attachments`);
   }
  }
 });
