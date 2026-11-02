@@ -161,6 +161,32 @@ const SOUNDS = {
     v.tone(v.t, 0.03, 0.1, 'triangle', 2200, 1500, 0.02, 0.001);
     v.noise(v.t, 0.012, 0.07, 'highpass', 5000);
   },
+  // A 角色库 card turning over: a short papery swish and the soft tap of it landing.
+  flip(v) {
+    const t = v.t, f = v.noise(t, 0.16, 0.12, 'bandpass', 1200, 1200, 1.1, 0.03);
+    f.frequency.exponentialRampToValueAtTime(3800, t + 0.12);
+    v.noise(t + 0.17, 0.03, 0.12, 'lowpass', 1800);
+    v.tone(t + 0.17, 0.06, 0.08, 'triangle', 300, 180, 0.05);
+  },
+  // Its grade showing (Elara 11-02: the draw has to feel like something). A rising run of bell notes, more of them and
+  // brighter the better the grade; an S adds a low bloom and a sparkle that rings on.
+  reveal(v, grade = 'C') {
+    const t = v.t, rank = Math.max(0, 'DCBAS'.indexOf(grade)), notes = [523, 659, 784, 1047, 1319].slice(0, rank + 1);
+    notes.forEach((f, i) => {
+      const at = t + i * 0.07, last = i === notes.length - 1, dur = last ? 0.5 + rank * 0.18 : 0.28;
+      v.tone(at, dur, 0.09, 'sine', f, f, dur, 0.002);
+      v.tone(at, dur * 0.7, 0.03, 'sine', f * 2.01, f * 2.01, dur, 0.002);
+    });
+    if (grade !== 'S') return;
+    const end = t + notes.length * 0.07;
+    v.tone(t, 1.1, 0.16, 'sine', 131, 131, 1.1, 0.05);
+    v.tone(t, 0.9, 0.06, 'triangle', 262, 262, 0.9, 0.05);
+    for (let i = 0; i < 9; i++) {
+      const f = 2600 + Math.random() * 3200;
+      v.tone(end + i * 0.045 + Math.random() * 0.02, 0.35, 0.025, 'sine', f, f, 0.35, 0.002);
+    }
+    v.noise(t, 1, 0.05, 'highpass', 7000, 7000, 0.7, 0.25);
+  },
   // Still cooling down: a short, quiet low buzz.
   deny(v) {
     v.tone(v.t, 0.1, 0.04, 'square', 92, 84, 0.1, 0.004);
@@ -223,6 +249,7 @@ export const sfx = {
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
   clang: live('clang'), perfect: live('perfect'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  flip: live('flip'), reveal: live('reveal'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {
     if (!tested.has(ctx)) tested.set(ctx, rig(ctx, LEVEL));
