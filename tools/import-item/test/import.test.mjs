@@ -163,7 +163,7 @@ test('invalid GLB, external resources and unsupported animated inputs fail befor
 
 test('existing IDs, changed run inputs and occupied locks cannot overwrite assets or start paid work',async()=>{
  const s=await sandbox(),g=gateway();
- await assert.rejects(run(s,args(s,'pot','glb'),g),/already exists/);assert.equal(g.calls.length,0);
+ await assert.rejects(run(s,args(s,'pot','glb'),g),/Item ID already exists/);assert.equal(g.calls.length,0);
  await run(s,args(s,'first','glb'),null,{env:{}});
  const changed=args(s,'first','glb');changed[changed.indexOf('--name')+1]='另一个名字';await assert.rejects(run(s,changed,g),/input changed/);assert.equal(g.calls.length,0);
  const folder=path.join(s.root,'.aholo','runs','locked');await fs.mkdir(folder,{recursive:true});await fs.mkdir(path.join(folder,'lock'));
@@ -174,7 +174,7 @@ test('all authored defaults reject replacement; resuming an import keeps its aut
  const s=await sandbox(),g=gateway(),file=path.join(s.root,'data/catalog.json');
  const designs=JSON.parse(await fs.readFile(path.join(ROOT,'data/default-item-designs.json'))).items;
  await saveJson(file,base);const before=await fs.readFile(file,'utf8');
- for(const {id} of designs)await assert.rejects(run(s,args(s,id,'glb'),g),/already exists/);
+ for(const {id} of designs)await assert.rejects(run(s,args(s,id,'glb'),g),/Item ID already exists/);
  assert.equal(await fs.readFile(file,'utf8'),before);assert.equal(g.calls.length,0);
  await run(s,args(s,'authored-import','glb'),null,{env:{}});
  const catalog=await s.catalog(),item=catalog.items.find(i=>i.id==='authored-import');
@@ -183,6 +183,20 @@ test('all authored defaults reject replacement; resuming an import keeps its aut
  const authored=await fs.readFile(file,'utf8');
  assert.equal((await run(s,args(s,'authored-import','glb'),g,{env:{}})).alreadyImported,true);
  assert.equal(await fs.readFile(file,'utf8'),authored);assert.equal(g.calls.length,0);
+});
+
+test('photo resume can rename the same ID without replacing authored properties or paying again',async()=>{
+ const s=await sandbox(),g=gateway(),file=path.join(s.root,'data/catalog.json');
+ await run(s,args(s,'authored-photo'),g);
+ const catalog=await s.catalog(),item=catalog.items.find(i=>i.id==='authored-photo');
+ Object.assign(item,{mass:.8,massBasis:'designed-default',material:'metal',condition:'worn'});
+ item.rating=rateItem(item,catalog.materials);await saveJson(file,catalog);
+ const calls=g.calls.length,creates=g.creates(),changed=args(s,'authored-photo');
+ changed[changed.indexOf('--name')+1]='改名后的设计锅';
+ assert.equal((await run(s,changed,g,{env:{}})).alreadyImported,true);
+ item.name='改名后的设计锅';
+ assert.deepEqual(await s.catalog(),catalog,'only the requested name may change; authored mass, material, condition and rating must survive');
+ assert.equal(g.calls.length,calls);assert.equal(g.creates(),creates);assert.equal(creates,2);
 });
 
 test('exclusive catalog lock rejects another writer while held and releases after failure',async()=>{

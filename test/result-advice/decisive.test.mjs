@@ -71,6 +71,14 @@ test('legacy recoil reads the lethal event at a nonzero index and the stored ter
   assert.equal(reasonLine(replay), '对手的锅撞碎了你的核心\n对手的核心还剩99%血', 'an explicit new role takes precedence over the legacy event');
 });
 
+test('legacy active lethal collision is not mislabeled by an earlier recoil event', () => {
+  const replay = ko({attackerItem: 'pan-lux3d'});
+  delete replay.decisive.why.role;
+  replay.decisive.eventIndex = 2;
+  replay.events = [{role: 'recoil'}, {role: 'recoil'}, {role: 'attack'}, {type: 'result'}];
+  assert.equal(reasonLine(replay), '对手的锅撞碎了你的核心');
+});
+
 test('unknown lethal item names use a generic object name for either side and recoil', () => {
   const unknown = 'not-in-this-catalog';
   assert.equal(reasonLine(ko({attackerItem: unknown})), '对手的道具撞碎了你的核心');
