@@ -9,3 +9,5 @@
 - 保存2891、9099原回放的最小摘录、输入、原文件SHA及物理数据指纹，CI重放两局：胜负、全meta、全部帧、除新增result.why外的全部事件必须相同；新旧why都能给出正确主句。覆盖主动/反作用、挂件/核心、超时和双KO分支。
 
 原回放和只读核因：[报告](https://raft-artifacts.com/p/lawrence-workspace/wanwu-v18-core-diagnosis)。封面与首局引导/规格页由Iris另做task #31。
+
+Elara 8d91d2fa 裁决：致命原因与核心余血用一个换行分开，不在逗号后硬折；余血统一“你的核心／对手的核心”。前端按两段显示，核心和完整物品名不拆词。390 宽 Chromium、WebKit 各验两局原因和最长句；本次不并入 task #34 的其他建议。

@@ -39,7 +39,7 @@ export function reasonLine(replay) {
   const winner = replay.meta.winner;
   if (partsLeft && ratios && (winner === 0 || winner === 1) && partsLeft[winner] < partsLeft[1 - winner]) {
     const name = winner === 0 ? '你' : '对手', ratio = ratios[winner];
-    return `${main}，${name}核心还剩${ratio < .01 ? '不足1' : Math.round(ratio * 100)}%血`;
+    return `${main}\n${name}的核心还剩${ratio < .01 ? '不足1' : Math.round(ratio * 100)}%血`;
   }
   return main;
 }

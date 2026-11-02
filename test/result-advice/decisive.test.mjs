@@ -9,8 +9,8 @@ const cases = JSON.parse(readFileSync(new URL('./v18-cases.json', import.meta.ur
 setNames(JSON.parse(readFileSync(new URL('../../data/catalog.json', import.meta.url))).items);
 const sha = x => createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const expected = {
-  2891: '对手的核心撞碎了你的核心，对手核心还剩47%血',
-  9099: '你的核心撞碎了对手的核心，你核心还剩55%血'
+  2891: '对手的核心撞碎了你的核心\n对手的核心还剩47%血',
+  9099: '你的核心撞碎了对手的核心\n你的核心还剩55%血'
 };
 
 for (const fixture of cases) {
@@ -49,7 +49,7 @@ test('actual lethal attachment or recoil takes priority over a previously broken
 
 test('ordinary KO does not invent a remaining-HP comparison; tiny positive HP is not displayed as zero', () => {
   assert.equal(reasonLine(ko({partsLeft: [0, 1], coreRatios: [0, .2]})), '对手的核心撞碎了你的核心');
-  assert.equal(reasonLine(ko({partsLeft: [1, 0], coreRatios: [0, .001]})), '对手的核心撞碎了你的核心，对手核心还剩不足1%血');
+  assert.equal(reasonLine(ko({partsLeft: [1, 0], coreRatios: [0, .001]})), '对手的核心撞碎了你的核心\n对手的核心还剩不足1%血');
 });
 
 test('timeout and simultaneous KO retain their distinct terminal facts', () => {
