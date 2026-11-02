@@ -8,7 +8,7 @@ catalog.items=JSON.parse(await readFile(new URL('./original-catalog-items.json',
 catalog.itemStandards.broom.longSideMeters=1.2;
 let source=await readFile(new URL('sim/index.js',root),'utf8');
 source=source.replaceAll("'@dimforge/rapier3d-compat'",JSON.stringify(new URL('sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs',root).href));
-source=source.replaceAll("'./math.js'",JSON.stringify(new URL('sim/math.js',root).href));
+for(const file of ['math.js','item-rating.js'])source=source.replaceAll(`'./${file}'`,JSON.stringify(new URL(`sim/${file}`,root).href));
 const from="new URL('../data/catalog.json',import.meta.url)";
 if(source.split(from).length!==2)throw Error('Historical catalog patch no longer matches');
 source=source.replace(from,`new URL('data:application/json;base64,${Buffer.from(JSON.stringify(catalog)).toString('base64')}')`);
