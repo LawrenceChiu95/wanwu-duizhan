@@ -156,7 +156,9 @@ async function main() {
   function renderFoe() { el.foeParts.innerHTML = partsHtml(FOE); }
   renderFoe();
   let foeReq = 0;
+  // Only on the build screen: once 开打 is pressed this round's opponent is fixed, so 原样再来 fights the same one (Sol B1).
   function openFoes() {
+    if (phase !== 'build') return;
     el.foeList.innerHTML = FOES.map((f, i) => `<button type="button" class="frow" role="radio" data-foe="${i}" aria-checked="${sameBuild(f.build, FOE)}">
       <span class="lvl${f.rank ? ' ' + f.rank : ''}">${f.level}</span><span class="fparts">${partsHtml(f.build)}</span><small>${SPREAD[f.build.spread]}</small></button>`).join('');
     for (const row of el.foeList.querySelectorAll('[data-foe]')) row.onclick = () => setFoe(FOES[Number(row.dataset.foe)].build);
@@ -164,7 +166,7 @@ async function main() {
   }
   async function setFoe(b) {
     el.foeSheet.hidden = true;
-    if (sameBuild(b, FOE)) return;
+    if (phase !== 'build' || sameBuild(b, FOE)) return;
     const req = ++foeReq;
     FOE = structuredClone(b);
     renderFoe();
@@ -227,6 +229,7 @@ async function main() {
     el.foe.hidden = false;
     setCaption(false);
     el.go.disabled = false;
+    $('foeBtn').disabled = false;
     [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
     syncBuild();
     layout_();
@@ -465,6 +468,8 @@ async function main() {
     if (!fixedSeed) seed = randomSeed();
     phase = 'computing';
     el.go.disabled = true;
+    el.foeSheet.hidden = true;
+    $('foeBtn').disabled = true;
     el.busyText.textContent = '计算中';
     el.busy.hidden = false;
     await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)));
