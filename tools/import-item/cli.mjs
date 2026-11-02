@@ -5,6 +5,7 @@ import {readGlb, prepareMesh, sha256} from './mesh.mjs';
 import {photoToGlb} from './aholo.mjs';
 import {keepPicture, writeOrigin} from './origin.mjs';
 import {timestamps, readJson, saveJson, withLock} from './state.mjs';
+import {rateItem} from '../../sim/item-rating.js';
 
 export const CATEGORIES = ['scissors', 'pot', 'broom', 'lamp', 'slipper', 'pillow'];
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -96,12 +97,13 @@ export async function runCli(argv, {repoRoot = ROOT, env = process.env, fetch, p
     state.prepared = {...prepared.report, sourceSha256: sha256(model)}; await save();
     // Category properties are copied, never inferred from a generated mesh's appearance.
     const item = {id: args.id, name: args.name, category: args.category, templateId: template.id, generated: true, glb: `data/models/generated/${args.id}.glb`, tag: template.tag, material: template.material, stats: structuredClone(template.stats), mass: standard.massKg, massBasis: 'category', standardLongSide: standard.longSideMeters, ...prepared.shape, source: {generator: args.mode === 'photo' ? 'Aholo G1-Turbo' : 'user-supplied GLB', license: 'LicenseRef-UserProvided', sourceSha256: sha256(model), normalizedSha256: prepared.report.sha256, importRun: runId, preparation: {triangles: prepared.report.triangles, textureSizes: prepared.report.textureSizes}}};
+    item.rating = rateItem(item, catalog.materials);
     await withLock(path.join(root, '.aholo', 'catalog-lock'), async () => {
       const current = await readJson(catalogFile);
       if (current.items.some(i => i.id === args.id)) throw Error('Item ID was imported concurrently; no item overwritten');
       // Reject a category change during preparation rather than silently mixing rule snapshots.
       const currentTemplate = current.items.find(i => i.id === template.id);
-      if (JSON.stringify(currentTemplate) !== JSON.stringify(template) || JSON.stringify(current.itemStandards[args.category]) !== JSON.stringify(standard)) throw Error('Category changed during preparation; rerun after checking catalog');
+      if (JSON.stringify(currentTemplate) !== JSON.stringify(template) || JSON.stringify(current.itemStandards[args.category]) !== JSON.stringify(standard) || JSON.stringify(current.materials) !== JSON.stringify(catalog.materials)) throw Error('Category changed during preparation; rerun after checking catalog');
       await fs.mkdir(path.dirname(destination), {recursive: true});
       try { await fs.writeFile(destination, prepared.bytes, {flag: 'wx'}); }
       catch (e) { if (e.code !== 'EEXIST') throw e; if (sha256(await fs.readFile(destination)) !== state.prepared.sha256) throw Error('Destination model exists and differs; it was not overwritten'); }

@@ -1,0 +1,103 @@
+{
+  "status": "initial, not battle-balanced",
+  "source": "catalog mass/bounds/material; condition unknown neutral",
+  "thresholds": {
+    "S": 75,
+    "A": 60,
+    "B": 45,
+    "C": 30,
+    "D": 0
+  },
+  "items": [
+    {
+      "id": "scissors",
+      "name": "剪刀",
+      "attack": 24,
+      "range": 25,
+      "durability": 49,
+      "mean": 32.666666666666664,
+      "grade": "C",
+      "version": "rating-v1:24-25-49:75-60-45-30-0"
+    },
+    {
+      "id": "broom",
+      "name": "扫把",
+      "attack": 37,
+      "range": 100,
+      "durability": 56,
+      "mean": 64.33333333333333,
+      "grade": "A",
+      "version": "rating-v1:37-100-56:75-60-45-30-0"
+    },
+    {
+      "id": "slipper",
+      "name": "拖鞋",
+      "attack": 17,
+      "range": 35,
+      "durability": 37,
+      "mean": 29.666666666666668,
+      "grade": "D",
+      "version": "rating-v1:17-35-37:75-60-45-30-0"
+    },
+    {
+      "id": "pillow",
+      "name": "枕头",
+      "attack": 20,
+      "range": 75,
+      "durability": 98,
+      "mean": 64.33333333333333,
+      "grade": "A",
+      "version": "rating-v1:20-75-98:75-60-45-30-0"
+    },
+    {
+      "id": "pan-lux3d",
+      "name": "锅（Lux3D）",
+      "attack": 100,
+      "range": 48,
+      "durability": 100,
+      "mean": 82.66666666666667,
+      "grade": "S",
+      "version": "rating-v1:100-48-100:75-60-45-30-0"
+    },
+    {
+      "id": "lamp-lux3d",
+      "name": "台灯（Lux3D）",
+      "attack": 52,
+      "range": 56,
+      "durability": 57,
+      "mean": 55.0,
+      "grade": "B",
+      "version": "rating-v1:52-56-57:75-60-45-30-0"
+    },
+    {
+      "id": "wasteland-knife",
+      "name": "废土刀",
+      "attack": 24,
+      "range": 25,
+      "durability": 49,
+      "mean": 32.666666666666664,
+      "grade": "C",
+      "version": "rating-v1:24-25-49:75-60-45-30-0"
+    },
+    {
+      "id": "wasteland-pot",
+      "name": "废土锅",
+      "attack": 100,
+      "range": 48,
+      "durability": 100,
+      "mean": 82.66666666666667,
+      "grade": "S",
+      "version": "rating-v1:100-48-100:75-60-45-30-0"
+    },
+    {
+      "id": "wasteland-broom",
+      "name": "废土扫把",
+      "attack": 37,
+      "range": 100,
+      "durability": 56,
+      "mean": 64.33333333333333,
+      "grade": "A",
+      "version": "rating-v1:37-100-56:75-60-45-30-0"
+    }
+  ]
+}
