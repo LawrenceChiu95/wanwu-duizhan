@@ -626,7 +626,7 @@ async function main() {
       if (req !== libReq || el.library.hidden) return;
       const strip = turntable(id, stage.renderer, stage.scene.environment);
       const turn = el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
-      if (strip && turn) { turn.style.backgroundImage = `url(${strip.url})`; turn.classList.add('on'); }
+      if (strip && turn) { turn.style.backgroundImage = `url(${strip.url})`; turn.style.setProperty('--frames', strip.frames); turn.classList.add('on'); }
       await nextPaint();
     }
   }
@@ -660,10 +660,12 @@ async function main() {
     const req = ++howReq;
     await loadModels([it]);
     if (req !== howReq || el.how.hidden) return;
-    const strip = turntable(id, stage.renderer, stage.scene.environment, {size: 320});
+    const strip = turntable(id, stage.renderer, stage.scene.environment, {frames: 60, size: 272});
     el.howTurn.style.backgroundImage = strip ? `url(${strip.url})` : '';
-    const small = turntable(id, stage.renderer, stage.scene.environment);
-    el.howSteps.querySelector('.mini3d').style.backgroundImage = small ? `url(${small.url})` : '';
+    if (strip) el.howTurn.style.setProperty('--frames', strip.frames);
+    const small = turntable(id, stage.renderer, stage.scene.environment), mini = el.howSteps.querySelector('.mini3d');
+    mini.style.backgroundImage = small ? `url(${small.url})` : '';
+    if (small) mini.style.setProperty('--frames', small.frames);
   }
   function playHow() {
     howT = 0;
@@ -944,7 +946,8 @@ async function main() {
         m.scale.push(stage.cam.stat.pxPerMetre);
       }
     }
-    stage.render(dt, simDt);
+    // The 角色库 covers the whole page: the stage under it would only draw what no one sees.
+    if (el.library.hidden) stage.render(dt, simDt);
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }
   }

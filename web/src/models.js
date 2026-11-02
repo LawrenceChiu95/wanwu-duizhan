@@ -78,11 +78,14 @@ export function instantiate(itemId, uniforms) {
 
 /**
  * A turntable strip for the 角色库 cards: `frames` square views of the item turning once, side by side in one PNG.
- * Rendered once per item with the page's own renderer (no second WebGL context) and played back as a CSS sprite.
+ * Rendered once per item with the page's own renderer (no second WebGL context) and played back as a CSS sprite; the
+ * element gets `--frames` so the animation steps through all of them. 72 frames over a six-second turn is 12 a second:
+ * at 24 it moved 15° per step and looked like it stuck (远夏 11-02). Keep `frames * size` within 16384, the widest
+ * image every browser here draws.
  */
 const strips = new Map();
-export function turntable(itemId, renderer, environment, {frames = 24, size = 160} = {}) {
-  const key = `${itemId}:${size}`;
+export function turntable(itemId, renderer, environment, {frames = 72, size = 160} = {}) {
+  const key = `${itemId}:${frames}:${size}`;
   if (strips.has(key)) return strips.get(key);
   const src = cache.get(itemId);
   if (!src) return null;
