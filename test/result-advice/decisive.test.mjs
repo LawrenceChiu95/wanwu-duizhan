@@ -61,7 +61,7 @@ test('legacy recoil reads the lethal event at a nonzero index and the stored ter
   const replay = ko({attackerItem: 'pan-lux3d'});
   delete replay.decisive.why.role;
   replay.decisive.eventIndex = 2;
-  replay.events = [{role: 'attack'}, {role: 'attack'}, {role: 'recoil'}];
+  replay.events = [{role: 'attack'}, {role: 'attack'}, {role: 'recoil'}, {type: 'result', role: 'attack'}];
   replay.frames = [{fighters: [
     {core: {hp: 0, maxHp: 100}, parts: [{alive: true}, {alive: false}]},
     {core: {hp: 99.9, maxHp: 100}, parts: [{alive: false}, {alive: false}]}
