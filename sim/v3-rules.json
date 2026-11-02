@@ -46,7 +46,7 @@
     "itemStats": {"hpBase": 0.4, "hpScale": 0.01, "powerBase": 0.6, "powerScale": 0.01, "attackBase": 6, "attackScale": 0.15, "defenseBase": 2, "defenseScale": 0.06},
     "referenceHardness": 1.2,
     "softHugReceive": {"cloth": 0.7, "rubber": 0.8},
-    "orientPower": {"out": 1.2, "hug": 0.85},
+    "orientPower": {"out": 1.05, "hug": 0.95},
     "orientReceive": {"out": 1.15, "hug": 0.85},
     "damageRamp": [
       [0, 0.75],
