@@ -136,6 +136,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #foeParts { display: flex; gap: 10px; color: #d5ddef; }
 #foeParts span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-family: var(--display); font-size: 16px; }
 #foeParts svg { width: 15px; height: 15px; color: var(--c1l); opacity: 0.8; }
+#foe .swap { pointer-events: auto; display: flex; align-items: center; gap: 4px; height: 30px; margin-left: 2px; padding: 0 10px; border-radius: 15px; box-shadow: inset 0 0 0 1.5px var(--line);
+  background: var(--plate); color: var(--c1l); font-size: 13px; font-weight: 600; white-space: nowrap; }
+#foe .swap svg { width: 15px; height: 15px; }
+@media (max-width: 380px) { #foe .swap span { display: none; } #foe .swap { padding: 0 8px; } }
 
 /* 「你」 over the player's top: an orange plate with a chevron pointing down at it. */
 .me { position: absolute; left: 0; top: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; pointer-events: none; opacity: 0; will-change: transform, opacity;
@@ -308,11 +312,24 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #caption.on ~ .link { opacity: 0; pointer-events: none; }
 
 /* ---------- Sheets ---------- */
-#credits { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
+#credits, #foeSheet { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
 .panel { width: 100%; max-height: 80%; overflow: auto; background: #0c111f; padding: 16px 14px calc(env(safe-area-inset-bottom) + 18px); box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 138, 61, 0.35); user-select: text; -webkit-user-select: text; animation: rise 0.25s ease-out both; }
 .head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .head b { font-family: var(--display); font-weight: 400; font-size: 22px; }
 .close { margin-left: auto; width: 36px; height: 36px; font-size: 24px; line-height: 1; color: var(--mute); }
+/* 换个对手: one row per computer build; level tag, its two pieces as on the VS line, and the spread. */
+.fsub { margin: -6px 0 10px; font-size: 12px; color: var(--mute); }
+#foeList { display: flex; flex-direction: column; gap: 8px; }
+.frow { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px; border-radius: 10px; text-align: left; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); }
+.frow[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--c1); background: rgba(61, 180, 255, 0.1); }
+.frow .lvl { flex: none; min-width: 40px; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 7px; border-radius: 11px; text-align: center; color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
+.frow .lvl.hi { color: #1a0900; background: var(--c0); box-shadow: none; }
+.frow .lvl.mid { color: var(--ink); background: rgba(255, 255, 255, 0.14); box-shadow: none; }
+.frow .lvl.lo { color: #04121f; background: var(--c1l); box-shadow: none; }
+.frow .fparts { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.frow .fparts span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-family: var(--display); font-size: 18px; }
+.frow .fparts svg { width: 15px; height: 15px; color: var(--c1l); opacity: 0.8; }
+.frow small { flex: none; font-size: 12px; color: var(--mute); }
 /* ---------- 角色库 ----------
    Layout only: colours come from the variables above, so the art pass (凡朔) can restyle it without touching the markup. */
 #library { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; }
