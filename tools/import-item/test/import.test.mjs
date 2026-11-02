@@ -170,6 +170,21 @@ test('existing IDs, changed run inputs and occupied locks cannot overwrite asset
  await assert.rejects(run(s,[...args(s,'locked'),'--run','locked'],g),/Lock already exists/);assert.equal(g.calls.length,0);
 });
 
+test('all authored defaults reject replacement; resuming an import keeps its authored values',async()=>{
+ const s=await sandbox(),g=gateway(),file=path.join(s.root,'data/catalog.json');
+ const designs=JSON.parse(await fs.readFile(path.join(ROOT,'data/default-item-designs.json'))).items;
+ await saveJson(file,base);const before=await fs.readFile(file,'utf8');
+ for(const {id} of designs)await assert.rejects(run(s,args(s,id,'glb'),g),/already exists/);
+ assert.equal(await fs.readFile(file,'utf8'),before);assert.equal(g.calls.length,0);
+ await run(s,args(s,'authored-import','glb'),null,{env:{}});
+ const catalog=await s.catalog(),item=catalog.items.find(i=>i.id==='authored-import');
+ Object.assign(item,{mass:.8,massBasis:'designed-default',material:'metal',condition:'worn'});
+ item.rating=rateItem(item,catalog.materials);await saveJson(file,catalog);
+ const authored=await fs.readFile(file,'utf8');
+ assert.equal((await run(s,args(s,'authored-import','glb'),g,{env:{}})).alreadyImported,true);
+ assert.equal(await fs.readFile(file,'utf8'),authored);assert.equal(g.calls.length,0);
+});
+
 test('exclusive catalog lock rejects another writer while held and releases after failure',async()=>{
  const s=await sandbox(),lock=path.join(s.root,'exclusive-lock');
  await assert.rejects(withLock(lock,async()=>{await assert.rejects(withLock(lock,async()=>{}),/Lock already exists/);throw Error('interrupted writer');}),/interrupted writer/);

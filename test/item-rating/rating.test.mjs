@@ -24,6 +24,14 @@ test('rating uses the object, not its category or cosmetic rust; unknown conditi
  assert.notEqual(damaged.version,rate(item).version);assert.throws(()=>rate({...item,condition:'rusty-art'}));
 });
 
+test('design IDs match the selectable authored catalog defaults, not later imports',()=>{
+ const ids=designs.map(d=>d.id),authored=catalog.items.filter(i=>i.massBasis==='designed-default').map(i=>i.id);
+ const replaced=new Set(catalog.items.map(i=>i.comparisonBase).filter(Boolean));
+ assert.equal(new Set(ids).size,ids.length);assert.equal(new Set(authored).size,authored.length);
+ assert.deepEqual([...ids].sort(),authored.sort());
+ assert.ok(ids.every(id=>!replaced.has(id)),'every authored default is selectable');
+});
+
 test('authored defaults have distinct scores and means, with pot and long broom S specialties',async()=>{
  const items=designs.map(d=>{const it=catalog.items.find(i=>i.id===d.id);assert.ok(it);assert.equal(it.mass,d.massKg);assert.equal(it.material,d.material);assert.equal(it.condition,d.condition);assert.equal(it.massBasis,'designed-default');assert.ok(Math.abs(Math.max(...it.bounds.max.map((v,k)=>v-it.bounds.min[k]))-d.lengthMeters)<1e-6);return it;});
  assert.equal(items.length,9);assert.equal(new Set(items.map(i=>Object.values(i.rating.scores).join(','))).size,9);assert.equal(new Set(items.map(i=>Object.values(i.rating.scores).reduce((a,b)=>a+b,0))).size,9);
