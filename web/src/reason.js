@@ -29,17 +29,17 @@ export function reasonLine(replay) {
   const W = why.attacker === 0 ? '你' : '对手', L = why.target === 0 ? '你' : '对手';
   // Both broke in the same instant; the decided loser is the one hit harder past zero.
   if (reason === 'double-ko') return `两颗核心同时碎，${L}伤得更重`;
-  const att = why.attackerItem ? NAMES[why.attackerItem] : '核心';
+  const att = why.attackerItem ? NAMES[why.attackerItem] ?? '道具' : '核心';
   // Stored v18 replays lack the new why fields; their terminal frame/event contain the same facts.
   const final = replay.frames?.at(-1)?.fighters;
   const role = why.role ?? replay.events?.[replay.decisive.eventIndex]?.role;
   const partsLeft = why.partsLeft ?? final?.map(f => f.parts.filter(p => p.alive).length);
   const ratios = why.coreRatios ?? final?.map(f => f.core.hp / f.core.maxHp);
-  const main = role === 'recoil' ? `${L}的核心撞上${W}的${att}，先碎了` : `${W}的${att}撞碎了${L}的核心`;
+  const main = role === 'recoil' ? `${L}的核心撞上${W}的${att}，${L}的核心先碎了` : `${W}的${att}撞碎了${L}的核心`;
   const winner = replay.meta.winner;
   if (partsLeft && ratios && (winner === 0 || winner === 1) && partsLeft[winner] < partsLeft[1 - winner]) {
     const name = winner === 0 ? '你' : '对手', ratio = ratios[winner];
-    return `${main}\n${name}的核心还剩${ratio < .01 ? '不足1' : Math.round(ratio * 100)}%血`;
+    return `${main}\n${name}的核心还剩${ratio < .01 ? '不足1' : Math.min(ratio < 1 ? 99 : 100, Math.round(ratio * 100))}%血`;
   }
   return main;
 }
