@@ -1,5 +1,5 @@
 import {ratingOf} from './rating.js';
-// One plain line (≤20 characters) for why the match ended, from the replay's decisive.why facts.
+// State the actual terminal damage; broken attachments never replace the cause of a core KO.
 // Short names from the catalog (the Lux3D tag is shown on its own); filled by setNames before the page draws anything.
 export const NAMES = {};
 const PREFERRED_ORIENT = {};
@@ -25,18 +25,23 @@ export function reasonLine(replay) {
     if (why?.kind !== 'timeout' || replay.meta.winner === null) return why?.kind === 'timeout' ? '时间到，两边剩的血一样多' : '时间到，两颗核心都还在';
     return why.criterion === 'part-hp' ? `时间到，核心一样，${W}的件剩血多` : `时间到，${W}的核心剩血多`;
   }
-  if (!why) return '时间到，两颗核心都还在';
+  if (!why) return '核心先被打空的一方输了';
   const W = why.attacker === 0 ? '你' : '对手', L = why.target === 0 ? '你' : '对手';
   // Both broke in the same instant; the decided loser is the one hit harder past zero.
   if (reason === 'double-ko') return `两颗核心同时碎，${L}伤得更重`;
-  const att = why.attackerItem ? NAMES[why.attackerItem] : null;
-  const broken = why.loserBroken.map(b => NAMES[b.item]);
-  if (why.loserPartsLeft === 0 && broken.length) return `${L}两件都碎了，核心被${att ?? (W === '你' ? '你' : '对手')}撞碎`;
-  // A piece held out was there to hit (losing it costs the attack); only a hugging piece was shielding the core.
-  if (broken.length) return why.loserBroken[0].orient === 'out' ? `${L}伸出去的${broken[0]}先碎了，没了攻击` : `${L}贴着的${broken[0]}先碎了，核心没了遮挡`;
-  if (!att) return `两颗核心硬碰，${W}撞赢了`;
-  if (why.attackerOrient === 'out') return `${W}的${att}伸得远，直接打中核心`;
-  return `${W}贴着的${att}撞中了核心`;
+  const att = why.attackerItem ? NAMES[why.attackerItem] : '核心';
+  // Stored v18 replays lack the new why fields; their terminal frame/event contain the same facts.
+  const final = replay.frames?.at(-1)?.fighters;
+  const role = why.role ?? replay.events?.[replay.decisive.eventIndex]?.role;
+  const partsLeft = why.partsLeft ?? final?.map(f => f.parts.filter(p => p.alive).length);
+  const ratios = why.coreRatios ?? final?.map(f => f.core.hp / f.core.maxHp);
+  const main = role === 'recoil' ? `${L}的核心撞上${W}的${att}，先碎了` : `${W}的${att}撞碎了${L}的核心`;
+  const winner = replay.meta.winner;
+  if (partsLeft && ratios && (winner === 0 || winner === 1) && partsLeft[winner] < partsLeft[1 - winner]) {
+    const name = winner === 0 ? '你' : '对手', ratio = ratios[winner];
+    return `${main}\n${name}的核心还剩${ratio < .01 ? '不足1' : Math.round(ratio * 100)}%血`;
+  }
+  return main;
 }
 
 /** The result card's top line: how the match ended. */
