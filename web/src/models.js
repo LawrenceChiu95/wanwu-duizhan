@@ -8,12 +8,14 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../data/models/lamp-lux3d-mobile.glb', '../../data/models/broom.glb', '../../data/models/scissors.glb', '../../data/models/slipper.glb', '../../data/models/pillow.glb', '../../data/models/generated/**/*.glb'], {query: '?url', import: 'default', eager: true});
 // Generation records (item.origin, 看它怎么来的): the original photo and the styled image, kept under data/origins/<id>/.
 const originUrls = import.meta.glob('../../data/origins/**/*.{jpg,jpeg,png,webp}', {query: '?url', import: 'default', eager: true});
-/** A record's picture: a repo-relative path from the catalog (bundled above), or a data:/https: URL as it is. */
-export const pictureUrl = path => /^(data:|https?:)/.test(path) ? path : Object.entries(originUrls).find(([key]) => key.endsWith('/' + path))?.[1] ?? null;
+/** A record's picture: a repo-relative path from the catalog (bundled above), or a URL as it is. */
+// A URL as it is (拍一件's items come from the shoot backend: /api/shoot/files/…, or data: in the local fake).
+const isUrl = path => /^(data:|blob:|https?:|\/)/.test(path);
+export const pictureUrl = path => isUrl(path) ? path : Object.entries(originUrls).find(([key]) => key.endsWith('/' + path))?.[1] ?? null;
 // Each catalog item at the turntable's starting angle (scripts/make-stills.mjs), shown on its card until the model is drawn.
 const stillUrls = import.meta.glob('../../data/stills/*.webp', {query: '?url', import: 'default', eager: true});
 export const stillUrl = id => stillUrls[`../../data/stills/${id}.webp`] ?? null;
-const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
+const urlFor = glb => isUrl(glb) ? glb : Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
 const cache = new Map();
@@ -83,7 +85,7 @@ export function instantiate(itemId, uniforms) {
  * One item on its own turntable for the 角色库 cards and 看它怎么来的: lit like the stage, centred, and framed so the
  * whole turn fits a square. Drawn live by LiveTurns (livecards.js); null until the model has loaded.
  */
-export function turnRig(itemId, environment) {
+export function turnRig(itemId, environment, zoom = 1) {
   const src = cache.get(itemId);
   if (!src) return null;
   const scene = new THREE.Scene();
@@ -97,18 +99,19 @@ export function turnRig(itemId, environment) {
   scene.add(spin);
   const box = new THREE.Box3().setFromObject(obj), center = box.getCenter(new THREE.Vector3());
   obj.position.sub(center);
-  return {scene, camera: turnCamera(box.translate(center.negate())), spin};
+  return {scene, camera: turnCamera(box.translate(center.negate()), zoom), spin};
 }
 
 /**
  * Fit for a turntable: as the model turns it sweeps a cylinder (its widest reach around the vertical axis by its
- * height), seen a little from above, filling most of the square. `box` is centred on the origin.
+ * height), seen a little from above, filling most of the square. `box` is centred on the origin; `zoom` moves the
+ * camera that much closer.
  */
-function turnCamera(box) {
+function turnCamera(box, zoom = 1) {
   const reach = Math.hypot(Math.max(-box.min.x, box.max.x), Math.max(-box.min.z, box.max.z)), half = (box.max.y - box.min.y) / 2;
   const pitch = 0.42, camera = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
   const extent = Math.max(reach, half * Math.cos(pitch) + reach * Math.sin(pitch));
-  const dist = extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch);
+  const dist = (extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch)) / zoom;
   camera.position.set(0, dist * Math.sin(pitch), dist * Math.cos(pitch));
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();

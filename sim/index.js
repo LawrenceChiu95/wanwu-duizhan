@@ -31,6 +31,8 @@ export async function registerItems(items){
  runtimeItems.clear();for(const [id,item] of next)runtimeItems.set(id,item);
  return structuredClone(items);
 }
+/** Temporary (PR #52, Elara a510bb73): the web page's fake backend (?shoot=fake) adds its copies here unchecked, into the same runtime list registerItems fills. Goes when the page switches to the real backend and registerItems. An id already known is left as it is. */
+export async function addItems(items){const c=await (catalogPromise??=readCatalog());for(const it of items)if(!runtimeItems.has(it.id)&&!c.items.some(i=>i.id===it.id))runtimeItems.set(it.id,structuredClone(it));}
 export function zoneRadius(t,a){return a.zoneStartRadius+(a.zoneEndRadius-a.zoneStartRadius)*Math.max(0,Math.min(1,(t-a.zoneShrinkStart)/(a.zoneShrinkEnd-a.zoneShrinkStart)));}
 export function zoneDamageRate(t,maxHp,a){return maxHp*a.zoneDamageMaxFraction*Math.max(0,Math.min(1,(t-a.zoneDamageStart)/(a.maxDuration-a.zoneDamageStart)));}
 export function contactDamage({mode,impulse,attacker,target,materials,matchups,weak}){

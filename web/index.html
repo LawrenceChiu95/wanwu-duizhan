@@ -106,13 +106,35 @@
     <header class="lhead">
       <button type="button" class="back" id="libBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg>拼装</button>
       <b>角色库</b>
-      <!-- 拍一件 (D2): hidden until the live photo flow is wired up (11-16). -->
+      <!-- 拍一件 (D2): shown once a shoot backend is on (?shoot=fake now; the real one from 11-13). -->
       <button type="button" class="shoot" id="shootBtn" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button>
     </header>
     <div class="lsub"><b id="libTitle"></b><span id="libCount"></span></div>
     <div class="lgrades" id="libGrades"></div>
     <div class="lgrid" id="libGrid"></div>
   </section>
+
+  <!-- 拍一件 (MVP 规格 §4-5, task #47): photo → 认物 → 生成中 → 好了, or 失败; drawn by shoot.js. Under 看它怎么来的. -->
+  <section id="shootView" hidden aria-label="拍一件">
+    <header class="lhead">
+      <button type="button" class="back" id="shootBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg><span id="shootBackText">角色库</span></button>
+      <b>拍一件</b>
+      <span class="squota" id="shootQuota"></span>
+    </header>
+    <ol class="ssteps" id="shootSteps"><li><i></i>1 拍照</li><li><i></i>2 认物</li><li><i></i>3 生成</li><li><i></i>4 好了</li></ol>
+    <div class="sbody" id="shootBody"></div>
+    <input type="file" id="shootCam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="shootAlbum" accept="image/*" hidden>
+  </section>
+  <div id="shootAsk" hidden>
+    <div class="panel">
+      <div class="head"><b>重新生成？</b></div>
+      <p id="shootAskText"></p>
+      <div class="sfoot"><button type="button" class="sghost" id="shootAskNo"><span>先不了</span></button><button type="button" class="go" id="shootAskYes"><span>确认，重新生成</span></button></div>
+    </div>
+  </div>
+  <!-- 拍一件 under way while the player is elsewhere: how far it has got, then 好了 (task #47). -->
+  <button type="button" id="shootTag" hidden></button>
 
   <!-- 看它怎么来的 (MVP 规格 §4-4): this item's real generation, replayed in about ten seconds from its record. -->
   <section id="howView" hidden aria-label="看它怎么来的">
