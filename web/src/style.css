@@ -311,8 +311,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 
 .link { position: absolute; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 5px); font-size: 10px; color: var(--mute); opacity: 0.7; padding: 2px 0; }
 #pad:not([hidden]) ~ .link { display: none; }
-/* The 决胜 caption runs along the bottom; the credits link steps aside while it is up (Elara 11-02 a788037f). */
-#caption.on ~ .link { opacity: 0; pointer-events: none; }
+/* The 决胜 caption runs along the bottom; the credits link steps aside while it is up (Elara 11-02 a788037f).
+   visibility, not opacity, so it can't be tabbed to or opened from the keyboard while unseen (PR #18 S1). */
+#caption.on ~ .link { visibility: hidden; }
 
 /* ---------- Sheets ---------- */
 #credits, #foeSheet { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
