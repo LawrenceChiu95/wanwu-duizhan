@@ -76,7 +76,8 @@ test('damage ramp is piecewise linear and never applies without a hit',()=>{
  assert.ok(tierDamage({...base,ramp:1.5}).damage<=55*rules.maxHitFraction+1e-9);
 });
 test('damage tiers and weak cap; near-static approach never gains damage from seed',()=>{
- const item=c.items[0],target=c.items.find(i=>i.id==='pillow'),args={attacker:item,target,materials:c.materials,matchups:c.matchups,maxHp:70,rules};
+ // Use the designed heavy pot so both modes actually exceed the cap; low-attack scissors need not.
+ const item=c.items.find(i=>i.id==='pan-lux3d'),target=c.items.find(i=>i.id==='pillow'),args={attacker:item,target,materials:c.materials,matchups:c.matchups,maxHp:70,rules};
  for(const mode of ['A','B']){const d=tierDamage({...args,mode,impulse:100,weak:true});assert.ok(d.damage<=28);assert.ok(d.rawDamage>d.damageCap);assert.equal(d.damageCap,28);}
  for(const seed of [0,1])assert.equal(strikeRoles({normal:[1,0,0],velocities:[[0,20,0],[0,-20,0]],tipRatios:[1,1],tipBonus:.3,seed,minimumSpeed:rules.minimumClosingSpeed}).attacker,null);
 });
