@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
-import {loadModels, pictureUrl, outlinePath} from './models.js';
+import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -617,10 +617,11 @@ async function main() {
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
     const r = rate(id), grade = r?.grade;
-    // Until the model is drawn (task #37, Elara 684ed1e6): the item's own styled picture if its record has one, else its
-    // outline, faint; the turning 3D fades in over it. No spinner.
-    const path = it.origin?.styled ? null : outlinePath(it);
-    const ghost = it.origin?.styled ? `<img class="ghost" src="${esc(pictureUrl(it.origin.styled) ?? '')}" alt="">`
+    // Until the model is drawn (task #37, Elara 684ed1e6): the styled picture of a photographed item, else the item's own
+    // still at the turntable's starting angle (task #39: an outline alone read as a shard), else its outline, faint. The
+    // turning 3D fades in over it. No spinner.
+    const still = it.origin?.styled ? pictureUrl(it.origin.styled) : stillUrl(id), path = still ? null : outlinePath(it);
+    const ghost = still ? `<img class="ghost still" src="${esc(still)}" alt="">`
       : path ? `<svg class="ghost" viewBox="0 0 100 100" aria-hidden="true"><path d="${path}" /></svg>` : '';
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
@@ -891,6 +892,8 @@ async function main() {
     setControl(c) { control = c; },
     // Fixture for the 看它怎么来的 check until the generation script writes real records.
     setOrigin(id, origin) { byId.get(id).origin = origin; },
+    // A card still for data/stills (scripts/make-stills.mjs): the item at the turntable's starting angle, as a WebP data URL.
+    async still(id, size) { await loadModels([byId.get(id)]); return turns.shot(id, size); },
     // Fixture for the 结算 layout check: any reasonLine text (e.g. from a stored replay) through the card's own rendering.
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).

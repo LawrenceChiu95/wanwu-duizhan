@@ -1917,7 +1917,7 @@
         "generator": "user-supplied GLB",
         "license": "LicenseRef-UserProvided",
         "sourceSha256": "43a035e9c3d595220107da68943a63b805da3e95a74c19b440d2e6f551f1bc83",
-        "normalizedSha256": "a8465e19889187c80a427aee410f1523641c30f213416986f5214c2ce42d0292",
+        "normalizedSha256": "3d0b3ce345fb65d0551e3d749e4f08a047ec22899a7d6d3e2ea317dc6cda45c5",
         "importRun": "wasteland-knife",
         "preparation": {
           "triangles": 14988,
@@ -2127,7 +2127,7 @@
         "generator": "user-supplied GLB",
         "license": "LicenseRef-UserProvided",
         "sourceSha256": "153b26a8ca43b40910a34849494766f0b299694b3bff6cb070184cfee319bb8f",
-        "normalizedSha256": "e8e5acaf8bcbd71a80bb72d71676e135c3d37eb37db9faf6f8c5df3b3e73b38b",
+        "normalizedSha256": "630e58b4acbab7f6cc5fad508d4343e250f35fda4504fe63af0491bce69e41bd",
         "importRun": "wasteland-pot",
         "preparation": {
           "triangles": 11860,
@@ -2337,7 +2337,7 @@
         "generator": "user-supplied GLB",
         "license": "LicenseRef-UserProvided",
         "sourceSha256": "7846ca553ec70442ccab569b5490bd95169985166d52f6eac67eb0abdb0097e2",
-        "normalizedSha256": "cc8d1bf0b88bac4796c9ad40ea114bf8be06b891fec458c98a2500dd51890edd",
+        "normalizedSha256": "68c7e4c63f134998cc155f6c3d2e52b32b7bc4a57b5937ab1445ae62bcdf3943",
         "importRun": "wasteland-broom",
         "preparation": {
           "triangles": 11750,

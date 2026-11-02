@@ -10,6 +10,9 @@ const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../
 const originUrls = import.meta.glob('../../data/origins/**/*.{jpg,jpeg,png,webp}', {query: '?url', import: 'default', eager: true});
 /** A record's picture: a repo-relative path from the catalog (bundled above), or a data:/https: URL as it is. */
 export const pictureUrl = path => /^(data:|https?:)/.test(path) ? path : Object.entries(originUrls).find(([key]) => key.endsWith('/' + path))?.[1] ?? null;
+// Each catalog item at the turntable's starting angle (scripts/make-stills.mjs), shown on its card until the model is drawn.
+const stillUrls = import.meta.glob('../../data/stills/*.webp', {query: '?url', import: 'default', eager: true});
+export const stillUrl = id => stillUrls[`../../data/stills/${id}.webp`] ?? null;
 const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
@@ -113,8 +116,8 @@ function turnCamera(box) {
 }
 
 /**
- * The item's outline before its model has loaded (task #37: a card must not sit empty and look broken): the catalog
- * hull, framed by the same turntable camera with its long side across the view, as an SVG path in a 0–100 square.
+ * The item's outline before its model has loaded, for an item without a still (task #37: a card must not sit empty and
+ * look broken): the catalog hull, framed by the same turntable camera with its long side across the view, as an SVG path in a 0–100 square.
  * Null without a hull.
  */
 export function outlinePath(item) {
