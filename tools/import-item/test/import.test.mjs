@@ -210,7 +210,7 @@ test('orientation follows category for either source sign; checked-in pot/broom 
   assert.ok(Math.abs(item.weakPoint.pos[2]-item.bounds.max[2])<1e-8);
  }
 });
-test('opaque colour textures are stored as JPEG; transparent colour and data textures stay PNG (task #42)',async()=>{
+test('opaque colour textures are stored as JPEG; transparent colour and data textures stay PNG (task #42, #45)',async()=>{
  const doc=await new NodeIO().readBinary(model),root=doc.getRoot(),first=root.listMaterials()[0];
  const pixels=Buffer.alloc(64*64*4);for(let i=0;i<pixels.length;i+=4)pixels.set([200,120,40,i<64*16*4?100:255],i); // top quarter see-through
  const rgba=await sharp(pixels,{raw:{width:64,height:64,channels:4}}).png().toBuffer();
@@ -221,8 +221,12 @@ test('opaque colour textures are stored as JPEG; transparent colour and data tex
  const nearly=Buffer.alloc(64*64*4);for(let i=0;i<nearly.length;i+=4)nearly.set([60,140,200,i%8?255:254],i);
  const stray=doc.createTexture('stray-254').setImage(await sharp(nearly,{raw:{width:64,height:64,channels:4}}).png().toBuffer()).setMimeType('image/png');
  const blend=doc.createTexture('blend').setImage(solidRgba).setMimeType('image/png');
+ // Task #45: a masked material's colour, and one image serving as both colour and occlusion, stay PNG too (solid, distinct images).
+ const solid=async(r,g,b)=>sharp({create:{width:64,height:64,channels:3,background:{r,g,b}}}).png().toBuffer();
+ const mask=doc.createTexture('mask').setImage(await solid(30,160,90)).setMimeType('image/png'),shared=doc.createTexture('shared').setImage(await solid(170,60,150)).setMimeType('image/png');
  const prim=root.listMeshes()[0].listPrimitives()[0];
- for(const tex of [clear,opaqueRgba,stray,blend])root.listMeshes()[0].addPrimitive(prim.clone().setMaterial(doc.createMaterial(tex.getName()).setBaseColorTexture(tex).setAlphaMode(tex===blend?'BLEND':'OPAQUE')));
+ for(const tex of [clear,opaqueRgba,stray,blend,mask,shared])root.listMeshes()[0].addPrimitive(prim.clone().setMaterial(doc.createMaterial(tex.getName()).setBaseColorTexture(tex).setAlphaMode(tex===blend?'BLEND':tex===mask?'MASK':'OPAQUE')));
+ root.listMaterials().find(m=>m.getName()==='shared').setOcclusionTexture(shared);
  const raw=Buffer.from(await new NodeIO().writeBinary(doc)),result=await prepareMesh(raw,originals.find(i=>i.id==='pot'),base.itemStandards.pot);
  const out=await new NodeIO().readBinary(result.bytes),mats=out.getRoot().listMaterials(),by=name=>mats.find(m=>m.getName()===name);
  const kind=async tex=>[tex.getMimeType(),(await sharp(tex.getImage()).metadata()).format];
@@ -233,6 +237,9 @@ test('opaque colour textures are stored as JPEG; transparent colour and data tex
  assert.deepEqual(await kind(by('opaque-rgba').getBaseColorTexture()),['image/jpeg','jpeg']);
  assert.deepEqual(await kind(by('stray-254').getBaseColorTexture()),['image/jpeg','jpeg']);
  assert.deepEqual(await kind(by('blend').getBaseColorTexture()),['image/png','png']);
+ assert.deepEqual(await kind(by('mask').getBaseColorTexture()),['image/png','png']);
+ assert.equal(by('shared').getBaseColorTexture(),by('shared').getOcclusionTexture());
+ assert.deepEqual(await kind(by('shared').getBaseColorTexture()),['image/png','png']);
  validateGlb(result.bytes);
 });
 test('changing only name and ID after paid work starts resumes the same default run',async()=>{
