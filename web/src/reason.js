@@ -1,12 +1,14 @@
 // One plain line (≤20 characters) for why the match ended, from the replay's decisive.why facts.
 // Short names from the catalog (the Lux3D tag is shown on its own); filled by setNames before the page draws anything.
 export const NAMES = {};
-const CATEGORY = {};
+const PREFERRED_ORIENT = {};
 export function setNames(items) {
   for (const it of items) {
     if (typeof it.name !== 'string' || !it.name.trim()) throw Error(`物品 ${it.id} 在 catalog 里没有名字`);
     NAMES[it.id] = it.name.trim().replace(/（Lux3D）$/, '');
-    CATEGORY[it.id] = it.category ?? it.id;
+    const scores = it.rating?.scores;
+    const offense = scores && Math.max(scores.attack, scores.range);
+    PREFERRED_ORIENT[it.id] = !scores || scores.durability === offense ? null : scores.durability > offense ? 'hug' : 'out';
   }
 }
 
@@ -45,8 +47,8 @@ export function endLine(replay) {
 /** What the player did this match, from the replay's own events (the page never judges a hit itself). */
 export function matchStats(replay, defs) {
   const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null],
-    // A broom hugging is weak by design (Elara be34213e: a long thing held close cannot reach the other top).
-    hugBroom: defs[0]?.parts.find(p => p.orient === 'hug' && CATEGORY[p.item] === 'broom')?.item ?? null};
+    // Advice follows this item's scores, rather than its category or overall grade.
+    hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null};
   for (const e of replay.events) {
     if (e.type === 'dash' && e.phase === 'end' && e.side === 0) {
       s.presses++;
@@ -83,8 +85,10 @@ export function tipLine(s, winner) {
   const mine = s.firstBroken[0];
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
-  if (winner === 1 && s.hugBroom) return `${NAMES[s.hugBroom] ?? '扫把'}贴着够不着，试试伸出`;
-  if (mine?.orient === 'out') return `先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`;
+  if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;
+  if (mine?.orient === 'out') return PREFERRED_ORIENT[mine.item] === 'hug'
+    ? `先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`
+    : `${NAMES[mine.item] ?? '伸出的件'}先碎了，试试在对手冲来时按挡`;
   if (s.missed >= 3 && s.missed >= s.presses / 2) return '冲空多，等它靠近再冲';
   if (s.blocked >= 2) return '冲进了它的挡，等它挡完再冲';
   if (s.landed === 0) return '一次没冲中，离近一点再按冲';
