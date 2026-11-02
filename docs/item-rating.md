@@ -15,13 +15,13 @@ item.rating = {
 }
 ```
 
-分数为 0–100 整数，由离线脚本写入；界面通过同一评分模块的 ratingOf 按有效分数核出字母和总等级，不重新从物件属性算分。总等级直接用三项整数之和除 3 比较；显示平均可保留两位，但比较前不先四舍五入。S/A/B/C/D 下限为 75/60/45/30/0，等于阈值归上档。
+分数为 0–100 整数，由离线脚本写入；界面通过 [web/src/rating.js 的 ratingOf](../web/src/rating.js)，使用 [sim 评分规则](../sim/item-rating.js)的 gradeFor / ratingScores 按有效分数核出字母和总等级，不重新从物件属性算分。总等级直接用三项整数之和除 3 比较；显示平均可保留两位，但比较前不先四舍五入。S/A/B/C/D 下限为 75/60/45/30/0，等于阈值归上档。
 
 version 是算法、三分和阈值的稳定标识。同件改名、换图不重翻，分数或定级算法改变才换。厘米公斤继续读现有 bounds/mass，不放进 rating。
 
 ## 九件第一版
 
-以下是第一版设计快照，供追溯；当前分数以 [catalog.json](../data/catalog.json) 各件的 rating.scores 为准，字母和总等级由 [评分模块](../sim/item-rating.js) 核出。调参后不把本表当现值。
+以下是第一版设计快照，供追溯；当前分数以 [catalog.json](../data/catalog.json) 各件的 rating.scores 为准，字母和总等级由 [ratingOf](../web/src/rating.js) 调用 [sim 评分规则](../sim/item-rating.js)核出。调参后不把本表当现值。
 
 | 道具（ID） | 攻击 | 范围 | 耐久 | 平均分 | 等级 |
 |---|---:|---:|---:|---:|---|
