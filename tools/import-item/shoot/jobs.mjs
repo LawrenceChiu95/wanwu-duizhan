@@ -16,7 +16,7 @@ const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regen
 export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
-const keyValid = key => typeof key === 'string' && key !== '__proto__' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
+const keyValid = key => typeof key === 'string' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
 const publicJob = record => copy(record.job);
 
 // A directory lock has only an empty PID subdirectory; stale ownership can be
@@ -43,6 +43,10 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
   try {
     store = await readJson(path.join(directory, 'state.json'), {jobs: {}, keys: {}, items: []});
     if (!store || !store.jobs || !store.keys || !Array.isArray(store.items)) throw Error('Invalid shoot state file');
+    store.jobs = Object.assign(Object.create(null), store.jobs);
+    store.keys = Object.assign(Object.create(null), store.keys);
+    const oldItem = store.items.findIndex(item => ![1, -1].includes(item?.outEnd));
+    if (oldItem >= 0) throw Error(`Saved shoot item ${store.items[oldItem]?.id ?? '(missing id)'} lacks valid outEnd; archive and clear the local shoot directory before upgrading (shoot/README.md)`);
     catalog = await readJson(path.join(repo, 'data/catalog.json'));
     mountRules = await readJson(path.join(repo, 'sim/v3-rules.json'));
     provider = generator ?? await fakeGenerator(directory, fakeOptions);
@@ -108,7 +112,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       if (!closed && !storageError) await serial(() => fail(record, Object.hasOwn(retryFor, error.code) ? error.code : j.recognition ? (j.steps[3].startedAt ? 'process' : 'download') : 'photo-unclear'));
     }
   }
-  function start(record) { runner = runner.then(() => closed ? undefined : work(record)); }
+  function start(record) { runner = runner.then(() => closed ? undefined : work(record)).catch(error => { storageError ??= error; }); }
   for (const record of Object.values(store.jobs)) if (['recognizing', 'generating'].includes(record.job.status)) start(record);
 
   async function create({clientKey, photo, fromJob, regenerateOf, confirm}) {
@@ -126,9 +130,10 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
         if (old.fingerprint !== fingerprint) throw apiError('key-conflict', 'Same clientKey with different input', 409);
         return publicJob(get(old.id));
       }
+      const parent = fromJob || regenerateOf ? get(fromJob ?? regenerateOf) : null;
+      if (parent?.usedBy) throw apiError('not-allowed', 'This source job already created a replacement', 409);
       const current = active();
       if (current) throw apiError('active-job', 'A job is still active', 409, {activeJobId: current.job.id});
-      const parent = fromJob || regenerateOf ? get(fromJob ?? regenerateOf) : null;
       if (regenerateOf && (confirm !== true || parent.job.error?.retry !== 'regenerate')) throw apiError('not-allowed', 'Explicit confirmation and a regeneratable failure required', 409);
       if (fromJob && parent.job.error?.code !== 'busy') throw apiError('not-allowed', 'fromJob is only for confirmed busy rejection', 409);
       if ((!photo && !parent) || (photo && parent)) throw apiError('photo-invalid', 'One photo or one source job required');
@@ -145,6 +150,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       else await fs.copyFile(path.join(directory, parent.job.id, 'photo.jpg'), path.join(folder, 'photo.jpg'));
       const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: 1, error: null, itemId: null, regenerateOf: regenerateOf ?? null};
       const record = {job: j, pending: false, providerId: null};
+      if (parent) parent.usedBy = id;
       store.jobs[id] = record; store.keys[clientKey] = {id, fingerprint}; await save(); start(record); return publicJob(record);
     });
   }
@@ -166,6 +172,6 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       if (!item || !record) throw apiError('not-found', 'No such item', 404);
       return path.join(directory, record.job.id, name);
     }),
-    async close() { closed = true; await runner; await chain; await release(); }
+    async close() { closed = true; try { await runner; await chain; } finally { await release(); } }
   };
 }

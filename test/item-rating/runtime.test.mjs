@@ -42,6 +42,8 @@ test('a new id preserves its sample orientation in every slot and both mount mod
   const builtin = await simulateV3(options);
   options.fighters[0].parts[0].item = item.id;
   const runtime = await simulateV3(options);
+  assert.ok(runtime.frames.some(f => f.fighters[0].parts.some(p => p.item === item.id)));
+  assert.ok(!JSON.stringify(builtin).includes(item.id));
   assert.equal(JSON.stringify(runtime).replaceAll(item.id, original.id), JSON.stringify(builtin));
  }
 });
