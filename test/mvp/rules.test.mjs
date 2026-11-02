@@ -7,6 +7,7 @@ import {simulateV3,createV3Match,loadCatalog,loadV3Rules,tierDamage,timeoutVerdi
 import {loadRules} from '../../sim/index.js';
 import {rotate} from '../../sim/math.js';
 import {simulateWithRules} from '../v3-top/variant.mjs';
+import {fixtures as timingFixtures,options as timingOptions} from '../v3-top/v13/experiment.mjs';
 const bare={parts:[]},rules=await loadV3Rules(),catalog=await loadRules();
 
 test('physical fence bounces an outward core without creating fighter hits or HP loss',async()=>{
@@ -97,4 +98,14 @@ test('ready fires once at each used cooldown boundary before accepting the same-
  assert.deepEqual(ready.map(e=>[e.side,e.action,e.t]),[[0,'block',601*rules.dt],[0,'block',1201*rules.dt]]);
  assert.ok(r.events.indexOf(ready[0])<r.events.findIndex(e=>e.type==='press'&&e.t===ready[0].t));
  assert.equal(JSON.stringify(r),JSON.stringify(await simulate(options)));
+});
+
+
+test('four timed scissors/pillow long-tail regressions end by 45s with real KO',async()=>{
+ const scene=timingFixtures.find(f=>f.id==='scissors-pillow/hug-hug-e90');
+ for(const seed of [15,18,30,69]){
+  const r=await simulateV3(timingOptions(scene,seed,'timing'));
+  assert.equal(r.meta.reason,'ko',`seed ${seed}: must end through real damage`);
+  assert.ok(r.meta.duration<=45,`seed ${seed}: ${r.meta.duration}s exceeds the accepted tail limit`);
+ }
 });
