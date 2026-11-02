@@ -45,6 +45,8 @@ const ICON = {
 };
 
 function showError(err) {
+  el.go.disabled = true;
+  el.busy.hidden = true;
   el.error.hidden = false;
   el.error.textContent = `出错了：${err?.message ?? err}`;
   console.error(err);
@@ -108,12 +110,8 @@ async function main() {
     if (!q.has(key)) return null;
     const p = q.get(key).split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
-    if (p.length === 5 && b.parts.every(x => OFFER.includes(x.item) && ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) && (key !== 'foe' || q.getAll(key).length === 1)) return b;
-    if (key === 'foe') {
-      el.busy.hidden = true;
-      throw Error('foe参数无效：格式为物品ID,out或hug,另一物品ID,out或hug,e180或e90；两件须是清单中不同的道具，foe只能出现一次');
-    }
-    return null;
+    if (p.length === 5 && b.parts.every(x => OFFER.includes(x.item) && ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) && q.getAll(key).length === 1) return b;
+    throw Error(`${key}参数无效：格式为物品ID,out或hug,另一物品ID,out或hug,e180或e90；两件须是清单中不同的道具，${key}只能出现一次`);
   };
   const mine = structuredClone(fromUrl() ?? DEFAULT);
   const FOE = structuredClone(fromUrl('foe') ?? DEFAULT_FOE);
@@ -190,7 +188,7 @@ async function main() {
     el.build.hidden = false;
     el.foe.hidden = false;
     setCaption(false);
-    el.go.disabled = false;
+    el.go.disabled = !el.error.hidden;
     [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
     syncBuild();
     layout_();
@@ -424,7 +422,7 @@ async function main() {
   // ---------- match ----------
   let runId = 0;
   async function start() {
-    if (phase !== 'build') return;
+    if (phase !== 'build' || !el.error.hidden) return;
     const id = ++runId;
     if (!fixedSeed) seed = randomSeed();
     phase = 'computing';
