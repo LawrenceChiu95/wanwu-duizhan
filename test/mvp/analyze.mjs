@@ -1,5 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
+import {fairFreezeChecks} from './fair-freeze.mjs';
 const out=new URL(process.env.MVP_OUT??'./results-pilot/',import.meta.url),manifest=JSON.parse(await readFile(new URL('manifest.json',out)));
 let raw;
 try{raw=await readFile(new URL('rounds.ndjson',out),'utf8');}catch(e){if(e.code!=='ENOENT')throw e;raw=gunzipSync(await readFile(new URL('rounds.ndjson.gz',out))).toString('utf8');}
@@ -30,14 +31,20 @@ if(['pilot','primary'].includes(manifest.stage)){
   return {radius,scenes,medianDeltaPoints,complete,pass:complete&&medianDeltaPoints>=15,scope:manifest.stage==='pilot'?'pilot signal only; not formal balance acceptance':'primary paired-seed comparison'};
  });
 }
-if(manifest.stage==='fair')summary.scenes=manifest.fixtures.map(f=>{
+if(manifest.stage==='fair'){
+ const freeze=process.env.MVP_FREEZE?JSON.parse(await readFile(new URL(process.env.MVP_FREEZE))):null;
+ summary.freeze=fairFreezeChecks(manifest,freeze);
+ summary.scenes=manifest.fixtures.map(f=>{
  const a=rows.filter(r=>r.plan.scene===f.id),scorePct=100*mean(a.map(r=>r.score)),seeds=new Set(a.map(r=>r.plan.seed));
  const paired=Array.from({length:manifest.n},(_,i)=>manifest.seedStart+i).every(seed=>{
   const pair=a.filter(r=>r.plan.seed===seed);return pair.length===2&&pair.some(r=>r.plan.swap===false)&&pair.some(r=>r.plan.swap===true);
  });
- const complete=summary.complete&&manifest.fixtures.length===6&&new Set(manifest.fixtures.map(f=>f.id)).size===6&&manifest.n>=1000&&Number.isInteger(manifest.seedStart)&&a.length===2*manifest.n&&seeds.size===manifest.n&&paired;
+ const complete=summary.complete&&manifest.fixtures.length===6&&new Set(manifest.fixtures.map(f=>f.id)).size===6&&summary.freeze.pass&&a.length===2*manifest.n&&seeds.size===manifest.n&&paired&&a.every(r=>[0,.5,1].includes(r.score));
  return {scene:f.id,n:a.length,pairedSeeds:seeds.size,seedStart:manifest.seedStart,scorePct,complete,pass:complete&&scorePct>=45&&scorePct<=55};
 });
+ summary.pass=summary.freeze.pass&&summary.scenes.length===6&&summary.scenes.every(s=>s.pass);
+ summary.scope='Mirror score acceptance only; declared prior seed ranges and frozen physics. Does not certify duration, timing, walls or mobile rendering.';
+}
 if(manifest.stage==='layout'){
  summary.contrasts=manifest.fixtures.flatMap(f=>{const a=rows.filter(r=>r.plan.scene===f.id),base=mean(a.filter(r=>r.plan.change==='original').map(r=>r.score));return ['orient-first','orient-second','spread'].map(change=>({scene:f.id,change,n:a.filter(r=>r.plan.change===change).length,deltaPoints:100*(mean(a.filter(r=>r.plan.change===change).map(r=>r.score))-base)}));});summary.medianAbsoluteDelta=median(summary.contrasts.map(r=>Math.abs(r.deltaPoints)));summary.pass=summary.medianAbsoluteDelta>=5;
 }
