@@ -39,11 +39,11 @@ if(manifest.stage==='fair'){
  const paired=Array.from({length:manifest.n},(_,i)=>manifest.seedStart+i).every(seed=>{
   const pair=a.filter(r=>r.plan.seed===seed);return pair.length===2&&pair.some(r=>r.plan.swap===false)&&pair.some(r=>r.plan.swap===true);
  });
- const complete=summary.complete&&manifest.fixtures.length===6&&new Set(manifest.fixtures.map(f=>f.id)).size===6&&summary.freeze.pass&&a.length===2*manifest.n&&seeds.size===manifest.n&&paired&&a.every(r=>[0,.5,1].includes(r.score));
- return {scene:f.id,n:a.length,pairedSeeds:seeds.size,seedStart:manifest.seedStart,scorePct,complete,pass:complete&&scorePct>=45&&scorePct<=55};
+ const complete=a.length===2*manifest.n&&seeds.size===manifest.n&&paired&&a.every(r=>[0,.5,1].includes(r.score));
+ return {scene:f.id,n:a.length,pairedSeeds:seeds.size,seedStart:manifest.seedStart,scorePct,complete,pass:complete&&summary.freeze.pass&&scorePct>=45&&scorePct<=55};
 });
- summary.pass=summary.freeze.pass&&summary.scenes.length===6&&summary.scenes.every(s=>s.pass);
- summary.scope='Mirror score acceptance only; declared prior seed ranges and frozen physics. Does not certify duration, timing, walls or mobile rendering.';
+ summary.pass=summary.complete&&summary.freeze.pass&&summary.scenes.length===6&&new Set(summary.scenes.map(s=>s.scene)).size===6&&summary.scenes.every(s=>s.pass);
+ summary.scope='Mirror score acceptance only; declared prior seed ranges, frozen physics, scene and pairing/scoring protocol. Does not certify duration, timing, walls or mobile rendering.';
 }
 if(manifest.stage==='layout'){
  summary.contrasts=manifest.fixtures.flatMap(f=>{const a=rows.filter(r=>r.plan.scene===f.id),base=mean(a.filter(r=>r.plan.change==='original').map(r=>r.score));return ['orient-first','orient-second','spread'].map(change=>({scene:f.id,change,n:a.filter(r=>r.plan.change===change).length,deltaPoints:100*(mean(a.filter(r=>r.plan.change===change).map(r=>r.score))-base)}));});summary.medianAbsoluteDelta=median(summary.contrasts.map(r=>Math.abs(r.deltaPoints)));summary.pass=summary.medianAbsoluteDelta>=5;

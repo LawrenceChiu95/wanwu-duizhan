@@ -13,20 +13,17 @@ const stage=process.env.MVP_STAGE??'pilot',n=Number(process.env.MVP_SEEDS??(stag
 assert.ok(['pilot','primary','fair','layout','strength','combos','combo-check'].includes(stage));assert.ok(Number.isInteger(n)&&n>0);
 const seedStart=stage==='fair'?Number(process.env.MVP_SEED_START??30000):0;
 assert.ok(Number.isInteger(seedStart)&&seedStart>=0&&seedStart+n<=0x100000000,'seed range must not wrap');
-const out=new URL(process.env.MVP_OUT??`./results-${stage}/`,import.meta.url);await mkdir(out,{recursive:true});
+const out=new URL(process.env.MVP_OUT??`./results-${stage}/`,import.meta.url);
 const files=[...physicsFiles,'data/item-standards.json','test/v3-top/v13/experiment.mjs','test/v3-top/variant.mjs','test/mvp/batch.mjs','test/mvp/analyze.mjs','test/mvp/fair-freeze.mjs','test/mvp/walls.mjs'];
 const sources=Object.fromEntries(await Promise.all(files.map(async f=>[f,hash(await readFile(new URL(f,root)))])));
-let freeze=null;
-if(stage==='fair'){
- assert.ok(process.env.MVP_FREEZE,'fair requires a predeclared MVP_FREEZE file URL');
- freeze=JSON.parse(await readFile(new URL(process.env.MVP_FREEZE)));
- const checks=fairFreezeChecks({stage,n,seedStart,planned:12*n,sources,freeze},freeze);
- assert.ok(checks.pass,`fair freeze rejected: ${JSON.stringify(checks)}`);
-}
 const plan=[];
 const baseRadius=JSON.parse(await readFile(new URL('sim/v3-rules.json',root))).arenaRadius;
 if(stage==='pilot'||stage==='primary')for(const radius of stage==='pilot'?[2.4,2.2,2]:[baseRadius])for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const condition of ['autoA','autoB','manual','timing','idle'])plan.push({stage,radius,scene:f.id,seed,condition});
-if(stage==='fair')for(const f of fixtures)for(let seed=seedStart;seed<seedStart+n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,scene:f.id,seed,swap});
+if(stage==='fair'){
+ assert.equal(fixtures.length,6,'fair requires exactly six scenes');
+ assert.equal(new Set(fixtures.map(f=>f.id)).size,6,'fair requires six distinct scene ids');
+ for(const f of fixtures)for(let seed=seedStart;seed<seedStart+n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,scene:f.id,seed,swap});
+}
 if(stage==='layout')for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const change of ['original','orient-first','orient-second','spread'])plan.push({stage,radius:baseRadius,scene:f.id,seed,change});
 const defaultItems=['scissors','lamp-lux3d','broom','pan-lux3d','slipper','pillow'];
 if(stage==='strength')for(let a=0;a<defaultItems.length;a++)for(let b=a;b<defaultItems.length;b++)for(const leftOrient of ['out','hug'])for(const rightOrient of ['out','hug'])for(let seed=0;seed<n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,left:defaultItems[a],right:defaultItems[b],leftOrient,rightOrient,seed,swap});
@@ -37,6 +34,14 @@ if(stage==='combo-check'){
  selection=JSON.parse(await readFile(new URL(process.env.MVP_SELECTION,import.meta.url)));assert.equal(selection.complete,true);
  for(const best of selection.combos)for(const opponent of fixtures)for(let seed=1000;seed<1000+n;seed++)plan.push({stage,radius:baseRadius,combo:best.combo,...best.best.layout,opponent:opponent.id,seed});
 }
+let freeze=null;
+if(stage==='fair'){
+ assert.ok(process.env.MVP_FREEZE,'fair requires a predeclared MVP_FREEZE file URL');
+ freeze=JSON.parse(await readFile(new URL(process.env.MVP_FREEZE)));
+ const checks=fairFreezeChecks({stage,n,seedStart,planned:plan.length,sources,freeze},freeze);
+ assert.ok(checks.pass,`fair freeze rejected: ${JSON.stringify(checks)}`);
+}
+await mkdir(out,{recursive:true});
 const manifest={stage,n,...(stage==='fair'&&{seedStart,freeze}),sources,fixtures,foe,defaultItems,selection,r8Protocol:'one attachment per top; out/hug; equal weight opponents and their two orientations; paired AI streams swapped; report per-own-orient average and take maximum',planned:plan.length};
 const fingerprint=hash(JSON.stringify(manifest)),manifestFile=new URL('manifest.json',out),recordFile=new URL('rounds.ndjson',out);
 let previous=[];
