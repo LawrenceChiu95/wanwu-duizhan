@@ -1,4 +1,4 @@
-// Per-object scores. Offline catalog preparation owns this; the UI only reads the result.
+// Offline preparation writes per-object scores; ratingOf derives UI letters and grade from valid stored scores.
 export const GRADE_FLOORS = {S:75,A:60,B:45,C:30,D:0};
 const toughness={metal:1,wood:.8,plastic:.65,cloth:1.4,rubber:.65};
 const conditions={unknown:[1,1],intact:[1,1],worn:[.95,.9],damaged:[.6,.5]};
