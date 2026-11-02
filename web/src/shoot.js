@@ -152,7 +152,8 @@ export function mountShoot(ctx) {
       li.className = i < at ? 'done' : i === at ? (kind === 'fail' || kind === 'err' ? 'now bad' : kind === 'held' ? 'now hold' : 'now') : '';
     });
   }
-  function paintQuota() { el.quota.textContent = quota ? `今天还能拍 ${quota.remaining} 件` : ''; }
+  // Shown only once the backend enforces a limit; this round it reports null (Elara 71be6494).
+  function paintQuota() { el.quota.textContent = quota?.remaining != null ? `今天还能拍 ${quota.remaining} 件` : ''; }
   const photo = () => stored?.photo ?? pending?.thumb ?? '';
   const frame = (cls, inner) => `<div class="sframe ${cls}">${photo() ? `<img src="${esc(photo())}" alt="你拍的照片">` : ''}${inner}</div>`;
   const foot = (...btns) => `<div class="sfoot">${btns.join('')}</div>`;
@@ -167,7 +168,7 @@ export function mountShoot(ctx) {
         <div class="ssix"><span>会认成这六类之一，不在里面的按形状最像的算</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>
         ${foot(ghost('album', '从相册选', ICON.album), go('camera', '拍照'))}`;
     } else if (kind === 'confirm') {
-      html = `${frame('', '')}<p class="snote">生成会用掉今天的 1 件，约 1–2 分钟，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
+      html = `${frame('', '')}<p class="snote">生成要 1–2 分钟，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
         ${foot(ghost('retake', '重拍', ICON.retry), go('submit', '用这张，开始'))}`;
     } else if (kind === 'wait') {
       html = `${frame('scan', '<i class="sline"></i>')}<p class="snote" data-live="warn">正在找回这一件…</p>`;
@@ -330,7 +331,7 @@ export function mountShoot(ctx) {
   function fresh() { startError = null; pending = null; job = null; stored = null; busyNote = ''; keep(); sync(); }
   async function ask() {
     await loadQuota();
-    el.askText.textContent = `会再扣一次今天的额度${quota ? `（还剩 ${quota.remaining} 件）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
+    el.askText.textContent = `会再扣一次额度${quota?.remaining != null ? `（今天还剩 ${quota.remaining} 件）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
     el.ask.hidden = false;
     return new Promise(res => { el.askYes.onclick = () => { el.ask.hidden = true; res(true); }; el.askNo.onclick = () => { el.ask.hidden = true; res(false); }; });
   }

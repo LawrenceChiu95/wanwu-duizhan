@@ -36,7 +36,8 @@ const FAIL_AT = {
 };
 const RETRY = {'photo-invalid': 'none', 'photo-unclear': 'none', pass: 'none', quota: 'none', busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate',
   download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same'};
-const LIMIT = 30;
+// No daily limit this round (Elara 71be6494): /quota reports limit and remaining as null; a quota error only comes from ?shootFail=quota.
+const LIMIT = null;
 
 const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* full or blocked: the fake forgets */ } };
@@ -123,7 +124,6 @@ export async function fakeApi(q) {
     return view(st.jobs[id]);
   }
   function again(old, clientKey, extra) {
-    if (used() >= LIMIT) throw new ShootError('quota');
     return open(clientKey, {from: 1, photo: old.photo, sig: old.sig, cat: old.cat, recognition: old.recognition, times: [old.times[0]], slow: false, fail: null, ...extra});
   }
   const tick = ms => new Promise(r => setTimeout(r, ms));
@@ -144,7 +144,6 @@ export async function fakeApi(q) {
       if (failCode === 'pass' && !getPass()) throw new ShootError('pass');
       if (where === 'create' && failCode !== 'pass') throw new ShootError(failCode);
       if (!/^image\/(jpeg|png)$/.test(photo.type) || photo.size > 32 * 2 ** 20) throw new ShootError('photo-invalid');
-      if (used() >= LIMIT) throw new ShootError('quota');
       const at = Array.isArray(where) ? [failStage ? STAGES.findIndex(x => x[0] === failStage) : where[0], failStage ? 0.5 : where[1]] : null;
       const key = PHOTO + (st.seq + 1);
       write(key, await keepPhoto(photo));
@@ -181,9 +180,7 @@ export async function fakeApi(q) {
       return again(old, clientKey, {regenerateOf: id});
     },
     async quota() {
-      const d = new Date();
-      d.setHours(24, 0, 0, 0);
-      return {limit: LIMIT, used: used(), remaining: LIMIT - used(), resetsAt: d.toISOString(), activeJobId: active()?.id ?? null};
+      return {limit: LIMIT, used: used(), remaining: null, resetsAt: null, activeJobId: active()?.id ?? null};
     },
     // Built on every read from the item it copies, so a rebuilt page's still and model URLs are the current ones.
     async items() {
