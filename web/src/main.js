@@ -114,9 +114,20 @@ function renderCredits(items) {
   el.creditsBody.innerHTML = html.join('');
 }
 
+// 拍一件's lasting address switches, kept when 开打 rewrites the address (Elara a510bb73 B1); shootReset is not one.
+const SHOOT_KEEP = ['shoot', 'shootSpeed', 'shootFail', 'shootCat', 'shootSix'];
+
 async function main() {
   el.busy.hidden = false;
-  const [items, rules] = await Promise.all([loadCatalog(), loadV3Rules()]);
+  const q = new URLSearchParams(location.search);
+  // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
+  if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
+  // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
+  // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with.
+  const shoot0 = shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
+  const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
+  const shotItems = (shot?.items ?? []).filter(it => !items.some(i => i.id === it.id));
+  if (shotItems.length) { items.push(...shotItems); await addSimItems(shotItems); }
   const byId = new Map(items.map(i => [i.id, i]));
   setNames(items);
   const OFFER = offerOf(items);
@@ -131,7 +142,6 @@ async function main() {
   const overlay = new Overlay(stage, el);
   renderCredits(items);
 
-  const q = new URLSearchParams(location.search);
   const mode = q.get('mode') === 'B' ? 'B' : 'A';
   const fromUrl = (key = 'mine') => {
     if (!q.has(key)) return null;
@@ -551,7 +561,7 @@ async function main() {
     overlay.showBanner('开转', '#ffffff', 0.8);
     setTimeout(() => coach(0), 400);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
-    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
@@ -812,8 +822,9 @@ async function main() {
     addSimItems(fresh);
   }
   let shoot = null;
-  shootApi(q).then(async api => {
-    if (!api) return;
+  shoot0.then(async s => {
+    if (!s) return;
+    const {api} = s;
     try { addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
     shoot = mountShoot({
       api, addItems, turns, loadModels, equip, equipLabel, openHow,
