@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {gzipSync} from 'node:zlib';
 import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {fairFreezeChecks,physicsFiles,protocolFiles} from './fair-freeze.mjs';
 const fixtures=Array.from({length:6},(_,i)=>({id:`scene-${i}`}));
 const sources=Object.fromEntries([...physicsFiles,...protocolFiles].map(f=>[f,'a'.repeat(64)]));
@@ -91,4 +92,18 @@ test('fair start rejects missing freeze and a wrapping range without creating ou
   assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('./batch.mjs',import.meta.url))],{env:{...process.env,MVP_STAGE:'fair',MVP_SEEDS:'1000',MVP_SEED_START:seedStart,MVP_FREEZE:'',MVP_OUT:pathToFileURL(out+'/').href},stdio:'pipe'}),e=>e.stderr.toString().includes(message));
   await assert.rejects(access(out),{code:'ENOENT'});
  }
+});
+
+test('fair start rejects an existing freeze with a wrong protocol hash before creating output',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'wanwu-fair-bad-protocol-')),out=join(root,'output'),freezeFile=join(root,'freeze.json');
+ const actual=Object.fromEntries(await Promise.all([...physicsFiles,...protocolFiles].map(async file=>[file,createHash('sha256').update(await readFile(new URL('../../'+file,import.meta.url))).digest('hex')])));
+ const freeze={...fairFreeze,physics:Object.fromEntries(physicsFiles.map(file=>[file,actual[file]])),protocol:Object.fromEntries(protocolFiles.map(file=>[file,actual[file]]))};
+ freeze.protocol[protocolFiles[0]]='0'.repeat(64);
+ const checks=fairFreezeChecks({stage:'fair',n:1000,seedStart:30000,planned:12000,sources:actual,freeze},freeze);
+ assert.ok(checks.record&&checks.snapshot&&checks.seedRange&&checks.usedRangesRecorded&&checks.unseenSeeds&&checks.planned&&checks.physics.every(x=>x.pass));
+ assert.deepEqual(checks.protocol.filter(x=>!x.pass).map(x=>x.file),[protocolFiles[0]]);
+ await writeFile(freezeFile,JSON.stringify(freeze));
+ assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('./batch.mjs',import.meta.url))],{env:{...process.env,MVP_STAGE:'fair',MVP_SEEDS:'1000',MVP_SEED_START:'30000',MVP_FREEZE:pathToFileURL(freezeFile).href,MVP_OUT:pathToFileURL(out+'/').href},stdio:'pipe',timeout:15000}),e=>e.stderr?.toString().includes('fair freeze rejected'));
+ await assert.rejects(access(out),{code:'ENOENT'});
+ await assert.rejects(access(join(out,'manifest.json')),{code:'ENOENT'});
 });
