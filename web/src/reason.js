@@ -48,7 +48,7 @@ export function endLine(replay) {
 export function matchStats(replay, defs) {
   const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null],
     // Advice follows this item's scores, rather than its category or overall grade.
-    hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out')?.item ?? null};
+    hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null};
   for (const e of replay.events) {
     if (e.type === 'dash' && e.phase === 'end' && e.side === 0) {
       s.presses++;

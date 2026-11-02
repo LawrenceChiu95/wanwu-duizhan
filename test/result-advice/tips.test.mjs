@@ -63,3 +63,14 @@ test('wins and the no-input tutorial retain priority over item advice', () => {
   s.presses = 0;
   assert.equal(tipLine(s, 1), '按冲朝它扑过去，它冲过来时按挡');
 });
+
+test('two real broom attackers never tell the player to swap them back and forth', () => {
+  for (const [hug, out] of [['broom', 'wasteland-broom'], ['wasteland-broom', 'broom']]) {
+    const s = matchStats({events: [
+      {type: 'dash', phase: 'end', side: 0, quality: 'full'},
+      {type: 'break', target: 0, targetPart: 'part-0', item: hug}
+    ]}, [{parts: [{item: hug, orient: 'hug'}, {item: out, orient: 'out'}]}, {parts: []}]);
+    assert.equal(s.hugAttacker, null);
+    assert.equal(tipLine(s, 1), '它冲过来时按挡，能把它弹开');
+  }
+});
