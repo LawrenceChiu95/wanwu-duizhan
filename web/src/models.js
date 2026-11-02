@@ -77,16 +77,10 @@ export function instantiate(itemId, uniforms) {
 }
 
 /**
- * A turntable strip for the 角色库 cards: `frames` square views of the item turning once, side by side in one PNG.
- * Rendered once per item with the page's own renderer (no second WebGL context) and played back as a CSS sprite; the
- * element gets `--frames` so the animation steps through all of them. 72 frames over a six-second turn is 12 a second:
- * at 24 it moved 15° per step and looked like it stuck (远夏 11-02). Keep `frames * size` within 16384, the widest
- * image every browser here draws.
+ * One item on its own turntable for the 角色库 cards and 看它怎么来的: lit like the stage, centred, and framed so the
+ * whole turn fits a square. Drawn live by LiveTurns (livecards.js); null until the model has loaded.
  */
-const strips = new Map();
-export function turntable(itemId, renderer, environment, {frames = 72, size = 160} = {}) {
-  const key = `${itemId}:${frames}:${size}`;
-  if (strips.has(key)) return strips.get(key);
+export function turnRig(itemId, environment) {
   const src = cache.get(itemId);
   if (!src) return null;
   const scene = new THREE.Scene();
@@ -109,31 +103,5 @@ export function turntable(itemId, renderer, environment, {frames = 72, size = 16
   const dist = extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch);
   camera.position.set(0, dist * Math.sin(pitch), dist * Math.cos(pitch));
   camera.lookAt(0, 0, 0);
-  const target = new THREE.WebGLRenderTarget(size, size, {samples: 4, colorSpace: THREE.SRGBColorSpace});
-  const canvas = document.createElement('canvas');
-  canvas.width = size * frames;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d'), pixels = new Uint8Array(size * size * 4), img = ctx.createImageData(size, size);
-  const old = {target: renderer.getRenderTarget(), color: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha(), viewport: renderer.getViewport(new THREE.Vector4())};
-  try {
-    renderer.setClearColor(0x000000, 0);
-    for (let i = 0; i < frames; i++) {
-      spin.rotation.y = (i / frames) * Math.PI * 2;
-      renderer.setRenderTarget(target);
-      renderer.clear();
-      renderer.render(scene, camera);
-      renderer.readRenderTargetPixels(target, 0, 0, size, size, pixels);
-      // WebGL rows run bottom-up.
-      for (let y = 0; y < size; y++) img.data.set(pixels.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
-      ctx.putImageData(img, i * size, 0);
-    }
-  } finally {
-    renderer.setRenderTarget(old.target);
-    renderer.setClearColor(old.color, old.alpha);
-    renderer.setViewport(old.viewport);
-    target.dispose();
-  }
-  const strip = {url: canvas.toDataURL('image/png'), frames, size};
-  strips.set(key, strip);
-  return strip;
+  return {scene, camera, spin};
 }
