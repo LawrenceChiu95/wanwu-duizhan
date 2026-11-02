@@ -442,9 +442,10 @@ async function main() {
   // ---------- 首局提示 ----------
   // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
   // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
-  const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件碎了，核心就露出来了', at: 'mid'}];
-  // Line 3 says what the broken piece took with it, in the result line's words (Elara 11-02 a788037f).
-  const BROKE_LINE = {out: '伸出去的件碎了，就没了攻击', hug: '贴着的件碎了，核心就没了遮挡'};
+  const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件只挡一边，核心随时会挨撞', at: 'mid'}];
+  // Line 3 says what the broken piece took with it (Elara 11-02 a788037f): only its own side; the core can be hit any
+  // time and still fights with what is left (task #31, Sol's 2891 / 9099 diagnosis).
+  const BROKE_LINE = {out: '伸出的件碎了，还有另一件和核心能撞', hug: '贴着的件碎了，核心这一边没了遮挡'};
   const COACH_KEY = 'wanwu-coach-seen';
   const coachSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(COACH_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('coach') === 'again') coachSeen.clear();
