@@ -1,0 +1,37 @@
+
+> test
+> node --test --test-concurrency=1
+
+✔ native fetch asset redirect/stream is saved before parsing (39.399792ms)
+✔ native fetch asset redirect/stream interruption resumes the same task (49.912542ms)
+✔ offline CLI needs no key: PBR/UV survive, used geometry is centered at category size, originals untouched (146.255125ms)
+✔ photo dispatch uses fake upload/image/model/download, exactly two paid creates and eight timestamps (144.9655ms)
+✔ large-photo block uploads use query init, sequential multipart chunks, and the same pipeline (85.449917ms)
+✔ unknown creation persists pending; rerun makes no network request and never creates again (28.663958ms)
+✔ interrupted poll resumes existing image task; download failure retries download without more creation (87.770875ms)
+✔ failed tasks and expired results stop explicitly; rerunning never regenerates (59.256667ms)
+✔ invalid GLB, external resources and unsupported animated inputs fail before catalog writes (12.26275ms)
+✔ existing IDs, changed run inputs and occupied locks cannot overwrite assets or start paid work (16.71725ms)
+✔ exclusive catalog lock rejects another writer while held and releases after failure (3.2435ms)
+✔ checked-in knife, pot, broom meet mobile budgets, original baselines and PBR contract (15.051916ms)
+✔ orientation follows category for either source sign; checked-in pot/broom heads and weak points face out (74.408375ms)
+✔ changing only name and ID after paid work starts resumes the same default run (54.140417ms)
+✔ explicit concurrency rejection exposes its code; clearing only confirmed pending preserves paid image task (51.434625ms)
+✔ an explicitly selected pre-review photo run may change name/ID without repeating its paid image task (56.385708ms)
+✔ credential-free result downloads follow HTTPS CDN redirects; all task and upload calls still reject redirects (95.961958ms)
+✔ a downloaded result is durable before GLB validation; rerun keeps it without re-downloading or regenerating (34.044083ms)
+✔ photo records strip metadata and orient pixels, retain styled image, and publish measured origin segments (77.376708ms)
+✔ cached photo run with incomplete historical timestamps gets no fabricated origin and does not use the network (74.247042ms)
+✔ a known paid model resumes without image history or replay caches, even if the old photo cannot decode (44.807833ms)
+✔ legacy PNG cache or missing cache never blocks the already paid model download (110.432083ms)
+✔ camera JPEG over 64MP is resized before upload and both replay images fit 1600 pixels (481.482959ms)
+✔ an oversized paid GLB is kept on disk while importer still enforces the 64MiB limit (173.137042ms)
+✔ all category dimensions are at most 0.8m; both broom GLBs, hulls and weakpoints share the new uniform scale (48.539875ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4519.982125
