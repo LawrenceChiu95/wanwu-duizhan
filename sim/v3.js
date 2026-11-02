@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import {loadRules as loadCatalogRules, strikeRoles, weakCritical} from './index.js';
+import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores} from './index.js';
 import {add,sub,scale,vec,arr,quat,qarr,rotate,inverseRotate,random} from './math.js';
 // Portable math only: replays must be byte-identical across JS engines. Chrome 156 and Node 18/25 disagree in the
 // last bit of Math.exp (and earlier Math.pow) for some inputs, so this file uses + - * / and Math.sqrt (IEEE exact)
@@ -22,7 +22,7 @@ export {loadCatalog} from './index.js';
 function validate(def,c,r){
  if(!def||!Array.isArray(def.parts)||def.parts.length>2)throw Error('v3 requires a core sphere with zero, one or two attachments');
  const used=new Set(),items=new Set();
- for(const p of def.parts){if(!c.items.some(i=>i.id===p.item))throw Error(`Unknown item ${p.item}`);if(items.has(p.item))throw Error('Duplicate attachments are outside this prototype');items.add(p.item);if(!Object.hasOwn(r.top.slots,p.mount)||used.has(p.mount))throw Error('Each attachment needs a unique equator slot');used.add(p.mount);if(!r.top.orients.includes(p.orient))throw Error(`orient must be one of ${r.top.orients.join(', ')}`);}
+ for(const p of def.parts){const item=c.items.find(i=>i.id===p.item);if(!item)throw Error(`Unknown item ${p.item}`);itemCombat(item,r);if(items.has(p.item))throw Error('Duplicate attachments are outside this prototype');items.add(p.item);if(!Object.hasOwn(r.top.slots,p.mount)||used.has(p.mount))throw Error('Each attachment needs a unique equator slot');used.add(p.mount);if(!r.top.orients.includes(p.orient))throw Error(`orient must be one of ${r.top.orients.join(', ')}`);}
 }
 /** Rotation matrix columns (item x, y, z axes in body frame) to a quaternion [x,y,z,w]. */
 function basisQuat(cx,cy,cz){
@@ -75,7 +75,9 @@ function buildArena(world,r){
 /** The same per-object scores the library displays drive combat; total rarity adds no hidden bonus. */
 export function itemCombat(item,r){
  if(item.id==='__core')return {hp:r.core.hp,power:1,attack:r.core.attack,defense:r.core.defense};
- const {attack,durability}=item.rating.scores,k=r.top.itemStats;
+ const scores=ratingScores(item);
+ if(!scores)throw Error(`物品“${item.name??item.id}”（${item.id}）缺评分或评分无效：攻击、范围、耐久必须都是0–100的有限数字`);
+ const {attack,durability}=scores,k=r.top.itemStats;
  return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability),power:k.powerBase+k.powerScale*attack,attack:k.attackBase+k.attackScale*attack,defense:k.defenseBase+k.defenseScale*durability};
 }
 function buildFighter(world,def,index,c,r,openingHalfTurn){

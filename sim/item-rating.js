@@ -7,6 +7,11 @@ export function gradeFor(value){
  if(!Number.isFinite(value)||value<0||value>100)throw Error('Rating score must be 0–100');
  return Object.keys(GRADE_FLOORS).find(g=>value>=GRADE_FLOORS[g]);
 }
+/** Stored scores only; invalid or incomplete ratings must not acquire a fabricated specialization. */
+export function ratingScores(item){
+ const scores=item?.rating?.scores;
+ return scores&&['attack','range','durability'].every(k=>Number.isFinite(scores[k])&&scores[k]>=0&&scores[k]<=100)?scores:null;
+}
 export function rateItem(item,materials){
  const ext=item.bounds.max.map((v,i)=>v-item.bounds.min[i]),length=Math.max(...ext);
  const condition=item.condition??'unknown',factors=conditions[condition];

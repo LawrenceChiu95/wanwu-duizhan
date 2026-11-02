@@ -1,3 +1,4 @@
+import {ratingOf} from './rating.js';
 // One plain line (≤20 characters) for why the match ended, from the replay's decisive.why facts.
 // Short names from the catalog (the Lux3D tag is shown on its own); filled by setNames before the page draws anything.
 export const NAMES = {};
@@ -6,7 +7,7 @@ export function setNames(items) {
   for (const it of items) {
     if (typeof it.name !== 'string' || !it.name.trim()) throw Error(`物品 ${it.id} 在 catalog 里没有名字`);
     NAMES[it.id] = it.name.trim().replace(/（Lux3D）$/, '');
-    const scores = it.rating?.scores;
+    const scores = ratingOf(it)?.scores;
     const offense = scores && Math.max(scores.attack, scores.range);
     PREFERRED_ORIENT[it.id] = !scores || scores.durability === offense ? null : scores.durability > offense ? 'hug' : 'out';
   }

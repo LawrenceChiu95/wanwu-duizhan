@@ -1,3 +1,4 @@
+import {ratingScores} from '../../sim/item-rating.js';
 /**
  * Each item's 等级 (远夏 11-02 #万物对战 69f9a308, Elara 79a528bb): 攻击, 范围 and 耐久 each scored 0–100, a letter for
  * each, and the item's grade from the plain average of the three scores. The generation/import side (Sol) writes it
@@ -9,7 +10,7 @@ export const GRADES = ['S', 'A', 'B', 'C', 'D'];
 export const STATS = [['attack', '攻击'], ['range', '范围'], ['durability', '耐久']];
 
 /** The item's rating, or null for an item that has none yet. */
-export const ratingOf = item => item?.rating ?? null;
+export const ratingOf = item => ratingScores(item) ? item.rating : null;
 
 /** Best grade first; items without a grade last; otherwise the order given. */
 export const byGrade = (ids, rate) => ids.map((id, i) => ({id, i, g: GRADES.indexOf(rate(id)?.grade ?? '')}))
