@@ -370,7 +370,7 @@ async function main() {
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
-      coach(2, stage.fighters[e.target]?.def.parts[Number(e.targetPart.split('-')[1])]?.orient);
+      coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       sfx.crunch();
       buzz(25);
@@ -449,9 +449,10 @@ async function main() {
   // ---------- 首局提示 ----------
   // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
   // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
-  const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件碎了，核心就露出来了', at: 'mid'}];
-  // Line 3 says what the broken piece took with it, in the result line's words (Elara 11-02 a788037f).
-  const BROKE_LINE = {out: '伸出去的件碎了，就没了攻击', hug: '贴着的件碎了，核心就没了遮挡'};
+  const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件只挡一边，核心随时会挨撞', at: 'mid'}];
+  // Line 3 says what the broken piece took with it (Elara 11-02 a788037f): only its own side; the core can be hit any
+  // time and still fights with what is left (task #31, Sol's 2891 / 9099 diagnosis).
+  const BROKE_LINE = {out: '伸出的件碎了，还有另一件和核心能撞', hug: '贴着的件碎了，核心这一边没了遮挡'};
   const COACH_KEY = 'wanwu-coach-seen';
   const coachSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(COACH_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('coach') === 'again') coachSeen.clear();
@@ -459,18 +460,22 @@ async function main() {
   // waiting behind it comes once 冲 is pressed or after COACH_HOLD s. Lines 2 and 3 stay COACH_HOLD s each.
   const COACH_HOLD = 3;
   let coachTimer = 0, coachSince = -Infinity, coachFirstUp = false;
-  function coach(n, orient) {
+  function coach(n, broke) {
     if (control !== 'manual' || !live || coachSeen.has(n) || phase !== 'play') return;
     if (n > 0) coach(0);
     const wait = coachSince + COACH_HOLD - performance.now() / 1000;
-    if (wait > 0) { setTimeout(() => coach(n, orient), wait * 1000 + 50); return; }
+    if (wait > 0) { setTimeout(() => coach(n, broke), wait * 1000 + 50); return; }
     coachSeen.add(n);
     coachSince = performance.now() / 1000;
     coachFirstUp = n === 0;
     try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ }
     // Numbered in the order they actually came up: lines 2 and 3 follow the match (a piece can break before a lunge).
     el.coachTag.textContent = `${coachSeen.size}/3`;
-    el.coachText.textContent = n === 2 && BROKE_LINE[orient] ? BROKE_LINE[orient] : COACH[n].text;
+    // 「还有另一件」 is checked when the line actually shows: a line queued behind another can come up after that side's
+    // other piece broke too, and then only the general line is still true (task #33).
+    const f = broke && stage.fighters[broke.side], orient = f?.def.parts[broke.k]?.orient;
+    const brokeLine = orient === 'out' && !f.parts.some((p, m) => m !== broke.k && p.alive) ? null : BROKE_LINE[orient];
+    el.coachText.textContent = n === 2 && brokeLine ? brokeLine : COACH[n].text;
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
     clearTimeout(coachTimer);
