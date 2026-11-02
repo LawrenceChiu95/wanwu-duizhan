@@ -8,15 +8,17 @@ const catalog=await loadCatalog();
 import {simulateWithRules} from '../v3-top/variant.mjs';
 import {fixtures,foe,options} from '../v3-top/v13/experiment.mjs';
 const hash=x=>createHash('sha256').update(x).digest('hex'),root=new URL('../../',import.meta.url);
-const stage=process.env.MVP_STAGE??'pilot',n=Number(process.env.MVP_SEEDS??(stage==='pilot'?5:stage==='fair'?200:stage==='combos'?5:stage==='combo-check'?20:100));
+const stage=process.env.MVP_STAGE??'pilot',n=Number(process.env.MVP_SEEDS??(stage==='pilot'?5:stage==='fair'?1000:stage==='combos'?5:stage==='combo-check'?20:100));
 assert.ok(['pilot','primary','fair','layout','strength','combos','combo-check'].includes(stage));assert.ok(Number.isInteger(n)&&n>0);
+const seedStart=stage==='fair'?Number(process.env.MVP_SEED_START??30000):0;
+assert.ok(Number.isInteger(seedStart)&&seedStart>=0&&seedStart+n<=0x100000000,'seed range must not wrap');
 const out=new URL(process.env.MVP_OUT??`./results-${stage}/`,import.meta.url);await mkdir(out,{recursive:true});
-const files=['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','data/catalog.json','data/item-standards.json','test/v3-top/v13/experiment.mjs','test/v3-top/variant.mjs','test/mvp/batch.mjs','test/mvp/analyze.mjs','test/mvp/walls.mjs'];
+const files=['sim/v3.js','sim/v3-rules.json','sim/index.js','sim/math.js','sim/item-rating.js','data/catalog.json','data/default-item-designs.json','data/item-standards.json','test/v3-top/v13/experiment.mjs','test/v3-top/variant.mjs','test/mvp/batch.mjs','test/mvp/analyze.mjs','test/mvp/walls.mjs'];
 const sources=Object.fromEntries(await Promise.all(files.map(async f=>[f,hash(await readFile(new URL(f,root)))])));
 const plan=[];
 const baseRadius=JSON.parse(await readFile(new URL('sim/v3-rules.json',root))).arenaRadius;
 if(stage==='pilot'||stage==='primary')for(const radius of stage==='pilot'?[2.4,2.2,2]:[baseRadius])for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const condition of ['autoA','autoB','manual','timing','idle'])plan.push({stage,radius,scene:f.id,seed,condition});
-if(stage==='fair')for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,scene:f.id,seed,swap});
+if(stage==='fair')for(const f of fixtures)for(let seed=seedStart;seed<seedStart+n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,scene:f.id,seed,swap});
 if(stage==='layout')for(const f of fixtures)for(let seed=0;seed<n;seed++)for(const change of ['original','orient-first','orient-second','spread'])plan.push({stage,radius:baseRadius,scene:f.id,seed,change});
 const defaultItems=['scissors','lamp-lux3d','broom','pan-lux3d','slipper','pillow'];
 if(stage==='strength')for(let a=0;a<defaultItems.length;a++)for(let b=a;b<defaultItems.length;b++)for(const leftOrient of ['out','hug'])for(const rightOrient of ['out','hug'])for(let seed=0;seed<n;seed++)for(const swap of [false,true])plan.push({stage,radius:baseRadius,left:defaultItems[a],right:defaultItems[b],leftOrient,rightOrient,seed,swap});
@@ -27,7 +29,7 @@ if(stage==='combo-check'){
  selection=JSON.parse(await readFile(new URL(process.env.MVP_SELECTION,import.meta.url)));assert.equal(selection.complete,true);
  for(const best of selection.combos)for(const opponent of fixtures)for(let seed=1000;seed<1000+n;seed++)plan.push({stage,radius:baseRadius,combo:best.combo,...best.best.layout,opponent:opponent.id,seed});
 }
-const manifest={stage,n,sources,fixtures,foe,defaultItems,selection,r8Protocol:'one attachment per top; out/hug; equal weight opponents and their two orientations; paired AI streams swapped; report per-own-orient average and take maximum',planned:plan.length};
+const manifest={stage,n,...(stage==='fair'&&{seedStart}),sources,fixtures,foe,defaultItems,selection,r8Protocol:'one attachment per top; out/hug; equal weight opponents and their two orientations; paired AI streams swapped; report per-own-orient average and take maximum',planned:plan.length};
 const fingerprint=hash(JSON.stringify(manifest)),manifestFile=new URL('manifest.json',out),recordFile=new URL('rounds.ndjson',out);
 let previous=[];
 try{assert.equal(JSON.parse(await readFile(manifestFile)).fingerprint,fingerprint,'sources/input changed: use new evidence directory');previous=(await readFile(recordFile,'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);}catch(e){if(e.code!=='ENOENT')throw e;await writeFile(manifestFile,JSON.stringify({...manifest,fingerprint},null,2)+'\n');await writeFile(recordFile,'');}

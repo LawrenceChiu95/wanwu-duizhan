@@ -72,6 +72,12 @@ function buildArena(world,r){
   [x,z]=[x*c-z*s,z*c+x*s];
  }
 }
+/** The same per-object scores the library displays drive combat; total rarity adds no hidden bonus. */
+export function itemCombat(item,r){
+ if(item.id==='__core')return {hp:r.core.hp,power:1,attack:r.core.attack,defense:r.core.defense};
+ const {attack,durability}=item.rating.scores,k=r.top.itemStats;
+ return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability),power:k.powerBase+k.powerScale*attack,attack:k.attackBase+k.attackScale*attack,defense:k.defenseBase+k.defenseScale*durability};
+}
 function buildFighter(world,def,index,c,r,openingHalfTurn){
  const spin=r.top.spinRate*r.top.spinDirections[index];
  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping));
@@ -81,7 +87,7 @@ function buildFighter(world,def,index,c,r,openingHalfTurn){
  const parts=def.parts.map((p,i)=>{
   const item=c.items.find(x=>x.id===p.item),{offset,quat:q}=mountTransform(item,p.mount,p.orient,r),d=RAPIER.ColliderDesc.convexHull(new Float32Array(item.hull.flat()));if(!d)throw Error(`Invalid hull ${item.id}`);
   const collider=world.createCollider(d.setMass(item.mass).setTranslation(...offset).setRotation(quat(q)).setRestitution(c.materials[item.material].restitution).setFriction(.12),body);
-  return {id:`part-${i}`,item,mount:p.mount,orient:p.orient,offset,localQuat:q,collider,maxHp:r.attachmentHp*(r.top.itemHp?.[item.category]??1),hp:r.attachmentHp*(r.top.itemHp?.[item.category]??1),alive:true};
+  return {id:`part-${i}`,item,mount:p.mount,orient:p.orient,offset,localQuat:q,collider,maxHp:itemCombat(item,r).hp,hp:itemCombat(item,r).hp,alive:true};
  });
  body.recomputeMassPropertiesFromColliders();
  // Opposite sides face each other by a half turn, without reflecting handed geometry.
@@ -111,13 +117,15 @@ function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.an
 function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
 export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r}){
- const hardness=Math.sqrt(materials[attacker.material].hardness/materials[target.material].hardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
- const score=(mode==='A'?impulse:Math.max(0,attacker.stats.attack*matchup-target.stats.defense))*hardness*tipMultiplier;
+ const attack=itemCombat(attacker,r),defend=itemCombat(target,r);
+ // Hardness rewards the striker; a soft target no longer raises the damage tier just for being soft.
+ const hardness=Math.sqrt(materials[attacker.material].hardness/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
+ const score=(mode==='A'?impulse:Math.max(0,attack.attack*matchup-defend.defense))*hardness*tipMultiplier;
  const tier=r.tierThresholds[mode].filter(threshold=>score>=threshold).length;
- // Category balance and mounting trade-off apply before the existing per-hit cap.
- const attackMultiplier=r.top?.orientPower?.[attackerOrient]??1,receiveMultiplier=r.top?.orientReceive?.[targetOrient]??1;
- const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*(r.top?.itemPower?.[attacker.category]??1)*attackMultiplier*receiveMultiplier,damageCap=maxHp*(weak?r.weakCritMaxFraction:r.maxHitFraction);
- return {score,tier,hardness,matchup,attackMultiplier,receiveMultiplier,rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
+ // Per-object power and mounting trade-off apply before the existing per-hit cap.
+ const attackMultiplier=r.top?.orientPower?.[attackerOrient]??1,receiveMultiplier=(r.top?.orientReceive?.[targetOrient]??1)*(targetOrient==='hug'?(r.top.softHugReceive[target.material]??1):1);
+ const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier,damageCap=maxHp*(weak?r.weakCritMaxFraction:r.maxHitFraction);
+ return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
 // Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.

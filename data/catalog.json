@@ -249,7 +249,7 @@
       },
       "volume": 0.00009555724682286382,
       "mass": 0.15,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/RRyFBBtM2K",
         "author": "Zsky",
@@ -683,7 +683,7 @@
       },
       "volume": 0.0049897101190355085,
       "mass": 0.6,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/bzCi_ZLQPN4",
         "author": "Poly by Google",
@@ -1086,8 +1086,8 @@
         "defense": 3
       },
       "volume": 0.0007369761005975306,
-      "mass": 0.25,
-      "massBasis": "category",
+      "mass": 0.16,
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/2wR1M99UwP",
         "author": "J-Toastie",
@@ -1221,8 +1221,8 @@
         "defense": 2
       },
       "volume": 0.020540330559015274,
-      "mass": 0.6,
-      "massBasis": "category",
+      "mass": 0.5,
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/f60emm1Xkas",
         "author": "Poly by Google",
@@ -1444,7 +1444,7 @@
         "defense": 6
       },
       "volume": 0.002363260369747877,
-      "mass": 2.5,
+      "mass": 2,
       "source": {
         "url": "https://www.aholo3d.cn/ (Aholo Lux3D 生成)",
         "author": "Aholo Lux3D",
@@ -1489,7 +1489,7 @@
       },
       "category": "pot",
       "standardLongSide": 0.38,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "comparisonBase": "pot",
       "rating": {
         "version": "rating-v1:89-48-95:75-60-45-30-0",
@@ -1672,7 +1672,7 @@
         "defense": 4
       },
       "volume": 0.00604151701554656,
-      "mass": 1.5,
+      "mass": 1.3,
       "source": {
         "url": "https://www.aholo3d.cn/ (Aholo Lux3D 生成)",
         "author": "Aholo Lux3D",
@@ -1717,7 +1717,7 @@
       },
       "category": "lamp",
       "standardLongSide": 0.45,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "comparisonBase": "lamp",
       "rating": {
         "version": "rating-v1:46-56-50:75-60-45-30-0",
@@ -1749,8 +1749,8 @@
         "attack": 14,
         "defense": 3
       },
-      "mass": 0.15,
-      "massBasis": "category",
+      "mass": 0.25,
+      "massBasis": "designed-default",
       "standardLongSide": 0.2,
       "hull": [
         [
@@ -1963,8 +1963,8 @@
         "attack": 12,
         "defense": 6
       },
-      "mass": 2.5,
-      "massBasis": "category",
+      "mass": 0.8,
+      "massBasis": "designed-default",
       "standardLongSide": 0.38,
       "hull": [
         [
@@ -2173,8 +2173,8 @@
         "attack": 13,
         "defense": 3
       },
-      "mass": 0.6,
-      "massBasis": "category",
+      "mass": 1.7,
+      "massBasis": "designed-default",
       "standardLongSide": 0.8,
       "hull": [
         [

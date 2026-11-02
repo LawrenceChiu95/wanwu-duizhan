@@ -9,6 +9,7 @@ import{vec,arr,add,sub,rotate,euler,length,random}from'../../sim/math.js';
 import{definition}from'./probe.mjs';
 const digest=r=>crypto.createHash('sha256').update(JSON.stringify(r)).digest('hex');
 const c=await loadRules(),rules=await loadV3Rules(),catalog=await loadCatalog();
+const designs=JSON.parse(await readFile(new URL('../../data/default-item-designs.json',import.meta.url),'utf8')).items;
 const simulations=[];
 for(const mode of ['A','B'])for(const [left,right]of [['broom','pot'],['scissors','pillow'],['lamp-lux3d','pan-lux3d']])simulations.push(await simulateV3({fighters:[definition(left),definition(right)],mode,seed:1}));
 test('explicit new schema, deterministic full replay, A/B identical initial geometry',async()=>{
@@ -19,7 +20,7 @@ test('explicit new schema, deterministic full replay, A/B identical initial geom
 test('equator slots and orientations, standard dimensions, inner end sunk into the core',()=>{
  const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0),unit=k=>[0,1,2].map(i=>i===k?1:0);
  assert.ok(Object.keys(rules.top.slots).length>=4);assert.deepEqual(rules.top.orients,['out','hug']);
- for(const item of catalog){assert.equal(item.mass,c.itemStandards[item.category].massKg);const span=Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]));assert.ok(Math.abs(span-c.itemStandards[item.category].longSideMeters)<1e-6);
+ for(const item of catalog){assert.equal(item.mass,designs.find(d=>d.id===item.id)?.massKg??c.itemStandards[item.category].massKg);const span=Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]));assert.ok(Math.abs(span-c.itemStandards[item.category].longSideMeters)<1e-6);
   const {long,thin}=itemAxes(item);
   for(const mount of Object.keys(rules.top.slots))for(const orient of rules.top.orients){
    const {offset,quat:q,direction:d}=mountTransform(item,mount,orient,rules),points=item.hull.map(v=>add(offset,rotate(q,v)));
@@ -75,7 +76,8 @@ test('damage ramp is piecewise linear and never applies without a hit',()=>{
  assert.ok(tierDamage({...base,ramp:1.5}).damage<=55*rules.maxHitFraction+1e-9);
 });
 test('damage tiers and weak cap; near-static approach never gains damage from seed',()=>{
- const item=c.items[0],target=c.items.find(i=>i.id==='pillow'),args={attacker:item,target,materials:c.materials,matchups:c.matchups,maxHp:70,rules};
+ // Use the designed heavy pot so both modes actually exceed the cap; low-attack scissors need not.
+ const item=c.items.find(i=>i.id==='pan-lux3d'),target=c.items.find(i=>i.id==='pillow'),args={attacker:item,target,materials:c.materials,matchups:c.matchups,maxHp:70,rules};
  for(const mode of ['A','B']){const d=tierDamage({...args,mode,impulse:100,weak:true});assert.ok(d.damage<=28);assert.ok(d.rawDamage>d.damageCap);assert.equal(d.damageCap,28);}
  for(const seed of [0,1])assert.equal(strikeRoles({normal:[1,0,0],velocities:[[0,20,0],[0,-20,0]],tipRatios:[1,1],tipBonus:.3,seed,minimumSpeed:rules.minimumClosingSpeed}).attacker,null);
 });

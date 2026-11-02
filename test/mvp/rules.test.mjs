@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {gzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
-import {simulateV3,createV3Match,loadCatalog,loadV3Rules,tierDamage,timeoutVerdict,itemAxes} from '../../sim/v3.js';
+import {simulateV3,createV3Match,loadCatalog,loadV3Rules,tierDamage,timeoutVerdict,itemAxes,itemCombat} from '../../sim/v3.js';
 import {loadRules} from '../../sim/index.js';
 import {rotate} from '../../sim/math.js';
 import {simulateWithRules} from '../v3-top/variant.mjs';
+import {fixtures as timingFixtures,options as timingOptions} from '../v3-top/v13/experiment.mjs';
 const bare={parts:[]},rules=await loadV3Rules(),catalog=await loadRules();
 
 test('physical fence bounces an outward core without creating fighter hits or HP loss',async()=>{
@@ -22,21 +23,29 @@ test('physical fence bounces an outward core without creating fighter hits or HP
  assert.ok(!r.events.some(e=>['contact','hit','weak','parry','break'].includes(e.type)));assert.ok(r.events.filter(e=>e.type==='blockResult').every(e=>e.outcome==='empty'));
 });
 
-test('category stats agree for original and generated assets, while mounting keeps per-item outward ends',async()=>{
+test('per-object scores drive HP and damage, while mounting keeps per-item outward ends',async()=>{
  const items=await loadCatalog(),generated=items.filter(i=>i.generated);assert.ok(generated.length>=3);
- const args={mode:'B',impulse:3,target:items.find(i=>i.id==='pillow'),materials:catalog.materials,matchups:catalog.matchups,maxHp:10000,rules};
- for(const item of generated){
-  const template=items.find(i=>i.id===item.category);assert.ok(template,`${item.id}: category template`);
-  for(const key of ['material','tag','stats'])assert.deepEqual(item[key],template[key],`${item.id}: ${key}`);
-  const m=await createV3Match({fighters:[{parts:[{item:template.id,mount:'e0',orient:'out'}]},{parts:[{item:item.id,mount:'e0',orient:'out'}]}],seed:0});
+ for(const item of items){
+  const m=await createV3Match({fighters:[{parts:[{item:item.id,mount:'e0',orient:'out'}]},{parts:[]}],seed:0});
   try{
-   assert.equal(m.initial[0].parts[0].maxHp,m.initial[1].parts[0].maxHp,`${item.id}: category HP`);
-   const f=m.initial[1],p=f.parts[0],axis=[0,0,0];axis[itemAxes(item).long]=rules.top.outEnd[item.id]??1;
-   const direction=rotate(p.quat,axis);assert.ok(direction.reduce((sum,v,i)=>sum+v*(p.pos[i]-f.pos[i]),0)>0,`${item.id}: its configured normalized end points outward`);
+   assert.equal(m.initial[0].parts[0].maxHp,itemCombat(item,rules).hp);
+   const f=m.initial[0],p=f.parts[0],axis=[0,0,0];axis[itemAxes(item).long]=rules.top.outEnd[item.id]??1;
+   const direction=rotate(p.quat,axis);assert.ok(direction.reduce((sum,v,i)=>sum+v*(p.pos[i]-f.pos[i]),0)>0,`${item.id}: normalized end points outward`);
   }finally{m.free();}
-  assert.equal(tierDamage({...args,attacker:item}).damage,tierDamage({...args,attacker:template}).damage,`${item.id}: category B damage`);
  }
+ const [pot,thin]=['pan-lux3d','wasteland-pot'].map(id=>items.find(i=>i.id===id));
+ assert.ok(itemCombat(pot,rules).hp>itemCombat(thin,rules).hp);assert.ok(itemCombat(pot,rules).power>itemCombat(thin,rules).power);
  assert.equal(rules.top.outEnd.broom,-1);assert.equal(rules.top.outEnd['pan-lux3d'],-1);
+});
+
+test('softness never raises incoming tier; cloth/rubber hugging reduce damage and attack stays low',()=>{
+ const it=id=>catalog.items.find(i=>i.id===id),pot=it('pan-lux3d'),pillow=it('pillow');
+ const args={mode:'A',impulse:1,attacker:pot,target:pot,materials:catalog.materials,matchups:{},maxHp:10000,rules};
+ const hard=tierDamage(args),soft=tierDamage({...args,target:pillow});assert.equal(soft.tier,hard.tier);assert.equal(soft.hardness,hard.hardness);
+ const hug=tierDamage({...args,target:pillow,targetOrient:'hug'});assert.equal(hug.receiveMultiplier,.85*.7);assert.ok(hug.damage<soft.damage);
+ const rubber=tierDamage({...args,target:it('slipper'),targetOrient:'hug'});assert.equal(rubber.receiveMultiplier,.85*.8);assert.ok(rubber.damage<soft.damage);
+ assert.ok(tierDamage({...args,attacker:pillow}).damage<hard.damage);assert.ok(itemCombat(pillow,rules).hp>itemCombat(it('slipper'),rules).hp);
+ for(const mode of ['A','B'])assert.ok(tierDamage({...args,mode,attacker:pillow}).itemPower<tierDamage({...args,mode,attacker:pot}).itemPower);
 });
 
 test('out trades protection for damage, hug trades damage for protection, before existing hit caps',()=>{
@@ -89,4 +98,14 @@ test('ready fires once at each used cooldown boundary before accepting the same-
  assert.deepEqual(ready.map(e=>[e.side,e.action,e.t]),[[0,'block',601*rules.dt],[0,'block',1201*rules.dt]]);
  assert.ok(r.events.indexOf(ready[0])<r.events.findIndex(e=>e.type==='press'&&e.t===ready[0].t));
  assert.equal(JSON.stringify(r),JSON.stringify(await simulate(options)));
+});
+
+
+test('four timed scissors/pillow long-tail regressions end by 45s with real KO',async()=>{
+ const scene=timingFixtures.find(f=>f.id==='scissors-pillow/hug-hug-e90');
+ for(const seed of [15,18,30,69]){
+  const r=await simulateV3(timingOptions(scene,seed,'timing'));
+  assert.equal(r.meta.reason,'ko',`seed ${seed}: must end through real damage`);
+  assert.ok(r.meta.duration<=45,`seed ${seed}: ${r.meta.duration}s exceeds the accepted tail limit`);
+ }
 });
