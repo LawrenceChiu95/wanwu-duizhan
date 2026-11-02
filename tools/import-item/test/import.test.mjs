@@ -179,12 +179,11 @@ test('exclusive catalog lock rejects another writer while held and releases afte
 test('checked-in knife, pot, broom meet mobile budgets, original baselines and PBR contract',async()=>{
  for(const id of ['wasteland-knife','wasteland-pot','wasteland-broom']){
   const item=base.items.find(i=>i.id===id);assert.ok(item,id);
-  const designs=JSON.parse(await fs.readFile(path.join(ROOT,'data/default-item-designs.json'))).items;
   const bytes=await fs.readFile(path.join(ROOT,item.glb));assert.equal(sha256(bytes),item.source.normalizedSha256);validateGlb(bytes);
   const doc=await new NodeIO().readBinary(bytes);let count=0;
   for(const mesh of doc.getRoot().listMeshes())for(const p of mesh.listPrimitives()){count+=(p.getIndices()?.getCount()??p.getAttribute('POSITION').getCount())/3;assert.ok(p.getAttribute('TEXCOORD_0'));assert.ok(p.getMaterial()?.getBaseColorTexture());}
   assert.ok(count>=10000&&count<=15000);assert.equal(count,item.source.preparation.triangles);
-  assert.ok(item.hull.length>=4&&item.hull.length<=64);assert.ok(item.volume>0);assert.equal(item.mass,designs.find(d=>d.id===id).massKg);
+  assert.ok(item.hull.length>=4&&item.hull.length<=64);assert.ok(item.volume>0);assert.equal(item.mass,base.itemStandards[item.category].massKg);
   for(const texture of doc.getRoot().listTextures()){const meta=await sharp(texture.getImage()).metadata();assert.ok(meta.width<=512&&meta.height<=512);}
  }
 });
