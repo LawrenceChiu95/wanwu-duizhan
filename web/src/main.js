@@ -665,9 +665,12 @@ async function main() {
         if (!card.isConnected || el.library.hidden) return; // left before its turn: still face down next time
         card.classList.replace('down', 'turning');
         sfx.flip();
-        setTimeout(() => sfx.reveal(rate(id)?.grade), REVEAL_FACE);
-        gradesSeen.add(seenKey(id));
-        try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+        setTimeout(() => {
+          if (!card.isConnected || el.library.hidden) return; // left mid-turn, before the face showed: turn again next time
+          sfx.reveal(rate(id)?.grade);
+          gradesSeen.add(seenKey(id));
+          try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+        }, REVEAL_FACE);
       }, wait);
     }
   }, {threshold: 0.6});
