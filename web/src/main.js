@@ -621,7 +621,7 @@ async function main() {
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
     // Collection so far, best grade first (远夏 11-02: collect the S).
     const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
-    el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}${OFFER.some(id => rate(id)?.placeholder) ? '<small>等级是占位，正式数据 11-03 到</small>' : ''}`;
+    el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}`;
     el.libGrid.innerHTML = byGrade(OFFER, rate).map(id => cardHtml(id, k)).join('');
     revealUnseen();
     el.libGrid.scrollTop = 0;
@@ -650,7 +650,7 @@ async function main() {
 
   // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet is dealt face down and turns over the first time
   // its card is on screen, one after another, with a sound by grade and gold for an S. Remembered per item and rating
-  // version, so a re-rated item (the placeholder giving way to real data) turns over again. ?reveal=again resets it.
+  // version, so a re-rated item (new scores or score lines) turns over again. ?reveal=again resets it.
   const SEEN_KEY = 'wanwu-grades-seen';
   const gradesSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('reveal') === 'again') gradesSeen.clear();
