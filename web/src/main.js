@@ -4,6 +4,7 @@ import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels, pictureUrl} from './models.js';
 import {LiveTurns} from './livecards.js';
+import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
@@ -17,8 +18,8 @@ const el = {
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
   result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), statsList: $('statsList'), tipLine: $('tipLine'),
   foeSheet: $('foeSheet'), foeList: $('foeList'),
-  library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'),
-  how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
+  library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'), libGrades: $('libGrades'),
+  resultBuild: $('resultBuild'), how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
   howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
@@ -109,6 +110,9 @@ async function main() {
   const byId = new Map(items.map(i => [i.id, i]));
   setNames(items);
   const OFFER = offerOf(items);
+  const rate = id => ratingOf(byId.get(id));
+  // A grade letter, coloured by grade (empty for an item without one).
+  const gradeTag = (id, cls = 'grade') => { const g = rate(id)?.grade; return g ? `<i class="${cls} g${g}">${g}</i>` : ''; };
   const spec = id => { const it = byId.get(id); return `${Math.round(Math.max(...it.bounds.max.map((v, i) => v - it.bounds.min[i])) * 100)} cm · ${it.mass} kg`; };
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
@@ -152,7 +156,7 @@ async function main() {
 
   // Opponent tag on the build screen, and 换个对手: a sheet of the computer's builds; the pick stays for the next rounds.
   const sameBuild = (x, y) => x.spread === y.spread && x.parts.every((p, i) => p.item === y.parts[i].item && p.orient === y.parts[i].orient);
-  const partsHtml = b => b.parts.map(p => `<span>${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
+  const partsHtml = b => b.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
   function renderFoe() { el.foeParts.innerHTML = partsHtml(FOE); }
   renderFoe();
   let foeReq = 0;
@@ -192,6 +196,8 @@ async function main() {
     document.querySelectorAll('.slot').forEach(slot => {
       const k = Number(slot.dataset.slot), part = mine.parts[k];
       slot.querySelector('.item b').textContent = NAMES[part.item];
+      slot.querySelector('.item .nm').querySelector('.grade')?.remove();
+      slot.querySelector('.item .nm').insertAdjacentHTML('afterbegin', gradeTag(part.item));
       slot.querySelector('.lux').hidden = !isLux(part.item);
       slot.querySelector('.spec').textContent = spec(part.item);
       slot.querySelector('.hint').textContent = HINT[part.orient];
@@ -550,6 +556,8 @@ async function main() {
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
     el.whyLine.textContent = reasonLine(replay);
+    const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
+    el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">对手</span>${builds[1]}`;
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner);
@@ -596,19 +604,26 @@ async function main() {
     const badge = other ? '<span class="badge">已装</span>' : own ? '<span class="badge own">装着</span>' : '';
     const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : src.tag ? `<span class="srctag">${esc(src.tag)}</span>` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(src.line)}</small>`;
-    return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}" data-item="${esc(id)}">
-      <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}">
+    // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
+    const r = rate(id), grade = r?.grade;
+    const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
+    return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
+      <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media"><canvas class="turn"></canvas>${corner}${badge}</span>
-        <span class="nm"><b>${esc(NAMES[id])}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span>
-        <small class="spec">${spec(id)}</small>
-      </button>${foot}</article>`;
+        <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span>
+        ${rows}<small class="spec">${spec(id)}</small>
+      </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }
   async function openLibrary(k) {
     const req = ++libReq;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
-    el.libGrid.innerHTML = OFFER.map(id => cardHtml(id, k)).join('');
+    // Collection so far, best grade first (远夏 11-02: collect the S).
+    const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
+    el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}${OFFER.some(id => rate(id)?.placeholder) ? '<small>等级是占位，正式数据 11-03 到</small>' : ''}`;
+    el.libGrid.innerHTML = byGrade(OFFER, rate).map(id => cardHtml(id, k)).join('');
+    revealUnseen();
     el.libGrid.scrollTop = 0;
     el.library.hidden = false;
     for (const card of el.libGrid.querySelectorAll('.card')) {
@@ -631,7 +646,41 @@ async function main() {
       if (turn) turns.show(turn, id);
     }
   }
-  function closeLibrary() { libReq++; el.library.hidden = true; }
+  function closeLibrary() { libReq++; revealIo.disconnect(); el.library.hidden = true; }
+
+  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet is dealt face down and turns over the first time
+  // its card is on screen, one after another, with a sound by grade and gold for an S. Remembered per item and rating
+  // version, so a re-rated item (the placeholder giving way to real data) turns over again. ?reveal=again resets it.
+  const SEEN_KEY = 'wanwu-grades-seen';
+  const gradesSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')); } catch { return new Set(); } })();
+  if (q.get('reveal') === 'again') gradesSeen.clear();
+  const seenKey = id => `${id}:${rate(id)?.version}`;
+  const REVEAL_GAP = 260, REVEAL_FACE = 330; // ms between cards; ms into the turn when the face shows
+  let revealAt = 0;
+  const revealIo = new IntersectionObserver(entries => {
+    for (const e of entries.filter(x => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left)) {
+      revealIo.unobserve(e.target);
+      const card = e.target, id = card.dataset.item, wait = Math.max(0, revealAt - performance.now());
+      revealAt = performance.now() + wait + REVEAL_GAP;
+      setTimeout(() => {
+        if (!card.isConnected || el.library.hidden) return; // left before its turn: still face down next time
+        card.classList.replace('down', 'turning');
+        sfx.flip();
+        setTimeout(() => sfx.reveal(rate(id)?.grade), REVEAL_FACE);
+        gradesSeen.add(seenKey(id));
+        try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+      }, wait);
+    }
+  }, {threshold: 0.6});
+  function revealUnseen() {
+    revealIo.disconnect();
+    revealAt = performance.now() + 250; // after the 角色库 has faded in
+    for (const card of el.libGrid.querySelectorAll('.card')) {
+      if (!rate(card.dataset.item) || gradesSeen.has(seenKey(card.dataset.item))) continue;
+      card.classList.add('down');
+      revealIo.observe(card);
+    }
+  }
   $('libBack').onclick = closeLibrary;
 
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
