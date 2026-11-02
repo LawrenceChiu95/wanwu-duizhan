@@ -1,0 +1,200 @@
+/**
+ * 拍一件's local stand-in backend (?shoot=fake, task #47): the same calls and job states as the real one in
+ * 「前端要的任务接口」 第 2 稿, kept in this browser's localStorage so closing and reopening the page finds the job where
+ * it was. Nothing is uploaded and nothing is generated: a finished job becomes a copy of an item already in the repo,
+ * with the player's photo.
+ *
+ * A job's stages run on a clock of their own so a walkthrough need not wait the real minute and a half; the job reports
+ * that clock's times, and the screens read it through now(), so they still show real-length durations.
+ *   ?shootSpeed=10        the clock runs 10× (default 1)
+ *   ?shootFail=<code>     the next new photo fails with that code at its usual stage; @stage moves it
+ *                         (recognize | styled | model | download | process), e.g. shootFail=server@download.
+ *                         Only jobs from a new photo fail: 再试, 再提交 and 重新生成 go through.
+ *                         Also: slow (the 3D step takes 11 minutes), offline (polls fail for ten seconds).
+ *   ?shootCat=<category>  what the photo is recognised as (pot, lamp, scissors, broom, slipper, pillow; default pot)
+ *   ?shootSix=0           recognised as outside the six, counted as the nearest
+ *   ?shootReset=1         forget every fake job, item and the page's current job
+ */
+import {loadCatalog} from '../../sim/index.js';
+import {stillUrl} from './models.js';
+import {ShootError, getPass} from './shoot-api.js';
+
+const KEY = 'wanwu-shoot-fake', PHOTO = 'wanwu-shoot-fake-photo:';
+// Seconds per stage at speed 1, roughly the real generation's (tools/import-item README); the four after 认物 sum to 90.
+const STAGES = [['recognize', 3], ['styled', 22], ['model', 53], ['download', 6], ['process', 9]];
+const STEP_KEYS = ['styled', 'model', 'download', 'process'];
+const ESTIMATE = 90;
+// What each category becomes: an item already in the repo.
+const SOURCE = {pot: 'wasteland-pot', scissors: 'wasteland-knife', broom: 'wasteland-broom', lamp: 'lamp-lux3d', slipper: 'slipper', pillow: 'pillow'};
+const CAT_NAME = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
+const BASIS = {pot: '圆口、有柄', lamp: '灯罩、底座', scissors: '细长、有刃', broom: '长柄、一头散开', slipper: '扁平、鞋形', pillow: '软、方块'};
+// Where each failure happens unless @stage says otherwise: [stage, fraction into it]; 'create' fails the call itself.
+const FAIL_AT = {
+  'photo-invalid': 'create', pass: 'create', quota: 'create', 'key-conflict': 'create',
+  'photo-unclear': [0, 1], busy: [1, 0], 'step-failed': [2, 0.5], 'unknown-submit': [2, 0.1], expired: [3, 0],
+  download: [3, 0.6], process: [4, 0.5], 'process-unfixable': [4, 0.7], server: [2, 0.4]
+};
+const RETRY = {'photo-invalid': 'none', 'photo-unclear': 'none', pass: 'none', quota: 'none', busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate',
+  download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same'};
+const LIMIT = 30;
+
+const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* full or blocked: the fake forgets */ } };
+const iso = ms => ms == null ? null : new Date(ms).toISOString();
+const today = () => new Date().toDateString();
+
+/** The photo as the backend would keep it for the item's origin: a JPEG data URL, 640 px on the long side. */
+async function keepPhoto(blob) {
+  const img = await createImageBitmap(blob), k = Math.min(1, 640 / Math.max(img.width, img.height));
+  const c = Object.assign(document.createElement('canvas'), {width: Math.round(img.width * k), height: Math.round(img.height * k)});
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+
+export async function fakeApi(q) {
+  if (q.get('shootReset') === '1') {
+    for (const k of Object.keys(localStorage)) if (k === KEY || k.startsWith(PHOTO) || k === 'wanwu-shoot-job') localStorage.removeItem(k);
+  }
+  const catalog = await loadCatalog();
+  const speed = Math.max(0.1, Number(q.get('shootSpeed')) || 1);
+  const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
+  const cat = SOURCE[q.get('shootCat')] ? q.get('shootCat') : 'pot', inSix = q.get('shootSix') !== '0';
+  const st = read(KEY) ?? {clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
+  const vnow = () => st.clock.virt0 + (Date.now() - st.clock.real0) * st.clock.speed;
+  // A new speed takes over from where the clock is: it never runs backwards.
+  if (st.clock.speed !== speed) st.clock = {real0: Date.now(), virt0: vnow(), speed};
+  const save = () => write(KEY, st);
+  save();
+  const used = () => st.used.day === today() ? st.used.n : 0;
+
+  const stageMs = (rec, s) => (rec.slow && STAGES[s][0] === 'model' ? 660 : STAGES[s][1]) * 1000;
+  // Brings a job up to the clock: which stage it is in, whether a planned failure has struck, and the item once done.
+  function advance(rec) {
+    if (rec.done) return;
+    const now = vnow();
+    let t = rec.t0;
+    for (let s = rec.from; s < STAGES.length; s++) {
+      const d = stageMs(rec, s);
+      rec.times[s] = [t, null];
+      if (s >= 1 && !rec.charged && !(rec.fail?.code === 'busy' && rec.fail.stage === s)) {
+        rec.charged = true;
+        st.used = {day: today(), n: used() + 1};
+      }
+      if (rec.fail?.stage === s && now >= t + rec.fail.frac * d) {
+        rec.done = {status: 'failed', error: {code: rec.fail.code, message: '', retry: RETRY[rec.fail.code], charged: rec.charged}, stage: s};
+        return;
+      }
+      if (now < t + d) return;
+      rec.times[s][1] = t += d;
+    }
+    const n = st.items.length + 1, base = `我拍的${CAT_NAME[rec.cat]}`, same = st.items.filter(i => i.cat === rec.cat).length;
+    const secs = s => rec.times[s]?.[1] != null ? (rec.times[s][1] - rec.times[s][0]) / 1000 : STAGES[s][1];
+    st.items.push({id: `shot-${n}`, job: rec.id, cat: rec.cat, name: same ? `${base} ${same + 1}` : base, photo: rec.photo,
+      steps: [{key: 'photo', seconds: secs(0)}, {key: 'styled', seconds: secs(1)}, {key: 'model', seconds: secs(2) + secs(3) + secs(4)}]});
+    rec.done = {status: 'succeeded', error: null};
+    rec.itemId = `shot-${n}`;
+  }
+  function view(rec) {
+    advance(rec);
+    save();
+    const stage = rec.done ? null : rec.times.findIndex((x, s) => s >= rec.from && x && x[1] == null);
+    return {
+      id: rec.id, clientKey: rec.clientKey, createdAt: iso(rec.createdAt),
+      status: rec.done?.status ?? (stage === 0 ? 'recognizing' : 'generating'),
+      recognition: rec.times[0]?.[1] != null || rec.from > 0 ? rec.recognition : null,
+      steps: STEP_KEYS.map((key, i) => ({key, startedAt: iso(rec.times[i + 1]?.[0]), endedAt: iso(rec.times[i + 1]?.[1])})),
+      estimateSeconds: ESTIMATE, error: rec.done?.error ?? null, itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
+    };
+  }
+  const get = id => { const rec = st.jobs[id]; if (!rec) throw new ShootError('server'); return rec; };
+  const active = () => Object.values(st.jobs).find(r => (advance(r), !r.done));
+  function recognise() {
+    const src = catalog.find(i => i.id === SOURCE[cat]);
+    const lengthMeters = +Math.max(...src.bounds.max.map((v, i) => v - src.bounds.min[i])).toFixed(2);
+    return {category: cat, inSix, basis: BASIS[cat], lengthMeters, massKg: src.mass, material: src.material, condition: src.condition ?? 'unknown',
+      sizeLabel: lengthMeters < 0.25 ? '小' : lengthMeters < 0.6 ? '中' : '大'};
+  }
+  // A new job: from a new photo (stage 0), or another go at an old one's photo and recognition (stage 1).
+  function open(clientKey, fields) {
+    if (active()) throw new ShootError('active-job', {activeJobId: active().id});
+    const id = `fake-${++st.seq}`, now = vnow();
+    st.jobs[id] = {id, clientKey, createdAt: now, t0: now, from: 0, times: [], done: null, charged: false, realCreated: Date.now(), ...fields};
+    st.keys[clientKey] = id;
+    return view(st.jobs[id]);
+  }
+  function again(old, clientKey, extra) {
+    if (used() >= LIMIT) throw new ShootError('quota');
+    return open(clientKey, {from: 1, photo: old.photo, sig: old.sig, cat: old.cat, recognition: old.recognition, times: [old.times[0]], slow: false, fail: null, ...extra});
+  }
+  const tick = ms => new Promise(r => setTimeout(r, ms));
+
+  return {
+    kind: 'fake',
+    pollMs: 500,
+    now: vnow,
+    async create(photo, clientKey) {
+      await tick(300);
+      const sig = `${photo.size}:${photo.type}`;
+      if (st.keys[clientKey]) {
+        const rec = st.jobs[st.keys[clientKey]];
+        if (rec.sig !== sig) throw new ShootError('key-conflict');
+        return view(rec);
+      }
+      const where = FAIL_AT[failCode];
+      if (failCode === 'pass' && !getPass()) throw new ShootError('pass');
+      if (where === 'create' && failCode !== 'pass') throw new ShootError(failCode);
+      if (!/^image\/(jpeg|png)$/.test(photo.type) || photo.size > 32 * 2 ** 20) throw new ShootError('photo-invalid');
+      if (used() >= LIMIT) throw new ShootError('quota');
+      const at = Array.isArray(where) ? [failStage ? STAGES.findIndex(x => x[0] === failStage) : where[0], failStage ? 0.5 : where[1]] : null;
+      const key = PHOTO + (st.seq + 1);
+      write(key, await keepPhoto(photo));
+      return open(clientKey, {photo: key, sig, cat, recognition: recognise(), slow: failCode === 'slow',
+        offline: failCode === 'offline', fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
+    },
+    async resubmit(fromJob, clientKey) {
+      await tick(300);
+      if (st.keys[clientKey]) return view(st.jobs[st.keys[clientKey]]);
+      const old = get(fromJob);
+      if (old.done?.error?.retry !== 'resubmit') throw new ShootError('server');
+      return again(old, clientKey, {});
+    },
+    async job(id) {
+      await tick(120);
+      const rec = get(id), since = Date.now() - rec.realCreated;
+      if (rec.offline && since > 4000 && since < 14000) throw new ShootError('offline');
+      return view(rec);
+    },
+    async retry(id) {
+      await tick(300);
+      const rec = get(id);
+      advance(rec);
+      if (rec.done?.error?.retry !== 'same') throw new ShootError('server');
+      Object.assign(rec, {from: rec.done.stage, t0: vnow(), fail: null, done: null});
+      return view(rec);
+    },
+    async regenerate(id, clientKey) {
+      await tick(300);
+      if (st.keys[clientKey]) return view(st.jobs[st.keys[clientKey]]);
+      const old = get(id);
+      advance(old);
+      if (old.done?.error?.retry !== 'regenerate') throw new ShootError('server');
+      return again(old, clientKey, {regenerateOf: id});
+    },
+    async quota() {
+      const d = new Date();
+      d.setHours(24, 0, 0, 0);
+      return {limit: LIMIT, used: used(), remaining: LIMIT - used(), resetsAt: d.toISOString(), activeJobId: active()?.id ?? null};
+    },
+    // Built on every read from the item it copies, so a rebuilt page's still and model URLs are the current ones.
+    async items() {
+      for (const r of Object.values(st.jobs)) advance(r);
+      save();
+      return st.items.map(x => {
+        const src = catalog.find(i => i.id === SOURCE[x.cat]), it = {...structuredClone(src), id: x.id, name: x.name, source: {kind: 'photo', job: x.job}};
+        delete it.comparisonBase;
+        it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
+        return it;
+      });
+    }
+  };
+}

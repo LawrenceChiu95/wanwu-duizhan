@@ -451,6 +451,138 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .hfoot { flex: 1; display: flex; align-items: flex-end; padding: 14px 14px calc(env(safe-area-inset-bottom) + 18px); }
 .hfoot .go { width: 100%; }
 .hfoot .go:disabled { opacity: 0.45; }
+/* ---------- 拍一件 (task #47) ---------- */
+/* Under 看它怎么来的 (same layer, earlier in the page), over the 角色库. */
+#shootView { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; }
+.lhead .squota { justify-self: end; font-size: 12px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lhead .shoot.run::after, .lhead .shoot.new::after { content: ""; width: 7px; height: 7px; border-radius: 50%; margin-left: 2px; background: var(--c0); }
+.lhead .shoot.run::after { animation: ghost 0.9s ease-in-out infinite alternate; }
+.lhead .shoot.new { box-shadow: inset 0 0 0 1.5px var(--c0); color: var(--c0l); }
+.ssteps { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 0; padding: 12px 14px 2px; list-style: none; font-size: 12px; color: var(--mute); }
+.ssteps li { display: flex; flex-direction: column; gap: 6px; white-space: nowrap; }
+.ssteps i { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); }
+.ssteps li.done i { background: var(--ink); }
+.ssteps li.done { color: var(--ink); }
+.ssteps li.now { color: var(--ink); font-weight: 700; }
+.ssteps li.now i { background: linear-gradient(90deg, var(--c0l), var(--c0)); box-shadow: 0 0 10px rgba(255, 138, 61, 0.5); }
+.ssteps li.bad i { background: #ff5a6a; box-shadow: 0 0 10px rgba(255, 90, 106, 0.45); }
+.ssteps li.hold i { background: #ffc94d; box-shadow: none; }
+.sbody { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.sframe { position: relative; flex: none; margin: 12px 14px 0; aspect-ratio: 4 / 3.2; max-height: 44vh; border-radius: 14px; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 40%, #141b30, #0a0e1a); box-shadow: inset 0 0 0 1px var(--line); }
+.sframe > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* 拍照: an empty viewfinder, orange corners. */
+.sframe.pick { display: grid; place-items: center;
+  --k: linear-gradient(var(--c0), var(--c0));
+  background: var(--k) 14px 14px / 26px 3px, var(--k) 14px 14px / 3px 26px, var(--k) right 14px top 14px / 26px 3px, var(--k) right 14px top 14px / 3px 26px,
+    var(--k) 14px bottom 14px / 26px 3px, var(--k) 14px bottom 14px / 3px 26px, var(--k) right 14px bottom 14px / 26px 3px, var(--k) right 14px bottom 14px / 3px 26px,
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 18px), radial-gradient(120% 90% at 50% 40%, #141b30, #0a0e1a);
+  background-repeat: no-repeat; aspect-ratio: 1 / 1.05; max-height: 54vh; }
+.sview { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.sview svg { width: 54px; height: 54px; stroke-width: 1.5; color: var(--c0l); margin-bottom: 6px; filter: drop-shadow(0 0 16px rgba(255, 138, 61, 0.5)); }
+.sview b { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 0.04em; }
+.sview small { font-size: 13px; color: var(--mute); }
+.ssix { flex: none; margin: 14px 14px 0; font-size: 12px; color: var(--mute); }
+.ssix div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ssix i { font-style: normal; font-size: 14px; line-height: 30px; padding: 0 12px; color: var(--ink); background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--line); clip-path: var(--slant); }
+.snote { flex: none; margin: 12px 16px 0; font-size: 13px; line-height: 1.5; color: var(--mute); }
+.snote.warn { color: #ffc94d; }
+.serr { flex: none; margin: 6px 16px 0; min-height: 0; font-size: 13px; color: #ff8a96; }
+.serr:empty { display: none; }
+.sfoot { flex: 1; display: flex; align-items: flex-end; gap: 10px; padding: 16px 14px calc(env(safe-area-inset-bottom) + 18px); }
+.sfoot .go { flex: 1.5; }
+.sfoot .go small { font-family: var(--body); font-size: 12px; letter-spacing: 0; font-weight: 700; opacity: 0.75; margin-left: 2px; }
+.sghost { flex: 1; height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--display); font-size: 19px; letter-spacing: 0.04em; white-space: nowrap;
+  background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1.5px var(--line); clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.sghost svg { width: 19px; height: 19px; }
+.sghost:active { transform: translateY(1px); }
+.sfoot .sghost:only-child { flex: none; width: 100%; }
+/* 认物: the photo scanned top to bottom, then the category stamped in. */
+.sframe.scan::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(255, 138, 61, 0.09) 1px, transparent 1px) 0 0 / 100% 22px; pointer-events: none; transition: opacity 0.3s; }
+.sline { position: absolute; left: 0; right: 0; top: 0; height: 30%; background: linear-gradient(transparent, rgba(255, 138, 61, 0.28) 85%, #ffc08f 100%); animation: scan 1.5s ease-in-out infinite alternate; pointer-events: none; z-index: 1; }
+.sframe.got .sline { animation: none; opacity: 0; transition: opacity 0.3s; }
+.sframe.got::after { opacity: 0; }
+@keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(240%); } }
+.stag { position: absolute; left: 10px; top: 10px; z-index: 2; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 10px; color: #1a0900; background: var(--c0); clip-path: var(--slant); }
+.srec { flex: none; margin: 18px 16px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.srec .lbl { font-size: 13px; color: var(--mute); }
+.stamp { font-family: var(--display); font-weight: 400; font-size: 40px; line-height: 1.1; letter-spacing: 0.02em; transform: skewX(-8deg); min-height: 44px;
+  background: linear-gradient(170deg, #ffd9b0 20%, var(--c0) 60%, var(--c0d)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.stamp:empty::before { content: "……"; -webkit-text-fill-color: rgba(255, 255, 255, 0.18); }
+.stamp:not(:empty) { animation: stamp 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.sfine { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--mute); }
+.sfixed { align-self: stretch; margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; border: 1px dashed rgba(160, 190, 255, 0.28); font-size: 13px; color: var(--mute); }
+.sfixed b { color: var(--ink); margin-right: 8px; }
+.snext { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; height: 52px; font-size: 14px; color: var(--mute); }
+.shead { flex: none; margin: 14px 16px 0; font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; letter-spacing: 0.04em; transform: skewX(-6deg); transform-origin: 0 100%;
+  background: linear-gradient(170deg, #ffe0bd 20%, var(--c0) 70%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+/* 生成中: the photo with a light passing over it, the step it is on, then time left, the bar and the four steps. */
+.sframe.gen { aspect-ratio: 4 / 2.8; }
+.ssweep { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 192, 143, 0.28) 50%, transparent 70%) 0 0 / 250% 100%; animation: sweep 2.4s ease-in-out infinite; pointer-events: none; }
+@keyframes sweep { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+.sframe.gen::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 55%, rgba(5, 7, 13, 0.85)); }
+.scat { position: absolute; left: 10px; top: 10px; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 10px; color: #1a0900; background: var(--c0); clip-path: var(--slant); }
+.snow { position: absolute; left: 12px; bottom: 10px; font-family: var(--display); font-size: 18px; letter-spacing: 0.03em; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
+.seta { flex: none; margin: 14px 16px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.seta b { font-size: 17px; font-weight: 650; }
+.seta em { font-style: normal; font-family: var(--display); font-weight: 400; font-size: 24px; color: var(--c0l); margin-left: 2px; }
+.seta small { font-size: 12px; color: var(--mute); white-space: nowrap; }
+.sbar { flex: none; margin: 8px 14px 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.sbar i { display: block; height: 100%; width: calc(var(--fill, 0) * 100%); border-radius: 3px; background: linear-gradient(90deg, var(--c0l), var(--c0)); box-shadow: 0 0 12px rgba(255, 138, 61, 0.6); transition: width 0.3s linear; }
+.sgsteps li { grid-template-columns: 26px 1fr auto; }
+.sgsteps .n svg { width: 14px; height: 14px; stroke-width: 3; }
+.sgsteps .sec { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.sgsteps li.now .sec { color: var(--c0l); }
+.spin { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.18); border-top-color: var(--c0); animation: spin 0.7s linear infinite; }
+/* 失败 / 核实中 */
+.sframe.bad > img { filter: grayscale(0.7) brightness(0.55); }
+.sframe.bad::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2px rgba(255, 90, 106, 0.55); border-radius: 14px; background: linear-gradient(transparent 40%, rgba(80, 10, 20, 0.45)); }
+.sframe.held > img { filter: grayscale(0.5) brightness(0.6); }
+.sframe.held::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2px rgba(255, 201, 77, 0.5); border-radius: 14px; }
+.sbadge { position: absolute; left: 10px; top: 10px; z-index: 1; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; line-height: 24px; padding: 0 12px; color: #fff; background: #e23a50; clip-path: var(--slant); }
+.sframe.held .sbadge { color: #241700; background: #ffc94d; }
+.sbadge svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.smsg { flex: none; margin: 18px 16px 0; }
+.smsg b { display: block; font-size: 19px; font-weight: 700; line-height: 1.45; }
+.smsg.held b { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 0.03em; color: #ffe2a0; }
+.spass { display: block; width: 100%; margin-top: 12px; height: 46px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-size: 16px; color: var(--ink); background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1.5px var(--line); outline: none; user-select: text; -webkit-user-select: text; }
+.spass:focus { box-shadow: inset 0 0 0 2px var(--c0); }
+/* 好了: the photo and the 3D side by side, then the grade card turning over. */
+.spair { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 14px 0; }
+.spair figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+/* Portrait panes fill a tall phone; the 3D stays square (its canvas is drawn square), centred in its pane. */
+.spair .pane { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 3.9; max-height: 40vh; border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.04); }
+.spair .pane::after { content: ""; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
+.spair img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.spair canvas { display: block; width: 100%; aspect-ratio: 1; opacity: 0; transition: opacity 0.4s; }
+.spair canvas[data-drawn] { opacity: 1; }
+.spair figcaption { font-size: 12px; color: var(--mute); text-align: center; }
+.card.sreveal { flex: none; margin: 14px 14px 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; padding: 14px 16px; }
+.sreveal .big { font-size: 70px; line-height: 0.85; padding-right: 4px; }
+.sreveal .sname { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.sreveal .nm b { font-family: var(--display); font-weight: 400; font-size: 24px; letter-spacing: 0.02em; }
+.sreveal .sname small { font-size: 13px; color: #c7d2ea; font-variant-numeric: tabular-nums; }
+.card.sreveal .rates { margin: 0; padding-left: 14px; border-left: 1px solid var(--line); }
+.sdone { flex: none; margin: 12px 16px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 13px; color: var(--mute); }
+.sdone > svg { width: 15px; height: 15px; color: #8ee6a8; stroke-width: 3; }
+.sdone button { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 650; color: var(--ink); }
+.sdone button svg { width: 11px; height: 11px; }
+#shootAsk { position: absolute; inset: 0; z-index: 8; display: flex; align-items: flex-end; background: rgba(2, 4, 9, 0.6); }
+#shootAsk .panel { width: 100%; padding: 18px 16px 0; background: #0d1222; box-shadow: 0 -1px 0 var(--line); border-radius: 16px 16px 0 0; animation: rise 0.22s ease-out both; }
+#shootAsk .head b { font-family: var(--display); font-weight: 400; font-size: 24px; }
+#shootAsk p { margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: #c7d2ea; }
+#shootAsk .sfoot { padding-left: 0; padding-right: 0; }
+/* The tag over the build and result screens while a job runs elsewhere. */
+#shootTag { position: absolute; left: 12px; right: 12px; top: calc(env(safe-area-inset-top) + 62px); z-index: 4; width: max-content; margin: 0 auto; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px);
+  height: 36px; padding: 0 18px 0 18px; white-space: nowrap; font-size: 13px; background: rgba(13, 18, 33, 0.94); box-shadow: inset 0 0 0 1px var(--line), 0 8px 22px rgba(0, 0, 0, 0.45);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); animation: rise 0.3s ease-out both; }
+#shootTag b { font-weight: 700; }
+#shootTag small { color: var(--mute); font-size: 12px; font-variant-numeric: tabular-nums; }
+#shootTag svg { width: 15px; height: 15px; stroke-width: 2.6; }
+#shootTag .ring { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(var(--c0) calc(var(--fill) * 360deg), rgba(255, 255, 255, 0.12) 0); -webkit-mask: radial-gradient(circle, transparent 5px, #000 5.5px); mask: radial-gradient(circle, transparent 5px, #000 5.5px); }
+#shootTag.done { padding-left: 16px; color: #1a0900; background: linear-gradient(100deg, #ffd0a0, var(--c0) 50%, var(--c0d)); box-shadow: none; filter: drop-shadow(0 0 14px rgba(255, 120, 40, 0.5)); }
+#shootTag.bad { padding-left: 16px; color: #ffd5da; background: rgba(70, 14, 24, 0.95); box-shadow: inset 0 0 0 1px rgba(255, 90, 106, 0.5); }
+@media (prefers-reduced-motion: reduce) { .sline, .ssweep, .lhead .shoot.run::after { animation: none; } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 #creditsBody { font-size: 13px; line-height: 1.55; color: #c7d2ea; }
 #creditsBody ul { margin: 0 0 10px; padding-left: 18px; }

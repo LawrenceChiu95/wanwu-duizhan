@@ -8,12 +8,14 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const urls = import.meta.glob(['../../data/models/pan-lux3d-mobile.glb', '../../data/models/lamp-lux3d-mobile.glb', '../../data/models/broom.glb', '../../data/models/scissors.glb', '../../data/models/slipper.glb', '../../data/models/pillow.glb', '../../data/models/generated/**/*.glb'], {query: '?url', import: 'default', eager: true});
 // Generation records (item.origin, 看它怎么来的): the original photo and the styled image, kept under data/origins/<id>/.
 const originUrls = import.meta.glob('../../data/origins/**/*.{jpg,jpeg,png,webp}', {query: '?url', import: 'default', eager: true});
-/** A record's picture: a repo-relative path from the catalog (bundled above), or a data:/https: URL as it is. */
-export const pictureUrl = path => /^(data:|https?:)/.test(path) ? path : Object.entries(originUrls).find(([key]) => key.endsWith('/' + path))?.[1] ?? null;
+/** A record's picture: a repo-relative path from the catalog (bundled above), or a URL as it is. */
+// A URL as it is (拍一件's items come from the shoot backend: /api/shoot/files/…, or data: in the local fake).
+const isUrl = path => /^(data:|blob:|https?:|\/)/.test(path);
+export const pictureUrl = path => isUrl(path) ? path : Object.entries(originUrls).find(([key]) => key.endsWith('/' + path))?.[1] ?? null;
 // Each catalog item at the turntable's starting angle (scripts/make-stills.mjs), shown on its card until the model is drawn.
 const stillUrls = import.meta.glob('../../data/stills/*.webp', {query: '?url', import: 'default', eager: true});
 export const stillUrl = id => stillUrls[`../../data/stills/${id}.webp`] ?? null;
-const urlFor = glb => Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
+const urlFor = glb => isUrl(glb) ? glb : Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
 const cache = new Map();

@@ -13,6 +13,8 @@ async function readCatalog(){
 }
 /** Catalog entries. GLBs are already centered, in meters; scale=1. */
 export async function loadCatalog(){const c=await (catalogPromise??=readCatalog());return structuredClone(c.items);}
+/** Items that arrive after the page has loaded (拍一件's generated items, MVP spec §4-5): added to the cached catalog so later matches can use them. An id already there is left as it is. */
+export async function addItems(items){const c=await (catalogPromise??=readCatalog());for(const it of items)if(!c.items.some(i=>i.id===it.id))c.items.push(structuredClone(it));}
 export async function loadRules(){const c=await (catalogPromise??=readCatalog());return structuredClone(c);}
 export function zoneRadius(t,a){return a.zoneStartRadius+(a.zoneEndRadius-a.zoneStartRadius)*Math.max(0,Math.min(1,(t-a.zoneShrinkStart)/(a.zoneShrinkEnd-a.zoneShrinkStart)));}
 export function zoneDamageRate(t,maxHp,a){return maxHp*a.zoneDamageMaxFraction*Math.max(0,Math.min(1,(t-a.zoneDamageStart)/(a.maxDuration-a.zoneDamageStart)));}

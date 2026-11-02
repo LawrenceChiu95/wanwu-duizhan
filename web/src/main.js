@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {loadCatalog} from '../../sim/index.js';
+import {loadCatalog, addItems as addSimItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
@@ -10,6 +10,8 @@ import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
+import {shootApi} from './shoot-api.js';
+import {mountShoot} from './shoot.js';
 
 const $ = id => document.getElementById(id);
 const el = {
@@ -21,6 +23,7 @@ const el = {
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'), libGrades: $('libGrades'),
   resultBuild: $('resultBuild'), how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
   howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'),
+  shoot: $('shootView'), shootBtn: $('shootBtn'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), mute: $('muteBtn'), camSeg: $('camSeg')
@@ -709,6 +712,21 @@ async function main() {
     }
   }
   $('libBack').onclick = closeLibrary;
+  // The same turn for one card outside the grid (拍一件's 好了): face down now, turned over after `wait` ms.
+  function turnOver(card, id, wait) {
+    card.classList.add('down');
+    setTimeout(() => {
+      if (!card.isConnected) return;
+      card.classList.replace('down', 'turning');
+      sfx.flip();
+      setTimeout(() => {
+        if (!card.isConnected) return;
+        sfx.reveal(rate(id)?.grade);
+        gradesSeen.add(seenKey(id));
+        try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+      }, REVEAL_FACE);
+    }, wait);
+  }
 
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
   // each step's real time beside it. The category is the one the player's pick fixed, not something a model guessed.
@@ -768,11 +786,52 @@ async function main() {
   $('howReplay').onclick = playHow;
   el.howEquip.onclick = () => {
     if (mine.parts[1 - libSlot].item === howItem) return;
-    mine.parts[libSlot].item = howItem;
+    const id = howItem;
     closeHow();
-    closeLibrary();
-    rebuildMine();
+    equip(id);
   };
+  // Into the slot the 角色库 was last opened for, from wherever the player is (a 拍一件 tag can be tapped on the result).
+  async function equip(id) {
+    if (mine.parts[1 - libSlot].item === id) return;
+    mine.parts[libSlot].item = id;
+    shoot?.close();
+    closeLibrary();
+    if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuildMine();
+  }
+  const equipLabel = id => mine.parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
+    : {text: mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它', disabled: false};
+
+  // ---------- 拍一件 (task #47) ----------
+  // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
+  function addItems(list) {
+    const fresh = list.filter(it => !byId.has(it.id));
+    if (!fresh.length) return;
+    for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
+    setNames(items);
+    OFFER.splice(0, OFFER.length, ...offerOf(items));
+    addSimItems(fresh);
+  }
+  let shoot = null;
+  shootApi(q).then(async api => {
+    if (!api) return;
+    try { addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
+    shoot = mountShoot({
+      api, addItems, turns, loadModels, equip, equipLabel, openHow,
+      item: id => byId.get(id), name: id => NAMES[id], grade: rate, spec,
+      seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
+      libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
+      goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
+      tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden && el.credits.hidden,
+      onChange: () => {
+        const s = shoot?.state;
+        el.shootBtn.classList.toggle('run', Boolean(s?.job && !['succeeded', 'failed'].includes(s.job.status)));
+        el.shootBtn.classList.toggle('new', Boolean(s?.job?.status === 'succeeded' && !s.stored?.seen));
+      }
+    });
+    el.shootBtn.hidden = false;
+    el.shootBtn.onclick = () => shoot.open('library');
+    window.__top.shoot = shoot;
+  }).catch(showError);
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
@@ -924,7 +983,7 @@ async function main() {
   };
 
   // ---------- loop ----------
-  let last = performance.now();
+  let last = performance.now(), lastTagKey = '';
   function frame(now) {
     requestAnimationFrame(frame);
     let dt = Math.min(0.1, (now - last) / 1000);
@@ -1027,8 +1086,11 @@ async function main() {
     }
     // The 角色库 covers the whole page: the stage under it would only draw what no one sees, and its canvas draws the
     // cards' 3D instead (看它怎么来的 over the 角色库: only its own).
-    if (el.library.hidden) stage.render(dt, simDt);
-    else turns.render(now / 1000, el.how.hidden ? el.library : el.how);
+    if (el.library.hidden && el.shoot.hidden) stage.render(dt, simDt);
+    else turns.render(now / 1000, !el.how.hidden ? el.how : !el.shoot.hidden ? el.shoot : el.library);
+    // The 拍一件 tag shows on the build and result screens only: redrawn as the player moves between screens.
+    const tagKey = `${phase}${el.library.hidden}${el.how.hidden}${el.foeSheet.hidden}${el.credits.hidden}`;
+    if (shoot && tagKey !== lastTagKey) { lastTagKey = tagKey; shoot.paintTag(); }
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }
   }
