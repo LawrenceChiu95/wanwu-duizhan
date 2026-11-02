@@ -25,12 +25,12 @@ const SAY = {
   'photo-unclear': '没看清拍的是什么，靠近一点、亮一点再拍',
   pass: '口令不对',
   quota: '今天能拍的件数用完了，明天再来',
-  busy: '生成的人太多，这次没扣额度，稍等再提交',
-  'step-failed': '这次没生成出来，可以重新生成（会再扣一次）',
-  expired: '结果过期了，可以重新生成（会再扣一次）',
-  download: '模型没取回来，再试一次（不扣额度）',
-  process: '处理没成功，再试一次（不扣额度）',
-  'process-unfixable': '这个模型处理不了，可以重新生成（会再扣一次）',
+  busy: '生成的人太多，这次没算次数，稍等再提交',
+  'step-failed': '这次没生成出来，可以重新生成（会多算一次）',
+  expired: '结果过期了，可以重新生成（会多算一次）',
+  download: '模型没取回来，再试一次（不算次数）',
+  process: '处理没成功，再试一次（不算次数）',
+  'process-unfixable': '这个模型处理不了，可以重新生成（会多算一次）',
   'key-conflict': '出了点问题，重新拍一次',
   server: '出了点问题，再试一次'
 };
@@ -78,7 +78,7 @@ export function mountShoot(ctx) {
   const {api} = ctx;
   let stored = (() => { try { return JSON.parse(localStorage.getItem(JOB_KEY)); } catch { return null; } })();
   const keep = () => { try { if (stored) localStorage.setItem(JOB_KEY, JSON.stringify(stored)); else localStorage.removeItem(JOB_KEY); } catch { /* no storage here */ } };
-  let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = null, shown = '', recogAt = 0, timer = 0, ticker = 0;
+  let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = null, shown = '', recogAt = -Infinity, timer = 0, ticker = 0;
   const keys = {}; // one clientKey per paid action on a job (再提交, 重新生成), reused if that request is sent again
 
   const final = j => j?.status === 'succeeded' || j?.status === 'failed';
@@ -175,7 +175,7 @@ export function mountShoot(ctx) {
     } else if (kind === 'recog') {
       html = `${frame('scan', '<i class="sline"></i><span class="stag" data-live="rtag">认物中</span>')}
         <div class="srec"><span class="lbl">认出来是</span><b class="stamp" data-live="as"></b>
-        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p><p class="sfixed"><b>不给改</b>没有候选，也没有「换一类」</p></div>
+        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p></div>
         <div class="sfoot"><p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
     } else if (kind === 'gen') {
       html = `${frame('gen', `<i class="ssweep"></i><span class="scat">${esc(countAs(job.recognition))}</span><span class="snow" data-live="now"></span>`)}
@@ -187,9 +187,9 @@ export function mountShoot(ctx) {
     } else if (kind === 'fail' || kind === 'err') {
       const retry = kind === 'err' ? 'none' : job.error.retry;
       const btns = code === 'pass' ? [go('pass', '确定')]
-        : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', '不扣额度')]
-        : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没扣')]
-        : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会再扣一次')]
+        : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', '不算次数')]
+        : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
+        : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会多算一次')]
         : ['photo-invalid', 'photo-unclear', 'key-conflict'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
         : code === 'server' && pending ? [ghost('lib', '回角色库'), go('submit', '再试')]
         : [ghost('lib', '回角色库')];
@@ -197,8 +197,9 @@ export function mountShoot(ctx) {
         <div class="smsg"><b>${esc(SAY[code] ?? SAY.server)}</b>${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
         <p class="serr" data-live="send"></p>${foot(...btns)}`;
     } else if (kind === 'held') {
-      // unknown-submit (Elara 8d32a2a6): one sentence, no retake and no retry: the paid submission is being checked.
-      html = `${frame('held', `<span class="sbadge">${ICON.wait}核实中</span>`)}<div class="smsg held"><b>这件还在核实，不会多扣</b></div>`;
+      // unknown-submit (Elara 8d32a2a6, 69a1c60d): one sentence and only 回角色库, no retake or retry: the paid
+      // submission is being checked. It doesn't hold the one-at-a-time place, so 拍一件 starts a new photo.
+      html = `${frame('held', `<span class="sbadge">${ICON.wait}核实中</span>`)}<div class="smsg held"><b>这件还在核实，不会多扣</b></div>${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'done') {
       const id = code, r = ctx.grade(id), it = ctx.item(id), eq = ctx.equipLabel(id);
       const line = [MATERIAL[it.material], ctx.spec(id), WEAR[it.condition]].filter(Boolean).join(' · ');
@@ -223,7 +224,7 @@ export function mountShoot(ctx) {
     if (ctx.grade(id) && !ctx.seen(id)) ctx.flip(card, id, 500);
     if (!stored.seen) { stored.seen = true; keep(); paintTag(); }
     await ctx.loadModels([ctx.item(id)]);
-    if (canvas.isConnected) ctx.turns.show(canvas, id);
+    if (canvas.isConnected) ctx.turns.show(canvas, id, {zoom: 1.3});
   }
   // The parts of a screen that move: 认物's result, 生成中's steps, times and bar, the connection and slow notices.
   function update() {
@@ -290,7 +291,7 @@ export function mountShoot(ctx) {
       keep();
       job = j;
       pending = null;
-      recogAt = j.recognition ? performance.now() - RECOG_HOLD : 0;
+      recogAt = j.recognition ? -Infinity : 0;
       loadQuota();
       sync();
       poll();
@@ -331,7 +332,7 @@ export function mountShoot(ctx) {
   function fresh() { startError = null; pending = null; job = null; stored = null; busyNote = ''; keep(); sync(); }
   async function ask() {
     await loadQuota();
-    el.askText.textContent = `会再扣一次额度${quota?.remaining != null ? `（今天还剩 ${quota.remaining} 件）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
+    el.askText.textContent = `会多算一次${quota?.remaining != null ? `（今天还剩 ${quota.remaining} 次）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
     el.ask.hidden = false;
     return new Promise(res => { el.askYes.onclick = () => { el.ask.hidden = true; res(true); }; el.askNo.onclick = () => { el.ask.hidden = true; res(false); }; });
   }

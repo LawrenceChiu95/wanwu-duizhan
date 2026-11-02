@@ -511,8 +511,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .stamp:empty::before { content: "……"; -webkit-text-fill-color: rgba(255, 255, 255, 0.18); }
 .stamp:not(:empty) { animation: stamp 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 .sfine { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--mute); }
-.sfixed { align-self: stretch; margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; border: 1px dashed rgba(160, 190, 255, 0.28); font-size: 13px; color: var(--mute); }
-.sfixed b { color: var(--ink); margin-right: 8px; }
 .snext { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; height: 52px; font-size: 14px; color: var(--mute); }
 .shead { flex: none; margin: 14px 16px 0; font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; letter-spacing: 0.04em; transform: skewX(-6deg); transform-origin: 0 100%;
   background: linear-gradient(170deg, #ffe0bd 20%, var(--c0) 70%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
@@ -547,11 +545,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .smsg.held b { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 0.03em; color: #ffe2a0; }
 .spass { display: block; width: 100%; margin-top: 12px; height: 46px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-size: 16px; color: var(--ink); background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1.5px var(--line); outline: none; user-select: text; -webkit-user-select: text; }
 .spass:focus { box-shadow: inset 0 0 0 2px var(--c0); }
-/* 好了: the photo and the 3D side by side, then the grade card turning over. */
-.spair { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 14px 0; }
-.spair figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
-/* Portrait panes fill a tall phone; the 3D stays square (its canvas is drawn square), centred in its pane. */
-.spair .pane { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 3.9; max-height: 40vh; border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.04); }
+/* 好了: the photo and the 3D side by side, then the grade card turning over. The 3D is the reward, so it gets the wider
+   column and a square pane its (square) canvas fills edge to edge (Elara 69a1c60d); the photo takes the same height. */
+.spair { flex: none; display: grid; grid-template-columns: 2fr 3fr; gap: 10px; margin: 12px 14px 0; }
+.spair figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.spair .pane { position: relative; display: block; border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.04); }
+.spair figure:first-child .pane { flex: 1; }
+.spair figure:last-child .pane { width: min(100%, 42vh); aspect-ratio: 1; align-self: center; }
 .spair .pane::after { content: ""; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
 .spair img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .spair canvas { display: block; width: 100%; aspect-ratio: 1; opacity: 0; transition: opacity 0.4s; }

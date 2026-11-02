@@ -29,8 +29,11 @@ export class LiveTurns {
     });
   }
 
-  /** Turns `itemId` in `canvas`, or holds one angle if `still`. Call again once the model has loaded. */
-  show(canvas, itemId, {still = false} = {}) {
+  /**
+   * Turns `itemId` in `canvas`, or holds one angle if `still`. Call again once the model has loaded. `zoom` > 1 brings
+   * the camera closer than the card fit (拍一件's 好了, where the 3D is the reward and should fill its pane).
+   */
+  show(canvas, itemId, {still = false, zoom = 1} = {}) {
     let v = this.views.get(canvas);
     if (!v) {
       v = {canvas, ctx: canvas.getContext('2d'), seen: false};
@@ -38,7 +41,7 @@ export class LiveTurns {
       this.io.observe(canvas);
     }
     if (v.id !== itemId) { v.id = itemId; v.rig = null; v.t0 = null; v.ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.removeAttribute('data-drawn'); }
-    v.rig ??= turnRig(itemId, this.environment);
+    v.rig ??= turnRig(itemId, this.environment, zoom);
     v.still = still;
     v.done = false;
     v.bg = null;

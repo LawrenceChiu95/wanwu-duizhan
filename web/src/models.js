@@ -85,7 +85,7 @@ export function instantiate(itemId, uniforms) {
  * One item on its own turntable for the 角色库 cards and 看它怎么来的: lit like the stage, centred, and framed so the
  * whole turn fits a square. Drawn live by LiveTurns (livecards.js); null until the model has loaded.
  */
-export function turnRig(itemId, environment) {
+export function turnRig(itemId, environment, zoom = 1) {
   const src = cache.get(itemId);
   if (!src) return null;
   const scene = new THREE.Scene();
@@ -99,18 +99,19 @@ export function turnRig(itemId, environment) {
   scene.add(spin);
   const box = new THREE.Box3().setFromObject(obj), center = box.getCenter(new THREE.Vector3());
   obj.position.sub(center);
-  return {scene, camera: turnCamera(box.translate(center.negate())), spin};
+  return {scene, camera: turnCamera(box.translate(center.negate()), zoom), spin};
 }
 
 /**
  * Fit for a turntable: as the model turns it sweeps a cylinder (its widest reach around the vertical axis by its
- * height), seen a little from above, filling most of the square. `box` is centred on the origin.
+ * height), seen a little from above, filling most of the square. `box` is centred on the origin; `zoom` moves the
+ * camera that much closer.
  */
-function turnCamera(box) {
+function turnCamera(box, zoom = 1) {
   const reach = Math.hypot(Math.max(-box.min.x, box.max.x), Math.max(-box.min.z, box.max.z)), half = (box.max.y - box.min.y) / 2;
   const pitch = 0.42, camera = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
   const extent = Math.max(reach, half * Math.cos(pitch) + reach * Math.sin(pitch));
-  const dist = extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch);
+  const dist = (extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch)) / zoom;
   camera.position.set(0, dist * Math.sin(pitch), dist * Math.cos(pitch));
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
