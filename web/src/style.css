@@ -356,7 +356,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .card .media { position: relative; display: block; aspect-ratio: 1; margin: 0 -2px 4px; overflow: hidden; }
 /* The 3D is drawn live into the canvas (livecards.js); 载入中 until its model has arrived. */
 .card .turn { position: absolute; inset: 0; width: 100%; height: 100%; }
-.card .media:has(> .turn:not([data-ready]))::before { content: "载入中"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--mute); }
+/* Before the model is drawn the card shows the item's outline (or its styled picture), breathing faintly; the 3D fades in
+   over it (task #37: an empty card looked broken). */
+.card .turn { opacity: 0; transition: opacity 0.4s ease-out; }
+.card .turn[data-drawn] { opacity: 1; }
+.card .ghost { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.4s ease-out; animation: ghost 1.6s ease-in-out infinite alternate; }
+.card svg.ghost path { fill: rgba(223, 231, 247, 0.07); stroke: rgba(223, 231, 247, 0.22); stroke-width: 0.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.card .media:has(> .turn[data-drawn]) .ghost { opacity: 0; animation: none; }
+@keyframes ghost { from { opacity: 0.55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .card .ghost { animation: none; } }
 .card .photo { position: absolute; left: 0; top: 0; width: 34%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line); }
 .card .badge { position: absolute; right: 0; top: 0; font-size: 11px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); }
 .card .badge.own { background: var(--c0); color: #1a0900; font-weight: 700; }

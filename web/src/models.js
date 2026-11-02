@@ -92,16 +92,46 @@ export function turnRig(itemId, environment) {
   const obj = src.clone(true), spin = new THREE.Group();
   spin.add(obj);
   scene.add(spin);
-  // Fit: centre the model; as it turns it sweeps a cylinder (its widest reach around the vertical axis by its height),
-  // seen a little from above, filling most of the square.
   const box = new THREE.Box3().setFromObject(obj), center = box.getCenter(new THREE.Vector3());
   obj.position.sub(center);
-  box.translate(center.negate());
+  return {scene, camera: turnCamera(box.translate(center.negate())), spin};
+}
+
+/**
+ * Fit for a turntable: as the model turns it sweeps a cylinder (its widest reach around the vertical axis by its
+ * height), seen a little from above, filling most of the square. `box` is centred on the origin.
+ */
+function turnCamera(box) {
   const reach = Math.hypot(Math.max(-box.min.x, box.max.x), Math.max(-box.min.z, box.max.z)), half = (box.max.y - box.min.y) / 2;
   const pitch = 0.42, camera = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
   const extent = Math.max(reach, half * Math.cos(pitch) + reach * Math.sin(pitch));
   const dist = extent / Math.tan(THREE.MathUtils.degToRad(15)) * 1.06 + reach * Math.cos(pitch);
   camera.position.set(0, dist * Math.sin(pitch), dist * Math.cos(pitch));
   camera.lookAt(0, 0, 0);
-  return {scene, camera, spin};
+  camera.updateMatrixWorld();
+  return camera;
+}
+
+/**
+ * The item's outline before its model has loaded (task #37: a card must not sit empty and look broken): the catalog
+ * hull, framed by the same turntable camera with its long side across the view, as an SVG path in a 0–100 square.
+ * Null without a hull.
+ */
+export function outlinePath(item) {
+  if (!item.hull?.length || !item.bounds) return null;
+  const box = new THREE.Box3(new THREE.Vector3(...item.bounds.min), new THREE.Vector3(...item.bounds.max));
+  const center = box.getCenter(new THREE.Vector3()), camera = turnCamera(box.clone().translate(center.clone().negate()));
+  // Long side across, turned a little so it reads as an object rather than a flat side view.
+  const size = box.getSize(new THREE.Vector3()), angle = (size.z > size.x ? Math.PI / 2 : 0) + 0.35;
+  const v = new THREE.Vector3(), turn = new THREE.Matrix4().makeRotationY(angle);
+  const pts = item.hull.map(([x, y, z]) => {
+    v.set(x, y, z).sub(center).applyMatrix4(turn).project(camera);
+    return [(v.x + 1) * 50, (1 - v.y) * 50];
+  });
+  // Convex hull of the projected points (monotone chain).
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = list => list.reduce((h, p) => { while (h.length > 1 && cross(h.at(-2), h.at(-1), p) <= 0) h.pop(); h.push(p); return h; }, []);
+  const lower = half(pts), upper = half([...pts].reverse());
+  return 'M' + [...lower.slice(0, -1), ...upper.slice(0, -1)].map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L') + 'Z';
 }
