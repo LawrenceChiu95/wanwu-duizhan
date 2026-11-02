@@ -30,7 +30,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       const origin = `http://127.0.0.1:${server.address().port}`;
       if (req.headers.host !== new URL(origin).host || (req.headers.origin && req.headers.origin !== origin && req.headers.origin !== frontendOrigin)) throw apiError('forbidden', 'Local same-origin requests only', 403);
       const url = new URL(req.url, origin), route = url.pathname;
-      if (url.search) throw apiError('bad-request', 'Unexpected query parameters');
+      if (route.startsWith('/api/') && url.search) throw apiError('bad-request', 'Unexpected query parameters');
       if (req.method === 'GET' && route === '/api/shoot/quota') return json(200, await jobs.quota());
       if (req.method === 'GET' && route === '/api/shoot/items') return json(200, {items: await jobs.items()});
       if (req.method === 'POST' && route === '/api/shoot/jobs') {
@@ -75,7 +75,8 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
     } catch (error) {
       if (res.headersSent) { res.destroy(); return; }
       const status = error.status ?? (error.code === 'ENOENT' ? 404 : 500);
-      json(status, {error: {code: error.status ? error.code : status === 404 ? 'not-found' : 'server', message: status === 500 ? 'Local backend failure' : error.message, retry: 'none', charged: false}, ...(error.activeJobId ? {activeJobId: error.activeJobId} : {})});
+      const code = error.status ? error.code : status === 404 ? 'not-found' : 'server';
+      json(status, {error: {code, message: status === 500 ? 'Local backend failure' : error.message, retry: code === 'server' ? 'same' : 'none', charged: false}, ...(error.activeJobId ? {activeJobId: error.activeJobId} : {})});
     }
   });
   server.requestTimeout = 30000; server.headersTimeout = 10000;

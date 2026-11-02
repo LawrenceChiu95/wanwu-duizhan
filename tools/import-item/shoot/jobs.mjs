@@ -39,11 +39,12 @@ async function own(directory) {
 export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), repo = REPO, generator, fakeOptions} = {}) {
   await fs.mkdir(directory, {recursive: true});
   const release = await own(directory);
-  let store, provider, catalog;
+  let store, provider, catalog, mountRules;
   try {
     store = await readJson(path.join(directory, 'state.json'), {jobs: {}, keys: {}, items: []});
     if (!store || !store.jobs || !store.keys || !Array.isArray(store.items)) throw Error('Invalid shoot state file');
     catalog = await readJson(path.join(repo, 'data/catalog.json'));
+    mountRules = await readJson(path.join(repo, 'sim/v3-rules.json'));
     provider = generator ?? await fakeGenerator(directory, fakeOptions);
   } catch (error) { await release(); throw error; }
   const template = catalog.items.find(i => i.id === 'pan-lux3d');
@@ -95,7 +96,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
           // Model and geometry both use the same fixed, already-normalized asset.
           const item = copy(template);
           delete item.comparisonBase; delete item.origin;
-          Object.assign(item, {id, name: `我拍的锅${store.items.length ? ' ' + (store.items.length + 1) : ''}`, glb: `${url}/model.glb`, massBasis: 'local-fake', source: {generator: 'local-fake', templateId: template.id, license: '沿用仓库锅样本；不是本次真实生成'}});
+          Object.assign(item, {id, outEnd: mountRules.top.outEnd[template.id] ?? 1, name: `我拍的锅${store.items.length ? ' ' + (store.items.length + 1) : ''}`, glb: `${url}/model.glb`, massBasis: 'local-fake', source: {generator: 'local-fake', templateId: template.id, license: '沿用仓库锅样本；不是本次真实生成'}});
           item.rating = rateItem(item, catalog.materials);
           const started = Date.parse(j.createdAt), styled = Date.parse(j.steps[0].startedAt), model = Date.parse(j.steps[1].startedAt);
           item.origin = {photo: `${url}/photo.jpg`, styled: `${url}/styled.jpg`, steps: [{key: 'photo', seconds: (styled - started) / 1000}, {key: 'styled', seconds: (model - styled) / 1000}, {key: 'model', seconds: (Date.parse(ended) - model) / 1000}]};

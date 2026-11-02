@@ -40,7 +40,7 @@ test('HTTP ten concurrent copies: one charge, atomic inventory, real origin time
   let r = await finished(app.url, id); assert.equal(r.job.status, 'succeeded');
   const q = await request(app.url, 'quota'); assert.deepEqual({...q, status: undefined}, {status: undefined, limit: null, remaining: null, resetsAt: null, used: 1, activeJobId: null});
   const {items} = await request(app.url, 'items'); assert.equal(items.length, 1); const item = items[0]; assert.equal(item.id, r.job.itemId);
-  validateRuntimeItem(item, catalog); assert.equal(item.source.generator, 'local-fake');
+  validateRuntimeItem(item, catalog); assert.equal(item.source.generator, 'local-fake'); assert.equal(item.outEnd, -1);
   assert.deepEqual(item.origin.steps.map(s => s.key), ['photo', 'styled', 'model']); assert.ok(item.origin.steps.every(s => s.seconds >= 0));
   assert.ok(Math.abs(item.origin.steps.reduce((s, x) => s + x.seconds, 0) - (Date.parse(r.job.steps[3].endedAt) - Date.parse(r.job.createdAt)) / 1000) < 1e-9);
   for (const route of [item.glb, item.origin.photo, item.origin.styled]) { const file = await fetch(app.url + route); assert.equal(file.status, 200); assert.ok((await file.arrayBuffer()).byteLength > 100); }
@@ -152,4 +152,33 @@ test('prototype key is rejected on repeated submits without creating or charging
  assert.equal((await request(app.url, 'quota')).used, 0);
  assert.deepEqual((await request(app.url, 'items')).items, []);
  assert.deepEqual((await readJson(path.join(app.jobs.directory, 'state.json'), {jobs: {}})).jobs, {});
+});
+
+test('static page and asset query strings work; API query parameters stay invalid', async t => {
+ const webRoot = await directory();
+ await fs.writeFile(path.join(webRoot, 'index.html'), '<title>shoot fixture</title>');
+ await fs.writeFile(path.join(webRoot, 'game.js'), 'export const ready = true;');
+ const app = await instance(t, {webRoot});
+ for (const query of ['?shoot=fake', '?shoot=real&mine=shoot_test&seed=7']) {
+  const page = await fetch(app.url + '/' + query); assert.equal(page.status, 200); assert.equal(await page.text(), '<title>shoot fixture</title>');
+ }
+ const asset = await fetch(app.url + '/game.js?v=2'); assert.equal(asset.status, 200); assert.equal(await asset.text(), 'export const ready = true;');
+ const api = await request(app.url, 'quota?unexpected=1'); assert.equal(api.status, 400); assert.equal(api.error.code, 'bad-request'); assert.equal(api.error.retry, 'none');
+});
+
+test('request errors use documented codes and only server failure offers same-request retry', async t => {
+ const app = await instance(t);
+ const forbidden = await fetch(app.url + '/api/shoot/quota', {headers: {origin: 'https://other.invalid'}});
+ const cases = [
+  [await create(app.url, 'short'), 400, 'key-conflict'],
+  [await request(app.url, 'jobs', {unexpected: true}), 400, 'bad-request'],
+  [await request(app.url, 'jobs/j_00000000-0000-0000-0000-000000000000'), 404, 'not-found'],
+  [{status: forbidden.status, ...await forbidden.json()}, 403, 'forbidden']
+ ];
+ const {job} = await create(app.url, 'error-codes-001'); await finished(app.url, job.id);
+ cases.push([await request(app.url, `jobs/${job.id}/retry`, undefined, 'POST'), 409, 'not-allowed']);
+ for (const [result, status, code] of cases) { assert.equal(result.status, status); assert.equal(result.error.code, code); assert.equal(result.error.retry, 'none'); assert.equal(result.error.charged, false); }
+ const broken = await instance(t, {generator: {used() { throw Error('private error detail'); }}});
+ const result = await request(broken.url, 'quota');
+ assert.equal(result.status, 500); assert.deepEqual(result.error, {code: 'server', message: 'Local backend failure', retry: 'same', charged: false});
 });

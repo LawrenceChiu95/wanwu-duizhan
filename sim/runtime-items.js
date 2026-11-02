@@ -14,7 +14,7 @@ export function validateRuntimeItem(item,catalog){
  const vector=a=>Array.isArray(a)&&a.length===3&&a.every(finite);
  if(!item||Object.getPrototypeOf(item)!==Object.prototype||typeof item.id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(item.id)||typeof item.name!=='string'||!item.name.trim()||typeof item.glb!=='string'||!item.glb||item.scale!==1)bad();
  if(!Object.hasOwn(catalog.materials,item.material)||typeof item.category!=='string'||!catalog.items.some(i=>i.category===item.category)||!catalog.items.some(i=>i.tag===item.tag)||!['intact','worn','damaged','unknown'].includes(item.condition))bad();
- if(!positive(item.mass)||!positive(item.volume)||!vector(item.bounds?.min)||!vector(item.bounds?.max)||!item.bounds.max.every((n,i)=>n>item.bounds.min[i]))bad();
+ if(![1,-1].includes(item.outEnd)||!positive(item.mass)||!positive(item.volume)||!vector(item.bounds?.min)||!vector(item.bounds?.max)||!item.bounds.max.every((n,i)=>n>item.bounds.min[i]))bad();
  if(!Array.isArray(item.hull)||item.hull.length<4||item.hull.length>64||!item.hull.every(vector))bad();
  if(!item.hull.every(p=>p.every((v,i)=>v>=item.bounds.min[i]-1e-5&&v<=item.bounds.max[i]+1e-5)))bad();
  // Reject collapsed/planar hulls before Rapier tries to create a convex collider.
