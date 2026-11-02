@@ -1,0 +1,78 @@
+{
+  "source": "Elara 2622db47: authored default objects, not photo recognition",
+  "items": [
+    {
+      "id": "scissors",
+      "lengthMeters": 0.2,
+      "massKg": 0.15,
+      "material": "metal",
+      "condition": "intact",
+      "note": "轻小的完好金属剪刀，短而轻"
+    },
+    {
+      "id": "broom",
+      "lengthMeters": 0.8,
+      "massKg": 0.6,
+      "material": "wood",
+      "condition": "intact",
+      "note": "轻木柄普通扫把，长而轻"
+    },
+    {
+      "id": "slipper",
+      "lengthMeters": 0.28,
+      "massKg": 0.16,
+      "material": "rubber",
+      "condition": "damaged",
+      "note": "轻薄的破旧橡胶拖鞋"
+    },
+    {
+      "id": "pillow",
+      "lengthMeters": 0.6,
+      "massKg": 0.5,
+      "material": "cloth",
+      "condition": "intact",
+      "note": "完好的蓬松布枕头，主要用来贴着防守"
+    },
+    {
+      "id": "pan-lux3d",
+      "lengthMeters": 0.38,
+      "massKg": 2,
+      "material": "metal",
+      "condition": "intact",
+      "note": "厚实完好的金属锅，攻击和耐久型S"
+    },
+    {
+      "id": "lamp-lux3d",
+      "lengthMeters": 0.45,
+      "massKg": 1.3,
+      "material": "plastic",
+      "condition": "worn",
+      "note": "用旧的塑料壳台灯，中等体量"
+    },
+    {
+      "id": "wasteland-knife",
+      "lengthMeters": 0.2,
+      "massKg": 0.25,
+      "material": "metal",
+      "condition": "worn",
+      "note": "较厚重的旧金属刀，与轻剪刀不同"
+    },
+    {
+      "id": "wasteland-pot",
+      "lengthMeters": 0.38,
+      "massKg": 0.8,
+      "material": "metal",
+      "condition": "worn",
+      "note": "较薄且用旧的轻金属锅，与厚锅不同"
+    },
+    {
+      "id": "wasteland-broom",
+      "lengthMeters": 0.8,
+      "massKg": 1.7,
+      "material": "wood",
+      "condition": "intact",
+      "note": "结实重硬木长扫把，范围型S；长度已到0.8m上限"
+    }
+  ],
+  "massStatus": "Proposed rating input only in this stage build; accepted collision mass stays in catalog until combat balance passes (Elara ad8c777d)."
+}
