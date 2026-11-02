@@ -16,4 +16,17 @@
 
 15、18、30、69是已参与调参的历史诊断，不再作为正式零超45秒的回归条件。原记录保留在PR26历史提交、共享开发归档/每件等级与材质/combat/的原始批量和原审查，不删历史数据。
 
-首次面板声明在本文件提交前已另存共享归档pre-run.json；已读现有MVP/combat各manifest，已知0起训练/验证、20000起诊断、30000–30999主验收，与40000–40099不重叠。未做全项目种子全量审计，不能据此推断其他项目无相同整数；隔离性指本轮规则调参/配平输入。
+首次面板声明在本文件提交前已另存共享归档pre-run.json。按共享 `开发归档/每件等级与材质/combat/` 的实际 `rounds.ndjson`（`plan.seed`，诊断记录为顶层 `seed`）回读，已用区间如下；端点均包含，逐文件行数、种子数和SHA保存在同次交付的 `seed-ledger-readback.json`。
+
+| 已用种子 | 现有记录（相对combat/） |
+|---|---|
+| 0–9 | pilot-v1/ |
+| 0–99 | primary-v2/、primary-v3/、combat-b0aad31-full/primary/、combat-be02b86-full/primary/、combat-be02b86-full/layout/、mirror-order-be02b86/ |
+| 0–4 | combat-b0aad31-full/s-select/、combat-be02b86-full/s-select/ |
+| 0–199 | combat-be02b86-full/fair/ |
+| 1000–1099 | combat-b0aad31-full/s-verify/ |
+| 2000–2099 | combat-be02b86-full/s-verify/ |
+| 20000–20199 | mirror-independent-be02b86/ |
+| 30000–30999 | mirror-1000/ |
+
+历史调参诊断种子是15、18、30、69，共四个；不是“五个历史回归种子”。选型面板0–4确有五个种子，属于另一组记录。以上已用区间的并集是0–199、1000–1099、2000–2099、20000–20199、30000–30999，与预先声明的40000–40099不重叠。此次只补全旧记录区间和数词，没有改变首次面板、测试、门槛或物理。未做全项目种子全量审计，隔离性指本轮规则调参/配平输入。
