@@ -74,3 +74,40 @@ test('two real broom attackers never tell the player to swap them back and forth
     assert.equal(tipLine(s, 1), '它冲过来时按挡，能把它弹开');
   }
 });
+
+test('orientation tolerance includes five points in either direction; six points can prefer attack, range or guard', () => {
+  for (const offense of ['attack', 'range']) {
+    for (const gap of [-6, -5, -1, 0, 1, 5, 6]) {
+      const id = `tolerance-${offense}-${gap}`;
+      const scores = {attack: 20, range: 20, durability: 60};
+      scores[offense] = 60 + gap;
+      setNames([{id, name: '测试件', rating: {scores}}]);
+      assert.equal(tipLine(stats(id), 1).includes('改成贴着'), gap < -5, `${offense} gap ${gap}, out`);
+      assert.equal(tipLine(stats(id, 'hug'), 1).includes('适合伸出'), gap > 5, `${offense} gap ${gap}, hug`);
+    }
+  }
+});
+
+test('only two effective blocks suppress repeated block-timing advice and continue later tips', () => {
+  const broom = catalog.items.find(it => it.category === 'broom' && it.rating);
+  for (const perfect of [0, 1, 2, 3]) {
+    const events = [
+      ...Array.from({length: 3}, () => ({type: 'dash', phase: 'end', side: 0, quality: 'miss'})),
+      {type: 'break', target: 0, targetPart: 'part-0', item: broom.id},
+      ...Array.from({length: 5}, () => ({type: 'blockResult', side: 0, outcome: 'empty'})),
+      {type: 'blockResult', side: 0, outcome: 'perfect', damageApplied: false},
+      {type: 'blockResult', side: 1, outcome: 'perfect', damageApplied: true},
+      ...Array.from({length: perfect}, () => ({type: 'blockResult', side: 0, outcome: 'perfect', damageApplied: true}))
+    ];
+    const s = matchStats({events}, [{parts: [{item: broom.id, orient: 'out'}]}, {parts: []}]);
+    assert.equal(s.perfect, perfect);
+    assert.equal(tipLine(s, 1), perfect < 2 ? `${broom.name}先碎了，试试在对手冲来时按挡` : '冲空多，等它靠近再冲');
+  }
+});
+
+test('effective blocks do not suppress explicit defensive orientation advice or winning advice', () => {
+  const s = stats('pillow');
+  s.perfect = 2;
+  assert.equal(tipLine(s, 1), '先碎的是伸出的枕头，试试把它改成贴着');
+  assert.equal(tipLine(s, 0), '完美挡了 2 次，换个装法试试别的打法');
+});
