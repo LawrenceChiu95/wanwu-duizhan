@@ -17,6 +17,21 @@ test('explicit new schema, deterministic full replay, A/B identical initial geom
  assert.equal(digest(a),digest(again));assert.equal(a.meta.schemaVersion,3);assert.deepEqual(a.meta.initial,simulations[3].meta.initial);
  for(const r of simulations){assert.equal(r.frames[0].t,0);assert.equal(r.frames.at(-1).t,r.meta.duration);assert.ok(r.frames.every(fr=>fr.fighters.every(f=>[...f.pos,...f.quat,...f.velocity,...f.angularVelocity,...f.centerOfMass,f.hp,f.mass,...f.parts.flatMap(p=>[p.hp,...p.pos,...p.quat])].every(Number.isFinite))));assert.ok(r.decisive.t1-r.decisive.t0<=2.5+1e-8);}
 });
+test('authored wasteland broom and pot finish with finite physics in both modes',async()=>{
+ for(const mode of ['A','B']){
+  const r=await simulateV3({fighters:[definition('wasteland-broom'),definition('wasteland-pot')],mode,seed:1});
+  assert.ok(['ko','double-ko','timeout'].includes(r.meta.reason));
+  assert.ok(r.meta.duration>0&&r.meta.duration<=rules.maxDuration);
+  assert.equal(r.frames.at(-1).t,r.meta.duration);
+  for(const frame of r.frames)for(const f of frame.fighters){
+   assert.ok([...f.pos,...f.quat,...f.velocity,...f.angularVelocity,...f.centerOfMass,f.hp,f.mass,...f.parts.flatMap(p=>[p.hp,...p.pos,...p.quat])].every(Number.isFinite));
+  }
+  for(const [side,id]of ['wasteland-broom','wasteland-pot'].entries()){
+   assert.equal(r.meta.initial[side].parts[0].item,id);
+   assert.equal(r.meta.initial[side].definition.parts[0].item,id);
+  }
+ }
+});
 test('equator slots and orientations, standard dimensions, inner end sunk into the core',()=>{
  const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0),unit=k=>[0,1,2].map(i=>i===k?1:0);
  assert.ok(Object.keys(rules.top.slots).length>=4);assert.deepEqual(rules.top.orients,['out','hug']);
