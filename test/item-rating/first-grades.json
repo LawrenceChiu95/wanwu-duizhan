@@ -1,6 +1,6 @@
 {
-  "status": "initial, not battle-balanced",
-  "source": "catalog mass/bounds/material; condition unknown neutral",
+  "status": "authored defaults, first ratings; combat coefficients and balance pending",
+  "source": "Elara 2622db47: explicit size/material/condition design",
   "thresholds": {
     "S": 75,
     "A": 60,
@@ -15,9 +15,8 @@
       "attack": 24,
       "range": 25,
       "durability": 49,
-      "mean": 32.666666666666664,
-      "grade": "C",
-      "version": "rating-v1:24-25-49:75-60-45-30-0"
+      "average": 32.67,
+      "grade": "C"
     },
     {
       "id": "broom",
@@ -25,79 +24,71 @@
       "attack": 37,
       "range": 100,
       "durability": 56,
-      "mean": 64.33333333333333,
-      "grade": "A",
-      "version": "rating-v1:37-100-56:75-60-45-30-0"
+      "average": 64.33,
+      "grade": "A"
     },
     {
       "id": "slipper",
       "name": "拖鞋",
-      "attack": 17,
+      "attack": 8,
       "range": 35,
-      "durability": 37,
-      "mean": 29.666666666666668,
-      "grade": "D",
-      "version": "rating-v1:17-35-37:75-60-45-30-0"
+      "durability": 16,
+      "average": 19.67,
+      "grade": "D"
     },
     {
       "id": "pillow",
       "name": "枕头",
-      "attack": 20,
+      "attack": 19,
       "range": 75,
-      "durability": 98,
-      "mean": 64.33333333333333,
-      "grade": "A",
-      "version": "rating-v1:20-75-98:75-60-45-30-0"
+      "durability": 94,
+      "average": 62.67,
+      "grade": "A"
     },
     {
       "id": "pan-lux3d",
       "name": "锅（Lux3D）",
-      "attack": 100,
+      "attack": 89,
       "range": 48,
-      "durability": 100,
-      "mean": 82.66666666666667,
-      "grade": "S",
-      "version": "rating-v1:100-48-100:75-60-45-30-0"
+      "durability": 95,
+      "average": 77.33,
+      "grade": "S"
     },
     {
       "id": "lamp-lux3d",
       "name": "台灯（Lux3D）",
-      "attack": 52,
+      "attack": 46,
       "range": 56,
-      "durability": 57,
-      "mean": 55.0,
-      "grade": "B",
-      "version": "rating-v1:52-56-57:75-60-45-30-0"
+      "durability": 50,
+      "average": 50.67,
+      "grade": "B"
     },
     {
       "id": "wasteland-knife",
       "name": "废土刀",
-      "attack": 24,
+      "attack": 30,
       "range": 25,
-      "durability": 49,
-      "mean": 32.666666666666664,
-      "grade": "C",
-      "version": "rating-v1:24-25-49:75-60-45-30-0"
+      "durability": 51,
+      "average": 35.33,
+      "grade": "C"
     },
     {
       "id": "wasteland-pot",
       "name": "废土锅",
-      "attack": 100,
+      "attack": 54,
       "range": 48,
-      "durability": 100,
-      "mean": 82.66666666666667,
-      "grade": "S",
-      "version": "rating-v1:100-48-100:75-60-45-30-0"
+      "durability": 68,
+      "average": 56.67,
+      "grade": "B"
     },
     {
       "id": "wasteland-broom",
       "name": "废土扫把",
-      "attack": 37,
+      "attack": 62,
       "range": 100,
-      "durability": 56,
-      "mean": 64.33333333333333,
-      "grade": "A",
-      "version": "rating-v1:37-100-56:75-60-45-30-0"
+      "durability": 73,
+      "average": 78.33,
+      "grade": "S"
     }
   ]
 }

@@ -249,7 +249,7 @@
       },
       "volume": 0.00009555724682286382,
       "mass": 0.15,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/RRyFBBtM2K",
         "author": "Zsky",
@@ -303,7 +303,8 @@
           "durability": "B"
         },
         "grade": "C"
-      }
+      },
+      "condition": "intact"
     },
     {
       "id": "lamp",
@@ -682,7 +683,7 @@
       },
       "volume": 0.0049897101190355085,
       "mass": 0.6,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/bzCi_ZLQPN4",
         "author": "Poly by Google",
@@ -736,7 +737,8 @@
           "durability": "B"
         },
         "grade": "A"
-      }
+      },
+      "condition": "intact"
     },
     {
       "id": "pot",
@@ -1084,8 +1086,8 @@
         "defense": 3
       },
       "volume": 0.0007369761005975306,
-      "mass": 0.25,
-      "massBasis": "category",
+      "mass": 0.16,
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/2wR1M99UwP",
         "author": "J-Toastie",
@@ -1127,19 +1129,20 @@
         "sourceVertices": 484
       },
       "rating": {
-        "version": "rating-v1:17-35-37:75-60-45-30-0",
+        "version": "rating-v1:8-35-16:75-60-45-30-0",
         "scores": {
-          "attack": 17,
+          "attack": 8,
           "range": 35,
-          "durability": 37
+          "durability": 16
         },
         "letters": {
           "attack": "D",
           "range": "C",
-          "durability": "C"
+          "durability": "D"
         },
         "grade": "D"
-      }
+      },
+      "condition": "damaged"
     },
     {
       "id": "pillow",
@@ -1218,8 +1221,8 @@
         "defense": 2
       },
       "volume": 0.020540330559015274,
-      "mass": 0.6,
-      "massBasis": "category",
+      "mass": 0.5,
+      "massBasis": "designed-default",
       "source": {
         "url": "https://poly.pizza/m/f60emm1Xkas",
         "author": "Poly by Google",
@@ -1261,11 +1264,11 @@
         "sourceVertices": 142
       },
       "rating": {
-        "version": "rating-v1:20-75-98:75-60-45-30-0",
+        "version": "rating-v1:19-75-94:75-60-45-30-0",
         "scores": {
-          "attack": 20,
+          "attack": 19,
           "range": 75,
-          "durability": 98
+          "durability": 94
         },
         "letters": {
           "attack": "D",
@@ -1273,7 +1276,8 @@
           "durability": "S"
         },
         "grade": "A"
-      }
+      },
+      "condition": "intact"
     },
     {
       "id": "pan-lux3d",
@@ -1440,7 +1444,7 @@
         "defense": 6
       },
       "volume": 0.002363260369747877,
-      "mass": 2.5,
+      "mass": 2,
       "source": {
         "url": "https://www.aholo3d.cn/ (Aholo Lux3D 生成)",
         "author": "Aholo Lux3D",
@@ -1485,14 +1489,14 @@
       },
       "category": "pot",
       "standardLongSide": 0.38,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "comparisonBase": "pot",
       "rating": {
-        "version": "rating-v1:100-48-100:75-60-45-30-0",
+        "version": "rating-v1:89-48-95:75-60-45-30-0",
         "scores": {
-          "attack": 100,
+          "attack": 89,
           "range": 48,
-          "durability": 100
+          "durability": 95
         },
         "letters": {
           "attack": "S",
@@ -1500,7 +1504,8 @@
           "durability": "S"
         },
         "grade": "S"
-      }
+      },
+      "condition": "intact"
     },
     {
       "id": "lamp-lux3d",
@@ -1667,7 +1672,7 @@
         "defense": 4
       },
       "volume": 0.00604151701554656,
-      "mass": 1.5,
+      "mass": 1.3,
       "source": {
         "url": "https://www.aholo3d.cn/ (Aholo Lux3D 生成)",
         "author": "Aholo Lux3D",
@@ -1712,14 +1717,14 @@
       },
       "category": "lamp",
       "standardLongSide": 0.45,
-      "massBasis": "category",
+      "massBasis": "designed-default",
       "comparisonBase": "lamp",
       "rating": {
-        "version": "rating-v1:52-56-57:75-60-45-30-0",
+        "version": "rating-v1:46-56-50:75-60-45-30-0",
         "scores": {
-          "attack": 52,
+          "attack": 46,
           "range": 56,
-          "durability": 57
+          "durability": 50
         },
         "letters": {
           "attack": "B",
@@ -1727,7 +1732,8 @@
           "durability": "B"
         },
         "grade": "B"
-      }
+      },
+      "condition": "worn"
     },
     {
       "id": "wasteland-knife",
@@ -1743,8 +1749,8 @@
         "attack": 14,
         "defense": 3
       },
-      "mass": 0.15,
-      "massBasis": "category",
+      "mass": 0.25,
+      "massBasis": "designed-default",
       "standardLongSide": 0.2,
       "hull": [
         [
@@ -1928,19 +1934,20 @@
         }
       },
       "rating": {
-        "version": "rating-v1:24-25-49:75-60-45-30-0",
+        "version": "rating-v1:30-25-51:75-60-45-30-0",
         "scores": {
-          "attack": 24,
+          "attack": 30,
           "range": 25,
-          "durability": 49
+          "durability": 51
         },
         "letters": {
-          "attack": "D",
+          "attack": "C",
           "range": "D",
           "durability": "B"
         },
         "grade": "C"
-      }
+      },
+      "condition": "worn"
     },
     {
       "id": "wasteland-pot",
@@ -1956,8 +1963,8 @@
         "attack": 12,
         "defense": 6
       },
-      "mass": 2.5,
-      "massBasis": "category",
+      "mass": 0.8,
+      "massBasis": "designed-default",
       "standardLongSide": 0.38,
       "hull": [
         [
@@ -2137,19 +2144,20 @@
         }
       },
       "rating": {
-        "version": "rating-v1:100-48-100:75-60-45-30-0",
+        "version": "rating-v1:54-48-68:75-60-45-30-0",
         "scores": {
-          "attack": 100,
+          "attack": 54,
           "range": 48,
-          "durability": 100
+          "durability": 68
         },
         "letters": {
-          "attack": "S",
+          "attack": "B",
           "range": "B",
-          "durability": "S"
+          "durability": "A"
         },
-        "grade": "S"
-      }
+        "grade": "B"
+      },
+      "condition": "worn"
     },
     {
       "id": "wasteland-broom",
@@ -2165,8 +2173,8 @@
         "attack": 13,
         "defense": 3
       },
-      "mass": 0.6,
-      "massBasis": "category",
+      "mass": 1.7,
+      "massBasis": "designed-default",
       "standardLongSide": 0.8,
       "hull": [
         [
@@ -2346,19 +2354,20 @@
         }
       },
       "rating": {
-        "version": "rating-v1:37-100-56:75-60-45-30-0",
+        "version": "rating-v1:62-100-73:75-60-45-30-0",
         "scores": {
-          "attack": 37,
+          "attack": 62,
           "range": 100,
-          "durability": 56
+          "durability": 73
         },
         "letters": {
-          "attack": "C",
+          "attack": "A",
           "range": "S",
-          "durability": "B"
+          "durability": "A"
         },
-        "grade": "A"
-      }
+        "grade": "S"
+      },
+      "condition": "intact"
     }
   ]
 }
