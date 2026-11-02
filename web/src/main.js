@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
-import {loadModels, turntable, pictureUrl} from './models.js';
+import {loadModels, pictureUrl} from './models.js';
+import {LiveTurns} from './livecards.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
 import {Overlay} from './overlay.js';
@@ -112,6 +113,7 @@ async function main() {
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
   const stage = new Stage(el.canvas, {items, coreRadius: rules.core.radius, layout});
+  const turns = new LiveTurns(stage.renderer, stage.scene.environment);
   const overlay = new Overlay(stage, el);
   renderCredits(items);
 
@@ -596,7 +598,7 @@ async function main() {
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(src.line)}</small>`;
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}">
-        <span class="media"><i class="turn"></i>${corner}${badge}</span>
+        <span class="media"><canvas class="turn"></canvas>${corner}${badge}</span>
         <span class="nm"><b>${esc(NAMES[id])}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span>
         <small class="spec">${spec(id)}</small>
       </button>${foot}</article>`;
@@ -621,13 +623,12 @@ async function main() {
       if (how) how.onclick = () => openHow(id);
     }
     // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it).
+    turns.prune();
     for (const id of OFFER) {
       await loadModels([byId.get(id)]);
       if (req !== libReq || el.library.hidden) return;
-      const strip = turntable(id, stage.renderer, stage.scene.environment);
       const turn = el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
-      if (strip && turn) { turn.style.backgroundImage = `url(${strip.url})`; turn.style.setProperty('--frames', strip.frames); turn.classList.add('on'); }
-      await nextPaint();
+      if (turn) turns.show(turn, id);
     }
   }
   function closeLibrary() { libReq++; el.library.hidden = true; }
@@ -646,26 +647,23 @@ async function main() {
     el.howTitle.textContent = `${NAMES[id]}是怎么来的`;
     el.howCat.textContent = CAT[it.category] ?? it.category ?? '';
     el.howSteps.innerHTML = STEPS.map((st, i) => {
-      const pic = st.key === 'model' ? '<i class="mini3d"></i>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
+      const pic = st.key === 'model' ? '<canvas class="mini3d"></canvas>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
       return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
     }).join('');
     el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${dur(secs.reduce((a, b) => a + b, 0))}` : '';
     const other = mine.parts[1 - libSlot].item === id;
     el.howEquip.disabled = other;
     el.howEquip.querySelector('span').textContent = other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
-    el.howTurn.style.backgroundImage = '';
+    turns.prune();
+    turns.show(el.howTurn, id);
     el.how.hidden = false;
     playHow();
     // The 3D step needs the model, which the 角色库 may not have loaded yet: it turns in once it arrives.
     const req = ++howReq;
     await loadModels([it]);
     if (req !== howReq || el.how.hidden) return;
-    const strip = turntable(id, stage.renderer, stage.scene.environment, {frames: 60, size: 272});
-    el.howTurn.style.backgroundImage = strip ? `url(${strip.url})` : '';
-    if (strip) el.howTurn.style.setProperty('--frames', strip.frames);
-    const small = turntable(id, stage.renderer, stage.scene.environment), mini = el.howSteps.querySelector('.mini3d');
-    mini.style.backgroundImage = small ? `url(${small.url})` : '';
-    if (small) mini.style.setProperty('--frames', small.frames);
+    turns.show(el.howTurn, id);
+    turns.show(el.howSteps.querySelector('.mini3d'), id, {still: true});
   }
   function playHow() {
     howT = 0;
@@ -814,6 +812,7 @@ async function main() {
   };
   window.__top = {
     press,
+    turns,
     setControl(c) { control = c; },
     // Fixture for the 看它怎么来的 check until the generation script writes real records.
     setOrigin(id, origin) { byId.get(id).origin = origin; },
@@ -946,8 +945,10 @@ async function main() {
         m.scale.push(stage.cam.stat.pxPerMetre);
       }
     }
-    // The 角色库 covers the whole page: the stage under it would only draw what no one sees.
+    // The 角色库 covers the whole page: the stage under it would only draw what no one sees, and its canvas draws the
+    // cards' 3D instead (看它怎么来的 over the 角色库: only its own).
     if (el.library.hidden) stage.render(dt, simDt);
+    else turns.render(now / 1000, el.how.hidden ? el.library : el.how);
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }
   }
