@@ -34,7 +34,7 @@ export class LiveTurns {
       this.views.set(canvas, v);
       this.io.observe(canvas);
     }
-    if (v.id !== itemId) { v.id = itemId; v.rig = null; v.ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    if (v.id !== itemId) { v.id = itemId; v.rig = null; v.ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.removeAttribute('data-drawn'); }
     v.rig ??= turnRig(itemId, this.environment);
     v.still = still;
     v.done = false;
@@ -66,6 +66,8 @@ export class LiveTurns {
       v.rig.spin.rotation.y = v.still || reduced.matches ? STILL_ANGLE : (t / TURN) * Math.PI * 2;
       r.render(v.rig.scene, v.rig.camera);
       v.ctx.drawImage(gl, 0, gl.height - size, size, size, 0, 0, size, size);
+      // The card fades the model in over its outline only once there is a picture to show (task #37).
+      v.canvas.setAttribute('data-drawn', '');
       v.done = v.still || reduced.matches;
       this.drawn++;
     }

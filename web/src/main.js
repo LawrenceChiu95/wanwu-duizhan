@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
-import {loadModels, pictureUrl} from './models.js';
+import {loadModels, pictureUrl, outlinePath} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -617,10 +617,15 @@ async function main() {
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
     const r = rate(id), grade = r?.grade;
+    // Until the model is drawn (task #37, Elara 684ed1e6): the item's own styled picture if its record has one, else its
+    // outline, faint; the turning 3D fades in over it. No spinner.
+    const path = it.origin?.styled ? null : outlinePath(it);
+    const ghost = it.origin?.styled ? `<img class="ghost" src="${esc(pictureUrl(it.origin.styled) ?? '')}" alt="">`
+      : path ? `<svg class="ghost" viewBox="0 0 100 100" aria-hidden="true"><path d="${path}" /></svg>` : '';
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
-        <span class="media"><canvas class="turn"></canvas>${corner}${badge}</span>
+        <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${badge}</span>
         <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
@@ -633,7 +638,8 @@ async function main() {
     // Collection so far, best grade first (远夏 11-02: collect the S).
     const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
     el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}`;
-    el.libGrid.innerHTML = byGrade(OFFER, rate).map(id => cardHtml(id, k)).join('');
+    const shown = byGrade(OFFER, rate);
+    el.libGrid.innerHTML = shown.map(id => cardHtml(id, k)).join('');
     revealUnseen();
     el.libGrid.scrollTop = 0;
     el.library.hidden = false;
@@ -648,13 +654,19 @@ async function main() {
       const how = card.querySelector('[data-how]');
       if (how) how.onclick = () => openHow(id);
     }
-    // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it).
+    // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it): the cards on
+    // screen together first, so a small model is not stuck behind a big one (task #37), then the rest.
     turns.prune();
-    for (const id of OFFER) {
-      await loadModels([byId.get(id)]);
+    const turnOf = id => el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
+    const onScreen = shown.filter(id => turnOf(id)?.getBoundingClientRect().top < innerHeight);
+    for (const group of [onScreen, shown.filter(id => !onScreen.includes(id))]) {
+      await Promise.all(group.map(async id => {
+        await loadModels([byId.get(id)]);
+        if (req !== libReq || el.library.hidden) return;
+        const turn = turnOf(id);
+        if (turn) turns.show(turn, id);
+      }));
       if (req !== libReq || el.library.hidden) return;
-      const turn = el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
-      if (turn) turns.show(turn, id);
     }
   }
   function closeLibrary() { libReq++; revealIo.disconnect(); el.library.hidden = true; }
