@@ -1089,11 +1089,11 @@
       "mass": 0.16,
       "massBasis": "designed-default",
       "source": {
-        "url": "https://poly.pizza/m/2wR1M99UwP",
-        "author": "J-Toastie",
-        "license": "CC-BY-3.0",
-        "sourceSha256": "106394219dd14c618d024f99c24fddf5cc946c9f63863952cf1e936a3616051b",
-        "normalizedSha256": "b5dd16f74dfa621f70abe6debd90fabb7208ea5a9aa76a750dbe3f3caefa1bb9"
+        "url": "https://sketchfab.com/3d-models/worn-flip-flop-000074a334c541878360457c672b6c2e",
+        "author": "inciprocal",
+        "license": "CC-BY-4.0",
+        "sourceSha256": "9d6f73ffdcbe1d81445643649b43a68bd7b980a974c2897208b84dbc94a471f1",
+        "normalizedSha256": "def412abf01dd60a076bf37a742d111566f80200920a71185a451173424eada2"
       },
       "normalization": {
         "sourceBounds": {
@@ -1142,7 +1142,23 @@
         },
         "grade": "D"
       },
-      "condition": "damaged"
+      "condition": "damaged",
+      "collisionSource": {
+        "url": "https://poly.pizza/m/2wR1M99UwP",
+        "author": "J-Toastie",
+        "license": "CC-BY-3.0",
+        "sourceSha256": "106394219dd14c618d024f99c24fddf5cc946c9f63863952cf1e936a3616051b",
+        "normalizedSha256": "b5dd16f74dfa621f70abe6debd90fabb7208ea5a9aa76a750dbe3f3caefa1bb9",
+        "note": "hull, bounds, weakPoint, volume and normalization still come from this model: task #74 swapped the look only, so fights and grades stay as they were"
+      },
+      "look": {
+        "note": "Worn Flip Flop fitted into the collision box: metal-rough materials, 512 px WebP textures, turned 30 deg about Y, 0.28 m long, stretched across to the hull width, sole on the hull bottom",
+        "size": [
+          0.28,
+          0.0723,
+          0.1612
+        ]
+      }
     },
     {
       "id": "pillow",

@@ -24,10 +24,10 @@
  * the same key with other input is key-conflict; a parent gets one 再提交 or 重新生成, another key on it is not-allowed;
  * an id it never made is not-found. Still only this browser's storage: it shows the page copes, not that the real one is idempotent.
  *   ?shootCat=<category>  what the photo is recognised as (pot, lamp, scissors, broom, slipper, pillow); without it the
- *                         first photo is a broom (an S) and the second a knife (a C), then each gets one of five at
- *                         random, all but the slipper (the page says so on 认物; Elara 1fd38db4, and c4225110 3dda8148 for
+ *                         first photo is a broom (an S) and the second a knife (a C), then each gets one of the six
+ *                         at random (the page says so on 认物; Elara 1fd38db4, and c4225110 3dda8148 for
  *                         第 22 版: the published copy can't take ?shootCat, so whoever tries it sees an S turn over first;
- *                         the slipper's model is a plain grey low-poly one with no texture, which reads as broken here)
+ *                         the slipper was left out there while its model was a plain grey one, back since task #74)
  *   ?shootSix=0           recognised as outside the six, counted as the nearest
  *   ?shootReset=1         forget every fake job, item and the page's current job
  */
@@ -80,7 +80,7 @@ export async function fakeApi(q) {
   const speed = Math.max(0.1, Number(q.get('shootSpeed')) || 1);
   const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
   const pinned = SOURCE[q.get('shootCat')] ? q.get('shootCat') : null, inSix = q.get('shootSix') !== '0';
-  const FIRST = ['broom', 'scissors'], RANDOM = Object.keys(SOURCE).filter(c => c !== 'slipper');
+  const FIRST = ['broom', 'scissors'], RANDOM = Object.keys(SOURCE);
   const someCat = n => pinned ?? FIRST[n] ?? RANDOM[Math.floor(Math.random() * RANDOM.length)];
   const st = read(KEY) ?? {v: VERSION, clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
   const vnow = () => st.clock.virt0 + (Date.now() - st.clock.real0) * st.clock.speed;
