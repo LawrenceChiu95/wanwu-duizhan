@@ -88,7 +88,9 @@ export function mountShoot(ctx) {
   let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = null, shown = '', recogAt = -Infinity, timer = 0, ticker = 0;
   // Errors running: polls that got a server error, item fetches that failed after 好了, sends that got a server error.
   let pollFails = 0, itemFails = 0, sendFails = 0, lastSend = null;
-  const keys = {}; // one clientKey per paid action on a job (再提交, 重新生成), reused if that request is sent again
+  // One clientKey per paid action on a job (再提交, 重新生成), reused whenever that request is sent again; kept with the
+  // job, so it survives the 角色库 and a reload (PR #57 B1, Elara a14738e8).
+  const keyFor = kind => { const ks = stored.keys ??= {}; ks[kind + ':' + job.id] ??= newClientKey(); keep(); return ks[kind + ':' + job.id]; };
 
   const final = j => j?.status === 'succeeded' || j?.status === 'failed';
   // 好了 but its item not yet in this page's catalog (task #56 S2): no card until it is, and it keeps being fetched.
@@ -328,6 +330,9 @@ export function mountShoot(ctx) {
       startError = e instanceof ShootError ? e.code : 'server';
       // A server error may be resent as it was (same request, same clientKey), but not forever (Sol 21c4552e).
       if (startError === 'server' && ++sendFails >= DOWN_AFTER) startError = 'server-down';
+      // 再试, 再提交 or 重新生成 that the backend couldn't take: the failed job stays this page's, seen or not, until that
+      // step goes through, so coming back later carries on with the same job and key (PR #57 B1). Refused outright, it lets go.
+      if (job && stored) { stored.hold = startError === 'server' || startError === 'server-down'; keep(); }
       if (!job) stored = null;
       sync();
     }
@@ -377,14 +382,14 @@ export function mountShoot(ctx) {
       startError = null;
       if (pending) send(() => api.create(pending.file, pending.key)); else { stored ? poll() : sync(); }
     },
-    retry: () => send(() => api.retry(job.id)),
+    retry: () => { const id = job.id; send(() => api.retry(id)); },
     again: () => lastSend && send(lastSend),
     refresh: () => { startError = null; poll(); },
-    resubmit: () => send(() => api.resubmit(job.id, keys['re:' + job.id] ??= newClientKey())),
+    resubmit: () => { const id = job.id, key = keyFor('re'); send(() => api.resubmit(id, key)); },
     regen: async () => {
       if (!(await ask())) return;
-      const old = job.id;
-      send(() => api.regenerate(old, keys['regen:' + old] ??= newClientKey()));
+      const old = job.id, key = keyFor('regen');
+      send(() => api.regenerate(old, key));
     },
     play: () => { close(); ctx.goPlay(); },
     lib: () => { const done = job?.status === 'succeeded'; close(); if (done || ctx.libraryOpen()) ctx.openLibrary(); },
@@ -399,7 +404,7 @@ export function mountShoot(ctx) {
     // One job at a time: while one runs, 拍一件 shows it (Elara f63778f3).
     busyNote = from === 'library' && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
     // A finished job seen already, or one that can't go on, gives way to a new photo.
-    if (from === 'library' && stored && job && final(job) && (stored.seen || job.error?.retry === 'none')) { stored = null; job = null; keep(); }
+    if (from === 'library' && stored && job && final(job) && !stored.hold && (stored.seen || job.error?.retry === 'none')) { stored = null; job = null; keep(); }
     // Back from the 角色库 a while later: a server error may be sent again three more times.
     if (from === 'library' && startError) { startError = null; sendFails = 0; }
     shown = '';

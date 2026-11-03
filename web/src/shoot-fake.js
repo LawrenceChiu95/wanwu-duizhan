@@ -14,6 +14,8 @@
  *                         server-poll (polls get a server error for ten seconds), server-items (the first two
  *                         item fetches after it is done get a server error), server-create (sending the photo always
  *                         gets a server error).
+ *   ?shootAgainFail=3     the first 3 calls of 再试, 再提交 or 重新生成 get a server error (counted across reloads), then they
+ *                         go through; the keys they carried are kept in the fake's storage (againKeys).
  * The same-key and parent checks follow 第 2 稿 and 「本机后台接线补充」 (task #56 S3): a key is 8–128 of [A-Za-z0-9_-];
  * the same key with other input is key-conflict; a parent gets one 再提交 or 重新生成, another key on it is not-allowed;
  * an id it never made is not-found. Still only this browser's storage: it shows the page copes, not that the real one is idempotent.
@@ -156,6 +158,13 @@ export async function fakeApi(q) {
     return j;
   }
   const tick = ms => new Promise(r => setTimeout(r, ms));
+  // ?shootAgainFail=N: a follow-up on a failed job fails with a server error until N of them have.
+  const againFail = Number(q.get('shootAgainFail')) || 0;
+  function down(clientKey) {
+    st.againKeys = [...st.againKeys ?? [], clientKey ?? null];
+    save();
+    if (st.againKeys.length <= againFail) throw new ShootError('server');
+  }
   let itemsFail = 0; // ?shootFail=server-items: item fetches still to fail once a job of this page load is done
 
   return {
@@ -181,6 +190,7 @@ export async function fakeApi(q) {
     },
     async resubmit(fromJob, clientKey) {
       await tick(300);
+      down(clientKey);
       return sameKey(clientKey, fromJob, 'resubmit') ?? again(child(fromJob, 'resubmit'), clientKey, 'resubmit', {});
     },
     async job(id) {
@@ -191,6 +201,7 @@ export async function fakeApi(q) {
     },
     async retry(id) {
       await tick(300);
+      down(null);
       const rec = get(id);
       advance(rec);
       if (rec.done?.error?.retry !== 'same') throw new ShootError('not-allowed');
@@ -199,6 +210,7 @@ export async function fakeApi(q) {
     },
     async regenerate(id, clientKey) {
       await tick(300);
+      down(clientKey);
       return sameKey(clientKey, id, 'regenerate') ?? again(child(id, 'regenerate'), clientKey, 'regenerate', {regenerateOf: id});
     },
     async quota() {
