@@ -8,6 +8,7 @@ import {once} from 'node:events';
 import {Document, NodeIO} from '@gltf-transform/core';
 import sharp from 'sharp';
 import {setTimeout as pause} from 'node:timers/promises';
+import {keychainEnvironment, startReal} from '../shoot/start-real.mjs';
 import {realGenerator, parseRecognition, recognitionPrompt, recognitionSchema} from '../shoot/real.mjs';
 import {startShootServer} from '../shoot/server.mjs';
 import {openJobs, REPO} from '../shoot/jobs.mjs';
@@ -39,6 +40,9 @@ function gateway(options = {}) {
    const body = JSON.parse(request.body); assert.equal(body.store, false); assert.equal(body.model, 'gemini-3.5-flash-lite'); assert.equal(body.input[0].text, recognitionPrompt);
    assert.equal(body.input[1].mime_type, 'image/jpeg'); assert.equal((await sharp(Buffer.from(body.input[1].data, 'base64')).metadata()).format, 'jpeg');
    assert.deepEqual(body.response_format.schema.required.sort(), Object.keys(result).sort());
+   if (options.visionNetwork) throw Error('network ' + env.GEMINI_API_KEY);
+   if (options.visionStatus) return new Response('private-body ' + env.GEMINI_API_KEY, {status: options.visionStatus});
+   if (options.visionBadJson) return new Response('private malformed ' + env.GEMINI_API_KEY);
    if (options.visionTimeout) return new Promise((_, reject) => request.signal.addEventListener('abort', () => reject(request.signal.reason), {once: true}));
    return Response.json(options.visionReply ?? geminiReply(options.recognition ?? result));
   }
@@ -57,6 +61,7 @@ function gateway(options = {}) {
    }
    if (u.pathname.endsWith('/get')) {
     const stage = u.searchParams.get('taskid') === 'image-id' ? 'image' : 'mesh';
+    if (options.queryStatus?.[stage]) return new Response('private query failure', {status: options.queryStatus[stage]});
     const states = options.statuses?.[stage]; const status = states?.length > 1 ? states.shift() : states?.[0] ?? 3;
     return ok({status, outputs: [{content: `https://assets.example/${stage === 'image' ? 'styled.jpg' : 'model.glb'}`} ]});
    }
@@ -86,7 +91,7 @@ async function open(t, options = {}) {
 }
 
 test('strict recognition bounds/enums/refusals do not silently substitute a high rating', () => {
- for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {category: 'chair'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'photo-unclear'});
+ for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {category: 'chair'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'recognition-invalid'});
  for (const condition of ['intact', 'worn', 'damaged', 'unknown']) assert.equal(parseRecognition({...result, condition}).condition, condition);
  assert.equal(parseRecognition({...result, lengthCm: 1, massKg: .001}).lengthMeters, .01);
  assert.equal(parseRecognition({...result, lengthCm: 300, massKg: 100, inSix: false}).inSix, false);
@@ -128,7 +133,7 @@ test('offline real HTTP task: structured vision, two durable paid stages, geomet
 
 for (const options of [{visionReply: {status: 'failed', steps: []}}, {recognition: {...result, massKg: -1}}, {visionTimeout: true}]) test(`vision refusal/bounds/timeout never enters Aholo ${JSON.stringify(options)}`, async t => {
  const {jobs, g} = await open(t, options), j = await jobs.create({photo: image, clientKey: 'vision-fail-0001'}), done = await finish(jobs, j.id);
- assert.equal(done.error.code, 'photo-unclear'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), 1);
+ assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), 1);
  assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), 1);
 });
 
@@ -146,15 +151,18 @@ for (const flags of [{clear: false, recognizable: true}, {clear: true, recogniza
  assert.equal((await jobs.create({photo: image, clientKey: 'unclear-real-001'})).id, j.id); assert.equal(g.visionCalls(), 1);
 });
 
-for (const lengthCm of [1, 300]) test(`actual ${lengthCm}cm item keeps the template weak spot proportion`, async t => {
- const {jobs} = await open(t, {recognition: {...result, lengthCm}}), j = await jobs.create({photo: image, clientKey: 'size-real-001'});
+for (const category of ['scissors', 'pot', 'broom', 'lamp', 'slipper', 'pillow']) for (const lengthCm of [1, 300]) test(`actual ${category} ${lengthCm}cm item keeps the template weak spot proportion`, async t => {
+ const {jobs, directory} = await open(t, {recognition: {...result, category, lengthCm}}), j = await jobs.create({photo: image, clientKey: 'size-real-001'});
  assert.equal((await finish(jobs, j.id)).status, 'succeeded');
  const [item] = await jobs.items(); validateRuntimeItem(item, catalog);
  const length = Math.max(...item.bounds.max.map((v, i) => v - item.bounds.min[i]));
  assert.ok(Math.abs(length - lengthCm / 100) < 1e-6);
- // The built-in pot is 38cm with a 4.94cm radius: a 13% weak spot.
- assert.ok(Math.abs(item.weakPoint.radius / length - .13) < 1e-6);
+ const template = catalog.items.find(i => i.category === category && !i.generated && !i.comparisonBase);
+ const templateLength = Math.max(...template.bounds.max.map((v, i) => v - template.bounds.min[i]));
+ assert.ok(Math.abs(item.weakPoint.radius / length - template.weakPoint.radius / templateLength) < 1e-6);
  assert.ok(item.weakPoint.radius < length / 2);
+ const saved=await readJson(path.join(directory,'state.json'));
+ assert.deepEqual(saved.jobs[j.id].providerState.orientation,item.normalization.orientation);
 });
 
 for (const category of ['scissors', 'broom', 'lamp', 'slipper', 'pillow']) test(`recognized ${category} uses this piece's material, size and condition with valid runtime geometry`, async t => {
@@ -178,16 +186,22 @@ for (const stage of ['image', 'mesh']) test(`unknown ${stage} create never repea
 
 for (const stage of ['image', 'mesh']) for (const status of [4, 6, 9, 0]) test(`Aholo ${stage} terminal/unknown/timeout ${status} preserves paid stages`, async t => {
  const {jobs, g} = await open(t, {statuses: {[stage]: [status]}}), j = await jobs.create({photo: image, clientKey: 'status-real-0001'}), failed = await finish(jobs, j.id);
- assert.equal(failed.error.code, stage === 'mesh' && [9, 0].includes(status) ? 'download' : 'step-failed'); assert.equal(failed.error.charged, true); assert.deepEqual(g.creates, stage === 'mesh' ? ['image', 'mesh'] : ['image']);
+ assert.equal(failed.error.code, [4, 6].includes(status) ? 'step-failed' : 'download'); assert.equal(failed.error.charged, true); assert.deepEqual(g.creates, stage === 'mesh' ? ['image', 'mesh'] : ['image']);
  if (failed.error.retry === 'regenerate') await assert.rejects(jobs.retry(j.id), {code: 'not-allowed'});
- else { await jobs.retry(j.id); await finish(jobs, j.id); assert.deepEqual(g.creates, ['image', 'mesh']); }
+ else { await jobs.retry(j.id); await finish(jobs, j.id); assert.deepEqual(g.creates, stage === 'mesh' ? ['image', 'mesh'] : ['image']); }
 });
 
 for (const stage of ['image', 'mesh']) test(`confirmed ${stage} busy rejection reports existing charges accurately`, async t => {
  const {jobs, g} = await open(t, {busy: stage}), j = await jobs.create({photo: image, clientKey: 'busy-real-0001'}), done = await finish(jobs, j.id);
- assert.equal(done.error.code, stage === 'image' ? 'busy' : 'step-failed'); assert.equal(done.error.charged, stage !== 'image');
- const child = await jobs.create({clientKey: 'busy-real-0002', ...(stage === 'image' ? {fromJob: j.id} : {regenerateOf: j.id, confirm: true})});
- await finish(jobs, child.id); assert.equal(g.visionCalls(), 1); assert.deepEqual(child.recognition, done.recognition);
+ assert.equal(done.error.code, stage === 'image' ? 'busy' : 'download'); assert.equal(done.error.charged, stage !== 'image');
+ if (stage === 'image') {
+  const child = await jobs.create({clientKey: 'busy-real-0002', fromJob: j.id});
+  await finish(jobs, child.id); assert.deepEqual(child.recognition, done.recognition);
+ } else {
+  assert.equal(done.error.retry, 'same'); await jobs.retry(j.id); await finish(jobs, j.id);
+  await assert.rejects(jobs.create({clientKey: 'busy-real-0002', regenerateOf: j.id, confirm: true}), {code: 'not-allowed'});
+ }
+ assert.equal(g.visionCalls(), 1);
 });
 
 test('download failure resumes saved model IDs without new vision or paid creation; processing failure keeps paid source', async t => {
@@ -303,7 +317,143 @@ for (const stage of ['vision', 'image', 'mesh']) for (const window of ['before',
  const exited = once(child, 'exit'); child.kill('SIGKILL'); await exited;
  let calls = 0; const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => {calls++;throw Error('no resubmit');}}});
  try {
-  const failed = await jobs.get(job.id); assert.equal(failed.error.code, stage === 'vision' ? 'photo-unclear' : 'unknown-submit'); assert.equal(failed.error.retry, 'none');
+  const failed = await jobs.get(job.id); assert.equal(failed.error.code, stage === 'vision' ? 'recognition-interrupted' : 'unknown-submit'); assert.equal(failed.error.retry, 'none');
   assert.equal((await jobs.create({photo: image, clientKey: 'real-hard-exit-001'})).id, job.id); assert.equal(calls, 0); assert.equal((await jobs.quota()).activeJobId, null);
  } finally { await jobs.close(); }
+});
+
+for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visionStatus: 403}, 'recognition-auth'], [{visionStatus: 429}, 'recognition-limit'], [{visionStatus: 503}, 'recognition-service'], [{visionNetwork: true}, 'recognition-network'], [{visionBadJson: true}, 'recognition-invalid']]) test(`recognition ${code} is safe, distinct and survives restart ${JSON.stringify(options)}`, async () => {
+ const directory = await dir(), g = gateway(options), logs = [], log = console.error;
+ let jobs;
+ try {
+  console.error = (...args) => logs.push(args.join(' '));
+  jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
+  const j = await jobs.create({photo: image, clientKey: 'vision-classified-001'}), failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, code); assert.equal(failed.error.retry, 'none'); assert.equal(failed.error.charged, false);
+  await jobs.close(); jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
+  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, []);
+  assert.ok(logs.length === 1 && logs[0].includes(code));
+  for (const secret of [...Object.values(env), 'private-body', 'private malformed', 'https://']) assert.ok(!logs.join().includes(secret));
+ } finally { console.error = log; await jobs?.close(); }
+});
+
+test('keychain launcher injects only child env and reports service names without secret diagnostics', async () => {
+ const names = [], parent = {KEEP: 'ok', GEMINI_API_KEY: 'stale'}, child = {pid: 123};
+ const launched = await startReal({env: parent, args: ['--port', '0'], readSecret: async name => {names.push(name); return ` ${name}-test-secret\n`;}, spawnServer: (node, args, options) => {
+  assert.equal(node, process.execPath); assert.deepEqual(args.slice(1), ['--provider', 'real', '--port', '0']);
+  assert.equal(options.env.KEEP, 'ok'); assert.equal(options.env.GEMINI_API_KEY, 'wanwu-gemini-api-key-test-secret'); assert.equal(options.env.AHOLO_API_KEY, 'wanwu-aholo-api-key-test-secret');
+  assert.equal(args.some(x => x.includes('test-secret')), false); return child;
+ }});
+ assert.equal(launched, child); assert.equal(parent.GEMINI_API_KEY, 'stale');
+ assert.deepEqual(names, ['wanwu-gemini-api-key', 'wanwu-aholo-api-key']);
+ await assert.rejects(keychainEnvironment({env: {}, readSecret: async () => {throw Error('unprinted SECRET');}}), error => error.message === 'Missing keychain services: wanwu-gemini-api-key, wanwu-aholo-api-key');
+ await assert.rejects(keychainEnvironment({env: {}, readSecret: async name => name.includes('gemini') ? 'fixture' : ''}), {message: 'Missing keychain services: wanwu-aholo-api-key'});
+});
+
+for (const http of [404, 403, 500]) test(`known image query HTTP ${http} is bounded and free retry creates only this order's first mesh`, async () => {
+ const directory = await dir(), options = {queryStatus: {image: http}}, g = gateway(options), waits = [];
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async ms => waits.push(ms)}});
+ try {
+  const j = await jobs.create({photo: image, clientKey: 'image-known-retry-001'}), failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, true);
+  assert.deepEqual(g.creates, ['image']); assert.deepEqual(waits, [1000, 2000, 4000]);
+  assert.equal(g.seen.filter(x => x.route.endsWith('/get')).length, 4);
+  options.queryStatus.image = null;
+  await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+  assert.deepEqual(g.creates, ['image', 'mesh']); assert.equal(g.visionCalls(), 1);
+  assert.equal((await jobs.create({photo: image, clientKey: 'image-known-retry-001'})).id, j.id);
+ } finally { await jobs.close(); }
+});
+
+test('transient query recovers inside bounded backoff without duplicate creation', async t => {
+ const directory = await dir(), g = gateway(), delays = []; let failures = 0;
+ const request = (url, options) => {
+  if (url.includes('task/get') && failures++ < 2) return Promise.reject(Error('transient'));
+  return g.fetch(url, options);
+ };
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async ms => delays.push(ms)}}); t.after(() => jobs.close());
+ const j = await jobs.create({photo: image, clientKey: 'query-backoff-001'}); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+ assert.deepEqual(delays, [1000, 2000]); assert.deepEqual(g.creates, ['image', 'mesh']);
+});
+
+test('close cancels an in-flight Aholo request and restart polls the saved image, never resubmits it', {timeout: 5000}, async () => {
+ const directory = await dir(), g = gateway(); let querying = false, aborted = false;
+ const request = (url, options) => {
+  if (url.includes('task/get')) { querying = true; return new Promise((_, reject) => options.signal.addEventListener('abort', () => {aborted = true; reject(options.signal.reason);}, {once: true})); }
+  return g.fetch(url, options);
+ };
+ let jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request}});
+ try {
+  const j = await jobs.create({photo: image, clientKey: 'close-query-001'}); await until(async () => querying, Boolean);
+  await jobs.close(); assert.equal(aborted, true); assert.deepEqual(g.creates, ['image']);
+  jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
+  assert.equal((await finish(jobs, j.id)).status, 'succeeded'); assert.deepEqual(g.creates, ['image', 'mesh']); assert.equal(g.visionCalls(), 1);
+ } finally { await jobs.close(); }
+});
+
+test('close cancels polling sleep rather than waiting forty minutes', {timeout: 5000}, async () => {
+ const directory = await dir(), g = gateway({statuses: {image: [0]}}); let asleep = false;
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: () => {asleep = true; return new Promise(() => {});}}});
+ await jobs.create({photo: image, clientKey: 'close-sleep-001'}); await until(async () => asleep, Boolean);
+ await jobs.close(); assert.deepEqual(g.creates, ['image']);
+ const disk = await readJson(path.join(directory, 'state.json')); assert.equal(Object.values(disk.jobs)[0].job.status, 'generating');
+});
+
+test('recognition received during close is persisted and no next charged stage starts', {timeout: 5000}, async () => {
+ const directory = await dir(), g = gateway(); let release, receiving = false;
+ const request = async (url, options) => {
+  const reply = await g.fetch(url, options);
+  if (url.includes('googleapis')) { receiving = true; await new Promise(resolve => release = resolve); }
+  return reply;
+ };
+ let jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request}});
+ try {
+  const j = await jobs.create({photo: image, clientKey: 'close-recognition-001'}); await until(async () => receiving, Boolean);
+  const closing = jobs.close(); release(); await closing;
+  const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id]; assert.equal(saved.job.recognition.category, 'pot'); assert.equal(saved.providerState.recognitionPending, undefined);
+  assert.deepEqual(g.creates, []);
+  jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
+  assert.equal((await finish(jobs, j.id)).status, 'succeeded'); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
+ } finally { await jobs.close(); }
+});
+
+async function stoppedProcess(directory) {
+ const g = gateway(), provider = realGenerator({env, fetch: g.fetch, pause: async () => {}}), step = provider.step;
+ provider.step = (...args) => args[0] === 'process' ? Promise.reject(Object.assign(Error('fixture process I/O'), {code: 'EIO'})) : step(...args);
+ const jobs = await openJobs({directory, generator: provider});
+ try { const j = await jobs.create({photo: image, clientKey: 'stored-source-001'}); assert.equal((await finish(jobs, j.id)).error.code, 'process'); return {g, j}; }
+ finally { await jobs.close(); }
+}
+for (const both of [false, true]) test(`corrupt source ${both ? 'and raw fail without requesting payment' : 'recovers from intact raw for free'}`, async () => {
+ const directory = await dir(), {j} = await stoppedProcess(directory), folder = path.join(directory, j.id);
+ await fs.writeFile(path.join(folder, 'source.glb'), 'bad saved source'); if (both) await fs.writeFile(path.join(folder, 'model.glb'), 'bad raw');
+ let calls = 0; const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => {calls++;throw Error('no network');}}});
+ try {
+  await jobs.retry(j.id); const done = await finish(jobs, j.id); assert.equal(calls, 0);
+  if (both) { assert.equal(done.error.code, 'process-corrupt'); assert.equal(done.error.retry, 'none'); await assert.rejects(jobs.retry(j.id), {code: 'not-allowed'}); await assert.rejects(jobs.create({clientKey: 'not-another-fee-001', regenerateOf: j.id, confirm: true}), {code: 'not-allowed'}); }
+  else { assert.equal(done.status, 'succeeded'); assert.deepEqual(await fs.readFile(path.join(folder, 'source.glb')), model); }
+ } finally { await jobs.close(); }
+});
+
+test('oversized raw model is rejected before reading/hash and cannot loop in free processing', async () => {
+ const directory = await dir(), {j} = await stoppedProcess(directory), file = path.join(directory, j.id, 'model.glb');
+ await fs.truncate(file, 64 * 1024 * 1024 + 1);
+ const read = fs.readFile; let largeRead = false;
+ fs.readFile = (target, ...args) => {if (target === file) largeRead = true; return read(target, ...args);};
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => {throw Error('no network');}}});
+ try { await jobs.retry(j.id); const done = await finish(jobs, j.id); assert.equal(done.error.code, 'process-too-large'); assert.equal(done.error.retry, 'none'); assert.equal(largeRead, false); await assert.rejects(jobs.retry(j.id), {code: 'not-allowed'}); }
+ finally { fs.readFile = read; await jobs.close(); }
+});
+
+test('check-real rejects relative photos before any request, and observation timeout keeps same job/key', async () => {
+ const file = path.join(await dir(), 'photo.png'); await fs.writeFile(file, image);
+ const run = source => new Promise(resolve => {
+  const child = spawn(process.execPath, ['--input-type=module', '-e', source], {stdio: ['ignore', 'pipe', 'pipe']}); let output = '';
+  child.stdout.on('data', b => output += b); child.stderr.on('data', b => output += b); child.on('exit', code => resolve({code, output}));
+ });
+ const url = new URL('../shoot/check-real.mjs', import.meta.url).href;
+ const relative = await run(`process.argv=['node','check-real','--photo','relative.jpg','--key','check-real-001','--allow-paid'];globalThis.fetch=()=>{throw Error('NETWORK SHOULD NOT RUN')};await import(${JSON.stringify(url)});`);
+ assert.equal(relative.code, 1); assert.match(relative.output, /absolute\/photo/); assert.doesNotMatch(relative.output, /NETWORK SHOULD NOT RUN/);
+ const observation = await run(`process.argv=['node','check-real','--photo',${JSON.stringify(file)},'--key','check-real-001','--allow-paid'];let clock=0,posts=0;Date.now=()=>clock++===0?0:46*60*1000;globalThis.fetch=async(url,o)=>{if(o?.method==='POST')posts++;return Response.json(url.endsWith('quota')?{provider:'real'}:{job:{id:'same-job',status:'generating',steps:[{key:'styled'}]}})};try{await import(${JSON.stringify(url)})}finally{console.log('POSTS='+posts)};`);
+ assert.equal(observation.code, 1); assert.match(observation.output, /NOT a job failure/); assert.match(observation.output, /same-job/); assert.match(observation.output, /SAME absolute photo and key/); assert.match(observation.output, /POSTS=1/);
 });

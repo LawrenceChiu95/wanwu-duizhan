@@ -41,7 +41,7 @@ async function sandbox() {
 }
 const args = (s,id='test-pot',mode='photo') => [mode,`--${mode}`,s[mode==='photo'?'photo':'glb'],'--category','pot','--id',id,'--name','测试锅'];
 function gateway(options={}) {
- const calls=[];let failed=false,waiting=false,rejected=false;
+ const calls=[];let failed=false,waiting=false,rejected=false,pollFailures=options.pollNetworkFailure?4:0;
  const fetch = async (url, request) => {
   const u=new URL(url),route=u.pathname;
   const headers=new Headers(request.headers);
@@ -60,7 +60,7 @@ function gateway(options={}) {
    }
    if(route.endsWith('/task/get')) {
     const isImage=u.searchParams.get('taskid')==='image-id';
-    if(options.pollNetworkFailure && !waiting){waiting=true;throw Error('interrupted poll');}
+    if(pollFailures>0){pollFailures--;throw Error('interrupted poll');}
     if(options.failedTask)return reply({status:4});
     if(options.pendingOnce&&!waiting){waiting=true;return reply({status:1});}
     return reply({status:3,outputs:isImage?[{content:'https://photo.example/styled.png'}]:[{content:'https://result.example/other.zip'},{content:'https://result.example/model.glb?signature=private-url'}]});
@@ -238,6 +238,23 @@ test('orientation follows category for either source sign; checked-in pot/broom 
   assert.ok(item.category==='scissors'?plus<minus:plus>minus,id);
   assert.ok(Math.abs(item.weakPoint.pos[2]-item.bounds.max[2])<1e-8);
  }
+});
+test('lamp and slipper match the mounted template end for either source sign; symmetric pillow records fallback',async()=>{
+ const rules=await readJson(path.join(ROOT,'sim/v3-rules.json'));
+ // The current lamp's +Y end is wider; the slipper's +X end is narrower.
+ // Inspect transformed vertices rather than trusting the normalization label.
+ for(const [id,wide] of [['lamp',true],['slipper',false]])for(const reversed of [false,true])for(const sign of [1,-1]){
+  const doc=await new NodeIO().readBinary(model);if(reversed)doc.getRoot().listNodes()[0].setRotation([0,1,0,0]);
+  const template={...originals.find(i=>i.id===id),outEnd:rules.top.outEnd[id]*sign};
+  const result=await prepareMesh(Buffer.from(await new NodeIO().writeBinary(doc)),template,base.itemStandards[id]);
+  const [minus,plus]=await endWidths(result.bytes);
+  assert.equal(plus>minus,sign===1?wide:!wide,`${id}, reversed=${reversed}, mount=${sign}`);
+  assert.equal(result.shape.normalization.orientation.method,'template-end-width');
+ }
+ const template={...originals.find(i=>i.id==='pillow'),outEnd:rules.top.outEnd.pillow};
+ const pillow=await prepareMesh(model,template,base.itemStandards.pillow);
+ assert.deepEqual(pillow.shape.normalization.orientation,{templateId:'pillow',method:'longest-axis',reason:'template-ends-indistinguishable'});
+ assert.equal(pillow.shape.normalization.outwardEnd,undefined);
 });
 test('opaque colour textures are stored as JPEG; transparent colour and data textures stay PNG (task #42, #45)',async()=>{
  const doc=await new NodeIO().readBinary(model),root=doc.getRoot(),first=root.listMaterials()[0];

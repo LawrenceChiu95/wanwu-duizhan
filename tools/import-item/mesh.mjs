@@ -121,13 +121,27 @@ export async function prepareMesh(raw, template, standard) {
   const thinnest = [0, 1, 2].filter(i => i !== longest).sort((a, b) => spans[a] - spans[b] || a - b)[0];
   // Match the current category templates: knife tip out, pot bowl/broom head out.
   // Compare the outer 10% at each end; source coordinate sign has no meaning.
-  const outwardEnd = {scissors: 'narrow', pot: 'wide', broom: 'wide'}[template.category];
-  const widths = [-1, 1].map(sign => {
-    const end = current.points.filter(p => sign < 0 ? p[longest] <= sourceBounds.min[longest] + length * .1 : p[longest] >= sourceBounds.max[longest] - length * .1);
-    const box = bounds(end);
-    return Math.max(...[0, 1, 2].filter(k => k !== longest).map(k => box.max[k] - box.min[k]));
+  const endWidths = (points, box, axis) => [-1, 1].map(sign => {
+    const size = box.max[axis] - box.min[axis];
+    const end = points.filter(p => sign < 0 ? p[axis] <= box.min[axis] + size * .1 : p[axis] >= box.max[axis] - size * .1);
+    if (!end.length) return 0;
+    const b = bounds(end);
+    return Math.max(...[0, 1, 2].filter(k => k !== axis).map(k => b.max[k] - b.min[k]));
   });
-  const flip = outwardEnd === 'wide' ? widths[0] > widths[1] : outwardEnd === 'narrow' ? widths[0] < widths[1] : false;
+  const distinguishable = w => Math.max(...w) > 0 && Math.abs(w[0] - w[1]) / Math.max(...w) >= .1;
+  let outwardEnd = {scissors: 'narrow', pot: 'wide', broom: 'wide'}[template.category];
+  // The other templates have no hand-authored head/tip rule. Learn which width
+  // belongs outside from their actual longest-axis hull and mounting sign.
+  if (!outwardEnd && template.hull && [1, -1].includes(template.outEnd)) {
+    const spans = template.bounds.max.map((v, i) => v - template.bounds.min[i]);
+    const axis = spans.indexOf(Math.max(...spans)), ends = endWidths(template.hull, template.bounds, axis);
+    if (distinguishable(ends)) outwardEnd = ends[template.outEnd === 1 ? 1 : 0] > ends[template.outEnd === 1 ? 0 : 1] ? 'wide' : 'narrow';
+  }
+  const widths = endWidths(current.points, sourceBounds, longest);
+  const resolved = outwardEnd && distinguishable(widths);
+  const orientation = {templateId: template.id, method: resolved ? 'template-end-width' : 'longest-axis',
+    ...(resolved ? {outwardEnd} : {reason: outwardEnd ? 'source-ends-indistinguishable' : 'template-ends-indistinguishable'})};
+  const flip = resolved && (outwardEnd === 'wide' ? widths[0] > widths[1] : widths[0] < widths[1]);
   const Y = [0, 0, 0], Z = [0, 0, 0]; Y[thinnest] = 1; Z[longest] = flip ? -1 : 1;
   const X = [Y[1] * Z[2] - Y[2] * Z[1], Y[2] * Z[0] - Y[0] * Z[2], Y[0] * Z[1] - Y[1] * Z[0]];
   const axes = [X, Y, Z], scale = standard.longSideMeters / length, center = sourceBounds.max.map((v, i) => (v + sourceBounds.min[i]) / 2);
@@ -155,5 +169,5 @@ export async function prepareMesh(raw, template, standard) {
   try { volume = world.createCollider(descriptor.setMass(standard.massKg)).volume(); } finally { world.free(); }
   if (!(volume > 0) || !Number.isFinite(volume)) throw Error('Invalid hull volume');
   const weak = final.points.reduce((a, b) => b[2] > a[2] ? b : a);
-  return {bytes: output, shape: {hull, bounds: finalBounds, volume, weakPoint: {pos: weak, radius: template.weakPoint.radius}, normalization: {matrix, sourceBounds, sourceVertices: current.points.length, ...(outwardEnd ? {outwardEnd} : {})}}, report: {sourceTriangles, triangles: final.triangles, vertices: final.points.length, textureSizes, materials: check.getRoot().listMaterials().length, bytes: output.length, sha256: sha256(output), hullPoints: hull.length, longSideMeters: measured}};
+  return {bytes: output, shape: {hull, bounds: finalBounds, volume, weakPoint: {pos: weak, radius: template.weakPoint.radius}, normalization: {matrix, sourceBounds, sourceVertices: current.points.length, orientation, ...(resolved ? {outwardEnd} : {})}}, report: {sourceTriangles, triangles: final.triangles, vertices: final.points.length, textureSizes, materials: check.getRoot().listMaterials().length, bytes: output.length, sha256: sha256(output), hullPoints: hull.length, longSideMeters: measured}};
 }

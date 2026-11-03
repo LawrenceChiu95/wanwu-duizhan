@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import {parseArgs} from 'node:util';
 import {setTimeout as pause} from 'node:timers/promises';
-const {values} = parseArgs({options: {photo: {type: 'string'}, key: {type: 'string'}, 'allow-paid': {type: 'boolean', default: false}}});
-if (!values['allow-paid'] || !values.photo || !/^[A-Za-z0-9_-]{8,128}$/.test(values.key ?? '')) throw Error('Use --photo /absolute/photo.jpg --key stable-key --allow-paid after Lead approves the cost');
+const {values} = parseArgs({args: process.argv.slice(2), options: {photo: {type: 'string'}, key: {type: 'string'}, 'allow-paid': {type: 'boolean', default: false}}});
+if (!values['allow-paid'] || !values.photo || !path.isAbsolute(values.photo) || !/^[A-Za-z0-9_-]{8,128}$/.test(values.key ?? '')) throw Error('Use --photo /absolute/photo.jpg --key stable-key --allow-paid after Lead approves the cost');
 const base = 'http://127.0.0.1:4408/api/shoot/';
 async function get(route, options = {}) {
   const response = await fetch(base + route, {...options, signal: AbortSignal.timeout(10000)});
@@ -19,7 +20,7 @@ let previous;
 while (!['succeeded', 'failed'].includes(job.status)) {
   const stage = job.status === 'recognizing' ? 'recognizing' : job.steps.find(s => !s.endedAt)?.key;
   if (stage !== previous) { console.log(JSON.stringify({job: id, stage})); previous = stage; }
-  if (Date.now() >= deadline) throw Error(`Observation timed out; original job ${id} remains. Re-run with the SAME photo and key`);
+  if (Date.now() >= deadline) throw Error(`Observation timed out, NOT a job failure. Original job ${id} and clientKey remain; re-run with the SAME absolute photo and key to read the same job, without a second submission charge`);
   await pause(2000); ({job} = await get(`jobs/${id}`));
 }
 if (job.status !== 'succeeded') { console.log(JSON.stringify({id, status: job.status, error: job.error})); process.exitCode = 1; }
