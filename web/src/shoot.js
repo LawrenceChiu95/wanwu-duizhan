@@ -230,11 +230,11 @@ export function mountShoot(ctx) {
       const end = Math.max(...job.steps.map(s => ms(s.endedAt) ?? 0)), took = end ? (end - ms(job.createdAt)) / 1000 : null;
       html = `<h2 class="shead">做好了</h2><div class="spair"><figure><span class="pane"><img src="${esc(photo())}" alt=""></span><figcaption>你拍的</figcaption></figure>
           <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D</figcaption></figure></div>
-        <div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
+        <div class="sstage"><div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
           ${r ? `<i class="big g${r.grade}">${r.grade}</i>` : ''}
           <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span><small>${esc(line)}</small></div>
           ${r ? `<span class="rates">${[['attack', '攻击'], ['range', '范围'], ['durability', '耐久']].map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : ''}
-          <span class="cover" aria-hidden="true"><i>?</i></span></div>
+          <span class="cover" aria-hidden="true"><i>?</i></span></div></div><i class="sdim" aria-hidden="true"></i>
         <p class="sdone">${ICON.check}<span>已经放进角色库${took ? `，用时 ${dur(took)}` : ''}</span>${it.origin ? `<button type="button" data-act="how">${ICON.play}看它怎么来的</button>` : ''}</p>
         ${foot(ghost('lib', '回角色库'), `<button type="button" class="go" data-act="equip"${eq.disabled ? ' disabled' : ''}><span>${eq.text}</span></button>`)}`;
     }
@@ -245,7 +245,7 @@ export function mountShoot(ctx) {
   async function showDone(id) {
     const card = el.body.querySelector('.sreveal'), canvas = el.body.querySelector('[data-live="turn"]');
     ctx.turns.prune();
-    if (ctx.grade(id) && !ctx.seen(id)) ctx.flip(card, id, 500);
+    if (ctx.grade(id) && !ctx.seen(id)) ctx.flip(card, id, 500, card.parentElement);
     if (!stored.seen) { stored.seen = true; keep(); paintTag(); }
     await ctx.loadModels([ctx.item(id)]);
     if (canvas.isConnected) ctx.turns.show(canvas, id, {zoom: 1.3});

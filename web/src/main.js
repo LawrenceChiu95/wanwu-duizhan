@@ -714,9 +714,7 @@ async function main() {
         sfx.flip();
         setTimeout(() => {
           if (!card.isConnected || el.library.hidden) return; // left mid-turn, before the face showed: turn again next time
-          sfx.reveal(rate(id)?.grade);
-          gradesSeen.add(seenKey(id));
-          try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+          faceUp(id);
         }, REVEAL_FACE);
       }, wait);
     }
@@ -731,19 +729,42 @@ async function main() {
     }
   }
   $('libBack').onclick = closeLibrary;
-  // The same turn for one card outside the grid (拍一件's 好了): face down now, turned over after `wait` ms.
-  function turnOver(card, id, wait) {
+  // The face showing: its sound by grade, a short buzz for an S (task #55), and remembered.
+  function faceUp(id) {
+    const grade = rate(id)?.grade;
+    sfx.reveal(grade);
+    if (grade === 'S') buzz([30, 50, 40]);
+    gradesSeen.add(seenKey(id));
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+  }
+  // The same turn for one card outside the grid (拍一件's 好了): face down now, turned over after `wait` ms. With `lift`
+  // (the card's holder, task #55) it first rises to the middle of the screen, a little bigger, and holds a beat face down;
+  // turned, it stays up longer the better the grade, then settles back where it was.
+  const LIFT = 380, PAUSE = 420, DEAL = 660, HOLD = {S: 1100, A: 800, B: 550, C: 350, D: 350};
+  function turnOver(card, id, wait, lift = null) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) lift = null;
     card.classList.add('down');
     setTimeout(() => {
       if (!card.isConnected) return;
-      card.classList.replace('down', 'turning');
-      sfx.flip();
+      if (lift) {
+        // Measured on the card (its holder also has its margins). On a phone it already spans the screen less its
+        // margins, so up there it fills the width, edge to edge.
+        const r = card.getBoundingClientRect();
+        lift.style.setProperty('--dx', `${innerWidth / 2 - (r.left + r.width / 2)}px`);
+        lift.style.setProperty('--dy', `${innerHeight / 2 - (r.top + r.height / 2)}px`);
+        lift.style.setProperty('--k', Math.min(1.2, (innerWidth + 8) / r.width).toFixed(3));
+        lift.classList.add('lifted');
+      }
       setTimeout(() => {
         if (!card.isConnected) return;
-        sfx.reveal(rate(id)?.grade);
-        gradesSeen.add(seenKey(id));
-        try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
-      }, REVEAL_FACE);
+        card.classList.replace('down', 'turning');
+        sfx.flip();
+        setTimeout(() => {
+          if (!card.isConnected) return;
+          faceUp(id);
+          if (lift) setTimeout(() => lift.classList.remove('lifted'), DEAL - REVEAL_FACE + (HOLD[rate(id)?.grade] ?? HOLD.B));
+        }, REVEAL_FACE);
+      }, lift ? LIFT + PAUSE : 0);
     }, wait);
   }
 
