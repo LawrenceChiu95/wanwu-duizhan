@@ -7,7 +7,7 @@
  * While a job runs the player can go and fight (先去打一局); a tag at the top of the build and result screens shows how
  * far it has got and, once done, takes them to 好了.
  */
-import {ShootError, newClientKey, setPass} from './shoot-api.js';
+import {ShootError, decodeImage, newClientKey, setPass} from './shoot-api.js';
 
 const JOB_KEY = 'wanwu-shoot-job';
 const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
@@ -59,7 +59,7 @@ const countAs = r => r.inSix ? `按${catOf(r)}算` : `不在六类里，按最�
 
 /** A small JPEG data URL of the photo for this page's own screens (the backend keeps the original). */
 async function thumbOf(blob, side = 480) {
-  const img = await createImageBitmap(blob), k = Math.min(1, side / Math.max(img.width, img.height));
+  const img = await decodeImage(blob), k = Math.min(1, side / Math.max(img.width, img.height));
   const c = Object.assign(document.createElement('canvas'), {width: Math.round(img.width * k), height: Math.round(img.height * k)});
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL('image/jpeg', 0.8);
@@ -67,7 +67,7 @@ async function thumbOf(blob, side = 480) {
 /** What gets uploaded: a JPEG or PNG as it is; anything else the phone can open (HEIC from an album) as a JPEG. */
 async function uploadable(file) {
   if (/^image\/(jpeg|png)$/.test(file.type) && file.size <= 32 * 2 ** 20) return file;
-  const img = await createImageBitmap(file), k = Math.min(1, 4096 / Math.max(img.width, img.height));
+  const img = await decodeImage(file), k = Math.min(1, 4096 / Math.max(img.width, img.height));
   const c = Object.assign(document.createElement('canvas'), {width: Math.round(img.width * k), height: Math.round(img.height * k)});
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));

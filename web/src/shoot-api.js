@@ -15,6 +15,19 @@ const PASS_KEY = 'wanwu-shoot-pass';
 export const getPass = () => { try { return localStorage.getItem(PASS_KEY) ?? ''; } catch { return ''; } };
 export const setPass = pass => { try { localStorage.setItem(PASS_KEY, pass); } catch { /* no storage here */ } };
 
+/**
+ * A photo, decoded for drawing onto a canvas. The published copy has no createImageBitmap (pack-artifact.mjs turns it off
+ * for three.js), so there it goes through an <img> from a data: URL, which the viewer allows.
+ */
+export async function decodeImage(blob) {
+  if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
+  const src = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(r.error); r.readAsDataURL(blob); });
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  return Object.assign(img, {width: img.naturalWidth, height: img.naturalHeight});
+}
+
 /** A random id for one submission: resent as is, it can only ever get the same job back. */
 export const newClientKey = () => crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 

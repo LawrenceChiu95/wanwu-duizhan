@@ -27,7 +27,7 @@
 import {loadCatalog} from '../../sim/index.js';
 import {loadV3Rules} from '../../sim/v3.js';
 import {stillUrl} from './models.js';
-import {ShootError, getPass} from './shoot-api.js';
+import {ShootError, decodeImage, getPass} from './shoot-api.js';
 
 const KEY = 'wanwu-shoot-fake', PHOTO = 'wanwu-shoot-fake-photo:';
 // Seconds per stage at speed 1, roughly the real generation's (tools/import-item README); the four after 认物 sum to 90.
@@ -58,7 +58,7 @@ const today = () => new Date().toDateString();
 
 /** The photo as the backend would keep it for the item's origin: a JPEG data URL, 640 px on the long side. */
 async function keepPhoto(blob) {
-  const img = await createImageBitmap(blob), k = Math.min(1, 640 / Math.max(img.width, img.height));
+  const img = await decodeImage(blob), k = Math.min(1, 640 / Math.max(img.width, img.height));
   const c = Object.assign(document.createElement('canvas'), {width: Math.round(img.width * k), height: Math.round(img.height * k)});
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL('image/jpeg', 0.82);
