@@ -476,7 +476,8 @@ for (const failedStage of ['token', 'upload']) test(`free retry after ${failedSt
  } finally { await jobs.close(); }
 });
 
-for (const stage of ['image', 'mesh']) test(`close collects the in-flight ${stage} creation ID before exiting`, {timeout: 5000}, async () => {
+// Include the fixed 5-second retake window before exercising shutdown.
+for (const stage of ['image', 'mesh']) test(`close collects the in-flight ${stage} creation ID before exiting`, {timeout: 10000}, async () => {
  const directory = await dir(), g = gateway(); let entered = false, release, requestSignal;
  const request = async (url, options) => {
   if (url.endsWith('/create') && url.includes(stage === 'image' ? 'multimodal-to-image' : 'img-to-3d')) {
@@ -580,7 +581,7 @@ globalThis.fetch=async(url,options)=>{
  }
 });
 
-test('close cancels an in-flight Aholo request and restart polls the saved image, never resubmits it', {timeout: 5000}, async () => {
+test('close cancels an in-flight Aholo request and restart polls the saved image, never resubmits it', {timeout: 10000}, async () => {
  const directory = await dir(), g = gateway(); let querying = false, aborted = false;
  const request = (url, options) => {
   if (url.includes('task/get')) { querying = true; return new Promise((_, reject) => options.signal.addEventListener('abort', () => {aborted = true; reject(options.signal.reason);}, {once: true})); }
@@ -595,7 +596,7 @@ test('close cancels an in-flight Aholo request and restart polls the saved image
  } finally { await jobs.close(); }
 });
 
-test('close cancels polling sleep rather than waiting forty minutes', {timeout: 5000}, async () => {
+test('close cancels polling sleep rather than waiting forty minutes', {timeout: 10000}, async () => {
  const directory = await dir(), g = gateway({statuses: {image: [0]}}); let asleep = false;
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: () => {asleep = true; return new Promise(() => {});}}});
  await jobs.create({photo: image, clientKey: 'close-sleep-001'}); await until(async () => asleep, Boolean);
@@ -603,7 +604,7 @@ test('close cancels polling sleep rather than waiting forty minutes', {timeout: 
  const disk = await readJson(path.join(directory, 'state.json')); assert.equal(Object.values(disk.jobs)[0].job.status, 'generating');
 });
 
-test('recognition received during close is persisted and no next charged stage starts', {timeout: 5000}, async () => {
+test('recognition received during close is persisted and no next charged stage starts', {timeout: 10000}, async () => {
  const directory = await dir(), g = gateway(); let release, receiving = false;
  const request = async (url, options) => {
   const reply = await g.fetch(url, options);
