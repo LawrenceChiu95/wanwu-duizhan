@@ -149,7 +149,8 @@ async function main() {
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with.
   const shoot0 = shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
-  items.push(...await register(photoItems(shot?.items).filter(it => !items.some(i => i.id === it.id))));
+  // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
+  if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
   setNames(items);
   const OFFER = offerOf(items);
