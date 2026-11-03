@@ -2,6 +2,15 @@
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 import R from '@dimforge/rapier3d-compat';
+// Historical (task #79): data/catalog.json has moved on since this was written (ratings, designed masses, the 废土 items,
+// the broom's current model and collision, the slipper's look-only swap in task #74), and a run rewrites it and data/models
+// without them, so it refuses unless asked for that on purpose.
+if(!process.argv.includes('--overwrite-current-assets')){
+ console.error('sim/prepare-assets.mjs is historical: a run rewrites data/catalog.json and data/models from the first prototype\'s sources, '+
+  'dropping the 废土 items, ratings and designed masses, changing the broom\'s model and collision, and putting the slipper\'s old grey look back. '+
+  'Nothing was written. To do that anyway: node sim/prepare-assets.mjs --overwrite-current-assets');
+ process.exit(1);
+}
 await R.init();
 const root = new URL('../', import.meta.url);
 const itemStandards=JSON.parse(await fs.readFile(new URL('data/item-standards.json',root),'utf8'));
