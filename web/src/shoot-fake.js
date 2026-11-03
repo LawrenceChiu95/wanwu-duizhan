@@ -14,9 +14,10 @@
  *                         server-poll (polls get a server error for ten seconds), server-items (the first two
  *                         item fetches after it is done get a server error), server-create (sending the photo always
  *                         gets a server error), forbidden-poll (polls get forbidden for ten seconds, as a backend
- *                         started for another page address would answer), refused (the item comes out in a form the
- *                         game's registerItems turns down: scale 2).
+ *                         started for another page address would answer), refused (the first item made comes out in a form
+ *                         the game's registerItems turns down: scale 2; photos after it come out fine).
  *   ?shootItemsSlow=8000  the page load's first item fetch takes that many ms (main.js waits 5 s for it at start).
+ *   ?shootItemsNull=1     item fetches carry a null and an entry with no id among the items.
  *   ?shootAgainFail=3     the first 3 calls of 再试, 再提交 or 重新生成 get a server error (counted across reloads), then they
  *                         go through; the keys they carried are kept in the fake's storage (againKeys).
  * The same-key and parent checks follow 第 2 稿 and 「本机后台接线补充」 (task #56 S3): a key is 8–128 of [A-Za-z0-9_-];
@@ -172,6 +173,7 @@ export async function fakeApi(q) {
   }
   let itemsFail = 0; // ?shootFail=server-items: item fetches still to fail once a job of this page load is done
   let itemsSlow = Number(q.get('shootItemsSlow')) || 0; // ?shootItemsSlow=ms: the first item fetch of this page load
+  const itemsNull = q.has('shootItemsNull');
 
   return {
     kind: 'fake',
@@ -194,7 +196,7 @@ export async function fakeApi(q) {
       const cat = someCat();
       return open(clientKey, {photo: key, sig, cat, recognition: recognise(cat), slow: failCode === 'slow', parent: null, kind: 'create',
         offline: failCode === 'offline' ? 'offline' : failCode === 'server-poll' ? 'server' : failCode === 'forbidden-poll' ? 'forbidden' : null,
-        refused: failCode === 'refused', fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
+        refused: failCode === 'refused' && !Object.values(st.jobs).some(r => r.refused), fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
     },
     async resubmit(fromJob, clientKey) {
       await tick(300);
@@ -230,7 +232,7 @@ export async function fakeApi(q) {
       for (const r of Object.values(st.jobs)) advance(r);
       save();
       if (itemsFail && Object.values(st.jobs).some(r => r.done?.status === 'succeeded')) { itemsFail--; throw new ShootError('server'); }
-      return st.items.map(x => {
+      const list = st.items.map(x => {
         const src = catalog.find(i => i.id === SOURCE[x.cat]), it = {...structuredClone(src), id: x.id, name: x.name, source: {kind: 'photo', job: x.job}};
         // Sticks out the way the item it copies does (registerItems wants outEnd on every new item).
         it.outEnd = src.outEnd ?? rules.top.outEnd[src.id] ?? 1;
@@ -240,6 +242,7 @@ export async function fakeApi(q) {
         it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
         return it;
       });
+      return itemsNull ? [null, ...list, {name: 'no id'}] : list;
     }
   };
 }

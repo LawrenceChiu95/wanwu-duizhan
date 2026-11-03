@@ -128,6 +128,8 @@ async function register(list) {
   }
   return ok;
 }
+// What /items sent, less any entry that isn't an item with an id (a null among them mustn't sink the rest, task #62).
+const photoItems = list => (Array.isArray(list) ? list : []).filter(it => it && typeof it === 'object' && typeof it.id === 'string');
 
 async function main() {
   el.busy.hidden = false;
@@ -138,7 +140,7 @@ async function main() {
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with.
   const shoot0 = shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
-  items.push(...await register((shot?.items ?? []).filter(it => !items.some(i => i.id === it.id))));
+  items.push(...await register(photoItems(shot?.items).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
   setNames(items);
   const OFFER = offerOf(items);
@@ -859,7 +861,8 @@ async function main() {
     if (ready(late.foe) && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
     for (const k of Object.keys(late)) if (ready(late[k])) delete late[k];
   }
-  async function addItems(list) {
+  async function addItems(sent) {
+    const list = photoItems(sent);
     if (!list.some(it => !byId.has(it.id))) { takeLate(); return; }
     await register(list.filter(it => !byId.has(it.id)));
     const fresh = list.filter(it => !byId.has(it.id) && simKnows.has(it.id));
