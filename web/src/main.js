@@ -129,7 +129,16 @@ async function register(list) {
   return ok;
 }
 // What /items sent, less any entry that isn't an item with an id (a null among them mustn't sink the rest, task #62).
-const photoItems = list => (Array.isArray(list) ? list : []).filter(it => it && typeof it === 'object' && typeof it.id === 'string');
+// Said once in the console, like a turned-down item: a backend sending these may be leaving out the item a job waits for (task #70).
+let saidBad = false;
+function photoItems(list) {
+  const ok = (Array.isArray(list) ? list : []).filter(it => it && typeof it === 'object' && typeof it.id === 'string');
+  if (!saidBad && (!Array.isArray(list) || ok.length < list.length)) {
+    saidBad = true;
+    console.warn(`拍一件: /items ${Array.isArray(list) ? `had ${list.length - ok.length} entries that aren't items (null or no id), left out` : 'sent no list'}`);
+  }
+  return ok;
+}
 
 async function main() {
   el.busy.hidden = false;
@@ -159,16 +168,27 @@ async function main() {
   // An address can name a photo item the backend hasn't handed over yet (/items slow or down as the page opens, task #62):
   // the page opens with the default build rather than an error, and takes the address's once the item comes in.
   const late = {};
-  const fromUrl = (key = 'mine') => {
-    if (!q.has(key)) return null;
-    const p = q.get(key).split(',');
+  // A build as 物品ID,out或hug,另一物品ID,out或hug,e180或e90: the build, null when it waits in late, undefined when unusable.
+  const readBuild = (key, text) => {
+    const p = text.split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
-    const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) && q.getAll(key).length === 1;
+    const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
     if (shape && b.parts.every(x => OFFER.includes(x.item))) return b;
     if (shape && shot && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
+  };
+  const buildArg = b => [b.parts[0].item, b.parts[0].orient, b.parts[1].item, b.parts[1].orient, b.spread].join(',');
+  const fromUrl = (key = 'mine') => {
+    if (!q.has(key)) return null;
+    const b = q.getAll(key).length === 1 ? readBuild(key, q.get(key)) : undefined;
+    if (b !== undefined) return b;
     throw Error(`${key}参数无效：格式为物品ID,out或hug,另一物品ID,out或hug,e180或e90；两件须是清单中不同的道具，${key}只能出现一次`);
   };
-  const mine = structuredClone(fromUrl() ?? DEFAULT);
+  // The player's build is kept on this phone (task #70 item 6, Elara c4225110): the hosted viewer drops the address, so a
+  // reload or reopening went back to the default. An address's build still comes first; a kept one naming an item that
+  // is gone falls back to the default without a word, and one whose photo item hasn't come in yet waits like the address's.
+  const BUILD_KEY = 'wanwu-build';
+  const keptArg = (() => { try { return localStorage.getItem(BUILD_KEY); } catch { return null; } })();
+  const mine = structuredClone((q.has('mine') ? fromUrl() : keptArg && readBuild('mine', keptArg)) ?? DEFAULT);
   let FOE = structuredClone(fromUrl('foe') ?? DEFAULT_FOE);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
@@ -242,6 +262,8 @@ async function main() {
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
+    // Not while the default stands in for a build whose photo item is on its way: that one is what to keep.
+    if (!(late.mine && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
   }
   let buildReq = 0;
   async function rebuildMine() {
@@ -278,6 +300,7 @@ async function main() {
     syncBuild();
     layout_();
     stage.updateCamera(0, true);
+    takeLate(); // the address's build, if its photo item came in during a match (task #70)
   }
 
   // ---------- HUD ----------
@@ -579,7 +602,9 @@ async function main() {
     overlay.showBanner('开转', '#ffffff', 0.8);
     setTimeout(() => coach(0), 400);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
-    try { history.replaceState(null, '', `?mine=${[mine.parts[0].item, mine.parts[0].orient, mine.parts[1].item, mine.parts[1].orient, mine.spread].join(',')}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
+    const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${waits('foe') ? `&foe=${q.get('foe')}` : ''}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
@@ -894,7 +919,7 @@ async function main() {
       tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden && el.credits.hidden,
       onChange: () => {
         const s = shoot?.state;
-        el.shootBtn.classList.toggle('run', Boolean(s?.job && !['succeeded', 'failed'].includes(s.job.status)));
+        el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
         el.shootBtn.classList.toggle('new', Boolean(s?.made && !s.stored?.seen));
       }
     });
