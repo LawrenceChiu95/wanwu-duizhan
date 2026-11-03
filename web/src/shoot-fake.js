@@ -19,7 +19,8 @@
  * The same-key and parent checks follow 第 2 稿 and 「本机后台接线补充」 (task #56 S3): a key is 8–128 of [A-Za-z0-9_-];
  * the same key with other input is key-conflict; a parent gets one 再提交 or 重新生成, another key on it is not-allowed;
  * an id it never made is not-found. Still only this browser's storage: it shows the page copes, not that the real one is idempotent.
- *   ?shootCat=<category>  what the photo is recognised as (pot, lamp, scissors, broom, slipper, pillow; default pot)
+ *   ?shootCat=<category>  what the photo is recognised as (pot, lamp, scissors, broom, slipper, pillow); without it each
+ *                         new photo gets one of the six at random (the page says so on 认物, Elara 1fd38db4)
  *   ?shootSix=0           recognised as outside the six, counted as the nearest
  *   ?shootReset=1         forget every fake job, item and the page's current job
  */
@@ -71,7 +72,8 @@ export async function fakeApi(q) {
   const [catalog, rules] = await Promise.all([loadCatalog(), loadV3Rules()]);
   const speed = Math.max(0.1, Number(q.get('shootSpeed')) || 1);
   const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
-  const cat = SOURCE[q.get('shootCat')] ? q.get('shootCat') : 'pot', inSix = q.get('shootSix') !== '0';
+  const pinned = SOURCE[q.get('shootCat')] ? q.get('shootCat') : null, inSix = q.get('shootSix') !== '0';
+  const someCat = () => pinned ?? Object.keys(SOURCE)[Math.floor(Math.random() * Object.keys(SOURCE).length)];
   const st = read(KEY) ?? {v: VERSION, clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
   const vnow = () => st.clock.virt0 + (Date.now() - st.clock.real0) * st.clock.speed;
   // A new speed takes over from where the clock is: it never runs backwards.
@@ -136,7 +138,7 @@ export async function fakeApi(q) {
     return old;
   }
   const active = () => Object.values(st.jobs).find(r => (advance(r), !r.done));
-  function recognise() {
+  function recognise(cat) {
     const src = catalog.find(i => i.id === SOURCE[cat]);
     const lengthMeters = +Math.max(...src.bounds.max.map((v, i) => v - src.bounds.min[i])).toFixed(2);
     return {category: cat, inSix, basis: BASIS[cat], lengthMeters, massKg: src.mass, material: src.material, condition: src.condition ?? 'unknown',
@@ -185,7 +187,8 @@ export async function fakeApi(q) {
       const key = PHOTO + (st.seq + 1);
       write(key, await keepPhoto(photo));
       if (failCode === 'server-items') itemsFail = 2;
-      return open(clientKey, {photo: key, sig, cat, recognition: recognise(), slow: failCode === 'slow', parent: null, kind: 'create',
+      const cat = someCat();
+      return open(clientKey, {photo: key, sig, cat, recognition: recognise(cat), slow: failCode === 'slow', parent: null, kind: 'create',
         offline: failCode === 'offline' ? 'offline' : failCode === 'server-poll' ? 'server' : null, fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
     },
     async resubmit(fromJob, clientKey) {
