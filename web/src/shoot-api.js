@@ -57,6 +57,8 @@ function realApi(base = '/api/shoot') {
     resubmit: async (fromJob, clientKey) => (await call('POST', '/jobs', {fromJob, clientKey})).job,
     job: async id => (await call('GET', `/jobs/${encodeURIComponent(id)}`)).job,
     retry: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retry`)).job,
+    // 不是它，重拍 between 认物 and generation (task #85; the route is Sol's to settle).
+    retake: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retake`)).job,
     regenerate: async (id, clientKey) => (await call('POST', `/jobs/${encodeURIComponent(id)}/regenerate`, {confirm: true, clientKey})).job,
     quota: () => call('GET', '/quota'),
     items: async () => (await call('GET', '/items')).items
