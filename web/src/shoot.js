@@ -38,8 +38,13 @@ const SAY = {
   'bad-request': '请求有问题，请重新打开页面',
   'not-found': '没找到这件，请回角色库看看',
   'not-allowed': '这一步现在不能做，请刷新任务状态',
-  'server-down': '后台出了问题，稍后再来'
+  'server-down': '后台出了问题，稍后再来',
+  // task #62: the page reached something that isn't 拍一件's backend; and an item made but turned down by the game.
+  'no-backend': '这个地址上没有拍一件的后台，请从游戏入口打开',
+  refused: '游戏装不进这件，换一张再拍'
 };
+// The page and its backend don't match: asking again won't help, so polling stops until 拍一件 is opened again (task #62).
+const MISMATCH = ['forbidden', 'bad-request', 'no-backend'];
 const DOWN_AFTER = 3; // the same server error this many times running: stop offering 再试
 const ICON = {
   camera: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>',
@@ -74,7 +79,7 @@ async function uploadable(file) {
 }
 
 /**
- * ctx (main.js): api; addItems(items); item(id); name(id); grade(id) → rating; spec(id); seen(id) / markSeen(id) for the
+ * ctx (main.js): api; addItems(items); item(id); refused(id) → the game turned it down; name(id); grade(id) → rating; spec(id); seen(id) / markSeen(id) for the
  * card flip; flip(el, id) turns a face-down card over; turns, loadModels; equipLabel(id) → {text, disabled}; equip(id);
  * libraryOpen(), openLibrary(); openHow(id); goPlay(); tagRoom() → whether the top tag may show now; onChange().
  */
@@ -94,7 +99,9 @@ export function mountShoot(ctx) {
 
   const final = j => j?.status === 'succeeded' || j?.status === 'failed';
   // 好了 but its item not yet in this page's catalog (task #56 S2): no card until it is, and it keeps being fetched.
-  const fetching = () => job?.status === 'succeeded' && !ctx.item(job.itemId);
+  const fetching = () => job?.status === 'succeeded' && !ctx.item(job.itemId) && !ctx.refused(job.itemId);
+  // 好了 at the backend, but the game turned the item down (task #62): it will never come in, so the job lets go.
+  const refused = () => job?.status === 'succeeded' && !ctx.item(job.itemId) && ctx.refused(job.itemId);
   const elapsed = () => job ? (api.now() - ms(job.createdAt)) / 1000 : 0;
   // Seconds left: each step not yet done at its usual share of the estimate, less the time the current one has had.
   function remaining() {
@@ -141,16 +148,17 @@ export function mountShoot(ctx) {
       else if (e.code === 'pass') { job = null; startError = 'pass'; }
       // Only the backend saying it has no such job ends it (task #56 S1); a 500 or 503 keeps the id and asks again later.
       else if (e.code === 'not-found') { stored = null; job = null; startError = 'not-found'; keep(); }
+      else if (MISMATCH.includes(e.code)) startError = e.code;
       else pollFails++;
     }
     sync();
     // Slower while it keeps failing: twice the wait each time, up to eight times.
     const fails = Math.max(pollFails, itemFails);
-    if (stored && (!final(job) || fetching())) timer = setTimeout(poll, api.pollMs * Math.min(8, 2 ** fails));
+    if (stored && !MISMATCH.includes(startError) && (!final(job) || fetching())) timer = setTimeout(poll, api.pollMs * Math.min(8, 2 ** fails));
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
   async function loadItems() {
-    try { await ctx.addItems(await api.items()); itemFails = fetching() ? itemFails + 1 : 0; } catch { itemFails++; }
+    try { await ctx.addItems(await api.items()); itemFails = fetching() ? itemFails + 1 : 0; } catch (e) { if (MISMATCH.includes(e.code)) startError = e.code; else itemFails++; }
   }
   async function loadQuota() { try { quota = await api.quota(); } catch { quota = null; } paintQuota(); }
 
@@ -163,13 +171,13 @@ export function mountShoot(ctx) {
     if (job.status === 'recognizing' || (job.status === 'generating' && performance.now() - recogAt < RECOG_HOLD)) return 'recog';
     if (job.status === 'generating') return 'gen';
     if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + job.error.code;
-    return fetching() ? 'fetch' : 'done:' + job.itemId;
+    return fetching() ? 'fetch' : refused() ? 'lost:refused' : 'done:' + job.itemId;
   }
-  const STEP_OF = {pick: 0, confirm: 0, wait: 2, recog: 1, gen: 2, fetch: 2, fail: 2, held: 2, done: 3, err: 0};
+  const STEP_OF = {pick: 0, confirm: 0, wait: 2, recog: 1, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
   function paintSteps(key) {
     const kind = key.split(':')[0], at = STEP_OF[kind];
     el.steps.querySelectorAll('li').forEach((li, i) => {
-      li.className = i < at ? 'done' : i === at ? (kind === 'fail' || kind === 'err' ? 'now bad' : kind === 'held' ? 'now hold' : 'now') : '';
+      li.className = i < at ? 'done' : i === at ? (kind === 'fail' || kind === 'err' || kind === 'lost' ? 'now bad' : kind === 'held' ? 'now hold' : 'now') : '';
     });
   }
   // Shown only once the backend enforces a limit; this round it reports null (Elara 71be6494).
@@ -207,17 +215,17 @@ export function mountShoot(ctx) {
         <ol class="hsteps sgsteps">${STEPS.map((st, i) => `<li data-step="${st.key}"><span class="n">${i + 1}</span><b>${st.name}</b><span class="sec"></span></li>`).join('')}</ol>
         <p class="snote warn" data-live="warn" hidden></p>
         ${foot(go('play', '先去打一局'))}`;
-    } else if (kind === 'fail' || kind === 'err') {
-      const retry = kind === 'err' ? 'none' : job.error.retry;
+    } else if (kind === 'fail' || kind === 'err' || kind === 'lost') {
+      const retry = kind === 'fail' ? job.error.retry : 'none';
       const btns = code === 'pass' ? [go('pass', '确定')]
         : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', '不算次数')]
         : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
         : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会多算一次')]
-        : ['photo-invalid', 'photo-unclear', 'key-conflict'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
+        : ['photo-invalid', 'photo-unclear', 'key-conflict', 'refused'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
         : code === 'server' && lastSend ? [ghost('lib', '回角色库'), go('again', '再试')]
         : code === 'not-allowed' && stored ? [ghost('lib', '回角色库'), go('refresh', '刷新')]
         : [ghost('lib', '回角色库')];
-      html = `${frame('bad', '<span class="sbadge">没生成出来</span>')}
+      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : MISMATCH.includes(code) ? '连错了后台' : '没生成出来'}</span>`)}
         <div class="smsg"><b>${esc(SAY[code] ?? SAY.server)}</b>${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
         <p class="serr" data-live="send"></p>${foot(...btns)}`;
     } else if (kind === 'held') {
@@ -284,20 +292,20 @@ export function mountShoot(ctx) {
     const key = screen();
     if (key !== shown) { shown = key; draw(key); paintSteps(key); }
     // A failure the player has now seen no longer calls them back from the top tag.
-    if (/^(fail|held)/.test(key) && stored && !stored.seen) { stored.seen = true; keep(); }
+    if (/^(fail|held|lost)/.test(key) && stored && !stored.seen) { stored.seen = true; keep(); }
     update();
   }
 
   // ---------- the tag at the top of the build and result screens ----------
   function paintTag() {
-    const room = ctx.tagRoom(), state = !stored || !job ? null : fetching() ? 'run' : job.status === 'succeeded' ? (stored.seen ? null : 'done')
+    const room = ctx.tagRoom(), state = !stored || !job ? null : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (stored.seen ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
     el.tag.hidden = !room || !el.view.hidden || !state;
     if (el.tag.hidden) return;
     el.tag.className = state;
     const what = catOf(job.recognition);
     const html = state === 'done' ? `<b>${what}生成好了，去装上</b>${ICON.arrow}`
-      : state === 'bad' ? `<b>${job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
+      : state === 'bad' ? `<b>${refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
@@ -404,7 +412,7 @@ export function mountShoot(ctx) {
     // One job at a time: while one runs, 拍一件 shows it (Elara f63778f3).
     busyNote = from === 'library' && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
     // A finished job seen already, or one that can't go on, gives way to a new photo.
-    if (from === 'library' && stored && job && final(job) && !stored.hold && (stored.seen || job.error?.retry === 'none')) { stored = null; job = null; keep(); }
+    if (from === 'library' && stored && job && final(job) && !stored.hold && (stored.seen || job.error?.retry === 'none' || refused())) { stored = null; job = null; keep(); }
     // Back from the 角色库 a while later: a server error may be sent again three more times.
     if (from === 'library' && startError) { startError = null; sendFails = 0; }
     shown = '';
@@ -420,6 +428,7 @@ export function mountShoot(ctx) {
   if (stored) poll();
   return {
     open, close, paintTag,
-    get state() { return {stored, job, screen: el.view.hidden ? null : screen(), offline}; }
+    // made: 好了 and the item is in this page's catalog (the 拍一件 button's 新 mark waits for it, not for the backend).
+    get state() { return {stored, job, screen: el.view.hidden ? null : screen(), offline, made: job?.status === 'succeeded' && !!ctx.item(job.itemId)}; }
   };
 }

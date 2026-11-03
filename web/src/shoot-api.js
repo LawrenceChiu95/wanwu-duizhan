@@ -39,7 +39,9 @@ function realApi(base = '/api/shoot') {
         headers: {'X-Shoot-Pass': getPass(), ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
     } catch { throw new ShootError('offline'); }
     const data = await res.json().catch(() => null);
-    if (!res.ok) throw new ShootError(data?.error?.code ?? (res.status === 401 ? 'pass' : 'server'), {activeJobId: data?.activeJobId ?? null});
+    // No such path or method, and not in the backend's own JSON: this address has no 拍一件 backend behind it (task #62).
+    // A gateway's 502 or 504 while the backend is down stays a server error, asked again later.
+    if (!res.ok) throw new ShootError(data?.error?.code ?? (res.status === 401 ? 'pass' : [404, 405, 501].includes(res.status) ? 'no-backend' : 'server'), {activeJobId: data?.activeJobId ?? null});
     return data;
   };
   return {
