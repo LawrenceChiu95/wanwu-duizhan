@@ -813,19 +813,21 @@ async function main() {
 
   // ---------- 拍一件 (task #47) ----------
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
-  function addItems(list) {
+  // The sim takes them first; one it turns down never shows up here, so the 好了 card waits for it (task #56 S2).
+  async function addItems(list) {
+    if (!list.some(it => !byId.has(it.id))) return;
+    await addSimItems(list.filter(it => !byId.has(it.id)));
     const fresh = list.filter(it => !byId.has(it.id));
     if (!fresh.length) return;
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
     OFFER.splice(0, OFFER.length, ...offerOf(items));
-    addSimItems(fresh);
   }
   let shoot = null;
   shoot0.then(async s => {
     if (!s) return;
     const {api} = s;
-    try { addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
+    try { await addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
     shoot = mountShoot({
       api, addItems, turns, loadModels, equip, equipLabel, openHow,
       item: id => byId.get(id), name: id => NAMES[id], grade: rate, spec,

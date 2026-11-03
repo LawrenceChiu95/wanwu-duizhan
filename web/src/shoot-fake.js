@@ -10,7 +10,13 @@
  *   ?shootFail=<code>     the next new photo fails with that code at its usual stage; @stage moves it
  *                         (recognize | styled | model | download | process), e.g. shootFail=server@download.
  *                         Only jobs from a new photo fail: 再试, 再提交 and 重新生成 go through.
- *                         Also: slow (the 3D step takes 11 minutes), offline (polls fail for ten seconds).
+ *                         Also: slow (the 3D step takes 11 minutes), offline (polls fail for ten seconds),
+ *                         server-poll (polls get a server error for ten seconds), server-items (the first two
+ *                         item fetches after it is done get a server error), server-create (sending the photo always
+ *                         gets a server error).
+ * The same-key and parent checks follow 第 2 稿 and 「本机后台接线补充」 (task #56 S3): a key is 8–128 of [A-Za-z0-9_-];
+ * the same key with other input is key-conflict; a parent gets one 再提交 or 重新生成, another key on it is not-allowed;
+ * an id it never made is not-found. Still only this browser's storage: it shows the page copes, not that the real one is idempotent.
  *   ?shootCat=<category>  what the photo is recognised as (pot, lamp, scissors, broom, slipper, pillow; default pot)
  *   ?shootSix=0           recognised as outside the six, counted as the nearest
  *   ?shootReset=1         forget every fake job, item and the page's current job
@@ -36,6 +42,8 @@ const FAIL_AT = {
 };
 const RETRY = {'photo-invalid': 'none', 'photo-unclear': 'none', pass: 'none', quota: 'none', busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate',
   download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same'};
+const KEY_FORM = /^[A-Za-z0-9_-]{8,128}$/;
+const VERSION = 2;
 // No daily limit this round (Elara 71be6494): /quota reports limit and remaining as null; a quota error only comes from ?shootFail=quota.
 const LIMIT = null;
 
@@ -53,14 +61,15 @@ async function keepPhoto(blob) {
 }
 
 export async function fakeApi(q) {
-  if (q.get('shootReset') === '1') {
+  // Storage from before the key checks (no version) is dropped with the page's job, as ?shootReset=1 would (Sol 21c4552e).
+  if (q.get('shootReset') === '1' || (read(KEY) && read(KEY).v !== VERSION)) {
     for (const k of Object.keys(localStorage)) if (k === KEY || k.startsWith(PHOTO) || k === 'wanwu-shoot-job') localStorage.removeItem(k);
   }
   const catalog = await loadCatalog();
   const speed = Math.max(0.1, Number(q.get('shootSpeed')) || 1);
   const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
   const cat = SOURCE[q.get('shootCat')] ? q.get('shootCat') : 'pot', inSix = q.get('shootSix') !== '0';
-  const st = read(KEY) ?? {clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
+  const st = read(KEY) ?? {v: VERSION, clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
   const vnow = () => st.clock.virt0 + (Date.now() - st.clock.real0) * st.clock.speed;
   // A new speed takes over from where the clock is: it never runs backwards.
   if (st.clock.speed !== speed) st.clock = {real0: Date.now(), virt0: vnow(), speed};
@@ -107,7 +116,22 @@ export async function fakeApi(q) {
       estimateSeconds: ESTIMATE, error: rec.done?.error ?? null, itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
     };
   }
-  const get = id => { const rec = st.jobs[id]; if (!rec) throw new ShootError('server'); return rec; };
+  const get = id => { const rec = st.jobs[id]; if (!rec) throw new ShootError('not-found'); return rec; };
+  // A key seen before: the job it made, if it was made by this same call on this same parent; otherwise key-conflict.
+  function sameKey(clientKey, parent, kind) {
+    if (!KEY_FORM.test(clientKey ?? '')) throw new ShootError('key-conflict');
+    const rec = st.jobs[st.keys[clientKey]];
+    if (!rec) return null;
+    if (rec.parent !== parent || rec.kind !== kind) throw new ShootError('key-conflict');
+    return view(rec);
+  }
+  // 再提交 or 重新生成 on a parent: only of the kind its failure allows, and only once.
+  function child(id, retry) {
+    const old = get(id);
+    advance(old);
+    if (old.done?.error?.retry !== retry || old.child) throw new ShootError('not-allowed');
+    return old;
+  }
   const active = () => Object.values(st.jobs).find(r => (advance(r), !r.done));
   function recognise() {
     const src = catalog.find(i => i.id === SOURCE[cat]);
@@ -123,10 +147,15 @@ export async function fakeApi(q) {
     st.keys[clientKey] = id;
     return view(st.jobs[id]);
   }
-  function again(old, clientKey, extra) {
-    return open(clientKey, {from: 1, photo: old.photo, sig: old.sig, cat: old.cat, recognition: old.recognition, times: [old.times[0]], slow: false, fail: null, ...extra});
+  function again(old, clientKey, kind, extra) {
+    const j = open(clientKey, {from: 1, photo: old.photo, sig: old.sig, cat: old.cat, recognition: old.recognition, times: [old.times[0]], slow: false, fail: null,
+      parent: old.id, kind, ...extra});
+    old.child = j.id;
+    save();
+    return j;
   }
   const tick = ms => new Promise(r => setTimeout(r, ms));
+  let itemsFail = 0; // ?shootFail=server-items: item fetches still to fail once a job of this page load is done
 
   return {
     kind: 'fake',
@@ -135,11 +164,9 @@ export async function fakeApi(q) {
     async create(photo, clientKey) {
       await tick(300);
       const sig = `${photo.size}:${photo.type}`;
-      if (st.keys[clientKey]) {
-        const rec = st.jobs[st.keys[clientKey]];
-        if (rec.sig !== sig) throw new ShootError('key-conflict');
-        return view(rec);
-      }
+      if (failCode === 'server-create') throw new ShootError('server');
+      const seen = sameKey(clientKey, null, 'create');
+      if (seen) { if (st.jobs[seen.id].sig !== sig) throw new ShootError('key-conflict'); return seen; }
       const where = FAIL_AT[failCode];
       if (failCode === 'pass' && !getPass()) throw new ShootError('pass');
       if (where === 'create' && failCode !== 'pass') throw new ShootError(failCode);
@@ -147,37 +174,31 @@ export async function fakeApi(q) {
       const at = Array.isArray(where) ? [failStage ? STAGES.findIndex(x => x[0] === failStage) : where[0], failStage ? 0.5 : where[1]] : null;
       const key = PHOTO + (st.seq + 1);
       write(key, await keepPhoto(photo));
-      return open(clientKey, {photo: key, sig, cat, recognition: recognise(), slow: failCode === 'slow',
-        offline: failCode === 'offline', fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
+      if (failCode === 'server-items') itemsFail = 2;
+      return open(clientKey, {photo: key, sig, cat, recognition: recognise(), slow: failCode === 'slow', parent: null, kind: 'create',
+        offline: failCode === 'offline' ? 'offline' : failCode === 'server-poll' ? 'server' : null, fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
     },
     async resubmit(fromJob, clientKey) {
       await tick(300);
-      if (st.keys[clientKey]) return view(st.jobs[st.keys[clientKey]]);
-      const old = get(fromJob);
-      if (old.done?.error?.retry !== 'resubmit') throw new ShootError('server');
-      return again(old, clientKey, {});
+      return sameKey(clientKey, fromJob, 'resubmit') ?? again(child(fromJob, 'resubmit'), clientKey, 'resubmit', {});
     },
     async job(id) {
       await tick(120);
       const rec = get(id), since = Date.now() - rec.realCreated;
-      if (rec.offline && since > 4000 && since < 14000) throw new ShootError('offline');
+      if (rec.offline && since > 4000 && since < 14000) throw new ShootError(rec.offline === true ? 'offline' : rec.offline);
       return view(rec);
     },
     async retry(id) {
       await tick(300);
       const rec = get(id);
       advance(rec);
-      if (rec.done?.error?.retry !== 'same') throw new ShootError('server');
+      if (rec.done?.error?.retry !== 'same') throw new ShootError('not-allowed');
       Object.assign(rec, {from: rec.done.stage, t0: vnow(), fail: null, done: null});
       return view(rec);
     },
     async regenerate(id, clientKey) {
       await tick(300);
-      if (st.keys[clientKey]) return view(st.jobs[st.keys[clientKey]]);
-      const old = get(id);
-      advance(old);
-      if (old.done?.error?.retry !== 'regenerate') throw new ShootError('server');
-      return again(old, clientKey, {regenerateOf: id});
+      return sameKey(clientKey, id, 'regenerate') ?? again(child(id, 'regenerate'), clientKey, 'regenerate', {regenerateOf: id});
     },
     async quota() {
       return {limit: LIMIT, used: used(), remaining: null, resetsAt: null, activeJobId: active()?.id ?? null};
@@ -186,6 +207,7 @@ export async function fakeApi(q) {
     async items() {
       for (const r of Object.values(st.jobs)) advance(r);
       save();
+      if (itemsFail && Object.values(st.jobs).some(r => r.done?.status === 'succeeded')) { itemsFail--; throw new ShootError('server'); }
       return st.items.map(x => {
         const src = catalog.find(i => i.id === SOURCE[x.cat]), it = {...structuredClone(src), id: x.id, name: x.name, source: {kind: 'photo', job: x.job}};
         delete it.comparisonBase;

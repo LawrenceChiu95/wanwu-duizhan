@@ -32,8 +32,15 @@ const SAY = {
   process: '处理没成功，再试一次（不算次数）',
   'process-unfixable': '这个模型处理不了，可以重新生成（会多算一次）',
   'key-conflict': '出了点问题，重新拍一次',
-  server: '出了点问题，再试一次'
+  server: '出了点问题，再试一次',
+  // 本机后台接线补充 (Sol 19f3ff20, PR #53): request codes; and a server error three times running (Sol 21c4552e).
+  forbidden: '页面和后台的地址对不上，请从游戏入口打开',
+  'bad-request': '请求有问题，请重新打开页面',
+  'not-found': '没找到这件，请回角色库看看',
+  'not-allowed': '这一步现在不能做，请刷新任务状态',
+  'server-down': '后台出了问题，稍后再来'
 };
+const DOWN_AFTER = 3; // the same server error this many times running: stop offering 再试
 const ICON = {
   camera: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>',
   album: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="M3.5 16l5-5 4 4 2.5-2.5 5.5 5.5" /><circle cx="15.5" cy="9.5" r="1.4" /></svg>',
@@ -79,9 +86,13 @@ export function mountShoot(ctx) {
   let stored = (() => { try { return JSON.parse(localStorage.getItem(JOB_KEY)); } catch { return null; } })();
   const keep = () => { try { if (stored) localStorage.setItem(JOB_KEY, JSON.stringify(stored)); else localStorage.removeItem(JOB_KEY); } catch { /* no storage here */ } };
   let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = null, shown = '', recogAt = -Infinity, timer = 0, ticker = 0;
+  // Errors running: polls that got a server error, item fetches that failed after 好了, sends that got a server error.
+  let pollFails = 0, itemFails = 0, sendFails = 0, lastSend = null;
   const keys = {}; // one clientKey per paid action on a job (再提交, 重新生成), reused if that request is sent again
 
   const final = j => j?.status === 'succeeded' || j?.status === 'failed';
+  // 好了 but its item not yet in this page's catalog (task #56 S2): no card until it is, and it keeps being fetched.
+  const fetching = () => job?.status === 'succeeded' && !ctx.item(job.itemId);
   const elapsed = () => job ? (api.now() - ms(job.createdAt)) / 1000 : 0;
   // Seconds left: each step not yet done at its usual share of the estimate, less the time the current one has had.
   function remaining() {
@@ -116,22 +127,29 @@ export function mountShoot(ctx) {
       const j = await api.job(id);
       if (stored?.id !== id) return;
       offline = false;
+      pollFails = 0;
       const was = job;
       job = j;
       // 认物 just came in while watching: its result stays up a moment (a page reopened later goes straight on).
       if (j.recognition && was?.status === 'recognizing') recogAt = performance.now();
-      if (j.status === 'succeeded' && was?.status !== 'succeeded') await loadItems();
+      if (fetching()) await loadItems();
       if (j.status !== was?.status || j.steps[0].startedAt !== was?.steps[0].startedAt) loadQuota();
     } catch (e) {
       if (e.code === 'offline') offline = true;
       else if (e.code === 'pass') { job = null; startError = 'pass'; }
-      else { stored = null; job = null; keep(); } // the backend no longer knows it
+      // Only the backend saying it has no such job ends it (task #56 S1); a 500 or 503 keeps the id and asks again later.
+      else if (e.code === 'not-found') { stored = null; job = null; startError = 'not-found'; keep(); }
+      else pollFails++;
     }
     sync();
-    if (stored && !final(job)) timer = setTimeout(poll, api.pollMs);
+    // Slower while it keeps failing: twice the wait each time, up to eight times.
+    const fails = Math.max(pollFails, itemFails);
+    if (stored && (!final(job) || fetching())) timer = setTimeout(poll, api.pollMs * Math.min(8, 2 ** fails));
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
-  async function loadItems() { try { ctx.addItems(await api.items()); } catch { /* next success tries again */ } }
+  async function loadItems() {
+    try { await ctx.addItems(await api.items()); itemFails = fetching() ? itemFails + 1 : 0; } catch { itemFails++; }
+  }
   async function loadQuota() { try { quota = await api.quota(); } catch { quota = null; } paintQuota(); }
 
   // ---------- screens ----------
@@ -143,9 +161,9 @@ export function mountShoot(ctx) {
     if (job.status === 'recognizing' || (job.status === 'generating' && performance.now() - recogAt < RECOG_HOLD)) return 'recog';
     if (job.status === 'generating') return 'gen';
     if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + job.error.code;
-    return 'done:' + job.itemId;
+    return fetching() ? 'fetch' : 'done:' + job.itemId;
   }
-  const STEP_OF = {pick: 0, confirm: 0, wait: 2, recog: 1, gen: 2, fail: 2, held: 2, done: 3, err: 0};
+  const STEP_OF = {pick: 0, confirm: 0, wait: 2, recog: 1, gen: 2, fetch: 2, fail: 2, held: 2, done: 3, err: 0};
   function paintSteps(key) {
     const kind = key.split(':')[0], at = STEP_OF[kind];
     el.steps.querySelectorAll('li').forEach((li, i) => {
@@ -172,6 +190,9 @@ export function mountShoot(ctx) {
         ${foot(ghost('retake', '重拍', ICON.retry), go('submit', '用这张，开始'))}`;
     } else if (kind === 'wait') {
       html = `${frame('scan', '<i class="sline"></i>')}<p class="snote" data-live="warn">正在找回这一件…</p>`;
+    } else if (kind === 'fetch') {
+      html = `${frame('gen', '<i class="ssweep"></i>')}<p class="snote">生成好了，正在取回…</p><p class="snote warn" data-live="warn" hidden></p>
+        ${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'recog') {
       html = `${frame('scan', '<i class="sline"></i><span class="stag" data-live="rtag">认物中</span>')}
         <div class="srec"><span class="lbl">认出来是</span><b class="stamp" data-live="as"></b>
@@ -191,7 +212,8 @@ export function mountShoot(ctx) {
         : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
         : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会多算一次')]
         : ['photo-invalid', 'photo-unclear', 'key-conflict'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
-        : code === 'server' && pending ? [ghost('lib', '回角色库'), go('submit', '再试')]
+        : code === 'server' && lastSend ? [ghost('lib', '回角色库'), go('again', '再试')]
+        : code === 'not-allowed' && stored ? [ghost('lib', '回角色库'), go('refresh', '刷新')]
         : [ghost('lib', '回角色库')];
       html = `${frame('bad', '<span class="sbadge">没生成出来</span>')}
         <div class="smsg"><b>${esc(SAY[code] ?? SAY.server)}</b>${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
@@ -233,11 +255,11 @@ export function mountShoot(ctx) {
       const as = live('as');
       if (!as.textContent) { as.textContent = countAs(job.recognition); live('rtag').textContent = '认好了'; live('next').textContent = '认好了，马上开始生成'; el.body.querySelector('.sframe').classList.add('got'); }
     }
-    if (shown === 'wait' || shown === 'gen') {
-      const warn = live('warn');
-      const text = offline ? '连不上，自动重连中' : busyNote || (job && elapsed() > SLOW ? '比平时慢，再等等' : '');
-      if (shown === 'gen') { warn.hidden = !text; warn.textContent = text; }
-      else if (offline) warn.textContent = text;
+    if (shown === 'wait' || shown === 'gen' || shown === 'fetch') {
+      const warn = live('warn'), fails = shown === 'fetch' ? itemFails : pollFails;
+      const text = offline ? '连不上，自动重连中' : fails >= DOWN_AFTER ? SAY['server-down'] : fails ? '后台没回话，过一会儿再查'
+        : shown === 'fetch' ? '' : busyNote || (job && elapsed() > SLOW ? '比平时慢，再等等' : '');
+      if (shown === 'wait') { if (text) warn.textContent = text; } else { warn.hidden = !text; warn.textContent = text; }
     }
     if (shown !== 'gen' || !job) return;
     const left = remaining(), now = STEPS.findIndex(st => !job.steps.find(x => x.key === st.key)?.endedAt);
@@ -266,7 +288,7 @@ export function mountShoot(ctx) {
 
   // ---------- the tag at the top of the build and result screens ----------
   function paintTag() {
-    const room = ctx.tagRoom(), state = !stored || !job ? null : job.status === 'succeeded' ? (stored.seen ? null : 'done')
+    const room = ctx.tagRoom(), state = !stored || !job ? null : fetching() ? 'run' : job.status === 'succeeded' ? (stored.seen ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
     el.tag.hidden = !room || !el.view.hidden || !state;
     if (el.tag.hidden) return;
@@ -274,6 +296,7 @@ export function mountShoot(ctx) {
     const what = catOf(job.recognition);
     const html = state === 'done' ? `<b>${what}生成好了，去装上</b>${ICON.arrow}`
       : state === 'bad' ? `<b>${job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
+      : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
   }
@@ -284,9 +307,11 @@ export function mountShoot(ctx) {
     const btn = el.body.querySelector('.sfoot .go'), note = el.body.querySelector('[data-live="send"]');
     if (btn) btn.disabled = true;
     if (note) note.textContent = '';
+    lastSend = fn;
     try {
       const j = await fn();
       startError = null;
+      sendFails = 0;
       stored = {id: j.id, photo: photo(), seen: false};
       keep();
       job = j;
@@ -301,6 +326,8 @@ export function mountShoot(ctx) {
       if (e.code === 'active-job') { await adopt(e.activeJobId); return; }
       if (job && final(job) && e.code === 'quota') { if (note) note.textContent = SAY.quota; return; }
       startError = e instanceof ShootError ? e.code : 'server';
+      // A server error may be resent as it was (same request, same clientKey), but not forever (Sol 21c4552e).
+      if (startError === 'server' && ++sendFails >= DOWN_AFTER) startError = 'server-down';
       if (!job) stored = null;
       sync();
     }
@@ -329,7 +356,7 @@ export function mountShoot(ctx) {
   }
   el.cam.onchange = () => picked(el.cam.files[0]);
   el.album.onchange = () => picked(el.album.files[0]);
-  function fresh() { startError = null; pending = null; job = null; stored = null; busyNote = ''; keep(); sync(); }
+  function fresh() { startError = null; pending = null; job = null; stored = null; busyNote = ''; lastSend = null; sendFails = 0; keep(); sync(); }
   async function ask() {
     await loadQuota();
     el.askText.textContent = `会多算一次${quota?.remaining != null ? `（今天还剩 ${quota.remaining} 次）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
@@ -351,6 +378,8 @@ export function mountShoot(ctx) {
       if (pending) send(() => api.create(pending.file, pending.key)); else { stored ? poll() : sync(); }
     },
     retry: () => send(() => api.retry(job.id)),
+    again: () => lastSend && send(lastSend),
+    refresh: () => { startError = null; poll(); },
     resubmit: () => send(() => api.resubmit(job.id, keys['re:' + job.id] ??= newClientKey())),
     regen: async () => {
       if (!(await ask())) return;
@@ -371,7 +400,8 @@ export function mountShoot(ctx) {
     busyNote = from === 'library' && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
     // A finished job seen already, or one that can't go on, gives way to a new photo.
     if (from === 'library' && stored && job && final(job) && (stored.seen || job.error?.retry === 'none')) { stored = null; job = null; keep(); }
-    if (from === 'library' && startError) startError = null;
+    // Back from the 角色库 a while later: a server error may be sent again three more times.
+    if (from === 'library' && startError) { startError = null; sendFails = 0; }
     shown = '';
     el.view.hidden = false;
     loadQuota();
