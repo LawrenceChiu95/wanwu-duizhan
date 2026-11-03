@@ -206,7 +206,7 @@ export function mountShoot(ctx) {
     } else if (kind === 'recog') {
       html = `${frame('scan', '<i class="sline"></i><span class="stag" data-live="rtag">认物中</span>')}
         <div class="srec"><span class="lbl">认出来是</span><b class="stamp" data-live="as"></b>
-        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? '<p class="sfine fake">现在是假生成：拍什么都会随机给一类</p>' : ''}</div>
+        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? '<p class="sfine fake">现在是假生成：前两张固定是扫把、刀剪，之后从五类里随机</p>' : ''}</div>
         <div class="sfoot"><p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
     } else if (kind === 'gen') {
       html = `${frame('gen', `<i class="ssweep"></i><span class="scat">${esc(countAs(job.recognition))}</span><span class="snow" data-live="now"></span>`)}
