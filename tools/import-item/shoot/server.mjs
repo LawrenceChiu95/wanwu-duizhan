@@ -98,6 +98,15 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let closing = false;
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => {
     if (closing) return;
-    closing = true; await instance.close(); process.exit(0);
+    closing = true;
+    console.log('Closing shoot backend; any in-flight paid creation ID may take up to 120 seconds to arrive.');
+    try { await instance.close(); process.exit(0); }
+    catch (error) {
+      // Fixed safe identifiers only; filesystem errors can carry paths/URLs and
+      // provider errors can include secrets in their message or stack.
+      const safe = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value) ? value : 'UNKNOWN';
+      console.error('Shoot shutdown failed:', JSON.stringify({type: safe(error?.name), code: safe(error?.code), status: Number.isInteger(error?.status) ? error.status : null}));
+      process.exit(1);
+    }
   });
 }

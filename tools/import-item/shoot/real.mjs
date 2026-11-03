@@ -53,7 +53,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
       state.recognitionPending = true; await save();
       let status = null;
       try {
-        const photo = await fs.readFile(path.join(folder, 'photo.jpg'));
+        const photo = await fs.readFile(path.join(folder, 'photo.jpg')).catch(() => { throw failure('photo-read'); });
         const response = await request('https://generativelanguage.googleapis.com/v1beta/interactions', {
           method: 'POST', redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
           headers: {'x-goog-api-key': geminiKey, 'Content-Type': 'application/json', 'Api-Revision': '2026-05-20'},
@@ -65,11 +65,12 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         status = response.status;
         if (!response.ok) { await response.body?.cancel(); throw failure([401, 403].includes(status) ? 'recognition-auth' : status === 429 ? 'recognition-limit' : 'recognition-service'); }
         const reply = await replyJson(response);
-        const content = reply.steps?.filter(step => step.type === 'model_output').flatMap(step => step.content ?? []);
-        if (reply.status !== 'completed' || !content?.length || content.some(c => c.type !== 'text') || content.length !== 1) throw failure('recognition-invalid');
+        if (!reply || !Array.isArray(reply.steps)) throw failure('recognition-invalid');
+        const content = reply.steps.filter(step => step?.type === 'model_output').flatMap(step => step.content ?? []);
+        if (reply.status !== 'completed' || !content.length || content.some(c => !c || c.type !== 'text' || typeof c.text !== 'string') || content.length !== 1) throw failure('recognition-invalid');
         return parseRecognition(JSON.parse(content[0].text));
       } catch (error) {
-        const code = ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code) ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
+        const code = ['photo-read', 'photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code) ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
         // Fixed fields only: never include the response body, URL or error message.
         if (code !== 'photo-unclear') console.error('Shoot recognition failed:', JSON.stringify({status, error: code}));
         throw failure(code);
@@ -79,10 +80,10 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
     async step(step, _id, context, catalog) {
       const {state, folder, save, recognition, allowCreate, signal, mountRules} = context;
       if (step !== 'process') {
-        // Resume never recreates a submitted stage. After a known image returns,
-        // this order may submit its first mesh (Elara 01d53730).
+        // Each stage may submit once when it has neither an ID nor pending;
+        // free resume can finish that first submission (Elara 0e7833a1).
         try {
-          const photo = await fs.readFile(path.join(folder, 'photo.jpg'));
+          const photo = await fs.readFile(path.join(folder, 'photo.jpg')).catch(() => { throw failure('photo-read'); });
           const prompt = `把参考照片的主要物品改成废土朋克游戏道具。按${names[recognition.category]}算，但保留照片原物件的轮廓、比例、主要结构和材质特征，不替换成标准样本。少量工业黄漆、警示纹、划痕和旧布。不要加第二件物品、人体、背景、尖刺或夸大结构。完整单件，浅灰背景，均匀柔光。`;
           await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal});
         } catch (error) {
@@ -90,6 +91,8 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
           if (state.pending) throw failure('unknown-submit');
           if (error.code === 'busy' && !Object.keys(state.tasks).length) throw failure('busy');
           if (error.code === 'step-failed') throw failure('step-failed');
+          if (error.code === 'photo-read' && !Object.keys(state.tasks).length) throw error;
+          if (!Object.keys(state.tasks).length) throw failure('photo-upload');
           throw failure('download');
         }
         return;
@@ -108,7 +111,10 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         catch (error) { if (error.code !== 'ENOENT') throw error; }
         if (!saved || sha256(saved) !== state.downloadSha256) {
           const model = path.join(folder, 'model.glb');
-          if (sha256(await storedBytes(model)) !== state.downloadSha256) throw failure('process-corrupt');
+          let original;
+          try { original = await storedBytes(model); }
+          catch (error) { if (error.code === 'ENOENT') throw failure('process-corrupt'); throw error; }
+          if (sha256(original) !== state.downloadSha256) throw failure('process-corrupt');
           // A crash can leave only a partial temporary copy. The original model
           // remains intact until the full source copy has been committed.
           await fs.copyFile(model, source + '.part');

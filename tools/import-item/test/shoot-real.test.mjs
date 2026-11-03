@@ -45,7 +45,7 @@ function gateway(options = {}) {
    if (options.visionStatus) return new Response('private-body ' + env.GEMINI_API_KEY, {status: options.visionStatus});
    if (options.visionBadJson) return new Response('private malformed ' + env.GEMINI_API_KEY);
    if (options.visionTimeout) return new Promise((_, reject) => request.signal.addEventListener('abort', () => reject(request.signal.reason), {once: true}));
-   return Response.json(options.visionReply ?? geminiReply(options.recognition ?? result));
+   return Response.json(Object.hasOwn(options, 'visionReply') ? options.visionReply : geminiReply(options.recognition ?? result));
   }
   assert.equal(headers.has('x-goog-api-key'), false);
   if (u.hostname === 'api.aholo.ai') {
@@ -386,7 +386,7 @@ for (const failedStage of ['token', 'upload']) test(`free retry after ${failedSt
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async () => {}}});
  try {
   const j = await jobs.create({photo: image, clientKey: 'upload-first-stage-001'}), failed = await finish(jobs, j.id);
-  assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, false);
+  assert.equal(failed.error.code, 'photo-upload'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, false);
   assert.deepEqual(g.creates, []);
   broken = false; await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
   assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
@@ -418,7 +418,7 @@ for (const stage of ['image', 'mesh']) test(`close collects the in-flight ${stag
  } finally { release?.(); await jobs.close(); }
 });
 
-test('keychain launcher and server survive direct plus forwarded SIGINT until the paid ID is saved', {skip: process.platform === 'win32', timeout: 10000}, async () => {
+for (const closeFailure of [false, true]) test(`keychain launcher saves paid ID under repeated SIGINT; close failure=${closeFailure}`, {skip: process.platform === 'win32', timeout: 10000}, async () => {
  // Run the actual CLI files in a tiny isolated repo. Only security and outbound
  // requests are stubbed; no real keychain, supplier or shared state is touched.
  const repo = await fs.realpath(await dir()), tools = path.join(repo, 'tools/import-item'), shoot = path.join(tools, 'shoot');
@@ -435,6 +435,7 @@ test('keychain launcher and server survive direct plus forwarded SIGINT until th
  await fs.writeFile(hook, `
 import fs from 'node:fs/promises';import net from 'node:net';import {setTimeout as pause} from 'node:timers/promises';
 const listen=net.Server.prototype.listen;net.Server.prototype.listen=function(port,...args){return listen.call(this,0,...args)};
+if(${closeFailure}){const rmdir=fs.rmdir;fs.rmdir=async(file,...args)=>{if(file.includes('/.owner/'))throw Object.assign(Error('https://private.example/offline-fixture-key'),{name:'https://private.example',code:'EACCES',status:503});return rmdir(file,...args)}};
 globalThis.fetch=async(url,options)=>{
  const ok=d=>Response.json({c:'0',d});
  if(url.includes('googleapis'))return Response.json(${JSON.stringify(geminiReply(result))});
@@ -462,13 +463,15 @@ globalThis.fetch=async(url,options)=>{
   // A second interrupt must also be harmless while the same close is pending.
   process.kill(-child.pid, 'SIGINT'); await pause(30);
   assert.equal(child.exitCode, null); assert.equal(child.signalCode, null);
+  assert.match(output, /in-flight paid creation ID.*120 seconds/);
   await fs.writeFile(released, 'continue');
-  assert.deepEqual(await exited, [0, null]);
+  assert.deepEqual(await exited, [closeFailure ? 1 : 0, null]);
   const state = (await readJson(path.join(repo, '.aholo/shoot-real/state.json'))).jobs[job.id];
   assert.equal(state.providerState.tasks['multimodal-to-image'], 'image-id'); assert.equal(state.providerState.pending, undefined);
   assert.equal(state.providerState.tasks['img-to-3d'], undefined);
-  await assert.rejects(fs.access(path.join(repo, '.aholo/shoot-real/.owner')), {code: 'ENOENT'});
-  assert.doesNotMatch(output + errors, /offline-fixture-key/);
+  if (closeFailure) assert.match(errors, /Shoot shutdown failed: \{"type":"UNKNOWN","code":"EACCES","status":503\}/);
+  else await assert.rejects(fs.access(path.join(repo, '.aholo/shoot-real/.owner')), {code: 'ENOENT'});
+  assert.doesNotMatch(output + errors, /offline-fixture-key|private\.example/);
  } finally {
   try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
   await exited;
@@ -516,6 +519,60 @@ test('recognition received during close is persisted and no next charged stage s
  } finally { await jobs.close(); }
 });
 
+for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visionStatus: 429}, 'recognition-limit'],
+ [{recognition: {clear: false, recognizable: false, category: null, inSix: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '照片不清楚'}}, 'photo-unclear']])
+ test(`recognition failure ${code} received during close survives restart without another call`, {timeout: 5000}, async () => {
+  const directory = await dir(), g = gateway(options); let release, receiving = false;
+  const request = async (url, options) => {
+   const response = await g.fetch(url, options);
+   if (url.includes('googleapis')) { receiving = true; await new Promise(resolve => release = resolve); }
+   return response;
+  };
+  let jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request}});
+  try {
+   const j = await jobs.create({photo: image, clientKey: 'close-failed-recog-001'}); await until(async () => receiving, Boolean);
+   const closing = jobs.close(); release(); await closing;
+   const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+   assert.equal(saved.job.status, 'failed'); assert.equal(saved.job.error.code, code); assert.equal(saved.providerState.recognitionPending, undefined);
+   jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
+   assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, []);
+  } finally { release?.(); await jobs.close(); }
+ });
+
+for (const visionReply of [null, {status: 'completed', steps: {}}, {status: 'completed', steps: [{type: 'model_output', content: [null]}]}])
+ test(`malformed recognition envelope is invalid, not a network failure: ${JSON.stringify(visionReply)}`, async t => {
+  const {jobs, g} = await open(t, {visionReply}), j = await jobs.create({photo: image, clientKey: 'invalid-envelope-001'});
+  assert.equal((await finish(jobs, j.id)).error.code, 'recognition-invalid'); assert.deepEqual(g.creates, []);
+ });
+
+test('local photo read failure is distinct and makes no recognition request', async () => {
+ const directory = await dir(), g = gateway(), read = fs.readFile;
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
+ fs.readFile = (file, ...args) => typeof file === 'string' && file.startsWith(directory + path.sep) && file.endsWith('photo.jpg')
+  ? Promise.reject(Object.assign(Error('private path'), {code: 'EIO'})) : read(file, ...args);
+ try {
+  const j = await jobs.create({photo: image, clientKey: 'unreadable-photo-001'}), failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'photo-read'); assert.equal(failed.error.retry, 'none'); assert.equal(g.visionCalls(), 0); assert.deepEqual(g.creates, []);
+ } finally { fs.readFile = read; await jobs.close(); }
+});
+
+test('paid IDs remain free-retryable after a local photo read failure; recovery creates nothing', async t => {
+ const {jobs, g, directory} = await open(t, {downloadFailure: true});
+ const j = await jobs.create({photo: image, clientKey: 'paid-photo-read-001'}), first = await finish(jobs, j.id);
+ assert.equal(first.error.code, 'download'); assert.deepEqual(g.creates, ['image', 'mesh']);
+ const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+ assert.deepEqual(saved.providerState.tasks, {'multimodal-to-image': 'image-id', 'img-to-3d': 'mesh-id'});
+ const read = fs.readFile;
+ fs.readFile = (file, ...args) => file === path.join(directory, j.id, 'photo.jpg')
+  ? Promise.reject(Object.assign(Error('private path'), {code: 'EIO'})) : read(file, ...args);
+ try {
+  await jobs.retry(j.id); const failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, true);
+ } finally { fs.readFile = read; }
+ await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+ assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
+});
+
 async function stoppedProcess(directory) {
  const g = gateway(), provider = realGenerator({env, fetch: g.fetch, pause: async () => {}}), step = provider.step;
  provider.step = (...args) => args[0] === 'process' ? Promise.reject(Object.assign(Error('fixture process I/O'), {code: 'EIO'})) : step(...args);
@@ -531,6 +588,17 @@ for (const both of [false, true]) test(`corrupt source ${both ? 'and raw fail wi
   await jobs.retry(j.id); const done = await finish(jobs, j.id); assert.equal(calls, 0);
   if (both) { assert.equal(done.error.code, 'process-corrupt'); assert.equal(done.error.retry, 'none'); await assert.rejects(jobs.retry(j.id), {code: 'not-allowed'}); await assert.rejects(jobs.create({clientKey: 'not-another-fee-001', regenerateOf: j.id, confirm: true}), {code: 'not-allowed'}); }
   else { assert.equal(done.status, 'succeeded'); assert.deepEqual(await fs.readFile(path.join(folder, 'source.glb')), model); }
+ } finally { await jobs.close(); }
+});
+
+test('corrupt source plus missing raw is non-retryable process-corrupt', async () => {
+ const directory = await dir(), {j} = await stoppedProcess(directory), folder = path.join(directory, j.id);
+ await fs.writeFile(path.join(folder, 'source.glb'), 'corrupt'); await fs.rename(path.join(folder, 'model.glb'), path.join(folder, 'model-missing-fixture.glb'));
+ let calls = 0; const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => { calls++; throw Error('no network'); }}});
+ try {
+  await jobs.retry(j.id); const failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'process-corrupt'); assert.equal(failed.error.retry, 'none'); assert.equal(calls, 0);
+  await assert.rejects(jobs.retry(j.id), {code: 'not-allowed'});
  } finally { await jobs.close(); }
 });
 
