@@ -18,6 +18,7 @@ node tools/import-item/shoot/server.mjs
 - 上传：POST `/api/shoot/jobs`，multipart photo和clientKey。JPEG/PNG≤32MiB、≤64MP。同key同输入返回原job；不同输入409 key-conflict。
 - GET `/api/shoot/jobs/:id`查状态；GET `/api/shoot/items`取入库件。
 - 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null；旧记录可能没有 fromJob，前端按 null 处理，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
+- 新照片认物后 `retakeUntil` 为五秒后的 ISO 时间；窗口内四步均未开始，POST `/api/shoot/jobs/:id/retake` 空body返回 `{job}`，状态failed、error为retake/none/charged:false。取消成功不进入生成、不增加used，认物费已发生；释放活动位后新照片须换clientKey，原key仍返回原任务，重复取消也返回原结果。已过截止或首步已开始回409 not-allowed。未重拍自动生成，关闭/重启沿原截止继续等待，不再认物；旧记录无此字段按null，继承认物和免费续查不另给窗口。
 - POST `/api/shoot/jobs/:id/retry`空body，续查已有阶段、下载或处理；真模式也可补该单从未提交过的阶段；无ID且无pending才允许首次提交（见下文）。busy通过POST jobs JSON `{fromJob,clientKey}`再次提交。每个busy或可重新生成的父任务只能产生一个子任务；原key重发仍返回该子任务，换key再用同一父任务409 not-allowed，重启后也一样。重新生成通过POST `/jobs/:id/regenerate` JSON `{confirm:true,clientKey}`，只对可重新生成的失败开放。
 - unknown-submit保留原记录、永不自动再提交；retry和regenerate均拒绝。它不占active位，新的clientKey可以拍另一件。活动任务冲突409 active-job并带activeJobId。
 - 成功一次原子提交同时公开itemId和/items。文件URL是根路径 `/api/shoot/files/<itemId>/model.glb`、photo.jpg、styled.jpg。只有入库文件可读。origin三段真实秒数，steps四步时间戳。

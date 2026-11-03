@@ -3,6 +3,7 @@ import path from 'node:path';
 import {randomUUID, createHash} from 'node:crypto';
 import sharp from 'sharp';
 import {fileURLToPath} from 'node:url';
+import {setTimeout as pause} from 'node:timers/promises';
 import {readJson, saveJson} from '../state.mjs';
 import {keepPicture} from '../origin.mjs';
 import {rateItem} from '../../../sim/item-rating.js';
@@ -18,7 +19,7 @@ export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
 const keyValid = key => typeof key === 'string' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
-const publicJob = record => copy(record.job);
+const publicJob = record => copy({retakeUntil: null, ...record.job});
 
 // A directory lock has only an empty PID subdirectory; stale ownership can be
 // recovered after a hard restart without removing any task or asset content.
@@ -62,6 +63,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   if (!template) { await release(); throw Error('Missing fake pot template'); }
   let closed = false, storageError = null, chain = Promise.resolve(), runner = Promise.resolve();
   const abort = new AbortController();
+  const retakeWaits = new Map();
   const now = () => new Date().toISOString();
   const save = async () => {
     try { await saveJson(path.join(directory, 'state.json'), store); }
@@ -92,6 +94,28 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     }
   }
   catch (error) { await release(); throw error; }
+  async function waitForRetake(record) {
+    const j = record.job;
+    if (closed || j.status !== 'generating') return false;
+    if (j.retakeUntil && !j.steps[0].startedAt) {
+      const wait = new AbortController(); retakeWaits.set(j.id, wait);
+      try {
+        const signal = AbortSignal.any([abort.signal, wait.signal]);
+        while (Date.now() < Date.parse(j.retakeUntil)) await pause(Date.parse(j.retakeUntil) - Date.now(), undefined, {signal});
+      }
+      catch (error) { if (error.name !== 'AbortError') throw error; return false; }
+      finally { retakeWaits.delete(j.id); }
+    }
+    // This durable boundary and retake() share the queue. The real provider's
+    // local providerId is not a paid submission; its first step can submit.
+    return serial(async () => {
+      if (closed || j.status !== 'generating') return false;
+      j.steps[0].startedAt ??= now();
+      if (provider.real) record.providerId ??= j.id;
+      else if (!record.providerId) record.pending = true;
+      await save(); return true;
+    });
+  }
   async function work(record) {
     const j = record.job, folder = path.join(directory, j.id);
     try {
@@ -99,12 +123,10 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         const recognition = await provider.recognize(template, context(record));
         // A response received while closing is still valuable paid work: save it
         // before honoring shutdown, then leave later stages for restart.
-        await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; await save(); });
+        await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; j.retakeUntil = !j.fromJob && !j.regenerateOf ? new Date(Date.now() + 5000).toISOString() : null; await save(); });
       }
-      if (closed) return;
-      if (provider.real && !record.providerId) await serial(async () => { record.providerId = j.id; await save(); });
+      if (!await waitForRetake(record)) return;
       if (!record.providerId) {
-        await serial(async () => { record.pending = true; j.steps[0].startedAt ??= now(); await save(); });
         let providerId;
         try { providerId = await provider.submit(j.id); }
         catch (error) {
@@ -182,7 +204,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       const id = `j_${randomUUID()}`, folder = path.join(directory, id); await fs.mkdir(folder);
       if (photo) await keepPicture(photo, path.join(folder, 'photo.jpg'));
       else await fs.copyFile(path.join(directory, parent.job.id, 'photo.jpg'), path.join(folder, 'photo.jpg'));
-      const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: provider.real ? 90 : 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
+      const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, retakeUntil: null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: provider.real ? 90 : 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
       const record = {job: j, pending: false, providerId: null};
       if (parent) parent.usedBy = id;
       store.jobs[id] = record; store.keys[clientKey] = {id, fingerprint}; await save(); start(record); return publicJob(record);
@@ -195,6 +217,14 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     get: id => serial(() => publicJob(get(id))),
     items: () => serial(() => copy(store.items)),
     quota: () => serial(() => ({provider: provider.real ? 'real' : 'fake', limit: null, remaining: null, resetsAt: null, used: provider.real ? Object.values(store.jobs).filter(r => provider.charged(r.providerState)).length : provider.used(), activeJobId: active()?.job.id ?? null})),
+    retake: id => serial(async () => {
+      if (closed) throw apiError('server', 'Service closing', 503);
+      const r = get(id), j = r.job;
+      if (j.status === 'failed' && j.error?.code === 'retake') return publicJob(r);
+      if (j.status !== 'generating' || !j.retakeUntil || Date.now() >= Date.parse(j.retakeUntil) || j.steps.some(s => s.startedAt) || r.pending || r.providerId) throw apiError('not-allowed', 'Generation has started or no retake window is open', 409);
+      j.status = 'failed'; j.error = {code: 'retake', message: 'retake', retry: 'none', charged: false};
+      await save(); retakeWaits.get(id)?.abort(); return publicJob(r);
+    }),
     retry: id => serial(async () => {
       const r = get(id), current = active();
       if (r.job.error?.retry !== 'same' || !r.providerId || r.pending) throw apiError('not-allowed', 'This job cannot be retried', 409);

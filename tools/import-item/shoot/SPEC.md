@@ -79,3 +79,13 @@
 
 ### task #84 真后台启动补充（Elara 7abb7fac）
 只修改 start-real 启动路径：Node <24 在读密钥前拒绝；后台子进程启用环境代理，大小写统一，默认本机7897、WANWU_REAL_PROXY可覆盖。Aholo默认加NO_PROXY直连，WANWU_REAL_NO_PROXY可覆盖。全局engines、CI和假后台不动。不因启动方式变更获取或使用Aholo费用授权。
+
+## task #85：认错后在生成前重拍
+
+来源：Elara task85（母需求 #万物对战:2b553b65），Iris/Sol接口对齐4030aa7c。Iris负责web，Sol负责tools后台，合在PR76。不调真生成，不改战斗、评分或默认件。
+
+- 新照片认物结果落盘时写retakeUntil=当前时间+5秒，期间四步未开始。不点重拍则自动生成。旧存档缺字段、继承认物的子任务和免费续查不新增窗口。
+- POST /api/shoot/jobs/:id/retake空body；窗口内且首步未开始，串行落盘failed/error retake/none/charged:false，释放活动位并唤醒等待。重复取消返回同一结果；旧clientKey仍指原任务，新照片换key。认物费已发生，生成used不增加。
+- 取消与首步开始共用现有串行队列，开始边界先落盘再调用fake.submit或real.step；超时或已开始回409 not-allowed。providerId本机标记不能作收费证据。
+- 关闭取消等待，重启沿原截止只等剩余时间，不再认物、不刷新5秒。存盘失败继续503封住进程，不能先提交或假报取消成功。
+- 验收：HTTP取消/重复/换key、超时自动继续、两种竞争顺序、等待时关闭重启和原截止、旧记录与续查；真provider用离线HTTP回包核认物一次及取消后Aholo请求为零。完整受影响工具测试、构建、Iris前后台合体和Claude独立只读审查后交Elara。

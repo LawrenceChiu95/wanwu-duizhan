@@ -93,6 +93,29 @@ async function open(t, options = {}) {
  t.after(() => jobs.close()); return {jobs, g, directory};
 }
 
+test('retake real provider cancels after recognition with no upload, paid creation or quota use', async t => {
+ const {jobs, g, directory} = await open(t);
+ const j = await jobs.create({photo: image, clientKey: 'retake-real-001'});
+ const ready = await until(() => jobs.get(j.id), value => value.retakeUntil);
+ assert.equal(ready.recognition.name, result.name); assert.ok(ready.steps.every(s => s.startedAt === null));
+ assert.equal(g.visionCalls(), 1); assert.equal(g.seen.length, 1);
+ await Promise.all(Array.from({length: 10}, () => jobs.retake(j.id)));
+ assert.deepEqual((await jobs.get(j.id)).error, {code: 'retake', message: 'retake', retry: 'none', charged: false});
+ assert.equal((await jobs.quota()).used, 0); assert.equal((await jobs.quota()).activeJobId, null);
+ assert.deepEqual(g.creates, []); assert.equal(g.seen.length, 1); assert.deepEqual(await jobs.items(), []);
+ assert.equal((await readJson(path.join(directory, 'state.json'))).jobs[j.id].providerId, null);
+});
+
+test('retake real provider automatically starts after expiry and cannot then cancel a paid job', async t => {
+ const {jobs, g} = await open(t);
+ const j = await jobs.create({photo: image, clientKey: 'retake-real-late-001'});
+ const ready = await until(() => jobs.get(j.id), value => value.retakeUntil);
+ const done = await finish(jobs, j.id); assert.equal(done.status, 'succeeded');
+ assert.ok(Date.parse(done.steps[0].startedAt) >= Date.parse(ready.retakeUntil));
+ await assert.rejects(jobs.retake(j.id), {code: 'not-allowed', status: 409});
+ assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']); assert.equal((await jobs.quota()).used, 1);
+});
+
 test('strict recognition bounds/enums/refusals do not silently substitute a high rating', () => {
  for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {name: ''}, {name: 'a'.repeat(41)}, {name: 'a\n'}, {materialName: ''}, {hardness: 0}, {hardness: 1.21}, {outwardEnd: 'left'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'recognition-invalid'});
  for (const condition of ['intact', 'worn', 'damaged', 'unknown']) assert.equal(parseRecognition({...result, condition}).condition, condition);
