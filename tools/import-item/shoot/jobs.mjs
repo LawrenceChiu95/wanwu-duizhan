@@ -7,6 +7,7 @@ import {readJson, saveJson} from '../state.mjs';
 import {keepPicture} from '../origin.mjs';
 import {rateItem} from '../../../sim/item-rating.js';
 import {fakeGenerator} from './fake.mjs';
+import {realGenerator} from './real.mjs';
 
 export const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 export const MAX_PHOTO = 32 * 1024 * 1024;
@@ -36,7 +37,10 @@ async function own(directory) {
   return async () => { await fs.rmdir(owner); await fs.rmdir(lock); };
 }
 
-export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), repo = REPO, generator, fakeOptions} = {}) {
+export async function openJobs({directory, repo = REPO, generator, fakeOptions, mode = 'fake', env = process.env, realOptions} = {}) {
+  if (!['real', 'fake'].includes(mode)) throw Error('Choose provider real or fake');
+  if (!generator && mode === 'real') generator = realGenerator({env, ...realOptions});
+  directory ??= path.join(repo, mode === 'real' ? '.aholo/shoot-real' : '.aholo/shoot');
   await fs.mkdir(directory, {recursive: true});
   const release = await own(directory);
   let store, provider, catalog, mountRules;
@@ -45,6 +49,9 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
     if (!store || !store.jobs || !store.keys || !Array.isArray(store.items)) throw Error('Invalid shoot state file');
     store.jobs = Object.assign(Object.create(null), store.jobs);
     store.keys = Object.assign(Object.create(null), store.keys);
+    const kind = generator?.real ? 'real' : 'fake';
+    if ((store.provider ?? 'fake') !== kind && Object.keys(store.jobs).length) throw Error('Shoot data provider changed; use a separate state directory');
+    store.provider = kind;
     const oldItem = store.items.findIndex(item => ![1, -1].includes(item?.outEnd));
     if (oldItem >= 0) throw Error(`Saved shoot item ${store.items[oldItem]?.id ?? '(missing id)'} lacks valid outEnd; archive and clear the local shoot directory before upgrading (shoot/README.md)`);
     catalog = await readJson(path.join(repo, 'data/catalog.json'));
@@ -65,7 +72,8 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
   const serial = fn => { const result = chain.then(() => { if (storageError) throw apiError('server', 'Persistence failed; restart after fixing storage', 503); return fn(); }); chain = result.catch(() => {}); return result; };
   const active = () => Object.values(store.jobs).find(r => ['recognizing', 'generating'].includes(r.job.status));
   const get = id => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id)) throw apiError('not-found', 'No such job', 404); return r; };
-  const charged = id => provider.charged(id);
+  const charged = id => provider.real ? provider.charged(get(id).providerState) : provider.charged(id);
+  const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry});
   async function fail(record, code) {
     record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id)}; await save();
   }
@@ -77,18 +85,22 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       if (parent && !parent.usedBy) { parent.usedBy = record.job.id; restored = true; }
     }
     if (restored) await save();
-    for (const record of Object.values(store.jobs)) if (record.pending) await fail(record, 'unknown-submit');
+    for (const record of Object.values(store.jobs)) {
+      if (record.pending || record.providerState?.pending) await fail(record, 'unknown-submit');
+      else if (record.providerState?.recognitionPending && !record.job.recognition) await fail(record, 'photo-unclear');
+    }
   }
   catch (error) { await release(); throw error; }
   async function work(record) {
     const j = record.job, folder = path.join(directory, j.id);
     try {
       if (!j.recognition) {
-        const recognition = await provider.recognize(template);
+        const recognition = await provider.recognize(template, context(record));
         if (closed) return;
-        await serial(async () => { j.recognition = recognition; j.status = 'generating'; await save(); });
+        await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; await save(); });
       }
       if (closed) return;
+      if (provider.real && !record.providerId) await serial(async () => { record.providerId = j.id; await save(); });
       if (!record.providerId) {
         await serial(async () => { record.pending = true; j.steps[0].startedAt ??= now(); await save(); });
         let providerId;
@@ -103,18 +115,19 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
         if (closed) return;
         if (step.endedAt) continue;
         await serial(async () => { step.startedAt ??= now(); await save(); });
-        await provider.step(step.key, j.id);
+        const prepared = await provider.step(step.key, j.id, context(record), catalog);
         if (closed) return;
-        if (step.key === 'styled') await fs.copyFile(path.join(folder, 'photo.jpg'), path.join(folder, 'styled.jpg'));
-        if (step.key === 'download') await fs.copyFile(path.join(repo, template.glb), path.join(folder, 'model.glb'));
+        if (!provider.real && step.key === 'styled') await fs.copyFile(path.join(folder, 'photo.jpg'), path.join(folder, 'styled.jpg'));
+        if (!provider.real && step.key === 'download') await fs.copyFile(path.join(repo, template.glb), path.join(folder, 'model.glb'));
         if (step.key !== 'process') await serial(async () => { step.endedAt = now(); await save(); });
         else await serial(async () => {
           await Promise.all(['photo.jpg', 'styled.jpg', 'model.glb'].map(f => fs.access(path.join(folder, f))));
           const ended = now(), id = `shoot_${j.id.slice(2)}`, url = `/api/shoot/files/${id}`;
-          // Model and geometry both use the same fixed, already-normalized asset.
-          const item = copy(template);
+          // The real provider returns prepared geometry; fake uses the fixed asset.
+          const item = provider.real ? prepared : copy(template);
           delete item.comparisonBase; delete item.origin;
-          Object.assign(item, {id, outEnd: mountRules.top.outEnd[template.id] ?? 1, name: `我拍的锅${store.items.length ? ' ' + (store.items.length + 1) : ''}`, glb: `${url}/model.glb`, massBasis: 'local-fake', source: {generator: 'local-fake', templateId: template.id, license: '沿用仓库锅样本；不是本次真实生成'}});
+          if (provider.real) Object.assign(item, {id, glb: `${url}/model.glb`});
+          else Object.assign(item, {id, outEnd: mountRules.top.outEnd[template.id] ?? 1, name: `我拍的锅${store.items.length ? ' ' + (store.items.length + 1) : ''}`, glb: `${url}/model.glb`, massBasis: 'local-fake', source: {generator: 'local-fake', templateId: template.id, license: '沿用仓库锅样本；不是本次真实生成'}});
           item.rating = rateItem(item, catalog.materials);
           const started = Date.parse(j.createdAt), styled = Date.parse(j.steps[0].startedAt), model = Date.parse(j.steps[1].startedAt);
           item.origin = {photo: `${url}/photo.jpg`, styled: `${url}/styled.jpg`, steps: [{key: 'photo', seconds: (styled - started) / 1000}, {key: 'styled', seconds: (model - styled) / 1000}, {key: 'model', seconds: (Date.parse(ended) - model) / 1000}]};
@@ -126,7 +139,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       if (!closed && !storageError) await serial(() => fail(record, Object.hasOwn(retryFor, error.code) ? error.code : j.recognition ? (j.steps[3].startedAt ? 'process' : 'download') : 'photo-unclear'));
     }
   }
-  function start(record) { runner = runner.then(() => closed ? undefined : work(record)).catch(error => { storageError ??= error; }); }
+  function start(record) { runner = runner.then(() => closed ? undefined : work(record)).catch(error => { if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); } }); }
   for (const record of Object.values(store.jobs)) if (['recognizing', 'generating'].includes(record.job.status)) start(record);
 
   async function create({clientKey, photo, fromJob, regenerateOf, confirm}) {
@@ -162,7 +175,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       const id = `j_${randomUUID()}`, folder = path.join(directory, id); await fs.mkdir(folder);
       if (photo) await keepPicture(photo, path.join(folder, 'photo.jpg'));
       else await fs.copyFile(path.join(directory, parent.job.id, 'photo.jpg'), path.join(folder, 'photo.jpg'));
-      const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
+      const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: provider.real ? 90 : 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
       const record = {job: j, pending: false, providerId: null};
       if (parent) parent.usedBy = id;
       store.jobs[id] = record; store.keys[clientKey] = {id, fingerprint}; await save(); start(record); return publicJob(record);
@@ -173,11 +186,12 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
     create,
     get: id => serial(() => publicJob(get(id))),
     items: () => serial(() => copy(store.items)),
-    quota: () => serial(() => ({limit: null, remaining: null, resetsAt: null, used: provider.used(), activeJobId: active()?.job.id ?? null})),
+    quota: () => serial(() => ({provider: provider.real ? 'real' : 'fake', limit: null, remaining: null, resetsAt: null, used: provider.real ? Object.values(store.jobs).filter(r => provider.charged(r.providerState)).length : provider.used(), activeJobId: active()?.job.id ?? null})),
     retry: id => serial(async () => {
       const r = get(id), current = active();
       if (r.job.error?.retry !== 'same' || !r.providerId || r.pending) throw apiError('not-allowed', 'This job cannot be retried', 409);
       if (current && current !== r) throw apiError('active-job', 'A job is still active', 409, {activeJobId: current.job.id});
+      if (provider.real) r.freeRetry = true;
       r.job.error = null; r.job.status = 'generating'; await save(); start(r); return publicJob(r);
     }),
     file: (id, name) => serial(() => {

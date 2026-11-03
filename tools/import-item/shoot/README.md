@@ -1,4 +1,4 @@
-# 本机「拍一件」后台（只接假生成）
+# 本机「拍一件」后台
 
 从仓库根运行，Node22：
 
@@ -17,7 +17,7 @@ node tools/import-item/shoot/server.mjs
 - 沿[Iris接口第2稿及后续裁决](https://raft-artifacts.com/p/lawrence-workspace/wanwu-mvp-spec)。`/quota` 的limit/remaining/resetsAt均null，used是假收费次数；不显示每天30次或剩几次。
 - 上传：POST `/api/shoot/jobs`，multipart photo和clientKey。JPEG/PNG≤32MiB、≤64MP。同key同输入返回原job；不同输入409 key-conflict。
 - GET `/api/shoot/jobs/:id`查状态；GET `/api/shoot/items`取入库件。
-- 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
+- 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null；旧记录可能没有 fromJob，前端按 null 处理，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
 - POST `/api/shoot/jobs/:id/retry`空body，只续免费下载/处理；不能进入提交。busy通过POST jobs JSON `{fromJob,clientKey}`再次提交。每个busy或可重新生成的父任务只能产生一个子任务；原key重发仍返回该子任务，换key再用同一父任务409 not-allowed，重启后也一样。重新生成通过POST `/jobs/:id/regenerate` JSON `{confirm:true,clientKey}`，只对可重新生成的失败开放。
 - unknown-submit保留原记录、永不自动再提交；retry和regenerate均拒绝。它不占active位，新的clientKey可以拍另一件。活动任务冲突409 active-job并带activeJobId。
 - 成功一次原子提交同时公开itemId和/items。文件URL是根路径 `/api/shoot/files/<itemId>/model.glb`、photo.jpg、styled.jpg。只有入库文件可读。origin三段真实秒数，steps四步时间戳。
@@ -70,3 +70,26 @@ server: {
 给Iris的界面约定：同一server错误连续失败三次后，停止给「再试」，显示「后台出了问题，稍后再来」，留「回角色库」；保留原任务/key，不能以界面退出表示撤销任务。具体接口稿已同步这一条，界面实现归task #56。
 
 本机后台当前只在 macOS 使用。Windows 上如果另一个程序正打开 state.json，替换文件可能报 EPERM，后台会转成503并等待修复存储后重启；这轮不做 Windows 产品兼容或自动存盘重试。Windows CI 的硬重启测试由子进程存盘完成后通知，父进程再读盘核实，避免高频读文件干扰写入。
+
+
+## 真生成（本机，需另获准使用密钥与付费）
+
+默认命令仍使用假provider。真模式显式运行：
+
+```sh
+node tools/import-item/shoot/server.mjs --provider real
+```
+
+从进程环境读取 `GEMINI_API_KEY`、`AHOLO_API_KEY`；缺配置会点名报错并退出，不回退假生成。不要把密钥写在命令、仓库或日志里。真模式独立保存 `.aholo/shoot-real/`，同一盘不可混真/假任务。网页 `?shoot=real` 只选择HTTP后台，不代表后台开了付费模式；`?shoot=fake` 仍为离线页面假后台。
+
+认物用 Gemini 3.5 Flash-Lite 的 Interactions（固定提示+JSON schema，store=false）；同任务一次请求，失败或崩溃不自动重认。物理数据是照片估计，不是测量；长边1–300cm、重量0.001–100kg，输出越界或不清楚时不建Aholo任务。类外物品按最接近的六类之一算，inSix=false。子任务继承既有认物。
+
+Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建GLB；每阶段先落pending，收到任务ID才继续。未知结果不重提。官方明确并发满且没有已付费阶段时返回busy；已有改图费用但3D还未创建的已知失败，需玩家明确确认重新生成，可能重新支付改图费。免费「再试」只续已知模型的轮询/下载/处理，绝不补提收费任务。
+
+quota 新增 provider 字段（real/fake），供单件验收先确认后台模式；现有页面可忽略。真quota的limit/remaining/resetsAt仍null，used是可能已创建收费阶段的本地任务数，**不是余额、金额或两个阶段的账单次数**。任务charged=true包含尚不能确定是否扣费的pending窗口。Gemini看图单独按token计费，不在该标记里。后台不设置付费预算，必须先由Lead确认单件真实验收和账号费用范围，再启真模式。
+
+压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z。原付费GLB留source.glb；model.glb为规范后的网页资产，磁盘读写失败可免费重做处理，坏格式模型则提示不能处理、须明确重新生成。供应商ID和签名URL只留本机私有状态，不返回前端。
+
+单件验收：`node tools/import-item/shoot/check-real.mjs --photo /absolute/photo.jpg --key stable-test-key --allow-paid`。只向当前本机后台建一次任务，重复同照片和同key取原任务；失败只报结果，不自动再生成；再执行仍沿用原key。没有 --allow-paid 时拒绝建任务。脚本本身不读取密钥，须先启动获准的真后台；它不能证明页面五屏或真机手感。
+
+官方契约：[Gemini Interactions](https://aistudio.google.com/api-reference/interactions-api)、[结构化输出](https://aistudio.google.com/docs/structured-output)、[Aholo OpenAPI](https://labs.aholo.ai/api-docs/en/openapi.json)。这次实现与离线通过不等于供应商实测，真实照片、账单和生成质量仍待密钥授权后验收。
