@@ -11,7 +11,7 @@ import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
 import {shootApi} from './shoot-api.js';
-import {mountShoot} from './shoot.js';
+import {catLabel, mountShoot} from './shoot.js';
 
 const $ = id => document.getElementById(id);
 const el = {
@@ -660,7 +660,6 @@ async function main() {
   // 角色库: every item a card (3D turning, name, category, size and weight, where it came from at the foot). The other slot's item
   // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
-  const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
   const sourceLine = it => {
     if (isLux(it.id)) return '来源：照片生成';
     if (/^CC/.test(it.source?.license ?? '')) return `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`;
@@ -684,7 +683,7 @@ async function main() {
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${badge}</span>
-        <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span>
+        <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }
@@ -811,7 +810,7 @@ async function main() {
   }
 
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
-  // each step's real time beside it. The category is the one the player's pick fixed, not something a model guessed.
+  // each step's real time beside it. 品类 shows only for one of the six; a real item's category is its name (task #84).
   const STEPS = [{key: 'photo', name: '照片', play: 3}, {key: 'styled', name: '改成画风的图', play: 3}, {key: 'model', name: '3D 转起来', play: 4}];
   const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(sec % 60)).padStart(2, '0')} 秒` : `${Math.round(sec)} 秒`;
   let howItem = null, howT = 0, howTimer = 0, howReq = 0;
@@ -821,7 +820,8 @@ async function main() {
     howItem = id;
     const secs = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds);
     el.howTitle.textContent = `${NAMES[id]}是怎么来的`;
-    el.howCat.textContent = CAT[it.category] ?? it.category ?? '';
+    el.howCat.textContent = catLabel(it, NAMES[id]);
+    el.howCat.parentElement.hidden = !el.howCat.textContent;
     el.howSteps.innerHTML = STEPS.map((st, i) => {
       const pic = st.key === 'model' ? '<canvas class="mini3d"></canvas>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
       return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
