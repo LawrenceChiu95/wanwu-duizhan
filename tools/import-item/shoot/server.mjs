@@ -95,5 +95,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const {values} = parseArgs({options: {'frontend-origin': {type: 'string'}, provider: {type: 'string', default: 'fake'}}});
   const instance = await startShootServer({frontendOrigin: values['frontend-origin'] ?? null, mode: values.provider});
   console.log(`Local ${values.provider} shoot backend: ${instance.url}`);
-  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, async () => { await instance.close(); process.exit(0); });
+  let closing = false;
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => {
+    if (closing) return;
+    closing = true; await instance.close(); process.exit(0);
+  });
 }

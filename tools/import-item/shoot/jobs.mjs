@@ -13,7 +13,7 @@ export const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 export const MAX_PHOTO = 32 * 1024 * 1024;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const copy = value => structuredClone(value);
-const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate', download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'photo-unclear': 'none', 'unknown-submit': 'none'};
+const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate', download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'photo-unclear': 'none', 'unknown-submit': 'none', 'recognition-auth': 'none', 'recognition-limit': 'none', 'recognition-network': 'none', 'recognition-service': 'none', 'recognition-invalid': 'none', 'recognition-interrupted': 'none', 'process-corrupt': 'none', 'process-too-large': 'none'};
 export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
@@ -61,6 +61,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const template = catalog.items.find(i => i.id === 'pan-lux3d');
   if (!template) { await release(); throw Error('Missing fake pot template'); }
   let closed = false, storageError = null, chain = Promise.resolve(), runner = Promise.resolve();
+  const abort = new AbortController();
   const now = () => new Date().toISOString();
   const save = async () => {
     try { await saveJson(path.join(directory, 'state.json'), store); }
@@ -73,7 +74,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const active = () => Object.values(store.jobs).find(r => ['recognizing', 'generating'].includes(r.job.status));
   const get = id => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id)) throw apiError('not-found', 'No such job', 404); return r; };
   const charged = id => provider.real ? provider.charged(get(id).providerState) : provider.charged(id);
-  const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry});
+  const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
   async function fail(record, code) {
     record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id)}; await save();
   }
@@ -87,7 +88,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     if (restored) await save();
     for (const record of Object.values(store.jobs)) {
       if (record.pending || record.providerState?.pending) await fail(record, 'unknown-submit');
-      else if (record.providerState?.recognitionPending && !record.job.recognition) await fail(record, 'photo-unclear');
+      else if (record.providerState?.recognitionPending && !record.job.recognition && record.job.status !== 'failed') await fail(record, 'recognition-interrupted');
     }
   }
   catch (error) { await release(); throw error; }
@@ -96,7 +97,8 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     try {
       if (!j.recognition) {
         const recognition = await provider.recognize(template, context(record));
-        if (closed) return;
+        // A response received while closing is still valuable paid work: save it
+        // before honoring shutdown, then leave later stages for restart.
         await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; await save(); });
       }
       if (closed) return;
@@ -200,6 +202,6 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       if (!item || !record) throw apiError('not-found', 'No such item', 404);
       return path.join(directory, record.job.id, name);
     }),
-    async close() { closed = true; try { await runner; await chain; } finally { await release(); } }
+    async close() { closed = true; abort.abort(); try { await runner; await chain; } finally { await release(); } }
   };
 }

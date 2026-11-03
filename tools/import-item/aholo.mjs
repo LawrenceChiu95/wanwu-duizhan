@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {setTimeout as sleep} from 'node:timers/promises';
 import {sha256} from './mesh.mjs';
 import {keepPicture} from './origin.mjs';
 
@@ -25,8 +26,9 @@ function unwrap(reply) {
 
 // Only credential-free asset GETs may redirect. Every hop is checked, including
 // relative Location values; API and upload requests keep redirect:'error'.
-async function download(url, file, request) {
-  const signal = AbortSignal.timeout(120000);
+async function download(url, file, request, cancelled) {
+  const signal = cancelled ? AbortSignal.any([cancelled, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000);
+  signal.throwIfAborted();
   let current = https(url), response;
   for (let hop = 0; hop <= 5; hop++) {
     try { response = await request(current, {method: 'GET', headers: {}, redirect: 'manual', credentials: 'omit', signal}); }
@@ -51,35 +53,60 @@ async function download(url, file, request) {
 }
 
 /** The key is only attached to the fixed official API gateway, never result/upload URLs. */
-export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause = ms => new Promise(r => setTimeout(r, ms)), now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true}) {
-  const send = async (url, {headers = {}, method = 'GET', body} = {}) => {
+export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstSubmit = false, signal}) {
+  const waitPause = async ms => {
+    signal?.throwIfAborted();
+    if (!pause) return sleep(ms, undefined, {signal});
+    let stop;
+    const cancelled = new Promise((_, reject) => { stop = () => reject(signal.reason); signal?.addEventListener('abort', stop, {once: true}); });
+    try { await Promise.race([pause(ms), cancelled]); } finally { signal?.removeEventListener('abort', stop); }
+    signal?.throwIfAborted();
+  };
+  const send = async (url, {headers = {}, method = 'GET', body, cancelOnClose = true} = {}) => {
     let response;
-    try { response = await request(https(url), {method, headers, body, redirect: 'error', signal: AbortSignal.timeout(120000)}); }
+    try {
+      if (cancelOnClose) signal?.throwIfAborted();
+      response = await request(https(url), {method, headers, body, redirect: 'error', signal: cancelOnClose && signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000)});
+    }
     catch { throw Error('Network request failed. Existing task IDs and pending flags are kept; rerun to resume, never recreate blindly.'); }
-    if (!response.ok) throw Error(`HTTP ${response.status}; resource may have expired or account access failed. Existing tasks are kept; no generation retry.`);
+    if (!response.ok) { await response.body?.cancel(); throw Error(`HTTP ${response.status}; existing tasks are kept; no generation retry.`); }
     return response;
   };
   const json = async (url, options) => {
     const response = await send(url, options);
     try { return JSON.parse((await limitedBody(response, 1024 * 1024)).toString()); } catch { throw Error('Invalid API reply; check the console. Pending task creation is not retried.'); }
   };
-  const api = (route, payload) => json(BASE + route, {headers: {Authorization: key, ...(payload ? {'Content-Type': 'application/json'} : {})}, ...(payload ? {method: 'POST', body: JSON.stringify(payload)} : {})});
+  const api = (route, payload, cancelOnClose = true) => json(BASE + route, {headers: {Authorization: key, ...(payload ? {'Content-Type': 'application/json'} : {})}, ...(payload ? {method: 'POST', body: JSON.stringify(payload)} : {}), cancelOnClose});
   const stamp = async name => { state.timestamps[name] ??= now(); await save(); };
   const create = async (stage, payload, timestamp) => {
     if (state.pending) throw Error(`Unconfirmed ${state.pending} creation. Check Aholo task history and record its ID before any retry; do not clear pending and resubmit blindly.`);
-    if (!allowCreate) throw Object.assign(Error('Resume cannot create a paid task'), {code: 'step-failed'});
+    signal?.throwIfAborted();
+    if (state.tasks[stage]) throw Error('This stage already has a task ID; resume it instead of creating another');
+    if (!allowCreate && !allowFirstSubmit) throw Error('First submission is not enabled for this resume');
     state.pending = stage; await stamp(timestamp);
-    const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload));
+    // Shutdown can arrive while the pending marker is being saved. No request
+    // has left yet, so remove that marker and leave the first submit for restart.
+    if (signal?.aborted) { delete state.pending; await save(); signal.throwIfAborted(); }
+    // Once sent, collect the paid task ID even during shutdown. The request still
+    // has its 120-second timeout; only polling/uploads obey the close signal.
+    const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload, false));
     if (!['number', 'string'].includes(typeof id) || !/^[A-Za-z0-9_-]{1,128}$/.test(String(id))) throw Error('Creation reply has no valid task ID; pending is kept. Check the console before retrying.');
     state.tasks[stage] = id; delete state.pending; await save();
   };
   const wait = async (id, timestamp) => {
     for (let i = 0; i < 240; i++) {
-      const detail = unwrap(await api(`/lux3d/v1/generate/task/get?taskid=${encodeURIComponent(id)}`));
+      signal?.throwIfAborted();
+      let detail;
+      // Only read-only queries are retried, never creation. A bare HTTP 404,
+      // permission error or unknown reply does not prove this paid task expired.
+      for (let attempt = 0; ; attempt++) {
+        try { detail = unwrap(await api(`/lux3d/v1/generate/task/get?taskid=${encodeURIComponent(id)}`)); break; }
+        catch (error) { signal?.throwIfAborted(); if (attempt === 3) throw error; await waitPause(1000 * 2 ** attempt); }
+      }
       if (detail?.status === 3) { if (!Array.isArray(detail.outputs)) throw Error('Completed task has no output list'); await stamp(timestamp); return detail.outputs; }
       if ([4, 6].includes(detail?.status)) throw Object.assign(Error('Existing generation task failed or was canceled'), {code: 'step-failed'});
       if (![0, 1].includes(detail?.status)) throw Error('Unknown task status; stop without creating a new task');
-      await pause(10000);
+      await waitPause(10000);
     }
     throw Error('Polling timed out. Rerun to poll the same task; no new generation is needed.');
   };
@@ -112,7 +139,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
           const detail = unwrap(await json(`${domain}/ous/api/v2/upload/status`, {headers}));
           if (detail?.status === 5 && detail.url) { state.photoUrl = https(detail.url); await stamp('upload_finished'); break; }
           if ([6, 8].includes(detail?.status)) throw Error('Photo upload failed');
-          await pause(2000);
+          await waitPause(2000);
         }
         if (!state.photoUrl) throw Error('Photo upload timed out; no generation was submitted');
       }
@@ -124,7 +151,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     const styled = https(outputs[0]?.content);
     if (!state.styledSha256) {
       const styledFile = path.join(folder, 'styled-download');
-      if (!state.styledDownloadSha256) { state.styledDownloadSha256 = await download(styled, styledFile, request); await save(); }
+      if (!state.styledDownloadSha256) { state.styledDownloadSha256 = await download(styled, styledFile, request, signal); await save(); }
       if ((await fs.stat(styledFile)).size > 32 * 1024 * 1024) throw Error('Styled image exceeds 32 MiB; the result is kept in styled-download for manual recovery');
       const bytes = await fs.readFile(styledFile);
       if (sha256(bytes) !== state.styledDownloadSha256) throw Error('Saved styled download changed; restore it before importing');
@@ -138,6 +165,6 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
   // Pick by explicit format or pathname, never a fixed output position.
   const output = outputs.find(x => String(x.format ?? x.type ?? '').toLowerCase() === 'glb' || (() => { try { return new URL(x.content).pathname.toLowerCase().endsWith('.glb'); } catch { return false; } })());
   if (!output) throw Error('Completed task has no identifiable GLB output; check its formats without creating another task');
-  state.downloadSha256 = await download(output.content, model, request); await stamp('download_finished');
+  state.downloadSha256 = await download(output.content, model, request, signal); await stamp('download_finished');
   return model;
 }
