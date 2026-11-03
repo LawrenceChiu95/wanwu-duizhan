@@ -59,3 +59,11 @@
 - 台灯/拖鞋从实际模板安装端宽窄取朝向；枕头等无法区分两端的模型按最长轴并记录原因。六类各1cm和300cm核弱点同比，不改战斗或等级算法。
 - 源副本损坏但下载原件哈希正确则恢复；双损坏process-corrupt、超大process-too-large，均不引导再收费/无限免费重做。stat先于hash。进程被杀恢复已测，不承诺断电，不加fsync。
 - 当前只离线契约和模拟回包；真实验收须等Elara明确通知密钥、费用和task62前端边界齐备，只跑一件，同时核供应商null schema，不另付费探测。
+
+## task #72：真生成错误与验证口径
+
+- 认物前本机照片读失败：photo-read/none，认物请求为零；认物已成功但无Aholo ID时读图、token或上传失败：photo-upload/same，免费续原任务、不重复认物。有改图或建模ID后读图失败仍download/same，恢复照片后只续已有ID；只有改图ID时准许补原单首次建模，阶段各至多一次。
+- 本机照片读失败独立诊断只记安全错误类，不记路径、错误原文或凭据；永久缺图也留此诊断。recognition-invalid涵盖JSON null、steps非数组及空/非法内容，不归网络失败；合法拒答才photo-unclear。全部错误及retry以README「真模式任务错误」表为准。
+- 源副本坏且原模型缺失，或两份原件哈希均坏，process-corrupt/none；大于64MiB为process-too-large/none。均不反复免费处理，也不引导再付费。
+- 收费创建等待提示仅真模式确有已发出、尚未完成ID落盘的create时打印；保留未知pending不算在途创建，假模式和真空闲不提示。关闭收ID至多120秒、重复信号幂等及安全异常输出不变。
+- CLI台灯/拖鞋/枕头缺安装端元数据的验证走真实runCli分派→隔离catalog→模型入库，核normalization.orientation.reason为template-mount-unknown；不把prepareMesh helper验证称作CLI同路。

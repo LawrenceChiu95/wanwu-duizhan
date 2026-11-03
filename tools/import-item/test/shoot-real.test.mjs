@@ -178,6 +178,7 @@ for (const stage of ['image', 'mesh']) test(`unknown ${stage} create never repea
  try {
   const j = await jobs.create({photo: image, clientKey: 'unknown-real-001'}), failed = await finish(jobs, j.id);
   assert.deepEqual(failed.error, {code: 'unknown-submit', message: 'unknown-submit', retry: 'none', charged: true});
+  assert.equal(jobs.waitingForPaidId(), false, 'a retained pending marker is not an in-flight request');
   const count = g.creates.length; await jobs.close(); jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
   assert.equal((await jobs.get(j.id)).error.code, 'unknown-submit'); assert.equal((await jobs.quota()).activeJobId, null);
   assert.equal((await jobs.create({photo: image, clientKey: 'unknown-real-001'})).id, j.id); assert.equal(g.creates.length, count);
@@ -418,7 +419,7 @@ for (const stage of ['image', 'mesh']) test(`close collects the in-flight ${stag
  } finally { release?.(); await jobs.close(); }
 });
 
-for (const closeFailure of [false, true]) test(`keychain launcher saves paid ID under repeated SIGINT; close failure=${closeFailure}`, {skip: process.platform === 'win32', timeout: 10000}, async () => {
+async function serverFixture() {
  // Run the actual CLI files in a tiny isolated repo. Only security and outbound
  // requests are stubbed; no real keychain, supplier or shared state is touched.
  const repo = await fs.realpath(await dir()), tools = path.join(repo, 'tools/import-item'), shoot = path.join(tools, 'shoot');
@@ -431,6 +432,24 @@ for (const closeFailure of [false, true]) test(`keychain launcher saves paid ID 
  await fs.writeFile(path.join(repo, 'package.json'), '{"type":"module"}');
  const bin = path.join(repo, 'bin'); await fs.mkdir(bin);
  await fs.writeFile(path.join(bin, 'security'), '#!/bin/sh\nprintf "offline-fixture-key\\n"\n', {mode: 0o700});
+ return {repo, shoot, bin};
+}
+
+for (const mode of ['fake', 'real']) test(`idle ${mode} server shutdown does not claim to wait for a paid ID`, {skip: process.platform === 'win32', timeout: 5000}, async () => {
+ const {repo, shoot} = await serverFixture(), hook = path.join(repo, 'idle.mjs'), ready = path.join(repo, 'signals-ready');
+ await fs.writeFile(hook, `import fs from 'node:fs';import net from 'node:net';const listen=net.Server.prototype.listen;net.Server.prototype.listen=function(port,...args){return listen.call(this,0,...args)};const on=process.on;process.on=function(event,...args){const result=on.call(this,event,...args);if(event==='SIGTERM')fs.writeFileSync(${JSON.stringify(ready)},'ready');return result};globalThis.fetch=()=>{throw Error('Unexpected offline request')};`);
+ const child = spawn(process.execPath, ['--import', pathToFileURL(hook).href, path.join(shoot, 'server.mjs'), '--provider', mode], {env: {...process.env, ...env}, stdio: ['ignore', 'pipe', 'pipe']});
+ const exited = once(child, 'exit'); let output = '';
+ child.stdout.on('data', b => output += b); child.stderr.on('data', b => output += b);
+ try {
+  await until(async () => { if (child.exitCode !== null) throw Error(output); return fs.access(ready).then(() => true, () => false); }, Boolean);
+  child.kill('SIGTERM'); assert.deepEqual(await exited, [0, null]);
+  assert.doesNotMatch(output, /paid creation ID|120 seconds|Unexpected offline request/);
+ } finally { if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); await exited; }
+});
+
+for (const closeFailure of [false, true]) test(`keychain launcher saves paid ID under repeated SIGINT; close failure=${closeFailure}`, {skip: process.platform === 'win32', timeout: 10000}, async () => {
+ const {repo, shoot, bin} = await serverFixture();
  const hook = path.join(repo, 'offline.mjs'), entered = path.join(repo, 'creating'), released = path.join(repo, 'release');
  await fs.writeFile(hook, `
 import fs from 'node:fs/promises';import net from 'node:net';import {setTimeout as pause} from 'node:timers/promises';
@@ -547,13 +566,53 @@ for (const visionReply of [null, {status: 'completed', steps: {}}, {status: 'com
 
 test('local photo read failure is distinct and makes no recognition request', async () => {
  const directory = await dir(), g = gateway(), read = fs.readFile;
+ const log = console.error, logs = []; console.error = (...args) => logs.push(args.join(' '));
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
  fs.readFile = (file, ...args) => typeof file === 'string' && file.startsWith(directory + path.sep) && file.endsWith('photo.jpg')
   ? Promise.reject(Object.assign(Error('private path'), {code: 'EIO'})) : read(file, ...args);
  try {
   const j = await jobs.create({photo: image, clientKey: 'unreadable-photo-001'}), failed = await finish(jobs, j.id);
   assert.equal(failed.error.code, 'photo-read'); assert.equal(failed.error.retry, 'none'); assert.equal(g.visionCalls(), 0); assert.deepEqual(g.creates, []);
- } finally { fs.readFile = read; await jobs.close(); }
+  assert.deepEqual(logs, ['Shoot local photo read failed: EIO']);
+ } finally { fs.readFile = read; console.error = log; await jobs.close(); }
+});
+
+test('photo read after recognition retries the same job without another vision charge or duplicate creates', async t => {
+ const directory = await dir(), g = gateway(), read = fs.readFile; let recognized = false;
+ const request = async (url, options) => { const response = await g.fetch(url, options); if (url.includes('googleapis')) recognized = true; return response; };
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async () => {}}});
+ t.after(() => jobs.close());
+ fs.readFile = (file, ...args) => recognized && typeof file === 'string' && file.startsWith(directory + path.sep) && file.endsWith('photo.jpg')
+  ? Promise.reject(Object.assign(Error('private path'), {code: 'EIO'})) : read(file, ...args);
+ let j;
+ try {
+  j = await jobs.create({photo: image, clientKey: 'recognized-photo-read-001'}); const failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'photo-upload'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, false);
+  assert.equal(failed.recognition.category, 'pot'); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, []);
+ } finally { fs.readFile = read; }
+ await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+ assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
+});
+
+test('image-only paid ID survives a missing photo and recovery submits the first mesh exactly once', async t => {
+ const queryStatus = {image: 500}, {jobs, g, directory} = await open(t, {queryStatus});
+ const j = await jobs.create({photo: image, clientKey: 'image-only-read-001'}); assert.equal((await finish(jobs, j.id)).error.code, 'download');
+ assert.deepEqual(g.creates, ['image']); delete queryStatus.image;
+ const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+ assert.deepEqual(saved.providerState.tasks, {'multimodal-to-image': 'image-id'});
+ const file = path.join(directory, j.id, 'photo.jpg'), backup = path.join(directory, j.id, 'photo-backup.jpg');
+ const log = console.error, logs = []; console.error = (...args) => logs.push(args.join(' '));
+ await fs.rename(file, backup);
+ try {
+  for (let i = 0; i < 2; i++) {
+   await jobs.retry(j.id); const failed = await finish(jobs, j.id);
+   assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, true);
+  }
+  assert.deepEqual(logs, ['Shoot local photo read failed: ENOENT', 'Shoot local photo read failed: ENOENT']);
+  assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image']);
+ } finally { console.error = log; await fs.rename(backup, file); }
+ await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+ assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
 });
 
 test('paid IDs remain free-retryable after a local photo read failure; recovery creates nothing', async t => {

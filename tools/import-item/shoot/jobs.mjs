@@ -190,6 +190,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   }
   return {
     directory,
+    waitingForPaidId: () => Boolean(provider.real && provider.waitingForPaidId?.()),
     create,
     get: id => serial(() => publicJob(get(id))),
     items: () => serial(() => copy(store.items)),

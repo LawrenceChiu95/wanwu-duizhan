@@ -99,7 +99,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => {
     if (closing) return;
     closing = true;
-    console.log('Closing shoot backend; any in-flight paid creation ID may take up to 120 seconds to arrive.');
+    if (instance.jobs.waitingForPaidId()) console.log('Closing shoot backend; in-flight paid creation ID may take up to 120 seconds to arrive.');
     try { await instance.close(); process.exit(0); }
     catch (error) {
       // Fixed safe identifiers only; filesystem errors can carry paths/URLs and

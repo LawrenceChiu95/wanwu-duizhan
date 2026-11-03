@@ -22,6 +22,14 @@ clear表示照片主体是否清楚；recognizable表示能否认出一件明确
 只有clear和recognizable都为true时才估计物品字段。category只可选剪刀scissors、锅pot、扫把broom、台灯lamp、拖鞋slipper、枕头pillow；清楚的单件东西即使不在六类、不是日常物品，也判clear和recognizable为true并选形状和用途最接近的一类，同时inSix=false，不因类外而拒答；属于六类时inSix=true。
 估计真实物品最长边lengthCm（厘米，1到300）和重量massKg（公斤，0.001到100），不要按画面像素给大小；没有参照时按现实常见尺寸估计。material选主要材质metal/wood/plastic/cloth/rubber。condition选intact完好、worn磨旧、damaged破损；看不出来选unknown。basis用一句简短中文说明类别、尺寸参照或估计、材质和新旧的可见依据，不能声称测量过。不要根据想要的游戏等级挑数值。`;
 const failure = code => Object.assign(Error(code), {code});
+async function readPhoto(folder) {
+  try { return await fs.readFile(path.join(folder, 'photo.jpg')); }
+  catch (error) {
+    const type = typeof error.code === 'string' && /^[A-Z0-9_]{1,32}$/.test(error.code) ? error.code : 'UNKNOWN';
+    console.error('Shoot local photo read failed:', type);
+    throw failure('photo-read');
+  }
+}
 export function parseRecognition(value) {
   if (!value || Object.getPrototypeOf(value) !== Object.prototype || Object.keys(value).sort().join() !== [...recognitionSchema.required].sort().join()) throw failure('recognition-invalid');
   if (typeof value.clear !== 'boolean' || typeof value.recognizable !== 'boolean') throw failure('recognition-invalid');
@@ -45,15 +53,17 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
   const missing = ['GEMINI_API_KEY', 'AHOLO_API_KEY'].filter(k => !env[k]?.trim());
   if (missing.length) throw Error(`Real shoot provider requires environment: ${missing.join(', ')}`);
   const geminiKey = env.GEMINI_API_KEY.trim(), aholoKey = env.AHOLO_API_KEY.trim();
+  let submitting = false;
   return {
     real: true,
+    waitingForPaidId: () => submitting,
     async recognize(_template, context) {
       const {state, save, folder} = context;
       if (state.recognitionPending) throw failure('recognition-interrupted');
       state.recognitionPending = true; await save();
       let status = null;
       try {
-        const photo = await fs.readFile(path.join(folder, 'photo.jpg')).catch(() => { throw failure('photo-read'); });
+        const photo = await readPhoto(folder);
         const response = await request('https://generativelanguage.googleapis.com/v1beta/interactions', {
           method: 'POST', redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
           headers: {'x-goog-api-key': geminiKey, 'Content-Type': 'application/json', 'Api-Revision': '2026-05-20'},
@@ -72,7 +82,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
       } catch (error) {
         const code = ['photo-read', 'photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code) ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
         // Fixed fields only: never include the response body, URL or error message.
-        if (code !== 'photo-unclear') console.error('Shoot recognition failed:', JSON.stringify({status, error: code}));
+        if (!['photo-unclear', 'photo-read'].includes(code)) console.error('Shoot recognition failed:', JSON.stringify({status, error: code}));
         throw failure(code);
       }
     },
@@ -83,15 +93,14 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         // Each stage may submit once when it has neither an ID nor pending;
         // free resume can finish that first submission (Elara 0e7833a1).
         try {
-          const photo = await fs.readFile(path.join(folder, 'photo.jpg')).catch(() => { throw failure('photo-read'); });
+          const photo = await readPhoto(folder);
           const prompt = `把参考照片的主要物品改成废土朋克游戏道具。按${names[recognition.category]}算，但保留照片原物件的轮廓、比例、主要结构和材质特征，不替换成标准样本。少量工业黄漆、警示纹、划痕和旧布。不要加第二件物品、人体、背景、尖刺或夸大结构。完整单件，浅灰背景，均匀柔光。`;
-          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal});
+          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, onCreate: value => { submitting = value; }});
         } catch (error) {
           if (error.code === 'busy' && state.pending) { delete state.pending; await save(); }
           if (state.pending) throw failure('unknown-submit');
           if (error.code === 'busy' && !Object.keys(state.tasks).length) throw failure('busy');
           if (error.code === 'step-failed') throw failure('step-failed');
-          if (error.code === 'photo-read' && !Object.keys(state.tasks).length) throw error;
           if (!Object.keys(state.tasks).length) throw failure('photo-upload');
           throw failure('download');
         }
