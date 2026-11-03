@@ -59,8 +59,12 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 const ms = t => t == null ? null : Date.parse(t);
 const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(sec % 60)).padStart(2, '0')} 秒` : `${Math.max(1, Math.round(sec))} 秒`;
 const about = sec => sec > 75 ? `${Math.round(sec / 60)} 分钟左右` : sec > 45 ? '1 分钟左右' : sec > 10 ? `${Math.ceil(sec / 10) * 10} 秒左右` : '几秒';
-const catOf = r => CAT[r?.category] ?? '东西';
-const countAs = r => r.inSix ? `按${catOf(r)}算` : `不在六类里，按最像的${catOf(r)}算`;
+// task #84: the real 认物 names the thing as the model says it (name, no inSix); only the fake backend still sorts
+// every photo into the six and says which one it counts as.
+const catOf = r => r?.name ?? CAT[r?.category] ?? '东西';
+const countAs = r => !('inSix' in (r ?? {})) ? catOf(r) : r.inSix ? `按${catOf(r)}算` : `不在六类里，按最像的${catOf(r)}算`;
+/** The tag beside an item's name: one of the six, or nothing when the category is just the name again (task #84). */
+export const catLabel = (it, name) => CAT[it?.category] ?? (it?.category && it.category !== name ? it.category : '');
 
 /** A small JPEG data URL of the photo for this page's own screens (the backend keeps the original). */
 async function thumbOf(blob, side = 480) {
@@ -199,7 +203,8 @@ export function mountShoot(ctx) {
     let html = '';
     if (kind === 'pick') {
       html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一件东西、拍全、背景干净</small></span></div>
-        <div class="ssix"><span>会认成这六类之一，不在里面的按形状最像的算</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>
+        ${api.kind === 'fake' && !api.named ? `<div class="ssix"><span>会认成这六类之一，不在里面的按形状最像的算</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>`
+          : '<div class="ssix"><span>拍的是什么就认成什么，大小、轻重、软硬看照片估</span></div>'}
         ${foot(ghost('album', '从相册选', ICON.album), go('camera', '拍照'))}`;
     } else if (kind === 'confirm') {
       html = `${frame('', '')}<p class="snote">生成要 1–2 分钟，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
@@ -212,7 +217,7 @@ export function mountShoot(ctx) {
     } else if (kind === 'recog') {
       html = `${frame('scan', '<i class="sline"></i><span class="stag" data-live="rtag">认物中</span>')}
         <div class="srec"><span class="lbl">认出来是</span><b class="stamp" data-live="as"></b>
-        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? '<p class="sfine fake">现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机</p>' : ''}</div>
+        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? `<p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p>` : ''}</div>
         <div class="sfoot"><p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
     } else if (kind === 'gen') {
       html = `${frame('gen', `<i class="ssweep"></i><span class="scat">${esc(countAs(job.recognition))}</span><span class="snow" data-live="now"></span>`)}
@@ -240,13 +245,13 @@ export function mountShoot(ctx) {
       html = `${frame('held', `<span class="sbadge">${ICON.wait}核实中</span>`)}<div class="smsg held"><b>这件还在核实，不会多扣</b></div>${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'done') {
       const id = code, r = ctx.grade(id), it = ctx.item(id), eq = ctx.equipLabel(id);
-      const line = [MATERIAL[it.material], ctx.spec(id), WEAR[it.condition]].filter(Boolean).join(' · ');
+      const line = [it.materialName ?? MATERIAL[it.material], ctx.spec(id), WEAR[it.condition]].filter(Boolean).join(' · ');
       const end = Math.max(...job.steps.map(s => ms(s.endedAt) ?? 0)), took = end ? (end - ms(job.createdAt)) / 1000 : null;
       html = `<h2 class="shead">做好了</h2><div class="spair"><figure><span class="pane"><img src="${esc(photo())}" alt=""></span><figcaption>你拍的</figcaption></figure>
           <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D</figcaption></figure></div>
         <div class="sstage"><div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
           ${r ? `<i class="big g${r.grade}">${r.grade}</i>` : ''}
-          <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b><span class="cat">${esc(CAT[it.category] ?? it.category ?? '')}</span></span><small>${esc(line)}</small></div>
+          <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, ctx.name(id)))}</span><small>${esc(line)}</small></div>
           ${r ? `<span class="rates">${[['attack', '攻击'], ['range', '范围'], ['durability', '耐久']].map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : ''}
           <span class="cover" aria-hidden="true"><i>?</i></span></div></div><i class="sdim" aria-hidden="true"></i>
         <p class="sdone">${ICON.check}<span>已经放进角色库${took ? `，用时 ${dur(took)}` : ''}</span>${it.origin ? `<button type="button" data-act="how">${ICON.play}看它怎么来的</button>` : ''}</p>

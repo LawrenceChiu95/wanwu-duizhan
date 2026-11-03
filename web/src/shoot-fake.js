@@ -29,6 +29,9 @@
  *                         第 22 版: the published copy can't take ?shootCat, so whoever tries it sees an S turn over first;
  *                         the slipper was left out there while its model was a plain grey one, back since task #74)
  *   ?shootSix=0           recognised as outside the six, counted as the nearest
+ *   ?shootName=保温杯      answers the way the real 认物 does since task #84: that name (and category), no inSix; the item
+ *                         takes the name too. &shootMat=不锈钢 adds materialName. The model and numbers still come from
+ *                         the six; the game takes such an item once sim/runtime-items.js accepts any category (Sol, task #84).
  *   ?shootReset=1         forget every fake job, item and the page's current job
  */
 import {loadCatalog} from '../../sim/index.js';
@@ -80,6 +83,7 @@ export async function fakeApi(q) {
   const speed = Math.max(0.1, Number(q.get('shootSpeed')) || 1);
   const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
   const pinned = SOURCE[q.get('shootCat')] ? q.get('shootCat') : null, inSix = q.get('shootSix') !== '0';
+  const realName = q.get('shootName')?.trim() || null, realMat = q.get('shootMat')?.trim() || null;
   const FIRST = ['broom', 'scissors'], RANDOM = Object.keys(SOURCE);
   const someCat = n => pinned ?? FIRST[n] ?? RANDOM[Math.floor(Math.random() * RANDOM.length)];
   const st = read(KEY) ?? {v: VERSION, clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
@@ -110,9 +114,11 @@ export async function fakeApi(q) {
       if (now < t + d) return;
       rec.times[s][1] = t += d;
     }
-    const n = st.items.length + 1, base = `我拍的${CAT_NAME[rec.cat]}`, same = st.items.filter(i => i.cat === rec.cat).length;
+    const n = st.items.length + 1, base = rec.recognition.name ?? `我拍的${CAT_NAME[rec.cat]}`;
+    const same = st.items.filter(i => i.cat === rec.cat && i.label === rec.recognition.name).length;
     const secs = s => rec.times[s]?.[1] != null ? (rec.times[s][1] - rec.times[s][0]) / 1000 : STAGES[s][1];
-    st.items.push({id: `shot-${n}`, job: rec.id, cat: rec.cat, name: same ? `${base} ${same + 1}` : base, photo: rec.photo,
+    st.items.push({id: `shot-${n}`, job: rec.id, cat: rec.cat, label: rec.recognition.name, matName: rec.recognition.materialName,
+      name: same ? `${base} ${same + 1}` : base, photo: rec.photo,
       steps: [{key: 'photo', seconds: secs(0)}, {key: 'styled', seconds: secs(1)}, {key: 'model', seconds: secs(2) + secs(3) + secs(4)}]});
     rec.done = {status: 'succeeded', error: null};
     rec.itemId = `shot-${n}`;
@@ -149,8 +155,11 @@ export async function fakeApi(q) {
   function recognise(cat) {
     const src = catalog.find(i => i.id === SOURCE[cat]);
     const lengthMeters = +Math.max(...src.bounds.max.map((v, i) => v - src.bounds.min[i])).toFixed(2);
-    return {category: cat, inSix, basis: BASIS[cat], lengthMeters, massKg: src.mass, material: src.material, condition: src.condition ?? 'unknown',
+    const r = {category: cat, inSix, basis: BASIS[cat], lengthMeters, massKg: src.mass, material: src.material, condition: src.condition ?? 'unknown',
       sizeLabel: lengthMeters < 0.25 ? '小' : lengthMeters < 0.6 ? '中' : '大'};
+    if (!realName) return r;
+    delete r.inSix;
+    return {...r, name: realName, category: realName, ...realMat ? {materialName: realMat} : {}};
   }
   // A new job: from a new photo (stage 0), or another go at an old one's photo and recognition (stage 1).
   function open(clientKey, fields) {
@@ -181,6 +190,7 @@ export async function fakeApi(q) {
 
   return {
     kind: 'fake',
+    named: !!realName, // ?shootName: the screens say what the real one says
     pollMs: 500,
     now: vnow,
     async create(photo, clientKey) {
@@ -242,6 +252,8 @@ export async function fakeApi(q) {
         it.outEnd = src.outEnd ?? rules.top.outEnd[src.id] ?? 1;
         it.scale ??= 1; // catalog models are all in meters (sim/index.js); registerItems wants it said
         if (st.jobs[x.job]?.refused) it.scale = 2;
+        if (x.label) it.category = x.label;
+        if (x.matName) it.materialName = x.matName;
         delete it.comparisonBase;
         it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
         return it;
