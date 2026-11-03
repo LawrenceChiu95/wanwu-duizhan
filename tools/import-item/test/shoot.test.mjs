@@ -130,32 +130,42 @@ async function child(dir, window = null) {
  import {startShootServer} from ${JSON.stringify(new URL('../shoot/server.mjs', import.meta.url).href)};
  import {fakeGenerator} from ${JSON.stringify(new URL('../shoot/fake.mjs', import.meta.url).href)};
  const directory=${JSON.stringify(dir)}, window=${JSON.stringify(window)};
- const rename=fs.rename; fs.rename=async(...args)=>{try{return await rename(...args)}catch(error){console.error(JSON.stringify({operation:'rename',code:error.code,destination:args[1]}));throw error;}};
+ const rename=fs.rename; fs.rename=async(...args)=>{
+  try{await rename(...args)}catch(error){console.error(JSON.stringify({operation:'rename',code:error.code,destination:args[1]}));throw error;}
+  if(window==='known' && args[1].endsWith('state.json')){
+   const state=JSON.parse(await fs.readFile(args[1],'utf8'));
+   const record=Object.values(state.jobs).find(r=>r.providerId);
+   if(record){process.send({checkpoint:'known',id:record.job.id});await new Promise(()=>{});}
+  }
+ };
  const generator=await fakeGenerator(directory,{delayMs:150});
- if(window){const submit=generator.submit;generator.submit=async id=>{
+ if(['before-ledger','after-ledger'].includes(window)){const submit=generator.submit;generator.submit=async id=>{
    if(window==='after-ledger') await submit(id);
    await fs.writeFile(directory+'/checkpoint.json',JSON.stringify({id,window}));
    await new Promise(()=>{});
  };}
  const app=await startShootServer({port:0,directory,generator});console.log(JSON.stringify({url:app.url}));
  process.once('SIGTERM',async()=>{await app.close();process.exit(0)});`;
- const proc = spawn(process.execPath, ['--input-type=module', '-e', source], {stdio: ['ignore', 'pipe', 'pipe']});
+ const proc = spawn(process.execPath, ['--input-type=module', '-e', source], {stdio: ['ignore', 'pipe', 'pipe', 'ipc']});
+ let checkpoint = null; proc.on('message', message => { checkpoint = message; });
  let text = '', stderr = ''; proc.stdout.on('data', b => { text += b; }); proc.stderr.on('data', b => { stderr += b; });
  const info = await until(async () => { if (proc.exitCode !== null) throw Error(stderr); return text; }, s => s.includes('\n')).catch(async error => { proc.kill('SIGKILL'); throw error; });
- return {proc, url: JSON.parse(info.split('\n')[0]).url, stderr: () => stderr};
+ return {proc, url: JSON.parse(info.split('\n')[0]).url, stderr: () => stderr, checkpoint: () => checkpoint};
 }
 
 for (let trial = 0; trial < Number(process.env.SHOOT_RESTART_REPETITIONS ?? 1); trial++) test(`real child hard restart resumes a known job, keeps output, and does not submit again (${trial + 1})`, async t => {
- const dir = await directory(); let current = await child(dir); const children = [current.proc];
+ const dir = await directory(); let current = await child(dir, 'known'); const children = [current.proc];
  t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill('SIGKILL'); await done; } });
  const {job} = await create(current.url, 'hard-restart-001');
- try { await until(() => readJson(path.join(dir, 'state.json')), s => s.jobs[job.id].providerId); }
+ try { await until(current.checkpoint, s => s?.checkpoint === 'known' && s.id === job.id); }
  catch (error) {
   const state = await readJson(path.join(dir, 'state.json'));
   const quota = await request(current.url, 'quota');
   throw Error(`${error.message}: ${JSON.stringify({state, quota, stderr: current.stderr()})}`, {cause: error});
  }
  let exit = once(current.proc, 'exit'); current.proc.kill('SIGKILL'); await exit;
+ const persisted = (await readJson(path.join(dir, 'state.json'))).jobs[job.id];
+ assert.ok(persisted.providerId); assert.equal(persisted.pending, false);
  current = await child(dir); children.push(current.proc);
  const result = await finished(current.url, job.id); assert.equal(result.job.status, 'succeeded');
  assert.equal((await request(current.url, 'quota')).used, 1); assert.equal((await request(current.url, 'items')).items.length, 1);

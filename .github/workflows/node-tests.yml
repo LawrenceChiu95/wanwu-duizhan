@@ -36,4 +36,4 @@ jobs:
       - run: npm ci --prefix tools/import-item
       - run: npm test --prefix tools/import-item
         env:
-          SHOOT_RESTART_REPETITIONS: 40
+          SHOOT_RESTART_REPETITIONS: 80
