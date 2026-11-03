@@ -13,7 +13,7 @@ export const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 export const MAX_PHOTO = 32 * 1024 * 1024;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const copy = value => structuredClone(value);
-const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate', download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'photo-unclear': 'none', 'unknown-submit': 'none', 'recognition-auth': 'none', 'recognition-limit': 'none', 'recognition-network': 'none', 'recognition-service': 'none', 'recognition-invalid': 'none', 'recognition-interrupted': 'none', 'process-corrupt': 'none', 'process-too-large': 'none'};
+const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate', download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'photo-upload': 'same', 'photo-read': 'none', 'photo-unclear': 'none', 'unknown-submit': 'none', 'recognition-auth': 'none', 'recognition-limit': 'none', 'recognition-network': 'none', 'recognition-service': 'none', 'recognition-invalid': 'none', 'recognition-interrupted': 'none', 'process-corrupt': 'none', 'process-too-large': 'none'};
 export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
@@ -138,7 +138,12 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         });
       }
     } catch (error) {
-      if (!closed && !storageError) await serial(() => fail(record, Object.hasOwn(retryFor, error.code) ? error.code : j.recognition ? (j.steps[3].startedAt ? 'process' : 'download') : 'photo-unclear'));
+      // Received recognition failures are paid responses too: preserve their
+      // classification during close, just as a successful recognition is saved.
+      if ((!closed || !j.recognition) && !storageError) await serial(async () => {
+        if (!j.recognition && record.providerState) delete record.providerState.recognitionPending;
+        await fail(record, Object.hasOwn(retryFor, error.code) ? error.code : j.recognition ? (j.steps[3].startedAt ? 'process' : 'download') : 'photo-unclear');
+      });
     }
   }
   function start(record) { runner = runner.then(() => closed ? undefined : work(record)).catch(error => { if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); } }); }

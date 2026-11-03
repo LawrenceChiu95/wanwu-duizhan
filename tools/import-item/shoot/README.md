@@ -88,7 +88,7 @@ Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建G
 
 quota 新增 provider 字段（real/fake），供单件验收先确认后台模式；现有页面可忽略。真quota的limit/remaining/resetsAt仍null，used是可能已创建收费阶段的本地任务数，**不是余额、金额或两个阶段的账单次数**。任务charged=true包含尚不能确定是否扣费的pending窗口。Gemini看图单独按token计费，不在该标记里。后台不设置付费预算，必须先由Lead确认单件真实验收和账号费用范围，再启真模式。
 
-压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z，弱点半径按本件长边相对品类模板长边同比缩放。原付费GLB先完整拷到source.glb.part、再原子改名为source.glb，之后才替换网页model.glb；中途硬退出保留完整原模型，重启覆盖未完成临时件、免费续处理。已有源副本哈希不符时，只有原模型仍与下载哈希一致才恢复副本。磁盘读写失败可免费重做处理。两份原件都哈希不符时报 process-corrupt、超过64MiB时报 process-too-large，均不开放反复免费处理或重新付费；先人工修复本机原件。大小先 stat 再读文件/算哈希。完整且校验一致但格式不支持的模型仍报 process-unfixable。朝向：剪刀/锅/扫把沿原尖端/宽端规则；台灯/拖鞋依实际模板最长轴安装端的宽窄，枕头等两端判不清时用最长轴并在私有任务和物品 normalization.orientation 中记下回退原因。这里验证进程中断后的恢复；未加 fsync，不承诺断电持久性。正常关闭取消 Aholo 查询和等待，不等四十分钟；已发出的收费创建不挂关闭信号，只保留120秒请求超时，先收ID落盘，关闭后不再发新创建。重复SIGINT/SIGTERM只收尾一次，启动器照旧转发。关闭期间已经收到的认物仍先保存，重启不再认一次。供应商ID和签名URL只留本机私有状态，不返回前端。
+压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z，弱点半径按本件长边相对品类模板长边同比缩放。原付费GLB先完整拷到source.glb.part、再原子改名为source.glb，之后才替换网页model.glb；中途硬退出保留完整原模型，重启覆盖未完成临时件、免费续处理。已有源副本哈希不符时，只有原模型仍与下载哈希一致才恢复副本。磁盘读写失败可免费重做处理。源副本哈希不符且原模型缺失，或两份原件都哈希不符时报 process-corrupt、超过64MiB时报 process-too-large，均不开放反复免费处理或重新付费；先人工修复本机原件。大小先 stat 再读文件/算哈希。完整且校验一致但格式不支持的模型仍报 process-unfixable。朝向：剪刀/锅/扫把沿原尖端/宽端选择，但现在三类也要求最长轴两端各外侧10%区域的端宽差至少达到较宽端的10%；差不足用最长轴而不猜方向，避免近似对称模型被微小网格噪声翻转。这是相对早期仅比较宽窄的行为变化，本轮保留该阈值。台灯/拖鞋依实际模板最长轴安装端的宽窄，枕头等两端判不清时用最长轴并在私有任务和物品 normalization.orientation 中记下回退原因。这里验证进程中断后的恢复；未加 fsync，不承诺断电持久性。正常关闭取消 Aholo 查询和等待，不等四十分钟；已发出的收费创建不挂关闭信号，只保留120秒请求超时，先收ID落盘，关闭后不再发新创建。重复SIGINT/SIGTERM只收尾一次，启动器照旧转发。关闭时终端提示收费创建ID最多等待120秒；关闭异常只打印安全的错误类型、代码和状态码并以1退出，不打印消息、路径、URL或凭据。关闭期间已经收到的认物（成功或明确失败）仍先保存，重启不再认一次。供应商ID和签名URL只留本机私有状态，不返回前端。
 
 单件验收：`node tools/import-item/shoot/check-real.mjs --photo /absolute/photo.jpg --key stable-test-key --allow-paid`。只向当前本机后台建一次任务，重复同照片和同key取原任务；失败只报结果，不自动再生成；再执行仍沿用原key。必须给绝对照片路径；没有 --allow-paid 时拒绝建任务。观察45分钟超时只表示脚本停止观察，不是任务失败：原任务和原key保留，用同照片、同key再执行只取原任务。脚本本身不读取密钥，须先启动获准的真后台；它不能证明页面五屏或真机手感。
 
@@ -110,3 +110,8 @@ quota 新增 provider 字段（real/fake），供单件验收先确认后台模�
 诊断只记固定错误分类和HTTP状态，不记供应商原始消息、响应体、URL或凭据。认物请求可能已经花费 token，charged 仍只代表 Aholo 阶段，不能据 charged=false 说认物没花钱。
 
 官方契约：[Gemini Interactions](https://aistudio.google.com/api-reference/interactions-api)、[结构化输出](https://aistudio.google.com/docs/structured-output)、[Aholo OpenAPI](https://labs.aholo.ai/api-docs/en/openapi.json)。这次实现与离线通过不等于供应商实测，真实照片、账单和生成质量仍待密钥授权后验收。
+
+### task69 错误与离线回退补充
+- 认物回包为 JSON null、steps 非数组或内容格式不符，均归 recognition-invalid，不误叫网络失败。
+- 本机 photo.jpg 读盘失败报 photo-read / retry:none，不继续调用认物或生成；先修本地照片。改图提交前 token/上传失败报 photo-upload / retry:same，仍沿原任务免费补首次提交，不另认物或重复创建。
+- CLI 台灯/拖鞋/枕头模板缺 hull 或合法安装端时，normalization.orientation.reason 为 template-mount-unknown；有安装端但两端宽度无法区分仍为 template-ends-indistinguishable。

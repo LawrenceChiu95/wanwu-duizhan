@@ -130,9 +130,10 @@ export async function prepareMesh(raw, template, standard) {
   });
   const distinguishable = w => Math.max(...w) > 0 && Math.abs(w[0] - w[1]) / Math.max(...w) >= .1;
   let outwardEnd = {scissors: 'narrow', pot: 'wide', broom: 'wide'}[template.category];
+  const mountKnown = template.hull && [1, -1].includes(template.outEnd);
   // The other templates have no hand-authored head/tip rule. Learn which width
   // belongs outside from their actual longest-axis hull and mounting sign.
-  if (!outwardEnd && template.hull && [1, -1].includes(template.outEnd)) {
+  if (!outwardEnd && mountKnown) {
     const spans = template.bounds.max.map((v, i) => v - template.bounds.min[i]);
     const axis = spans.indexOf(Math.max(...spans)), ends = endWidths(template.hull, template.bounds, axis);
     if (distinguishable(ends)) outwardEnd = ends[template.outEnd === 1 ? 1 : 0] > ends[template.outEnd === 1 ? 0 : 1] ? 'wide' : 'narrow';
@@ -140,7 +141,7 @@ export async function prepareMesh(raw, template, standard) {
   const widths = endWidths(current.points, sourceBounds, longest);
   const resolved = outwardEnd && distinguishable(widths);
   const orientation = {templateId: template.id, method: resolved ? 'template-end-width' : 'longest-axis',
-    ...(resolved ? {outwardEnd} : {reason: outwardEnd ? 'source-ends-indistinguishable' : 'template-ends-indistinguishable'})};
+    ...(resolved ? {outwardEnd} : {reason: outwardEnd ? 'source-ends-indistinguishable' : mountKnown ? 'template-ends-indistinguishable' : 'template-mount-unknown'})};
   const flip = resolved && (outwardEnd === 'wide' ? widths[0] > widths[1] : widths[0] < widths[1]);
   const Y = [0, 0, 0], Z = [0, 0, 0]; Y[thinnest] = 1; Z[longest] = flip ? -1 : 1;
   const X = [Y[1] * Z[2] - Y[2] * Z[1], Y[2] * Z[0] - Y[0] * Z[2], Y[0] * Z[1] - Y[1] * Z[0]];

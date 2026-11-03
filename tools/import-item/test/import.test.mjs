@@ -256,6 +256,11 @@ test('lamp and slipper match the mounted template end for either source sign; sy
  assert.deepEqual(pillow.shape.normalization.orientation,{templateId:'pillow',method:'longest-axis',reason:'template-ends-indistinguishable'});
  assert.equal(pillow.shape.normalization.outwardEnd,undefined);
 });
+for(const id of ['lamp','slipper','pillow'])test(`CLI ${id} without mount metadata records unknown mount, not indistinguishable ends`,async()=>{
+ const template={...originals.find(i=>i.id===id)};delete template.outEnd;
+ const result=await prepareMesh(model,template,base.itemStandards[id]);
+ assert.deepEqual(result.shape.normalization.orientation,{templateId:id,method:'longest-axis',reason:'template-mount-unknown'});
+});
 test('opaque colour textures are stored as JPEG; transparent colour and data textures stay PNG (task #42, #45)',async()=>{
  const doc=await new NodeIO().readBinary(model),root=doc.getRoot(),first=root.listMaterials()[0];
  const pixels=Buffer.alloc(64*64*4);for(let i=0;i<pixels.length;i+=4)pixels.set([200,120,40,i<64*16*4?100:255],i); // top quarter see-through
