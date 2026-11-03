@@ -16,7 +16,7 @@
  *                         gets a server error), forbidden-poll (polls get forbidden for ten seconds, as a backend
  *                         started for another page address would answer), refused (the first item made comes out in a form
  *                         the game's registerItems turns down: scale 2; photos after it come out fine).
- *   ?shootItemsSlow=8000  the page load's first item fetch takes that many ms (main.js waits 5 s for it at start).
+ *   ?shootItemsSlow=15000 item fetches don't answer until that many ms after the page loaded (main.js waits 5 s at start).
  *   ?shootItemsNull=1     item fetches carry a null and an entry with no id among the items.
  *   ?shootAgainFail=3     the first 3 calls of 再试, 再提交 or 重新生成 get a server error (counted across reloads), then they
  *                         go through; the keys they carried are kept in the fake's storage (againKeys).
@@ -176,7 +176,7 @@ export async function fakeApi(q) {
     if (st.againKeys.length <= againFail) throw new ShootError('server');
   }
   let itemsFail = 0; // ?shootFail=server-items: item fetches still to fail once a job of this page load is done
-  let itemsSlow = Number(q.get('shootItemsSlow')) || 0; // ?shootItemsSlow=ms: the first item fetch of this page load
+  const itemsAt = performance.now() + (Number(q.get('shootItemsSlow')) || 0); // ?shootItemsSlow=ms: no items before then
   const itemsNull = q.has('shootItemsNull');
 
   return {
@@ -232,7 +232,7 @@ export async function fakeApi(q) {
     },
     // Built on every read from the item it copies, so a rebuilt page's still and model URLs are the current ones.
     async items() {
-      if (itemsSlow) { const ms = itemsSlow; itemsSlow = 0; await tick(ms); }
+      if (performance.now() < itemsAt) await tick(itemsAt - performance.now());
       for (const r of Object.values(st.jobs)) advance(r);
       save();
       if (itemsFail && Object.values(st.jobs).some(r => r.done?.status === 'succeeded')) { itemsFail--; throw new ShootError('server'); }

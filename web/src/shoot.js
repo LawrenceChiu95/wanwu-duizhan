@@ -102,6 +102,8 @@ export function mountShoot(ctx) {
   const fetching = () => job?.status === 'succeeded' && !ctx.item(job.itemId) && !ctx.refused(job.itemId);
   // 好了 at the backend, but the game turned the item down (task #62): it will never come in, so the job lets go.
   const refused = () => job?.status === 'succeeded' && !ctx.item(job.itemId) && ctx.refused(job.itemId);
+  // A job this page follows, no longer asked about because the page and its backend don't match (task #70).
+  const stopped = () => MISMATCH.includes(startError) && !!stored && !!job;
   const elapsed = () => job ? (api.now() - ms(job.createdAt)) / 1000 : 0;
   // Seconds left: each step not yet done at its usual share of the estimate, less the time the current one has had.
   function remaining() {
@@ -137,6 +139,8 @@ export function mountShoot(ctx) {
       if (stored?.id !== id) return;
       offline = false;
       pollFails = 0;
+      // Answered as its own backend again (reopened from the tag, or back to the page): the mismatch is over (task #70).
+      if (MISMATCH.includes(startError)) startError = null;
       const was = job;
       job = j;
       // 认物 just came in while watching: its result stays up a moment (a page reopened later goes straight on).
@@ -164,8 +168,9 @@ export function mountShoot(ctx) {
 
   // ---------- screens ----------
   // Which screen the state calls for; each key is drawn once, then only its live parts are updated.
-  function screen() {
-    if (startError) return 'err:' + startError;
+  function screen() { return startError ? 'err:' + startError : under(); }
+  // The screen the job itself calls for, under any error.
+  function under() {
     if (!stored) return pending ? 'confirm' : 'pick';
     if (!job) return 'wait';
     if (job.status === 'recognizing' || (job.status === 'generating' && performance.now() - recogAt < RECOG_HOLD)) return 'recog';
@@ -175,7 +180,8 @@ export function mountShoot(ctx) {
   }
   const STEP_OF = {pick: 0, confirm: 0, wait: 2, recog: 1, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
   function paintSteps(key) {
-    const kind = key.split(':')[0], at = STEP_OF[kind];
+    // An error lights the step the job stopped at (task #70), the first one if there is no job.
+    const kind = key.split(':')[0], at = STEP_OF[kind === 'err' ? under().split(':')[0] : kind];
     el.steps.querySelectorAll('li').forEach((li, i) => {
       li.className = i < at ? 'done' : i === at ? (kind === 'fail' || kind === 'err' || kind === 'lost' ? 'now bad' : kind === 'held' ? 'now hold' : 'now') : '';
     });
@@ -298,14 +304,14 @@ export function mountShoot(ctx) {
 
   // ---------- the tag at the top of the build and result screens ----------
   function paintTag() {
-    const room = ctx.tagRoom(), state = !stored || !job ? null : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (stored.seen ? null : 'done')
+    const room = ctx.tagRoom(), state = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (stored.seen ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
     el.tag.hidden = !room || !el.view.hidden || !state;
     if (el.tag.hidden) return;
     el.tag.className = state;
     const what = catOf(job.recognition);
     const html = state === 'done' ? `<b>${what}生成好了，去装上</b>${ICON.arrow}`
-      : state === 'bad' ? `<b>${refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
+      : state === 'bad' ? `<b>${stopped() ? '拍一件连错了后台，去看看' : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
@@ -428,7 +434,8 @@ export function mountShoot(ctx) {
   if (stored) poll();
   return {
     open, close, paintTag,
-    // made: 好了 and the item is in this page's catalog (the 拍一件 button's 新 mark waits for it, not for the backend).
-    get state() { return {stored, job, screen: el.view.hidden ? null : screen(), offline, made: job?.status === 'succeeded' && !!ctx.item(job.itemId)}; }
+    // made: 好了 and the item is in this page's catalog (the 拍一件 button's 新 mark waits for it, not for the backend);
+    // stopped: no longer asked about, the page and backend don't match (the button stops showing it running).
+    get state() { return {stored, job, screen: el.view.hidden ? null : screen(), offline, made: job?.status === 'succeeded' && !!ctx.item(job.itemId), stopped: stopped()}; }
   };
 }
