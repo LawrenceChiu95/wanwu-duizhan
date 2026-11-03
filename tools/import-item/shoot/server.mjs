@@ -92,8 +92,8 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
   return {jobs, server, url: `http://127.0.0.1:${server.address().port}`, async close() { await new Promise(resolve => { server.close(resolve); server.closeIdleConnections(); }); await jobs.close(); }};
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const {values} = parseArgs({options: {'frontend-origin': {type: 'string'}}});
-  const instance = await startShootServer({frontendOrigin: values['frontend-origin'] ?? null});
-  console.log(`Local fake shoot backend: ${instance.url}`);
+  const {values} = parseArgs({options: {'frontend-origin': {type: 'string'}, provider: {type: 'string', default: 'fake'}}});
+  const instance = await startShootServer({frontendOrigin: values['frontend-origin'] ?? null, mode: values.provider});
+  console.log(`Local ${values.provider} shoot backend: ${instance.url}`);
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, async () => { await instance.close(); process.exit(0); });
 }

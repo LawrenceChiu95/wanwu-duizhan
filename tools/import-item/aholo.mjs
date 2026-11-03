@@ -18,6 +18,7 @@ async function limitedBody(response, limit) {
 }
 function unwrap(reply) {
   const code = String(reply?.c ?? 'unknown');
+  if (code === 'GENERATION_CONCURRENCY_LIMIT_EXCEEDED') throw Object.assign(Error('GENERATION_CONCURRENCY_LIMIT_EXCEEDED; no task created'), {code: 'busy'});
   if (code !== '0') throw Error(`Aholo business error ${/^[A-Za-z0-9_-]{1,96}$/.test(code) ? code : 'unknown'}; check task history. No generation retry.`);
   return reply.d;
 }
@@ -50,7 +51,7 @@ async function download(url, file, request) {
 }
 
 /** The key is only attached to the fixed official API gateway, never result/upload URLs. */
-export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause = ms => new Promise(r => setTimeout(r, ms)), now = () => new Date().toISOString()}) {
+export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause = ms => new Promise(r => setTimeout(r, ms)), now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true}) {
   const send = async (url, {headers = {}, method = 'GET', body} = {}) => {
     let response;
     try { response = await request(https(url), {method, headers, body, redirect: 'error', signal: AbortSignal.timeout(120000)}); }
@@ -66,6 +67,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
   const stamp = async name => { state.timestamps[name] ??= now(); await save(); };
   const create = async (stage, payload, timestamp) => {
     if (state.pending) throw Error(`Unconfirmed ${state.pending} creation. Check Aholo task history and record its ID before any retry; do not clear pending and resubmit blindly.`);
+    if (!allowCreate) throw Object.assign(Error('Resume cannot create a paid task'), {code: 'step-failed'});
     state.pending = stage; await stamp(timestamp);
     const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload));
     if (!['number', 'string'].includes(typeof id) || !/^[A-Za-z0-9_-]{1,128}$/.test(String(id))) throw Error('Creation reply has no valid task ID; pending is kept. Check the console before retrying.');
@@ -75,7 +77,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     for (let i = 0; i < 240; i++) {
       const detail = unwrap(await api(`/lux3d/v1/generate/task/get?taskid=${encodeURIComponent(id)}`));
       if (detail?.status === 3) { if (!Array.isArray(detail.outputs)) throw Error('Completed task has no output list'); await stamp(timestamp); return detail.outputs; }
-      if ([4, 6].includes(detail?.status)) throw Error(`Existing generation task ${detail.status === 4 ? 'failed' : 'was canceled'}; no new paid task is created.`);
+      if ([4, 6].includes(detail?.status)) throw Object.assign(Error('Existing generation task failed or was canceled'), {code: 'step-failed'});
       if (![0, 1].includes(detail?.status)) throw Error('Unknown task status; stop without creating a new task');
       await pause(10000);
     }
@@ -83,6 +85,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
   };
   if (state.pending) throw Error(`Unconfirmed ${state.pending} creation. Check Aholo task history before resuming; no new task was submitted.`);
   const model = path.join(folder, 'model.glb');
+  if (stopAfter === 'styled' && state.styledSha256) return path.join(folder, 'styled.jpg');
   // Validation belongs to the caller for both first download and cached reruns,
   // so rejected paid files always receive the same manual-recovery instructions.
   if (state.timestamps.download_finished) return model;
@@ -127,9 +130,11 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
       if (sha256(bytes) !== state.styledDownloadSha256) throw Error('Saved styled download changed; restore it before importing');
       state.styledSha256 = sha256(await keepPicture(bytes, path.join(folder, 'styled.jpg'))); state.styledFile = 'styled.jpg'; await save();
     }
+    if (stopAfter === 'styled') return path.join(folder, 'styled.jpg');
     if (!state.tasks[meshStage]) await create(meshStage, {img: styled, version: 'G1-Turbo', faceCount: 100000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false}, 'mesh_submit');
   }
   const outputs = await wait(state.tasks[meshStage], 'mesh_success_observed');
+  if (stopAfter === 'model') return null;
   // Pick by explicit format or pathname, never a fixed output position.
   const output = outputs.find(x => String(x.format ?? x.type ?? '').toLowerCase() === 'glb' || (() => { try { return new URL(x.content).pathname.toLowerCase().endsWith('.glb'); } catch { return false; } })());
   if (!output) throw Error('Completed task has no identifiable GLB output; check its formats without creating another task');

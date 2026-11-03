@@ -41,3 +41,13 @@
 - 硬退出回归异常清理用SIGKILL，Windows超时先留子进程/状态诊断再按实因修，不延长等待，不重复提交。
 
 - Windows硬重启主验收：子进程在state原子替换完成后通知并暂停写入；父进程仍直接核磁盘providerId/pending，SIGKILL后再核一次，再正常重启续接、核一次假收费。通知只改变读取时机，不替代磁盘断言。
+
+## task #64：本机真认物与生成
+
+- 默认假生成保留；明确 `--provider real` 使用独立 `.aholo/shoot-real/`。只读环境 GEMINI_API_KEY/AHOLO_API_KEY，缺哪个启动报哪个；同目录不能混用真、假 provider，不把供应商ID/URL/密钥放进公开任务或物品。
+- Gemini 3.5 Flash-Lite Interactions：固定提示、照片JPEG1600、store=false、结构化JSON；clear和recognizable两标志都为true才接受物品字段，否则物品字段允许null并拒答、不进Aholo。清楚的六类之外物品归最近类并inSix=false。物理范围1–300cm、0.001–100kg，五材质、新旧三档及unknown；越界/拒答/超时不进Aholo。每任务发出前记录recognitionPending，响应确认时与recognition一起落盘，未知认物不再发；显式子任务继承认物结果。
+- 复用Aholo上传/改图/G1-Turbo 100K PBR/GLB客户端下载，按四步更新时间。每阶段付费提交前pending、确认ID后清pending；任一创建结果未知转unknown-submit。并发满只在官方明确拒绝且无任何阶段ID时作busy，已有改图收费、模型拒绝不能报未收费。
+- /retry只续已有ID、下载、处理，禁止创建任何收费请求。已知失败但尚无模型ID仅能显式确认重新生成，原改图费用可能已发生；结果不明没有重生成入口。原付费结果先完整写source.glb.part再原子改名，之后才替换model.glb；未完成临时副本不影响原模型，重启免费续处理。已有源副本损坏时，仅从下载哈希仍相符的原模型恢复。未知任务不占活动位。
+- 本件长度/重量/材质/新旧给prepareMesh和现有rateItem；三项和总等级仍由现有算式决定。模型、凸包、弱点位置一起规范，弱点半径按本件长边/模板长边同比缩放，outEnd=+1；成功资产全部就绪后一次入库/完成提交。模拟器复算登记不变。
+- task60四小补同时落实：旧fromJob缺字段当null；诊断quota请求2秒限时；EISDIR日志一次断言；runner收费查询等意外失败只记录原错误码一次并503封住进程，不重试存盘。
+- 这轮只离线契约，备单件真实验收脚本；真实密钥和费用启用另交Elara，task62前端收费边界先验收。本机之外、真照片质量/时延/账单不由契约测试宣称已通过。

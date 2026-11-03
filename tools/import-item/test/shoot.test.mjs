@@ -17,8 +17,8 @@ const photo = await sharp({create: {width: 40, height: 32, channels: 3, backgrou
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-shoot-test-'));
 const catalog = await readJson(path.join(REPO, 'data/catalog.json'));
 const directory = () => fs.mkdtemp(path.join(root, 'case-'));
-async function request(url, route, data, method = data === undefined ? 'GET' : 'POST') {
- const response = await fetch(url + '/api/shoot/' + route, {method, ...(data === undefined ? {} : {headers: {'content-type': 'application/json'}, body: JSON.stringify(data)})});
+async function request(url, route, data, method = data === undefined ? 'GET' : 'POST', signal) {
+ const response = await fetch(url + '/api/shoot/' + route, {method, signal, ...(data === undefined ? {} : {headers: {'content-type': 'application/json'}, body: JSON.stringify(data)})});
  return {status: response.status, ...await response.json()};
 }
 async function create(url, key, bytes = photo) {
@@ -39,7 +39,7 @@ test('HTTP ten concurrent copies: one charge, atomic inventory, real origin time
   const copies = await Promise.all(Array.from({length: 10}, () => create(app.url, 'repeat-key-0001')));
   assert.ok(copies.every(x => x.status === 202)); const id = copies[0].job.id; assert.ok(copies.every(x => x.job.id === id));
   let r = await finished(app.url, id); assert.equal(r.job.status, 'succeeded');
-  const q = await request(app.url, 'quota'); assert.deepEqual({...q, status: undefined}, {status: undefined, limit: null, remaining: null, resetsAt: null, used: 1, activeJobId: null});
+  const q = await request(app.url, 'quota'); assert.deepEqual({...q, status: undefined}, {status: undefined, provider: 'fake', limit: null, remaining: null, resetsAt: null, used: 1, activeJobId: null});
   const {items} = await request(app.url, 'items'); assert.equal(items.length, 1); const item = items[0]; assert.equal(item.id, r.job.itemId);
   validateRuntimeItem(item, catalog); assert.equal(item.source.generator, 'local-fake'); assert.equal(item.outEnd, -1);
   assert.deepEqual(item.origin.steps.map(s => s.key), ['photo', 'styled', 'model']); assert.ok(item.origin.steps.every(s => s.seconds >= 0));
@@ -158,7 +158,7 @@ async function child(dir, window = null) {
 async function restartDiagnostics(dir, current) {
  const detail = {};
  try { detail.state = await readJson(path.join(dir, 'state.json')); } catch (error) { detail.stateError = error.message; }
- try { detail.quota = await request(current.url, 'quota'); } catch (error) { detail.quotaError = error.message; }
+ try { detail.quota = await request(current.url, 'quota', undefined, 'GET', AbortSignal.timeout(2000)); } catch (error) { detail.quotaError = error.message; }
  try { detail.stderr = current.stderr(); } catch (error) { detail.stderrError = error.message; }
  return detail;
 }
@@ -290,7 +290,8 @@ for (const window of ['before-ledger', 'after-ledger']) test(`SIGKILL ${window}:
  }
 });
 
-test('failure while recording a failed step returns 503, closes, releases lock and resumes after storage repair', async () => {
+test('failure while recording a failed step returns 503, closes, releases lock and resumes after storage repair', async t => {
+ const errors = []; t.mock.method(console, 'error', (...args) => errors.push(args));
  const dir = await directory(), stateFile = path.join(dir, 'state.json'), backup = path.join(dir, 'state-before-failure.json');
  const generator = await fakeGenerator(dir, {delayMs: 1});
  const step = generator.step; let broken = false;
@@ -307,6 +308,8 @@ test('failure while recording a failed step returns 503, closes, releases lock a
   const {job} = await create(app.url, 'storage-failure-001');
   const failure = await until(() => request(app.url, 'quota'), r => r.status === 503);
   assert.equal(failure.error.code, 'server'); assert.equal(failure.error.retry, 'same');
+  // Windows rename(file, directory) reports EPERM; POSIX reports EISDIR.
+  assert.deepEqual(errors, [['Shoot persistence failed:', process.platform === 'win32' ? 'EPERM' : 'EISDIR']]);
   assert.equal((await create(app.url, 'storage-failure-002')).status, 503);
   await app.close(); app = null;
   await assert.rejects(fs.access(path.join(dir, '.owner')), {code: 'ENOENT'});
@@ -424,4 +427,18 @@ test('real HTTP oversized multipart and multi-MiB JSON drain fully and return 41
  }
  assert.equal((await request(app.url, 'quota')).used, 0);
  assert.equal((await request(app.url, 'quota')).activeJobId, null);
+});
+
+
+test('runner failure while reading provider charges logs the original error once and closes', async t => {
+ const dir = await directory(), errors = []; t.mock.method(console, 'error', (...args) => errors.push(args));
+ const generator = await fakeGenerator(dir, {delayMs: 1, fault: 'step-failed'});
+ generator.charged = () => { throw Object.assign(Error('private provider error'), {code: 'EACCES'}); };
+ const app = await startShootServer({port: 0, directory: dir, generator});
+ try {
+  await create(app.url, 'runner-charge-0001');
+  assert.equal((await until(() => request(app.url, 'items'), r => r.status === 503)).error.code, 'server');
+  await request(app.url, 'items'); assert.deepEqual(errors, [['Shoot persistence failed:', 'EACCES']]);
+ } finally { await app.close(); }
+ await assert.rejects(fs.access(path.join(dir, '.owner')), {code: 'ENOENT'});
 });
