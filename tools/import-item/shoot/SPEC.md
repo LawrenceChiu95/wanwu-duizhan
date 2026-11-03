@@ -39,3 +39,5 @@
 - 子任务保存fromJob；启动依fromJob/regenerateOf回填缺失的父usedBy。已有幂等键顺序不变，不能再建第二子任务。
 - 所有state存盘失败第一次起均503 server，保持阻断后续操作与修盘重启恢复。
 - 硬退出回归异常清理用SIGKILL，Windows超时先留子进程/状态诊断再按实因修，不延长等待，不重复提交。
+
+- Windows硬重启主验收：子进程在state原子替换完成后通知并暂停写入；父进程仍直接核磁盘providerId/pending，SIGKILL后再核一次，再正常重启续接、核一次假收费。通知只改变读取时机，不替代磁盘断言。

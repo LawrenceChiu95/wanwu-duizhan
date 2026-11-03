@@ -35,5 +35,3 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix tools/import-item
       - run: npm test --prefix tools/import-item
-        env:
-          SHOOT_RESTART_REPETITIONS: 80

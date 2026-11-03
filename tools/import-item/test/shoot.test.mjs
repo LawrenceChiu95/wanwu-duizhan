@@ -153,7 +153,7 @@ async function child(dir, window = null) {
  return {proc, url: JSON.parse(info.split('\n')[0]).url, stderr: () => stderr, checkpoint: () => checkpoint};
 }
 
-for (let trial = 0; trial < Number(process.env.SHOOT_RESTART_REPETITIONS ?? 1); trial++) test(`real child hard restart resumes a known job, keeps output, and does not submit again (${trial + 1})`, async t => {
+test('real child hard restart resumes a known job, keeps output, and does not submit again', async t => {
  const dir = await directory(); let current = await child(dir, 'known'); const children = [current.proc];
  t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill('SIGKILL'); await done; } });
  const {job} = await create(current.url, 'hard-restart-001');
@@ -163,9 +163,12 @@ for (let trial = 0; trial < Number(process.env.SHOOT_RESTART_REPETITIONS ?? 1); 
   const quota = await request(current.url, 'quota');
   throw Error(`${error.message}: ${JSON.stringify({state, quota, stderr: current.stderr()})}`, {cause: error});
  }
- let exit = once(current.proc, 'exit'); current.proc.kill('SIGKILL'); await exit;
+ // The writer is paused after rename. Verify the disk ourselves, then kill it;
+ // neither the checkpoint notification nor in-memory state counts as durability.
  const persisted = (await readJson(path.join(dir, 'state.json'))).jobs[job.id];
- assert.ok(persisted.providerId); assert.equal(persisted.pending, false);
+ assert.equal(persisted.providerId, `fake_${job.id}`); assert.equal(persisted.pending, false);
+ let exit = once(current.proc, 'exit'); current.proc.kill('SIGKILL'); await exit;
+ assert.deepEqual((await readJson(path.join(dir, 'state.json'))).jobs[job.id], persisted);
  current = await child(dir); children.push(current.proc);
  const result = await finished(current.url, job.id); assert.equal(result.job.status, 'succeeded');
  assert.equal((await request(current.url, 'quota')).used, 1); assert.equal((await request(current.url, 'items')).items.length, 1);
