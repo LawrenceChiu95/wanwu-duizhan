@@ -747,34 +747,41 @@ async function main() {
     try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
   }
   // The same turn for one card outside the grid (拍一件's 好了): face down now, turned over after `wait` ms. With `lift`
-  // (the card's holder, task #55) it first rises to the middle of the screen, a little bigger, and holds a beat face down;
-  // turned, it stays up longer the better the grade, then settles back where it was.
+  // (the card's holder, task #55) it first rises to the middle of 拍一件's frame, a little bigger, and holds a beat face
+  // down; turned, it stays up longer the better the grade, then settles back where it was.
+  // Left before the face showed (task #63): back face down, silent and unseen. Its screen closed (回角色库, 装上它), it
+  // turns the next time it is shown; under 看它怎么来的, it turns again once that closes.
   const LIFT = 380, PAUSE = 420, DEAL = 660, HOLD = {S: 1100, A: 800, B: 550, C: 350, D: 350};
   function turnOver(card, id, wait, lift = null) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) lift = null;
     card.classList.add('down');
-    setTimeout(() => {
+    const then = (ms, go) => setTimeout(() => {
       if (!card.isConnected) return;
+      if (card.offsetParent && el.how.hidden) return go();
+      card.classList.replace('turning', 'down');
+      lift?.classList.remove('lifted');
+      const back = () => { if (card.isConnected && card.offsetParent) el.how.hidden ? turnOver(card, id, 300, lift) : setTimeout(back, 200); };
+      if (card.offsetParent) setTimeout(back, 200);
+    }, ms);
+    then(wait, () => {
       if (lift) {
-        // Measured on the card (its holder also has its margins). On a phone it already spans the screen less its
-        // margins, so up there it fills the width, edge to edge.
-        const r = card.getBoundingClientRect();
-        lift.style.setProperty('--dx', `${innerWidth / 2 - (r.left + r.width / 2)}px`);
-        lift.style.setProperty('--dy', `${innerHeight / 2 - (r.top + r.height / 2)}px`);
-        lift.style.setProperty('--k', Math.min(1.2, (innerWidth + 8) / r.width).toFixed(3));
+        // Measured on the card (its holder also has its margins) against the frame: on a phone it already spans the
+        // frame less its margins, so up there it fills the width, edge to edge; on a desktop's centred frame the same.
+        const r = card.getBoundingClientRect(), f = lift.closest('#shootView')?.getBoundingClientRect() ?? {left: 0, top: 0, width: innerWidth, height: innerHeight};
+        lift.style.setProperty('--dx', `${f.left + f.width / 2 - (r.left + r.width / 2)}px`);
+        lift.style.setProperty('--dy', `${f.top + f.height / 2 - (r.top + r.height / 2)}px`);
+        lift.style.setProperty('--k', Math.min(1.2, (f.width + 8) / r.width).toFixed(3));
         lift.classList.add('lifted');
       }
-      setTimeout(() => {
-        if (!card.isConnected) return;
+      then(lift ? LIFT + PAUSE : 0, () => {
         card.classList.replace('down', 'turning');
         sfx.flip();
-        setTimeout(() => {
-          if (!card.isConnected) return;
+        then(REVEAL_FACE, () => {
           faceUp(id);
           if (lift) setTimeout(() => lift.classList.remove('lifted'), DEAL - REVEAL_FACE + (HOLD[rate(id)?.grade] ?? HOLD.B));
-        }, REVEAL_FACE);
-      }, lift ? LIFT + PAUSE : 0);
-    }, wait);
+        });
+      });
+    });
   }
 
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
