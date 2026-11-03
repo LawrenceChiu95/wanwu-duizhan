@@ -308,7 +308,8 @@ test('failure while recording a failed step returns 503, closes, releases lock a
   const {job} = await create(app.url, 'storage-failure-001');
   const failure = await until(() => request(app.url, 'quota'), r => r.status === 503);
   assert.equal(failure.error.code, 'server'); assert.equal(failure.error.retry, 'same');
-  assert.deepEqual(errors, [['Shoot persistence failed:', 'EISDIR']]);
+  // Windows rename(file, directory) reports EPERM; POSIX reports EISDIR.
+  assert.deepEqual(errors, [['Shoot persistence failed:', process.platform === 'win32' ? 'EPERM' : 'EISDIR']]);
   assert.equal((await create(app.url, 'storage-failure-002')).status, 503);
   await app.close(); app = null;
   await assert.rejects(fs.access(path.join(dir, '.owner')), {code: 'ENOENT'});
