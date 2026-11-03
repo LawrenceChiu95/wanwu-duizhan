@@ -44,6 +44,8 @@ const KEY = 'wanwu-shoot-fake', PHOTO = 'wanwu-shoot-fake-photo:';
 const STAGES = [['recognize', 3], ['styled', 22], ['model', 53], ['download', 6], ['process', 9]];
 const STEP_KEYS = ['styled', 'model', 'download', 'process'];
 const ESTIMATE = 90;
+// After a new photo's 认物, this long (ms, on the fake clock) to say 不是它，重拍 before generation starts (task #85).
+const RETAKE_MS = 5000;
 // What each category becomes: an item already in the repo.
 const SOURCE = {pot: 'wasteland-pot', scissors: 'wasteland-knife', broom: 'wasteland-broom', lamp: 'lamp-lux3d', slipper: 'slipper', pillow: 'pillow'};
 const CAT_NAME = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
@@ -113,6 +115,12 @@ export async function fakeApi(q) {
       }
       if (now < t + d) return;
       rec.times[s][1] = t += d;
+      // A new photo's 认物 is in: nothing is paid for until the moment to say 不是它 has passed (task #85).
+      if (s === 0) {
+        rec.retakeUntil = t + RETAKE_MS;
+        if (now < rec.retakeUntil) return;
+        t = rec.retakeUntil;
+      }
     }
     const n = st.items.length + 1, base = rec.recognition.name ?? `我拍的${CAT_NAME[rec.cat]}`;
     const same = st.items.filter(i => i.cat === rec.cat && i.label === rec.recognition.name).length;
@@ -130,7 +138,7 @@ export async function fakeApi(q) {
     return {
       id: rec.id, clientKey: rec.clientKey, createdAt: iso(rec.createdAt),
       status: rec.done?.status ?? (stage === 0 ? 'recognizing' : 'generating'),
-      recognition: rec.times[0]?.[1] != null || rec.from > 0 ? rec.recognition : null,
+      recognition: rec.times[0]?.[1] != null || rec.from > 0 ? rec.recognition : null, retakeUntil: iso(rec.retakeUntil),
       steps: STEP_KEYS.map((key, i) => ({key, startedAt: iso(rec.times[i + 1]?.[0]), endedAt: iso(rec.times[i + 1]?.[1])})),
       estimateSeconds: ESTIMATE, error: rec.done?.error ?? null, itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
     };
@@ -230,6 +238,17 @@ export async function fakeApi(q) {
       advance(rec);
       if (rec.done?.error?.retry !== 'same') throw new ShootError('not-allowed');
       Object.assign(rec, {from: rec.done.stage, t0: vnow(), fail: null, done: null});
+      return view(rec);
+    },
+    // 不是它，重拍 (task #85): only between 认物 and the start of generation; the job ends unpaid and lets go of its place.
+    async retake(id) {
+      await tick(300);
+      down(null);
+      const rec = get(id);
+      advance(rec);
+      if (rec.done || rec.retakeUntil == null || vnow() >= rec.retakeUntil) throw new ShootError('not-allowed');
+      rec.done = {status: 'failed', error: {code: 'retake', message: '', retry: 'none', charged: false}, stage: 1};
+      save();
       return view(rec);
     },
     async regenerate(id, clientKey) {

@@ -33,6 +33,89 @@ async function until(read, accept) {
 const finished = (url, id) => until(() => request(url, `jobs/${id}`), r => ['succeeded', 'failed'].includes(r.job.status));
 async function instance(t, options = {}) { const app = await startShootServer({port: 0, directory: await directory(), fakeOptions: {delayMs: 2}, ...options}); t.after(() => app.close()); return app; }
 
+test('retake HTTP cancellation releases the slot, preserves the key and never submits generation', async t => {
+ const app = await instance(t), {job} = await create(app.url, 'retake-first-001');
+ assert.equal(job.retakeUntil, null);
+ const ready = await until(() => app.jobs.get(job.id), j => j.retakeUntil);
+ assert.equal(ready.status, 'generating'); assert.ok(ready.steps.every(s => s.startedAt === null));
+ assert.equal((await request(app.url, `jobs/${job.id}/retake`, {}, 'POST')).status, 413);
+ const replies = await Promise.all(Array.from({length: 10}, () => request(app.url, `jobs/${job.id}/retake`, undefined, 'POST')));
+ assert.ok(replies.every(r => r.status === 200 && r.job.status === 'failed'));
+ assert.deepEqual(replies[0].job.error, {code: 'retake', message: 'retake', retry: 'none', charged: false});
+ assert.equal((await create(app.url, 'retake-first-001')).job.id, job.id);
+ assert.equal((await request(app.url, `jobs/${job.id}/retry`, undefined, 'POST')).status, 409);
+ assert.equal((await app.jobs.quota()).used, 0); assert.equal((await app.jobs.quota()).activeJobId, null);
+ assert.deepEqual(await app.jobs.items(), []);
+ assert.deepEqual((await readJson(path.join(app.jobs.directory, 'fake-ledger.json'), {calls: []})).calls, []);
+ const next = await create(app.url, 'retake-second-001'); assert.notEqual(next.job.id, job.id);
+ await until(() => app.jobs.get(next.job.id), j => j.retakeUntil);
+ await app.jobs.retake(next.job.id); // The canceled runner woke up instead of blocking the next recognition.
+ assert.equal((await app.jobs.quota()).used, 0);
+ assert.equal((await readJson(path.join(app.jobs.directory, 'state.json'))).jobs[job.id].job.error.code, 'retake');
+});
+
+test('retake loses once the durable submission boundary wins, even before its paid reply', async t => {
+ const dir = await directory(), generator = await fakeGenerator(dir, {delayMs: 1});
+ let entered; const atSubmit = new Promise(resolve => {entered = resolve;});
+ let release; const gate = new Promise(resolve => {release = resolve;});
+ const submit = generator.submit; generator.submit = async id => { entered(); await gate; return submit(id); };
+ const app = await instance(t, {directory: dir, generator});
+ try {
+  const {job} = await create(app.url, 'retake-late-001'); await atSubmit;
+  const disk = (await readJson(path.join(dir, 'state.json'))).jobs[job.id];
+  assert.equal(disk.pending, true); assert.ok(Date.parse(disk.job.steps[0].startedAt) >= Date.parse(disk.job.retakeUntil));
+  assert.equal((await request(app.url, `jobs/${job.id}/retake`, undefined, 'POST')).error.code, 'not-allowed');
+  assert.equal((await app.jobs.quota()).used, 0); release();
+  assert.equal((await finished(app.url, job.id)).job.status, 'succeeded');
+  assert.equal((await app.jobs.quota()).used, 1);
+  assert.equal((await request(app.url, `jobs/${job.id}/retake`, undefined, 'POST')).status, 409);
+ } finally { release(); }
+});
+
+test('retake waiting closes promptly and restart keeps the original deadline without recognizing again', async () => {
+ const dir = await directory(); let app = await startShootServer({port: 0, directory: dir, fakeOptions: {delayMs: 1}});
+ try {
+  const {job} = await create(app.url, 'retake-restart-001');
+  const ready = await until(() => app.jobs.get(job.id), j => j.retakeUntil);
+  await pause(2000); const closing = Date.now(); await app.close(); app = null;
+  assert.ok(Date.now() - closing < 2000, 'shutdown must cancel the five-second wait');
+  const generator = await fakeGenerator(dir, {delayMs: 1}); generator.recognize = () => { throw Error('must reuse saved recognition'); };
+  const restarted = Date.now(); app = await startShootServer({port: 0, directory: dir, generator});
+  assert.equal((await app.jobs.get(job.id)).retakeUntil, ready.retakeUntil);
+  const done = await finished(app.url, job.id); assert.equal(done.job.status, 'succeeded');
+  assert.ok(Date.parse(done.job.steps[0].startedAt) >= Date.parse(ready.retakeUntil));
+  assert.ok(Date.parse(done.job.steps[0].startedAt) < restarted + 5000, 'restart must not open another full window');
+  assert.equal((await app.jobs.quota()).used, 1);
+ } finally { if (app) await app.close(); }
+});
+
+test('legacy recognized records without retakeUntil resume immediately with no new window', async () => {
+ const dir = await directory(); let app = await startShootServer({port: 0, directory: dir, fakeOptions: {delayMs: 1}});
+ try {
+  const {job} = await create(app.url, 'retake-legacy-001'); await until(() => app.jobs.get(job.id), j => j.retakeUntil);
+  await app.close(); app = null;
+  const state = await readJson(path.join(dir, 'state.json')); delete state.jobs[job.id].job.retakeUntil;
+  await fs.writeFile(path.join(dir, 'state.json'), JSON.stringify(state));
+  const generator = await fakeGenerator(dir, {delayMs: 1}); generator.recognize = () => { throw Error('must reuse saved recognition'); };
+  const started = Date.now(); app = await startShootServer({port: 0, directory: dir, generator});
+  const done = await finished(app.url, job.id); assert.equal(done.job.retakeUntil, null); assert.equal(done.job.status, 'succeeded');
+  assert.ok(Date.parse(done.job.steps[0].startedAt) < started + 3000);
+  assert.equal((await app.jobs.quota()).used, 1);
+ } finally { if (app) await app.close(); }
+});
+
+test('retake save failure returns 503 instead of claiming cancellation or submitting generation', async t => {
+ const app = await instance(t), {job} = await create(app.url, 'retake-save-001'); await until(() => app.jobs.get(job.id), j => j.retakeUntil);
+ const rename = fs.rename;
+ fs.rename = async (from, to) => { if (to === path.join(app.jobs.directory, 'state.json')) throw Object.assign(Error('disk blocked'), {code: 'EACCES'}); return rename(from, to); };
+ try {
+  assert.equal((await request(app.url, `jobs/${job.id}/retake`, undefined, 'POST')).status, 503);
+  assert.equal((await request(app.url, 'quota')).status, 503);
+  assert.equal((await readJson(path.join(app.jobs.directory, 'state.json'))).jobs[job.id].job.status, 'generating');
+  assert.deepEqual((await readJson(path.join(app.jobs.directory, 'fake-ledger.json'), {calls: []})).calls, []);
+ } finally { fs.rename = rename; }
+});
+
 test('HTTP ten concurrent copies: one charge, atomic inventory, real origin times, assets and restart persistence', async t => {
  const dir = await directory(); let app = await startShootServer({port: 0, directory: dir, fakeOptions: {delayMs: 10}});
  try {

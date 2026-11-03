@@ -17,6 +17,7 @@ const WEAR = {intact: '完好', worn: '有点旧', damaged: '破损'};
 // The four steps after 认物 and each one's usual share of the estimate (the real generation's, tools/import-item README).
 const STEPS = [{key: 'styled', name: '改成画风的图', share: 0.25}, {key: 'model', name: '做成 3D', share: 0.59},
   {key: 'download', name: '取回模型', share: 0.06}, {key: 'process', name: '算等级、放进角色库', share: 0.1}];
+const LATE_HOLD = 1500; // ms 「已经开始生成了」 stays up on 认物 before 生成中
 const RECOG_HOLD = 2600; // ms the 认物 result stays up once it is in, before 生成中 takes over
 const SLOW = 10 * 60; // seconds: past this a job is 比平时慢, not failed
 // What the screen says for each failure code (the draft's 「界面说」); the backend's own words only go to its log.
@@ -109,6 +110,14 @@ export function mountShoot(ctx) {
   // A job this page follows, no longer asked about because the page and its backend don't match (task #70).
   const stopped = () => MISMATCH.includes(startError) && !!stored && !!job;
   const elapsed = () => job ? (api.now() - ms(job.createdAt)) / 1000 : 0;
+  // Seconds still open to say 不是它，重拍 (task #85): after a new photo's 认物 the backend waits until retakeUntil before
+  // anything is paid for; null when there is no such moment (a job made from an earlier one's 认物).
+  const retakeLeft = () => job?.status === 'generating' && job.retakeUntil && !job.steps.some(s => s.startedAt)
+    ? Math.max(0, (ms(job.retakeUntil) - api.now()) / 1000) : 0;
+  // After 不是它 was tapped: what 认物 says, whether the call is still out, and when the backend said too late. 认物 stays
+  // up until the answer is in and a moment after a 「已经开始生成了」, so the tap is never just swallowed.
+  let retakeSay = '', retaking = false, lateAt = -Infinity;
+  const retakeLate = () => lateAt > -Infinity;
   // Seconds left: each step not yet done at its usual share of the estimate, less the time the current one has had.
   function remaining() {
     const total = (job.estimateSeconds ?? 90) * 0.95;
@@ -145,6 +154,8 @@ export function mountShoot(ctx) {
       pollFails = 0;
       // Answered as its own backend again (reopened from the tag, or back to the page): the mismatch is over (task #70).
       if (MISMATCH.includes(startError)) startError = null;
+      // Retaken (here a moment ago, or in another tab): nothing more to follow, back to taking a photo.
+      if (j.status === 'failed' && j.error?.code === 'retake') { fresh(); return; }
       const was = job;
       job = j;
       // 认物 just came in while watching: its result stays up a moment (a page reopened later goes straight on).
@@ -177,7 +188,7 @@ export function mountShoot(ctx) {
   function under() {
     if (!stored) return pending ? 'confirm' : 'pick';
     if (!job) return 'wait';
-    if (job.status === 'recognizing' || (job.status === 'generating' && performance.now() - recogAt < RECOG_HOLD)) return 'recog';
+    if (job.status === 'recognizing' || (job.status === 'generating' && (retakeLeft() > 0 || retaking || performance.now() - lateAt < LATE_HOLD || performance.now() - recogAt < RECOG_HOLD))) return 'recog';
     if (job.status === 'generating') return 'gen';
     if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + job.error.code;
     return fetching() ? 'fetch' : refused() ? 'lost:refused' : 'done:' + job.itemId;
@@ -202,7 +213,7 @@ export function mountShoot(ctx) {
     const [kind, code] = key.split(':');
     let html = '';
     if (kind === 'pick') {
-      html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一件东西、拍全、背景干净</small></span></div>
+      html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一次拍一样，让它占满画面</small></span></div>
         ${api.kind === 'fake' && !api.named ? `<div class="ssix"><span>会认成这六类之一，不在里面的按形状最像的算</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>`
           : '<div class="ssix"><span>拍的是什么就认成什么，大小、轻重、软硬看照片估</span></div>'}
         ${foot(ghost('album', '从相册选', ICON.album), go('camera', '拍照'))}`;
@@ -218,7 +229,8 @@ export function mountShoot(ctx) {
       html = `${frame('scan', '<i class="sline"></i><span class="stag" data-live="rtag">认物中</span>')}
         <div class="srec"><span class="lbl">认出来是</span><b class="stamp" data-live="as"></b>
         <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? `<p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p>` : ''}</div>
-        <div class="sfoot"><p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
+        <div class="sfoot"><button type="button" class="sghost sretake" data-act="nothis" hidden>${ICON.retry}<span>不是它，重拍</span></button>
+          <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
     } else if (kind === 'gen') {
       html = `${frame('gen', `<i class="ssweep"></i><span class="scat">${esc(countAs(job.recognition))}</span><span class="snow" data-live="now"></span>`)}
         <div class="seta"><b data-live="eta"></b><small>好了会在顶部提醒你</small></div>
@@ -274,7 +286,10 @@ export function mountShoot(ctx) {
     const live = n => el.body.querySelector(`[data-live="${n}"]`);
     if (shown === 'recog' && job.recognition) {
       const as = live('as');
-      if (!as.textContent) { as.textContent = countAs(job.recognition); live('rtag').textContent = '认好了'; live('next').textContent = '认好了，马上开始生成'; el.body.querySelector('.sframe').classList.add('got'); }
+      if (!as.textContent) { as.textContent = countAs(job.recognition); live('rtag').textContent = '认好了'; el.body.querySelector('.sframe').classList.add('got'); }
+      const left = Math.ceil(retakeLeft()), btn = el.body.querySelector('[data-act="nothis"]');
+      btn.hidden = (!left && !retaking) || retakeLate();
+      live('next').textContent = retakeLate() ? retakeSay : !left ? '认好了，马上开始生成' : retakeSay ? `${retakeSay}（还剩 ${left} 秒）` : `${left} 秒后开始生成`;
     }
     if (shown === 'wait' || shown === 'gen' || shown === 'fetch') {
       const warn = live('warn'), fails = shown === 'fetch' ? itemFails : pollFails;
@@ -337,6 +352,7 @@ export function mountShoot(ctx) {
       keep();
       job = j;
       pending = null;
+      retakeSay = ''; retaking = false; lateAt = -Infinity;
       recogAt = j.recognition ? -Infinity : 0;
       loadQuota();
       sync();
@@ -380,7 +396,7 @@ export function mountShoot(ctx) {
   }
   el.cam.onchange = () => picked(el.cam.files[0]);
   el.album.onchange = () => picked(el.album.files[0]);
-  function fresh() { startError = null; pending = null; job = null; stored = null; busyNote = ''; lastSend = null; sendFails = 0; keep(); sync(); }
+  function fresh() { retakeSay = ''; retaking = false; lateAt = -Infinity; startError = null; pending = null; job = null; stored = null; busyNote = ''; lastSend = null; sendFails = 0; keep(); sync(); }
   async function ask() {
     await loadQuota();
     el.askText.textContent = `会多算一次${quota?.remaining != null ? `（今天还剩 ${quota.remaining} 次）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
@@ -402,6 +418,23 @@ export function mountShoot(ctx) {
       if (pending) send(() => api.create(pending.file, pending.key)); else { stored ? poll() : sync(); }
     },
     retry: () => { const id = job.id; send(() => api.retry(id)); },
+    // 不是它，重拍 (task #85): ends the job before generation is paid for and goes back to taking a photo. Too late (the
+    // backend already started), it says so and carries on; not reached, the button stays for another go while time is left.
+    nothis: async () => {
+      const id = job.id, btn = el.body.querySelector('[data-act="nothis"]');
+      btn.disabled = true;
+      retaking = true;
+      try {
+        await api.retake(id);
+        if (stored?.id === id) fresh();
+      } catch (e) {
+        retaking = false;
+        if (stored?.id !== id) return;
+        if (e.code === 'not-allowed') { lateAt = performance.now(); retakeSay = '已经开始生成了'; poll(); }
+        else { btn.disabled = false; retakeSay = e.code === 'offline' ? '没连上，再点一次' : '没成功，再点一次'; }
+        sync();
+      }
+    },
     again: () => lastSend && send(lastSend),
     refresh: () => { startError = null; poll(); },
     resubmit: () => { const id = job.id, key = keyFor('re'); send(() => api.resubmit(id, key)); },

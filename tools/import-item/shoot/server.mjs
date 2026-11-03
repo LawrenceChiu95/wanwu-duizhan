@@ -56,11 +56,12 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
         else throw apiError('bad-request', 'Expected multipart or JSON', 415);
         return json(202, {job: await jobs.create(input)});
       }
-      const jobRoute = route.match(/^\/api\/shoot\/jobs\/(j_[a-f0-9-]{36})(?:\/(retry|regenerate))?$/);
+      const jobRoute = route.match(/^\/api\/shoot\/jobs\/(j_[a-f0-9-]{36})(?:\/(retry|regenerate|retake))?$/);
       if (jobRoute) {
         const [, id, action] = jobRoute;
         if (req.method === 'GET' && !action) return json(200, {job: await jobs.get(id)});
         if (req.method === 'POST' && action === 'retry') { await body(req, 0); return json(200, {job: await jobs.retry(id)}); }
+        if (req.method === 'POST' && action === 'retake') { await body(req, 0); return json(200, {job: await jobs.retake(id)}); }
         if (req.method === 'POST' && action === 'regenerate') return json(202, {job: await jobs.create({...await jsonBody(req, ['confirm', 'clientKey']), regenerateOf: id})});
       }
       const fileRoute = route.match(/^\/api\/shoot\/files\/(shoot_[a-f0-9-]{36})\/(model\.glb|photo\.jpg|styled\.jpg)$/);
