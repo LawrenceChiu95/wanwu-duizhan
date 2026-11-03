@@ -11,9 +11,11 @@ async function body(req, limit, code = 'bad-request') {
   // Leave the request alive on rejection so the client receives the JSON error.
   for await (const chunk of req.iterator({destroyOnReturn: false})) {
     size += chunk.length;
-    if (size > limit) { req.resume(); throw apiError(code, 'Request too large', 413); }
-    chunks.push(chunk);
+    // Keep draining after the limit without retaining more bytes. Throwing from
+    // inside this iterator would pause it again after an attempted resume().
+    if (size <= limit) chunks.push(chunk);
   }
+  if (size > limit) throw apiError(code, 'Request too large', 413);
   return Buffer.concat(chunks);
 }
 function fields(value, allowed) {

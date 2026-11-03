@@ -32,3 +32,10 @@
 - 完整导入及runtime检查串行nice20；独立Claude只读最新完整diff，交Elara裁决后才能合base。
 
 - Elara6fe0eb01并入第8–11条：启动拒绝缺outEnd的旧入库件并释放锁、不隐式补字段；README写升级前归档并清空旧假数据。存盘503须先修存储重启，接口约定同server连续三次失败改提示后台问题（界面归Iris task56）；JSON超限及retry带body为bad-request；回放对照替换前明确核新id出现且原回放无此id。新增HTTP限流读取保留错误响应连接，不改鉴权/来源限制。
+
+## task #57：HTTP、旧状态与跨平台检查点
+
+- 读取超限停止缓存但继续消费完整请求，再回413；JSON与照片读取边界分别bad-request/photo-invalid。照片文件超过32MiB且总请求尚未越界为400。真实HTTP验证完整消费和及时响应。
+- 子任务保存fromJob；启动依fromJob/regenerateOf回填缺失的父usedBy。已有幂等键顺序不变，不能再建第二子任务。
+- 所有state存盘失败第一次起均503 server，保持阻断后续操作与修盘重启恢复。
+- 硬退出回归异常清理用SIGKILL，Windows超时先留子进程/状态诊断再按实因修，不延长等待，不重复提交。
