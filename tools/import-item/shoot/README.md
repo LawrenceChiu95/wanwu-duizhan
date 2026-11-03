@@ -82,13 +82,13 @@ node tools/import-item/shoot/server.mjs --provider real
 
 从进程环境读取 `GEMINI_API_KEY`、`AHOLO_API_KEY`；缺配置会点名报错并退出，不回退假生成。不要把密钥写在命令、仓库或日志里。真模式独立保存 `.aholo/shoot-real/`，同一盘不可混真/假任务。网页 `?shoot=real` 只选择HTTP后台，不代表后台开了付费模式；`?shoot=fake` 仍为离线页面假后台。
 
-认物用 Gemini 3.5 Flash-Lite 的 Interactions（固定提示+JSON schema，store=false）；同任务一次请求，失败或崩溃不自动重认。物理数据是照片估计，不是测量；长边1–300cm、重量0.001–100kg，输出越界或不清楚时不建Aholo任务。类外物品按最接近的六类之一算，inSix=false。子任务继承既有认物。
+认物用 Gemini 3.5 Flash-Lite 的 Interactions（固定提示+JSON schema，store=false）；同任务一次请求，失败或崩溃不自动重认。供应商回包的clear、recognizable都必须为true才接受物品字段；拒答仍符合schema，物品字段填null，报photo-unclear、不建Aholo收费任务。清楚的类外物品照旧按最接近的六类之一算，inSix=false，不当成拒答。物理数据是照片估计，不是测量；长边1–300cm、重量0.001–100kg，输出越界同样拒绝。子任务继承既有认物。
 
 Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建GLB；每阶段先落pending，收到任务ID才继续。未知结果不重提。官方明确并发满且没有已付费阶段时返回busy；已有改图费用但3D还未创建的已知失败，需玩家明确确认重新生成，可能重新支付改图费。免费「再试」只续已知模型的轮询/下载/处理，绝不补提收费任务。
 
 quota 新增 provider 字段（real/fake），供单件验收先确认后台模式；现有页面可忽略。真quota的limit/remaining/resetsAt仍null，used是可能已创建收费阶段的本地任务数，**不是余额、金额或两个阶段的账单次数**。任务charged=true包含尚不能确定是否扣费的pending窗口。Gemini看图单独按token计费，不在该标记里。后台不设置付费预算，必须先由Lead确认单件真实验收和账号费用范围，再启真模式。
 
-压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z。原付费GLB留source.glb；model.glb为规范后的网页资产，磁盘读写失败可免费重做处理，坏格式模型则提示不能处理、须明确重新生成。供应商ID和签名URL只留本机私有状态，不返回前端。
+压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z，弱点半径按本件长边相对品类模板长边同比缩放。原付费GLB先完整拷到source.glb.part、再原子改名为source.glb，之后才替换网页model.glb；中途硬退出保留完整原模型，重启覆盖未完成临时件、免费续处理。已有源副本哈希不符时，只有原模型仍与下载哈希一致才恢复副本。磁盘读写失败可免费重做处理，坏格式模型则提示不能处理、须明确重新生成。供应商ID和签名URL只留本机私有状态，不返回前端。
 
 单件验收：`node tools/import-item/shoot/check-real.mjs --photo /absolute/photo.jpg --key stable-test-key --allow-paid`。只向当前本机后台建一次任务，重复同照片和同key取原任务；失败只报结果，不自动再生成；再执行仍沿用原key。没有 --allow-paid 时拒绝建任务。脚本本身不读取密钥，须先启动获准的真后台；它不能证明页面五屏或真机手感。
 
