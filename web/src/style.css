@@ -431,8 +431,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .sdim { position: fixed; inset: 0; z-index: 1; background: rgba(4, 6, 14, 0.74); opacity: 0; pointer-events: none; transition: opacity 0.42s; }
 .sstage.lifted ~ .sdim { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .card.turning, .card.turning .big, .card.turning.gradeS::after, .card.turning.gradeA::after, .card.gradeS .big { animation: none; }
-  .card.turning .cover { display: none; }
+  /* The by-grade S rules weigh more than .card.turning, so they are named again here (PR #58 B1). */
+  .card.turning, .card.turning .big, .card.turning.gradeS::after, .card.turning.gradeA::after, .card.gradeS .big,
+  .card.turning.gradeS, .card.turning.gradeS .big { animation: none; }
+  .card.turning .cover, .card.turning.gradeS::after, .card.turning.gradeA::after { display: none; }
 }
 .card .how { display: flex; align-items: center; gap: 5px; font-weight: 650; text-align: left; }
 .card .how svg { width: 12px; height: 12px; }
