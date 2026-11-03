@@ -16,7 +16,7 @@
 
 15、18、30、69是已参与调参的历史诊断，不再作为正式零超45秒的回归条件。四局来源是共享 `开发归档/每件等级与材质/combat/late-diagnostic.json`（与PR26历史调参记录对应），该文件逐局含seed、时长与原始回放哈希，四局均来自剪刀枕头贴着场景；原始批量和原审查仍保留，不删历史数据。
 
-首次面板声明在本文件提交前已另存共享归档pre-run.json。按共享 `开发归档/每件等级与材质/combat/` 的实际 `rounds.ndjson`（`plan.seed`，诊断记录为顶层 `seed`）回读，已用区间如下；端点均包含，逐文件行数、种子数和SHA保存在共享 `开发归档/长局独立种子回归/seed-ledger-readback.json`（项目文档目录：`/Users/lawrence/Desktop/My Life/Game Building/万物对战/`）。
+首次面板声明在本文件提交前已另存共享归档pre-run.json。按共享 `开发归档/每件等级与材质/combat/` 的实际 `rounds.ndjson`（`plan.seed`，诊断记录为顶层 `seed`）回读，已用区间如下；端点均包含，逐文件行数、种子数和SHA保存在共享 `开发归档/长局独立种子回归/seed-ledger-readback.json`。
 
 | 已用种子 | 现有记录（相对combat/） |
 |---|---|

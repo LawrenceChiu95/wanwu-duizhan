@@ -99,11 +99,13 @@ test('fair start rejects an existing freeze with a wrong protocol hash before cr
  const actual=Object.fromEntries(await Promise.all([...physicsFiles,...protocolFiles].map(async file=>[file,createHash('sha256').update(await readFile(new URL('../../'+file,import.meta.url))).digest('hex')])));
  const freeze={...fairFreeze,physics:Object.fromEntries(physicsFiles.map(file=>[file,actual[file]])),protocol:Object.fromEntries(protocolFiles.map(file=>[file,actual[file]]))};
  freeze.protocol[protocolFiles[0]]='0'.repeat(64);
- const checks=fairFreezeChecks({stage:'fair',n:1000,seedStart:30000,planned:12000,sources:actual,freeze},freeze);
- assert.ok(checks.record&&checks.snapshot&&checks.seedRange&&checks.usedRangesRecorded&&checks.unseenSeeds&&checks.planned&&checks.physics.every(x=>x.pass));
- assert.deepEqual(checks.protocol.filter(x=>!x.pass).map(x=>x.file),[protocolFiles[0]]);
  await writeFile(freezeFile,JSON.stringify(freeze));
- assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('./batch.mjs',import.meta.url))],{env:{...process.env,MVP_STAGE:'fair',MVP_SEEDS:'1000',MVP_SEED_START:'30000',MVP_FREEZE:pathToFileURL(freezeFile).href,MVP_OUT:pathToFileURL(out+'/').href},stdio:'pipe',timeout:15000}),e=>e.stderr?.toString().includes('fair freeze rejected'));
+ assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('./batch.mjs',import.meta.url))],{env:{...process.env,MVP_STAGE:'fair',MVP_SEEDS:'1000',MVP_SEED_START:'30000',MVP_FREEZE:pathToFileURL(freezeFile).href,MVP_OUT:pathToFileURL(out+'/').href},stdio:'pipe',timeout:15000}),e=>{
+  const match=e.stderr?.toString().match(/fair freeze rejected: (\{[^\n]+\})/);assert.ok(match,'child process must report its freeze checks');
+  const checks=JSON.parse(match[1]);assert.equal(checks.pass,false);
+  assert.ok(checks.record&&checks.snapshot&&checks.seedRange&&checks.usedRangesRecorded&&checks.unseenSeeds&&checks.planned&&checks.physics.every(x=>x.pass));
+  assert.deepEqual(checks.protocol.filter(x=>!x.pass).map(x=>x.file),[protocolFiles[0]]);
+  return true;
+ });
  await assert.rejects(access(out),{code:'ENOENT'});
- await assert.rejects(access(join(out,'manifest.json')),{code:'ENOENT'});
 });
