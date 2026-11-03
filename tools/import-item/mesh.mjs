@@ -119,7 +119,7 @@ export async function prepareMesh(raw, template, standard) {
   const longest = spans.indexOf(length);
   // Pick a different axis even for symmetric bounds. Always a right-handed basis.
   const thinnest = [0, 1, 2].filter(i => i !== longest).sort((a, b) => spans[a] - spans[b] || a - b)[0];
-  // Match the current category templates: knife tip out, pot bowl/broom head out.
+  // Use this photo's end choice, or retain the legacy template's end rule.
   // Compare the outer 10% at each end; source coordinate sign has no meaning.
   const endWidths = (points, box, axis) => [-1, 1].map(sign => {
     const size = box.max[axis] - box.min[axis];
@@ -129,7 +129,8 @@ export async function prepareMesh(raw, template, standard) {
     return Math.max(...[0, 1, 2].filter(k => k !== axis).map(k => b.max[k] - b.min[k]));
   });
   const distinguishable = w => Math.max(...w) > 0 && Math.abs(w[0] - w[1]) / Math.max(...w) >= .1;
-  let outwardEnd = {scissors: 'narrow', pot: 'wide', broom: 'wide'}[template.category];
+  let outwardEnd = template.outwardEnd ?? {scissors: 'narrow', pot: 'wide', broom: 'wide'}[template.category];
+  if (outwardEnd === 'unknown') outwardEnd = undefined;
   const mountKnown = template.hull && [1, -1].includes(template.outEnd);
   // The other templates have no hand-authored head/tip rule. Learn which width
   // belongs outside from their actual longest-axis hull and mounting sign.
@@ -140,8 +141,9 @@ export async function prepareMesh(raw, template, standard) {
   }
   const widths = endWidths(current.points, sourceBounds, longest);
   const resolved = outwardEnd && distinguishable(widths);
-  const orientation = {templateId: template.id, method: resolved ? 'template-end-width' : 'longest-axis',
-    ...(resolved ? {outwardEnd} : {reason: outwardEnd ? 'source-ends-indistinguishable' : mountKnown ? 'template-ends-indistinguishable' : 'template-mount-unknown'})};
+  const fromPhoto = template.outwardEnd !== undefined;
+  const orientation = {templateId: template.id, method: resolved ? fromPhoto ? 'photo-end-width' : 'template-end-width' : 'longest-axis',
+    ...(resolved ? {outwardEnd} : {reason: outwardEnd ? 'source-ends-indistinguishable' : fromPhoto ? 'photo-end-unknown' : mountKnown ? 'template-ends-indistinguishable' : 'template-mount-unknown'})};
   const flip = resolved && (outwardEnd === 'wide' ? widths[0] > widths[1] : widths[0] < widths[1]);
   const Y = [0, 0, 0], Z = [0, 0, 0]; Y[thinnest] = 1; Z[longest] = flip ? -1 : 1;
   const X = [Y[1] * Z[2] - Y[2] * Z[1], Y[2] * Z[0] - Y[0] * Z[2], Y[0] * Z[1] - Y[1] * Z[0]];

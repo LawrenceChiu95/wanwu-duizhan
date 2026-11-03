@@ -8,11 +8,35 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {loadCatalog, loadRules, registerItems} from '../../sim/index.js';
 import {rateItem} from '../../sim/item-rating.js';
-import {simulateV3, mountTransform, loadV3Rules} from '../../sim/v3.js';
+import {simulateV3, mountTransform, loadV3Rules, tierDamage} from '../../sim/v3.js';
 const exec = promisify(execFile), root = fileURLToPath(new URL('../../', import.meta.url));
 const base = await loadRules();
 const mountRules = await loadV3Rules();
 const sample = () => { const item = structuredClone(base.items.find(i => i.id === 'pan-lux3d')); item.id = 'runtime-pot-test'; item.name = '运行时锅'; item.outEnd = mountRules.top.outEnd['pan-lux3d']; delete item.comparisonBase; item.rating = rateItem(item, base.materials); return item; };
+
+const photo = (hardness = .4) => {
+ const item = sample(); Object.assign(item, {id:'runtime-photo-cup', name:'保温杯', category:'保温杯', materialName:'不锈钢和硅胶', photoPhysics:{hardness}, tag:'photo', generated:true, massBasis:'photo-estimate'});
+ item.rating = rateItem(item, base.materials); return item;
+};
+test('unrestricted photo identity registers, fights, and validates its individual physical inputs', async () => {
+ const item = photo();
+ for (const edit of [i=>i.photoPhysics.hardness=0, i=>i.photoPhysics.hardness=1.21, i=>i.photoPhysics.extra=1, i=>delete i.materialName, i=>i.name='x\n', i=>i.category='pot', i=>i.tag='sharp', i=>i.mass=101, i=>i.generated=false, i=>i.bounds.max[0]=i.bounds.min[0]+.81]) {
+  const invalid=structuredClone(item); edit(invalid); await assert.rejects(registerItems([invalid]));
+ }
+ await registerItems([item]);
+ const replay=await simulateV3({mode:'A',seed:41671,fighters:[{parts:[{item:item.id,mount:'e0',orient:'out'}]},{parts:[{item:'broom',mount:'e0',orient:'out'}]}]});
+ assert.ok(replay.frames.length>10); assert.equal(replay.frames[0].fighters[0].parts[0].item,item.id);
+});
+test('a photo hardness estimate changes its score and actual hit, without a category multiplier', () => {
+ const soft=photo(.1),hard=photo(1.2);
+ assert.ok(hard.rating.scores.attack>soft.rating.scores.attack);
+ assert.ok(soft.rating.scores.durability>hard.rating.scores.durability);
+ assert.equal(soft.rating.scores.range,hard.rating.scores.range);
+ const hit=attacker=>tierDamage({mode:'A',impulse:1,attacker,target:sample(),materials:base.materials,matchups:base.matchups,maxHp:1000,rules:mountRules});
+ assert.ok(hit(hard).score>hit(soft).score); assert.ok(hit(hard).damage>hit(soft).damage);
+ const renamed={...hard,name:'玻璃杯',category:'玻璃杯'};
+ assert.deepEqual(rateItem(renamed,base.materials),hard.rating); assert.deepEqual(hit(renamed),hit(hard));
+});
 
 test('runtime registration validates whole batch, rejects collisions/tampered grades and keeps data isolated', async () => {
  const item = sample();

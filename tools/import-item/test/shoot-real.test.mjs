@@ -16,8 +16,10 @@ import {openJobs, REPO} from '../shoot/jobs.mjs';
 import {readJson} from '../state.mjs';
 import {rateItem} from '../../../sim/item-rating.js';
 import {validateRuntimeItem} from '../../../sim/runtime-items.js';
+import {sha256} from '../mesh.mjs';
+import {recognizePhoto} from '../shoot/recognition.mjs';
 const env = {GEMINI_API_KEY: 'test-gemini-secret', AHOLO_API_KEY: 'test-aholo-secret'};
-const result = {clear: true, recognizable: true, category: 'pot', inSix: true, lengthCm: 42, massKg: 0.72, material: 'metal', condition: 'worn', basis: '可见锅沿，按常见锅估计尺寸，有磨损'};
+const result = {clear: true, recognizable: true, name: '平底锅', materialName: '金属', hardness: 1.2, outwardEnd: 'wide', lengthCm: 42, massKg: 0.72, material: 'metal', condition: 'worn', basis: '可见锅沿，按常见锅估计尺寸，有磨损'};
 const image = await sharp({create: {width: 32, height: 32, channels: 3, background: '#abcabc'}}).png().toBuffer();
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-real-test-'));
 const catalog = await readJson(path.join(REPO, 'data/catalog.json'));
@@ -92,10 +94,17 @@ async function open(t, options = {}) {
 }
 
 test('strict recognition bounds/enums/refusals do not silently substitute a high rating', () => {
- for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {category: 'chair'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'recognition-invalid'});
+ for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {name: ''}, {name: 'a'.repeat(41)}, {name: 'a\n'}, {materialName: ''}, {hardness: 0}, {hardness: 1.21}, {outwardEnd: 'left'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'recognition-invalid'});
  for (const condition of ['intact', 'worn', 'damaged', 'unknown']) assert.equal(parseRecognition({...result, condition}).condition, condition);
  assert.equal(parseRecognition({...result, lengthCm: 1, massKg: .001}).lengthMeters, .01);
- assert.equal(parseRecognition({...result, lengthCm: 300, massKg: 100, inSix: false}).inSix, false);
+ assert.equal(parseRecognition({...result, name: '保温杯', lengthCm: 300, massKg: 100}).name, '保温杯');
+});
+
+test('recognition-only entry point accepts any object without Aholo configuration or requests', async () => {
+ const g=gateway({recognition:{...result,name:'马克杯',materialName:'陶瓷'}});
+ const recognition=await recognizePhoto({photo:await sharp(image).jpeg().toBuffer(),key:env.GEMINI_API_KEY,fetch:g.fetch});
+ assert.equal(recognition.name,'马克杯'); assert.equal(recognition.category,'马克杯'); assert.equal(recognition.materialName,'陶瓷'); assert.equal(recognition.inSix,undefined);
+ assert.equal(g.visionCalls(),1); assert.equal(g.seen.length,1); assert.deepEqual(g.creates,[]);
 });
 
 test('real startup names missing env keys before touching disk and refuses provider changes', async t => {
@@ -139,7 +148,7 @@ for (const options of [{visionReply: {status: 'failed', steps: []}}, {recognitio
 });
 
 for (const flags of [{clear: false, recognizable: true}, {clear: true, recognizable: false}]) test(`schema-compliant unclear photo does not guess a category or create paid Aholo work ${JSON.stringify(flags)}`, async t => {
- const recognition = {...flags, category: null, inSix: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '无法辨认一个清楚的主要物品'};
+ const recognition = {...flags, name: null, materialName: null, hardness: null, outwardEnd: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '无法辨认一个清楚的主要物品'};
  assert.deepEqual(Object.keys(recognition).sort(), [...recognitionSchema.required].sort());
  for (const [key, value] of Object.entries(recognition)) {
   const schema = recognitionSchema.properties[key], type = value === null ? 'null' : typeof value;
@@ -152,24 +161,38 @@ for (const flags of [{clear: false, recognizable: true}, {clear: true, recogniza
  assert.equal((await jobs.create({photo: image, clientKey: 'unclear-real-001'})).id, j.id); assert.equal(g.visionCalls(), 1);
 });
 
-for (const category of ['scissors', 'pot', 'broom', 'lamp', 'slipper', 'pillow']) for (const lengthCm of [1, 300]) test(`actual ${category} ${lengthCm}cm item keeps the template weak spot proportion`, async t => {
- const {jobs, directory} = await open(t, {recognition: {...result, category, lengthCm}}), j = await jobs.create({photo: image, clientKey: 'size-real-001'});
+for (const name of ['保温杯', '雨伞', '鼠标', '玩具车', '书', '马克杯']) for (const lengthCm of [1, 300]) test(`unrestricted ${name} ${lengthCm}cm uses its mesh, caps size and keeps a proportional weak spot`, async t => {
+ const {jobs, directory} = await open(t, {recognition: {...result, name, lengthCm}}), j = await jobs.create({photo: image, clientKey: 'size-real-001'});
  assert.equal((await finish(jobs, j.id)).status, 'succeeded');
  const [item] = await jobs.items(); validateRuntimeItem(item, catalog);
+ assert.equal(item.name, name); assert.equal(item.category, name); assert.equal(item.tag, 'photo');
+ assert.equal(item.templateId, undefined); assert.equal(item.materialName, '金属'); assert.equal(item.photoPhysics.hardness, 1.2);
  const length = Math.max(...item.bounds.max.map((v, i) => v - item.bounds.min[i]));
- assert.ok(Math.abs(length - lengthCm / 100) < 1e-6);
- const template = catalog.items.find(i => i.category === category && !i.generated && !i.comparisonBase);
- const templateLength = Math.max(...template.bounds.max.map((v, i) => v - template.bounds.min[i]));
- assert.ok(Math.abs(item.weakPoint.radius / length - template.weakPoint.radius / templateLength) < 1e-6);
- assert.ok(item.weakPoint.radius < length / 2);
+ assert.ok(Math.abs(length - Math.min(.8, lengthCm / 100)) < 1e-6);
+ assert.ok(Math.abs(item.weakPoint.radius / length - .06) < 1e-6);
  const saved=await readJson(path.join(directory,'state.json'));
  assert.deepEqual(saved.jobs[j.id].providerState.orientation,item.normalization.orientation);
 });
 
-for (const category of ['scissors', 'broom', 'lamp', 'slipper', 'pillow']) test(`recognized ${category} uses this piece's material, size and condition with valid runtime geometry`, async t => {
- const {jobs} = await open(t, {recognition: {...result, category, material: 'cloth', condition: 'damaged', inSix: false}});
- const j = await jobs.create({photo: image, clientKey: `category-${category}-001`}); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
- const [item] = await jobs.items(); assert.equal(item.category, category); assert.equal(item.material, 'cloth'); assert.equal(item.condition, 'damaged'); validateRuntimeItem(item, catalog);
+for (const name of ['剪刀', '扫把', '台灯', '拖鞋', '枕头']) test(`recognized ${name} uses this piece's estimates instead of a category template`, async t => {
+ const {jobs} = await open(t, {recognition: {...result, name, materialName: '柔软海绵', material: 'cloth', hardness: .1, condition: 'damaged', outwardEnd: 'unknown'}});
+ const j = await jobs.create({photo: image, clientKey: 'identity-001'}); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+ const [item] = await jobs.items(); assert.equal(item.category, name); assert.equal(item.material, 'cloth'); assert.equal(item.condition, 'damaged'); assert.equal(item.photoPhysics.hardness, .1); validateRuntimeItem(item, catalog);
+});
+
+test('stored recognitions from the previous six-category version still finish without another provider call', async () => {
+ const provider=realGenerator({env,fetch:()=>{throw Error('no request during processing');}});
+ for(const category of ['scissors','pot','broom','lamp','slipper','pillow']) {
+  const folder=await dir(); await fs.writeFile(path.join(folder,'model.glb'),model);
+  const recognition={category,inSix:true,lengthMeters:.42,massKg:.72,material:'metal',condition:'worn'};
+  const item=await provider.step('process','legacy',{folder,recognition,state:{downloadSha256:sha256(model)},save:async()=>{},mountRules:JSON.parse(await fs.readFile(path.join(REPO,'sim/v3-rules.json'),'utf8'))},catalog);
+  Object.assign(item,{id:'legacy-'+category,glb:'/legacy.glb',rating:rateItem(item,catalog.materials)});
+  validateRuntimeItem(item,catalog);
+  assert.equal(item.category,category); assert.equal(item.photoPhysics,undefined);
+  const template=catalog.items.find(i=>i.category===category&&!i.generated&&!i.comparisonBase);
+  const size=Math.max(...template.bounds.max.map((v,i)=>v-template.bounds.min[i]));
+  assert.ok(Math.abs(item.weakPoint.radius/.42-template.weakPoint.radius/size)<1e-6);
+ }
 });
 
 for (const stage of ['image', 'mesh']) test(`unknown ${stage} create never repeats after restart and does not occupy active slot`, async t => {
@@ -341,15 +364,31 @@ for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visi
 
 test('keychain launcher injects only child env and reports service names without secret diagnostics', async () => {
  const names = [], parent = {KEEP: 'ok', GEMINI_API_KEY: 'stale'}, child = {pid: 123};
- const launched = await startReal({env: parent, args: ['--port', '0'], readSecret: async name => {names.push(name); return ` ${name}-test-secret\n`;}, spawnServer: (node, args, options) => {
+ const launched = await startReal({env: parent, nodeVersion: '24.12.0', args: ['--port', '0'], readSecret: async name => {names.push(name); return ` ${name}-test-secret\n`;}, spawnServer: (node, args, options) => {
   assert.equal(node, process.execPath); assert.deepEqual(args.slice(1), ['--provider', 'real', '--port', '0']);
   assert.equal(options.env.KEEP, 'ok'); assert.equal(options.env.GEMINI_API_KEY, 'wanwu-gemini-api-key-test-secret'); assert.equal(options.env.AHOLO_API_KEY, 'wanwu-aholo-api-key-test-secret');
+  assert.equal(options.env.NODE_USE_ENV_PROXY, '1'); assert.equal(options.env.HTTPS_PROXY, 'http://127.0.0.1:7897'); assert.equal(options.env.https_proxy, options.env.HTTPS_PROXY);
+  assert.equal(options.env.NO_PROXY, 'api.aholo.ai'); assert.equal(options.env.no_proxy, options.env.NO_PROXY);
   assert.equal(args.some(x => x.includes('test-secret')), false); return child;
  }});
  assert.equal(launched, child); assert.equal(parent.GEMINI_API_KEY, 'stale');
  assert.deepEqual(names, ['wanwu-gemini-api-key', 'wanwu-aholo-api-key']);
  await assert.rejects(keychainEnvironment({env: {}, readSecret: async () => {throw Error('unprinted SECRET');}}), error => error.message === 'Missing keychain services: wanwu-gemini-api-key, wanwu-aholo-api-key');
  await assert.rejects(keychainEnvironment({env: {}, readSecret: async name => name.includes('gemini') ? 'fixture' : ''}), {message: 'Missing keychain services: wanwu-aholo-api-key'});
+});
+
+test('real launcher rejects old Node before reading secrets, and proxy settings affect only its child', async () => {
+ let read = 0;
+ for (const nodeVersion of ['18.20.8','22.18.0','23.11.0']) await assert.rejects(startReal({nodeVersion, readSecret: async () => {read++;}}), /需要 Node 24/);
+ assert.equal(read, 0);
+ for (const override of [false, true]) {
+  const parent = {https_proxy:'http://other-app.invalid:1234', NO_PROXY:'localhost', no_proxy:'127.0.0.1', WANWU_REAL_PROXY:'http://127.0.0.1:9000', ...(override ? {WANWU_REAL_NO_PROXY:'localhost'} : {})};
+  await startReal({nodeVersion:'24.12.0', env:parent, readSecret:async()=> 'fixture-key', spawnServer:(_node,_args,{env})=> {
+   assert.equal(env.https_proxy,'http://127.0.0.1:9000'); assert.equal(env.HTTPS_PROXY,env.https_proxy);
+   assert.equal(env.NO_PROXY,override ? 'localhost' : 'localhost,127.0.0.1,api.aholo.ai'); assert.equal(env.no_proxy,env.NO_PROXY);
+  }});
+  assert.equal(parent.https_proxy,'http://other-app.invalid:1234'); assert.equal(parent.NODE_USE_ENV_PROXY,undefined);
+ }
 });
 
 for (const http of [404, 403, 500]) test(`known image query HTTP ${http} is bounded and free retry creates only this order's first mesh`, async () => {
@@ -453,6 +492,9 @@ for (const closeFailure of [false, true]) test(`keychain launcher saves paid ID 
  const hook = path.join(repo, 'offline.mjs'), entered = path.join(repo, 'creating'), released = path.join(repo, 'release');
  await fs.writeFile(hook, `
 import fs from 'node:fs/promises';import net from 'node:net';import {setTimeout as pause} from 'node:timers/promises';
+// This isolated fixture stubs outbound fetch; exercise launcher forwarding on
+// the Node 22 CI runner independently of the production Node 24 version gate.
+Object.defineProperty(process.versions,'node',{value:'24.12.0'});
 const listen=net.Server.prototype.listen;net.Server.prototype.listen=function(port,...args){return listen.call(this,0,...args)};
 if(${closeFailure}){const rmdir=fs.rmdir;fs.rmdir=async(file,...args)=>{if(file.includes('/.owner/'))throw Object.assign(Error('https://private.example/offline-fixture-key'),{name:'https://private.example',code:'EACCES',status:503});return rmdir(file,...args)}};
 globalThis.fetch=async(url,options)=>{
@@ -531,7 +573,7 @@ test('recognition received during close is persisted and no next charged stage s
  try {
   const j = await jobs.create({photo: image, clientKey: 'close-recognition-001'}); await until(async () => receiving, Boolean);
   const closing = jobs.close(); release(); await closing;
-  const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id]; assert.equal(saved.job.recognition.category, 'pot'); assert.equal(saved.providerState.recognitionPending, undefined);
+  const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id]; assert.equal(saved.job.recognition.category, '平底锅'); assert.equal(saved.providerState.recognitionPending, undefined);
   assert.deepEqual(g.creates, []);
   jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
   assert.equal((await finish(jobs, j.id)).status, 'succeeded'); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
@@ -539,7 +581,7 @@ test('recognition received during close is persisted and no next charged stage s
 });
 
 for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visionStatus: 429}, 'recognition-limit'],
- [{recognition: {clear: false, recognizable: false, category: null, inSix: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '照片不清楚'}}, 'photo-unclear']])
+ [{recognition: {clear: false, recognizable: false, name: null, materialName: null, hardness: null, outwardEnd: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '照片不清楚'}}, 'photo-unclear']])
  test(`recognition failure ${code} received during close survives restart without another call`, {timeout: 5000}, async () => {
   const directory = await dir(), g = gateway(options); let release, receiving = false;
   const request = async (url, options) => {
@@ -588,7 +630,7 @@ test('photo read after recognition retries the same job without another vision c
  try {
   j = await jobs.create({photo: image, clientKey: 'recognized-photo-read-001'}); const failed = await finish(jobs, j.id);
   assert.equal(failed.error.code, 'photo-upload'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, false);
-  assert.equal(failed.recognition.category, 'pot'); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, []);
+  assert.equal(failed.recognition.category, '平底锅'); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, []);
  } finally { fs.readFile = read; }
  await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
  assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);

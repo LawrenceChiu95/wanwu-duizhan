@@ -15,8 +15,13 @@ export async function keychainEnvironment({env = process.env, readSecret = async
   if (missing.length) throw Error(`Missing keychain services: ${missing.join(', ')}`);
   return childEnv;
 }
-export async function startReal({args = [], env, readSecret, spawnServer = spawn} = {}) {
-  const childEnv = await keychainEnvironment({env, readSecret});
+export async function startReal({args = [], env = process.env, readSecret, spawnServer = spawn, nodeVersion = process.versions.node} = {}) {
+  if (Number(nodeVersion.split('.')[0]) < 24) throw Error('真后台需要 Node 24 或以上；请用 Node 24 运行 start-real.mjs。');
+  const proxy = env.WANWU_REAL_PROXY ?? 'http://127.0.0.1:7897';
+  const bypass = env.WANWU_REAL_NO_PROXY ?? [env.NO_PROXY, env.no_proxy, 'api.aholo.ai'].filter(Boolean).join(',');
+  // The child inherits env, not the launcher's Node flags. Override both cases:
+  // Node prefers https_proxy and it may point at another application's proxy.
+  const childEnv = await keychainEnvironment({env: {...env, NODE_USE_ENV_PROXY: '1', HTTPS_PROXY: proxy, https_proxy: proxy, NO_PROXY: bypass, no_proxy: bypass}, readSecret});
   return spawnServer(process.execPath, [fileURLToPath(new URL('./server.mjs', import.meta.url)), '--provider', 'real', ...args], {env: childEnv, stdio: 'inherit'});
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

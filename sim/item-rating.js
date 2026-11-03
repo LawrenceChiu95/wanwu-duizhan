@@ -12,12 +12,22 @@ export function ratingScores(item){
  const scores=item?.rating?.scores;
  return scores&&['attack','range','durability'].every(k=>Number.isFinite(scores[k])&&scores[k]>=0&&scores[k]<=100)?scores:null;
 }
+/** Photo estimates override only this new item's hardness; existing items keep their exact arithmetic. */
+export function itemHardness(item,materials){
+ if(item.photoPhysics!==undefined){
+  const h=item.photoPhysics?.hardness;
+  if(!Number.isFinite(h)||h<.05||h>1.2)throw Error('Invalid photo hardness');
+  return h;
+ }
+ return materials[item.material].hardness;
+}
 export function rateItem(item,materials){
  const ext=item.bounds.max.map((v,i)=>v-item.bounds.min[i]),length=Math.max(...ext);
  const condition=item.condition??'unknown',factors=conditions[condition];
  if(!factors||!Object.hasOwn(toughness,item.material)||!materials[item.material]||!Number.isFinite(item.mass)||item.mass<=0||!ext.every(v=>Number.isFinite(v)&&v>0))throw Error(`Invalid rating inputs: ${item.id}`);
- const m=Math.sqrt(item.mass/2.5),h=materials[item.material].hardness/1.2;
- const scores={attack:score(100*m*h*factors[0]),range:score(100*(Math.round(length*1e6)/1e6)/.8),durability:score(100*Math.sqrt(m)*toughness[item.material]*factors[1])};
+ const m=Math.sqrt(item.mass/2.5),h=itemHardness(item,materials)/1.2;
+ const endurance=item.photoPhysics ? 1.4-.4*h : toughness[item.material];
+ const scores={attack:score(100*m*h*factors[0]),range:score(100*(Math.round(length*1e6)/1e6)/.8),durability:score(100*Math.sqrt(m)*endurance*factors[1])};
  const letters=Object.fromEntries(Object.entries(scores).map(([k,v])=>[k,gradeFor(v)]));
  const grade=gradeFor((scores.attack+scores.range+scores.durability)/3);
  // Stable per-item reveal revision: metadata/name/image-only changes do not reveal again.
