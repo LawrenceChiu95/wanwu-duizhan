@@ -45,7 +45,7 @@
 ## task #64：本机真认物与生成
 
 - 默认假生成保留；明确 `--provider real` 使用独立 `.aholo/shoot-real/`。只读环境 GEMINI_API_KEY/AHOLO_API_KEY，缺哪个启动报哪个；同目录不能混用真、假 provider，不把供应商ID/URL/密钥放进公开任务或物品。
-- Gemini 3.5 Flash-Lite Interactions：固定提示、照片JPEG1600、store=false、结构化JSON；clear和recognizable两标志都为true才接受物品字段，否则物品字段允许null并拒答、不进Aholo。清楚的六类之外物品归最近类并inSix=false。物理范围1–300cm、0.001–100kg，五材质、新旧三档及unknown；越界/拒答/超时不进Aholo。每任务发出前记录recognitionPending，响应确认时与recognition一起落盘，未知认物不再发；显式子任务继承认物结果。
+- Gemini 3.5 Flash-Lite Interactions：固定提示、照片JPEG1600、store=false、结构化JSON；clear和recognizable两标志都为true才接受物品字段，否则物品字段允许null并拒答、不进Aholo。（task84取代旧六类映射，见下。）照片估计范围1–300cm、0.001–100kg，入场长度至多0.8m、对打质量至多默认九件最重值（当前2kg，不含已被替换的历史锅），认物原估值保留。名字提示日常叫法八字以内、后台按Unicode字符截到十二字；同样物品的一双/一对算一件，多种物品选最大最居中的主体，无法区分才拒。五材质、新旧三档及unknown；越界/拒答/超时不进Aholo。每任务发出前记录recognitionPending，响应确认时与recognition一起落盘，未知认物不再发；显式子任务继承认物结果。
 - 复用Aholo上传/改图/G1-Turbo 100K PBR/GLB客户端下载，按四步更新时间。每阶段付费提交前pending、确认ID后清pending；任一创建结果未知转unknown-submit。并发满只在官方明确拒绝且无任何阶段ID时作busy，已有改图收费、模型拒绝不能报未收费。
 - /retry续已有ID、下载、处理；依 Elara 01d53730及0e7833a1，每阶段从未被接受且无ID、无pending时，可补原单首次提交；已有ID或pending不再提交，不加确认接口。每单两阶段各最多一次被接受的创建。改图查询有限退避；裸404/403、未知码和旧签名URL不推断 expired，只有明确失败/取消才 step-failed；官方未说明任务过期码，暂不制造过期判定。结果不明没有重生成入口。原付费结果先完整写source.glb.part再原子改名，之后才替换model.glb；未完成临时副本不影响原模型，重启免费续处理。已有源副本损坏时，仅从下载哈希仍相符的原模型恢复。未知任务不占活动位。
 - 本件长度/重量/材质/新旧给prepareMesh和现有rateItem；三项和总等级仍由现有算式决定。模型、凸包、弱点位置一起规范，弱点半径按本件长边/模板长边同比缩放，outEnd=+1；成功资产全部就绪后一次入库/完成提交。模拟器复算登记不变。
@@ -54,7 +54,7 @@
 
 ## task #67：真生成离线收尾
 
-- 启动器固定读钥匙串两服务名，只传后台子进程环境；只用stub验证，不读真密钥。认物认证、限流、网络、服务、解析、中断分别有码，日志只有HTTP状态和分类；合法拒答才photo-unclear。清楚单件类外或非日常物品仍识别并映射最近类。
+- 启动器固定读钥匙串两服务名，只传后台子进程环境；只用stub验证，不读真密钥。认物认证、限流、网络、服务、解析、中断分别有码，日志只有HTTP状态和分类；合法拒答才photo-unclear。清楚单件照实认物，不限品类（task84取代旧映射）。
 - 关闭取消Aholo查询、下载和等待；已发出的收费create只留120秒超时、不接关闭信号，先收ID落盘，关闭后不发新create。服务常驻监听SIGINT/SIGTERM并幂等关闭，启动器转发不变。收到认物的成功或失败结果后先落盘再停，重启继承。单件验收要求绝对路径；脚本观察超时不改任务失败、不换key，不自动再付费。
 - 台灯/拖鞋从实际模板安装端宽窄取朝向；枕头等无法区分两端的模型按最长轴并记录原因。六类各1cm和300cm核弱点同比，不改战斗或等级算法。
 - 源副本损坏但下载原件哈希正确则恢复；双损坏process-corrupt、超大process-too-large，均不引导再收费/无限免费重做。stat先于hash。进程被杀恢复已测，不承诺断电，不加fsync。
@@ -67,3 +67,15 @@
 - 源副本坏且原模型缺失，或两份原件哈希均坏，process-corrupt/none；大于64MiB为process-too-large/none。均不反复免费处理，也不引导再付费。
 - 收费创建等待提示仅真模式确有已发出、尚未完成ID落盘的create时打印；保留未知pending不算在途创建，假模式和真空闲不提示。关闭收ID至多120秒、重复信号幂等及安全异常输出不变。
 - CLI台灯/拖鞋/枕头缺安装端元数据的验证走真实runCli分派→隔离catalog→模型入库，核normalization.orientation.reason为template-mount-unknown；不把prepareMesh helper验证称作CLI同路。
+
+## task #84：拍什么就是什么
+
+授权：Elara 2b553b65；先准 Gemini 几张认物，不准 Aholo 真生成。接口及评分以 README「真生成」为准，本节取代 task64/67 的真新件六类、模板朝向/弱点和材质族硬度约束。
+
+- Gemini 原名 name/category、materialName 实际材质、独立 hardness、lengthMeters/massKg、新旧和 outwardEnd；不再 inSix。只物理族保留五种，不限制身份。严格 schema/null 拒答、单任务一次认物及收费续接不变。识别-only 函数单独导出，不需 Aholo 密钥。
+- 生成提示保留照片原件，不套标准样本；生成网格决定凸包和形状，最长边≤0.8m、弱点半径6%；朝向按本件宽/窄端与网格判断，不明时不猜。任意原名通过 runtime 登记，复算评分防篡改。
+- 新件 photoPhysics.hardness 进入三项和碰撞，旧默认/假件/已存认物继续旧算法。无数据、克制、分数线或局长规则变更。
+- 改 docs/mvp-spec.md D2、§4第5屏、§7；Iris另改web原名/材质显示。离线真实HTTP全流程+任意名入库战斗+默认精确回放、完整受影响检查、Claude独立只读；真照片准确度与供应商真生成分别列未验，不拿模拟回包代替。
+
+### task #84 真后台启动补充（Elara 7abb7fac）
+只修改 start-real 启动路径：Node <24 在读密钥前拒绝；后台子进程启用环境代理，大小写统一，默认本机7897、WANWU_REAL_PROXY可覆盖。Aholo默认加NO_PROXY直连，WANWU_REAL_NO_PROXY可覆盖。全局engines、CI和假后台不动。不因启动方式变更获取或使用Aholo费用授权。

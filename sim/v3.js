@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores} from './index.js';
+import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores, itemHardness} from './index.js';
 import {add,sub,scale,vec,arr,quat,qarr,rotate,inverseRotate,random} from './math.js';
 // Portable math only: replays must be byte-identical across JS engines. Chrome 156 and Node 18/25 disagree in the
 // last bit of Math.exp (and earlier Math.pow) for some inputs, so this file uses + - * / and Math.sqrt (IEEE exact)
@@ -121,7 +121,7 @@ function weakContact(p,point){if(p.mount==='core')return false;const local=inver
 export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r}){
  const attack=itemCombat(attacker,r),defend=itemCombat(target,r);
  // Hardness rewards the striker; a soft target no longer raises the damage tier just for being soft.
- const hardness=Math.sqrt(materials[attacker.material].hardness/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
+ const hardness=Math.sqrt(itemHardness(attacker,materials)/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
  const score=(mode==='A'?impulse:Math.max(0,attack.attack*matchup-defend.defense))*hardness*tipMultiplier;
  const tier=r.tierThresholds[mode].filter(threshold=>score>=threshold).length;
  // Per-object power and mounting trade-off apply before the existing per-hit cap.
