@@ -14,7 +14,7 @@ import {realGenerator, parseRecognition, recognitionPrompt, recognitionSchema} f
 import {startShootServer} from '../shoot/server.mjs';
 import {openJobs, REPO} from '../shoot/jobs.mjs';
 import {readJson} from '../state.mjs';
-import {rateItem} from '../../../sim/item-rating.js';
+import {rateItem, photoMassLimit} from '../../../sim/item-rating.js';
 import {validateRuntimeItem} from '../../../sim/runtime-items.js';
 import {sha256} from '../mesh.mjs';
 import {recognizePhoto} from '../shoot/recognition.mjs';
@@ -98,6 +98,24 @@ test('strict recognition bounds/enums/refusals do not silently substitute a high
  for (const condition of ['intact', 'worn', 'damaged', 'unknown']) assert.equal(parseRecognition({...result, condition}).condition, condition);
  assert.equal(parseRecognition({...result, lengthCm: 1, massKg: .001}).lengthMeters, .01);
  assert.equal(parseRecognition({...result, name: '保温杯', lengthCm: 300, massKg: 100}).name, '保温杯');
+});
+
+test('names longer than twelve characters are shortened consistently without cutting a code point', () => {
+ const name='儿童电动塑料玩具小汽车加长版本';
+ const parsed=parseRecognition({...result,name});
+ assert.equal(parsed.name,Array.from(name).slice(0,12).join('')); assert.equal(parsed.category,parsed.name);
+ assert.equal(Array.from(parseRecognition({...result,name:'🚗'.repeat(15)}).name).length,12);
+ assert.equal(parseRecognition({...result,name:'日常名字'}).name,'日常名字');
+});
+
+for (const [lengthCm,massKg,expectedMass] of [[300,100,2],[1,.001,.001]]) test(`photo estimate ${lengthCm}cm/${massKg}kg produces bounded combat geometry and mass`, async t => {
+ const {jobs}=await open(t,{recognition:{...result,name:'测试物件',lengthCm,massKg}});
+ const j=await jobs.create({photo:image,clientKey:'bounded-photo-001'}),done=await finish(jobs,j.id);
+ assert.equal(done.status,'succeeded'); assert.equal(done.recognition.massKg,massKg);
+ assert.equal(photoMassLimit(catalog),2); // The historical 2.5kg pot is replaced in the default nine.
+ const [item]=await jobs.items(); assert.equal(item.mass,expectedMass); validateRuntimeItem(item,catalog);
+ assert.ok(Math.abs(Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]))-Math.min(.8,lengthCm/100))<1e-6);
+ assert.deepEqual(item.rating,rateItem(item,catalog.materials));
 });
 
 test('recognition-only entry point accepts any object without Aholo configuration or requests', async () => {

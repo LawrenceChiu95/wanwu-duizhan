@@ -3,6 +3,11 @@ export const GRADE_FLOORS = {S:75,A:60,B:45,C:30,D:0};
 const toughness={metal:1,wood:.8,plastic:.65,cloth:1.4,rubber:.65};
 const conditions={unknown:[1,1],intact:[1,1],worn:[.95,.9],damaged:[.6,.5]};
 const score=n=>Math.round(Math.max(0,Math.min(100,n)));
+// comparisonBase entries replace historical catalog objects in the default offer.
+export function photoMassLimit(catalog){
+ const replaced=new Set(catalog.items.map(i=>i.comparisonBase).filter(Boolean));
+ return Math.max(...catalog.items.filter(i=>!replaced.has(i.id)).map(i=>i.mass));
+}
 export function gradeFor(value){
  if(!Number.isFinite(value)||value<0||value>100)throw Error('Rating score must be 0–100');
  return Object.keys(GRADE_FLOORS).find(g=>value>=GRADE_FLOORS[g]);

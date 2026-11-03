@@ -1,4 +1,4 @@
-import {rateItem} from './item-rating.js';
+import {rateItem, photoMassLimit} from './item-rating.js';
 
 // JSON comparison ignores key order, but never drops undefined/non-finite fields.
 export function itemSignature(value) {
@@ -17,7 +17,7 @@ export function validateRuntimeItem(item,catalog){
  if(photo&&(!item.generated||item.massBasis!=='photo-estimate'||!item.photoPhysics||Object.getPrototypeOf(item.photoPhysics)!==Object.prototype||Object.keys(item.photoPhysics).join()!=='hardness'||!finite(item.photoPhysics.hardness)||item.photoPhysics.hardness<.05||item.photoPhysics.hardness>1.2||typeof item.materialName!=='string'||!item.materialName.trim()||item.materialName.length>40))bad();
  if(!Object.hasOwn(catalog.materials,item.material)||typeof item.category!=='string'||!(photo?item.category===item.name&&item.category.length<=40:catalog.items.some(i=>i.category===item.category))||!(photo?item.tag==='photo':catalog.items.some(i=>i.tag===item.tag))||!['intact','worn','damaged','unknown'].includes(item.condition))bad();
  if(![1,-1].includes(item.outEnd)||!positive(item.mass)||!positive(item.volume)||!vector(item.bounds?.min)||!vector(item.bounds?.max)||!item.bounds.max.every((n,i)=>n>item.bounds.min[i]))bad();
- if(photo&&(item.mass>100||Math.max(...item.bounds.max.map((n,i)=>n-item.bounds.min[i]))>.800001||/[\u0000-\u001f\u007f]/.test(item.name+item.materialName)))bad();
+ if(photo&&(Array.from(item.name).length>12||item.mass>photoMassLimit(catalog)||Math.max(...item.bounds.max.map((n,i)=>n-item.bounds.min[i]))>.800001||/[\u0000-\u001f\u007f]/.test(item.name+item.materialName)))bad();
  if(!Array.isArray(item.hull)||item.hull.length<4||item.hull.length>64||!item.hull.every(vector))bad();
  if(!item.hull.every(p=>p.every((v,i)=>v>=item.bounds.min[i]-1e-5&&v<=item.bounds.max[i]+1e-5)))bad();
  // Reject collapsed/planar hulls before Rapier tries to create a convex collider.

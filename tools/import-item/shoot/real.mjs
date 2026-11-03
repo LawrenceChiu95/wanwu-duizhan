@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {photoToGlb} from '../aholo.mjs';
 import {prepareMesh, readGlb, sha256} from '../mesh.mjs';
+import {photoMassLimit} from '../../../sim/item-rating.js';
 
 import {recognizePhoto} from './recognition.mjs';
 export {parseRecognition, recognitionPrompt, recognitionSchema} from './recognition.mjs';
@@ -38,7 +39,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         // free resume can finish that first submission (Elara 0e7833a1).
         try {
           const photo = await readPhoto(folder);
-          const prompt = `把参考照片的主要物品改成废土朋克游戏道具。照片里的${recognition.name ?? recognition.category}是什么就保留什么。保留照片原物件的轮廓、比例、主要结构和材质特征，不替换成标准样本。少量工业黄漆、警示纹、划痕和旧布。不要加第二件物品、人体、背景、尖刺或夸大结构。完整单件，浅灰背景，均匀柔光。`;
+          const prompt = `把参考照片的主要物品改成废土朋克游戏道具。照片里的${recognition.name ?? recognition.category}是什么就保留什么。保留照片原物件的轮廓、比例、主要结构和材质特征，不替换成标准样本。同样物品的一双或一对保留原有成对结构，当作一个完整道具。少量工业黄漆、警示纹、划痕和旧布。不要添加主体以外的物品、人体、背景、尖刺或夸大结构。浅灰背景，均匀柔光。`;
           await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, onCreate: value => { submitting = value; }});
         } catch (error) {
           if (error.code === 'busy' && state.pending) { delete state.pending; await save(); }
@@ -55,6 +56,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         // photos have their own identity, physical estimates and mesh geometry.
         const unrestricted = typeof recognition.name === 'string';
         const lengthMeters = Math.min(.8, recognition.lengthMeters);
+        const massKg = unrestricted ? Math.min(photoMassLimit(catalog), recognition.massKg) : recognition.massKg;
         const template = unrestricted ? {id: 'photo', category: 'photo', outwardEnd: recognition.outwardEnd, weakPoint: {radius: lengthMeters * .06}} : catalog.items.find(i => i.category === recognition.category && !i.generated && !i.comparisonBase);
         if (!template) throw Error('Missing legacy category template');
         // Preserve the original paid model before replacing the served asset.
@@ -79,7 +81,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         }
         const raw = await readGlb(source);
         if (sha256(raw) !== state.downloadSha256) throw failure('process-corrupt');
-        const prepared = await prepareMesh(raw, {...template, outEnd: mountRules.top.outEnd[template.id] ?? 1}, {longSideMeters: lengthMeters, massKg: recognition.massKg});
+        const prepared = await prepareMesh(raw, {...template, outEnd: mountRules.top.outEnd[template.id] ?? 1}, {longSideMeters: lengthMeters, massKg});
         if (!unrestricted) {
           const templateLength = Math.max(...template.bounds.max.map((v, i) => v - template.bounds.min[i]));
           prepared.shape.weakPoint.radius *= lengthMeters / templateLength;
@@ -88,7 +90,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         await fs.writeFile(path.join(folder, 'model.glb'), prepared.bytes);
         return {name: recognition.name ?? `我拍的${({scissors:"剪刀",pot:"锅",broom:"扫把",lamp:"台灯",slipper:"拖鞋",pillow:"枕头"})[recognition.category]}`, category: recognition.category, ...(unrestricted ? {materialName: recognition.materialName, photoPhysics: {hardness: recognition.hardness}} : {templateId: template.id}),
           generated: true, scale: 1, outEnd: 1, tag: unrestricted ? 'photo' : template.tag, stats: unrestricted ? {hp: 60, attack: 11, defense: 4} : structuredClone(template.stats),
-          material: recognition.material, condition: recognition.condition, mass: recognition.massKg,
+          material: recognition.material, condition: recognition.condition, mass: massKg,
           massBasis: 'photo-estimate', standardLongSide: lengthMeters, ...prepared.shape,
           source: {generator: 'Aholo G1-Turbo', license: 'LicenseRef-UserProvided', sourceSha256: sha256(raw), normalizedSha256: prepared.report.sha256,
             preparation: {triangles: prepared.report.triangles, textureSizes: prepared.report.textureSizes}}};
