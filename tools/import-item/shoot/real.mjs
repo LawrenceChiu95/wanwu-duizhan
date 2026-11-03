@@ -91,7 +91,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
           if (state.pending) throw failure('unknown-submit');
           if (error.code === 'busy' && !Object.keys(state.tasks).length) throw failure('busy');
           if (error.code === 'step-failed') throw failure('step-failed');
-          if (error.code === 'photo-read') throw error;
+          if (error.code === 'photo-read' && !Object.keys(state.tasks).length) throw error;
           if (!Object.keys(state.tasks).length) throw failure('photo-upload');
           throw failure('download');
         }

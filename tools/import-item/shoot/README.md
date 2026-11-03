@@ -113,5 +113,5 @@ quota 新增 provider 字段（real/fake），供单件验收先确认后台模�
 
 ### task69 错误与离线回退补充
 - 认物回包为 JSON null、steps 非数组或内容格式不符，均归 recognition-invalid，不误叫网络失败。
-- 本机 photo.jpg 读盘失败报 photo-read / retry:none，不继续调用认物或生成；先修本地照片。改图提交前 token/上传失败报 photo-upload / retry:same，仍沿原任务免费补首次提交，不另认物或重复创建。
+- 本机 photo.jpg 读盘失败且尚无收费任务 ID 时报 photo-read / retry:none，不继续调用认物或生成；先修本地照片。已有改图或建模 ID 后读盘失败仍报 download / retry:same，修好照片可免费续原任务。改图提交前 token/上传失败报 photo-upload / retry:same，仍沿原任务免费补首次提交，不另认物或重复创建。
 - CLI 台灯/拖鞋/枕头模板缺 hull 或合法安装端时，normalization.orientation.reason 为 template-mount-unknown；有安装端但两端宽度无法区分仍为 template-ends-indistinguishable。

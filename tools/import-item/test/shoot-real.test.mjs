@@ -556,6 +556,23 @@ test('local photo read failure is distinct and makes no recognition request', as
  } finally { fs.readFile = read; await jobs.close(); }
 });
 
+test('paid IDs remain free-retryable after a local photo read failure; recovery creates nothing', async t => {
+ const {jobs, g, directory} = await open(t, {downloadFailure: true});
+ const j = await jobs.create({photo: image, clientKey: 'paid-photo-read-001'}), first = await finish(jobs, j.id);
+ assert.equal(first.error.code, 'download'); assert.deepEqual(g.creates, ['image', 'mesh']);
+ const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+ assert.deepEqual(saved.providerState.tasks, {'multimodal-to-image': 'image-id', 'img-to-3d': 'mesh-id'});
+ const read = fs.readFile;
+ fs.readFile = (file, ...args) => file === path.join(directory, j.id, 'photo.jpg')
+  ? Promise.reject(Object.assign(Error('private path'), {code: 'EIO'})) : read(file, ...args);
+ try {
+  await jobs.retry(j.id); const failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, true);
+ } finally { fs.readFile = read; }
+ await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+ assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
+});
+
 async function stoppedProcess(directory) {
  const g = gateway(), provider = realGenerator({env, fetch: g.fetch, pause: async () => {}}), step = provider.step;
  provider.step = (...args) => args[0] === 'process' ? Promise.reject(Object.assign(Error('fixture process I/O'), {code: 'EIO'})) : step(...args);
