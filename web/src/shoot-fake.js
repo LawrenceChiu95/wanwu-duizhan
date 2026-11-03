@@ -22,6 +22,7 @@
  *   ?shootReset=1         forget every fake job, item and the page's current job
  */
 import {loadCatalog} from '../../sim/index.js';
+import {loadV3Rules} from '../../sim/v3.js';
 import {stillUrl} from './models.js';
 import {ShootError, getPass} from './shoot-api.js';
 
@@ -65,7 +66,7 @@ export async function fakeApi(q) {
   if (q.get('shootReset') === '1' || (read(KEY) && read(KEY).v !== VERSION)) {
     for (const k of Object.keys(localStorage)) if (k === KEY || k.startsWith(PHOTO) || k === 'wanwu-shoot-job') localStorage.removeItem(k);
   }
-  const catalog = await loadCatalog();
+  const [catalog, rules] = await Promise.all([loadCatalog(), loadV3Rules()]);
   const speed = Math.max(0.1, Number(q.get('shootSpeed')) || 1);
   const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
   const cat = SOURCE[q.get('shootCat')] ? q.get('shootCat') : 'pot', inSix = q.get('shootSix') !== '0';
@@ -210,6 +211,9 @@ export async function fakeApi(q) {
       if (itemsFail && Object.values(st.jobs).some(r => r.done?.status === 'succeeded')) { itemsFail--; throw new ShootError('server'); }
       return st.items.map(x => {
         const src = catalog.find(i => i.id === SOURCE[x.cat]), it = {...structuredClone(src), id: x.id, name: x.name, source: {kind: 'photo', job: x.job}};
+        // Sticks out the way the item it copies does (registerItems wants outEnd on every new item).
+        it.outEnd = src.outEnd ?? rules.top.outEnd[src.id] ?? 1;
+        it.scale ??= 1; // catalog models are all in meters (sim/index.js); registerItems wants it said
         delete it.comparisonBase;
         it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
         return it;

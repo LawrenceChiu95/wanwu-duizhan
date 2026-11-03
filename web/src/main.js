@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {loadCatalog, addItems as addSimItems} from '../../sim/index.js';
+import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
@@ -116,6 +116,16 @@ function renderCredits(items) {
 
 // 拍一件's lasting address switches, kept when 开打 rewrites the address (Elara a510bb73 B1); shootReset is not one.
 const SHOOT_KEEP = ['shoot', 'shootSpeed', 'shootFail', 'shootCat', 'shootSix'];
+// Items from the photo backend go to the sim's registerItems one at a time before the page shows, equips or replays
+// them (tools/import-item/shoot README): it checks each and recomputes its rating; one it turns down stays out, the rest come in.
+const simKnows = new Set();
+async function register(list) {
+  const ok = [];
+  for (const it of list) {
+    try { await registerItems([it]); simKnows.add(it.id); ok.push(it); } catch (e) { console.warn(`拍一件: ${it?.id} not registered: ${e.message}`); }
+  }
+  return ok;
+}
 
 async function main() {
   el.busy.hidden = false;
@@ -126,8 +136,7 @@ async function main() {
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with.
   const shoot0 = shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
-  const shotItems = (shot?.items ?? []).filter(it => !items.some(i => i.id === it.id));
-  if (shotItems.length) { items.push(...shotItems); await addSimItems(shotItems); }
+  items.push(...await register((shot?.items ?? []).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
   setNames(items);
   const OFFER = offerOf(items);
@@ -816,8 +825,8 @@ async function main() {
   // The sim takes them first; one it turns down never shows up here, so the 好了 card waits for it (task #56 S2).
   async function addItems(list) {
     if (!list.some(it => !byId.has(it.id))) return;
-    await addSimItems(list.filter(it => !byId.has(it.id)));
-    const fresh = list.filter(it => !byId.has(it.id));
+    await register(list.filter(it => !byId.has(it.id)));
+    const fresh = list.filter(it => !byId.has(it.id) && simKnows.has(it.id));
     if (!fresh.length) return;
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
