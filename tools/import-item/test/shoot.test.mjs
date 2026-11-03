@@ -89,7 +89,13 @@ test('busy uses a new idempotent submit; retry cannot enter paid path', async ()
   assert.equal(reused.status, 409); assert.equal(reused.error.code, 'not-allowed');
   assert.equal((await request(app.url, 'jobs', {fromJob: job.id, clientKey: 'busy-second-001'})).job.id, replies[0].job.id);
   assert.equal((await readJson(path.join(dir, 'state.json'))).jobs[job.id].usedBy, replies[0].job.id);
-  await app.close(); app = await startShootServer({port: 0, directory: dir});
+  await app.close();
+  const saved = await readJson(path.join(dir, 'state.json'));
+  assert.equal(saved.jobs[replies[0].job.id].job.fromJob, job.id);
+  delete saved.jobs[job.id].usedBy;
+  await fs.writeFile(path.join(dir, 'state.json'), JSON.stringify(saved));
+  app = await startShootServer({port: 0, directory: dir});
+  assert.equal((await readJson(path.join(dir, 'state.json'))).jobs[job.id].usedBy, replies[0].job.id);
   assert.equal((await request(app.url, 'jobs', {fromJob: job.id, clientKey: 'busy-fourth-001'})).error.code, 'not-allowed');
   assert.equal((await request(app.url, 'quota')).used, 1);
  } finally { await app.close(); }
@@ -124,26 +130,45 @@ async function child(dir, window = null) {
  import {startShootServer} from ${JSON.stringify(new URL('../shoot/server.mjs', import.meta.url).href)};
  import {fakeGenerator} from ${JSON.stringify(new URL('../shoot/fake.mjs', import.meta.url).href)};
  const directory=${JSON.stringify(dir)}, window=${JSON.stringify(window)};
+ const rename=fs.rename; fs.rename=async(...args)=>{
+  try{await rename(...args)}catch(error){console.error(JSON.stringify({operation:'rename',code:error.code,destination:args[1]}));throw error;}
+  if(window==='known' && args[1].endsWith('state.json')){
+   const state=JSON.parse(await fs.readFile(args[1],'utf8'));
+   const record=Object.values(state.jobs).find(r=>r.providerId);
+   if(record){process.send({checkpoint:'known',id:record.job.id});await new Promise(()=>{});}
+  }
+ };
  const generator=await fakeGenerator(directory,{delayMs:150});
- if(window){const submit=generator.submit;generator.submit=async id=>{
+ if(['before-ledger','after-ledger'].includes(window)){const submit=generator.submit;generator.submit=async id=>{
    if(window==='after-ledger') await submit(id);
    await fs.writeFile(directory+'/checkpoint.json',JSON.stringify({id,window}));
    await new Promise(()=>{});
  };}
  const app=await startShootServer({port:0,directory,generator});console.log(JSON.stringify({url:app.url}));
  process.once('SIGTERM',async()=>{await app.close();process.exit(0)});`;
- const proc = spawn(process.execPath, ['--input-type=module', '-e', source], {stdio: ['ignore', 'pipe', 'pipe']});
+ const proc = spawn(process.execPath, ['--input-type=module', '-e', source], {stdio: ['ignore', 'pipe', 'pipe', 'ipc']});
+ let checkpoint = null; proc.on('message', message => { checkpoint = message; });
  let text = '', stderr = ''; proc.stdout.on('data', b => { text += b; }); proc.stderr.on('data', b => { stderr += b; });
- const info = await until(async () => { if (proc.exitCode !== null) throw Error(stderr); return text; }, s => s.includes('\n')).catch(async error => { proc.kill(); throw error; });
- return {proc, url: JSON.parse(info.split('\n')[0]).url};
+ const info = await until(async () => { if (proc.exitCode !== null) throw Error(stderr); return text; }, s => s.includes('\n')).catch(async error => { proc.kill('SIGKILL'); throw error; });
+ return {proc, url: JSON.parse(info.split('\n')[0]).url, stderr: () => stderr, checkpoint: () => checkpoint};
 }
 
 test('real child hard restart resumes a known job, keeps output, and does not submit again', async t => {
- const dir = await directory(); let current = await child(dir); const children = [current.proc];
- t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill(); await done; } });
+ const dir = await directory(); let current = await child(dir, 'known'); const children = [current.proc];
+ t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill('SIGKILL'); await done; } });
  const {job} = await create(current.url, 'hard-restart-001');
- await until(() => readJson(path.join(dir, 'state.json')), s => s.jobs[job.id].providerId);
+ try { await until(current.checkpoint, s => s?.checkpoint === 'known' && s.id === job.id); }
+ catch (error) {
+  const state = await readJson(path.join(dir, 'state.json'));
+  const quota = await request(current.url, 'quota');
+  throw Error(`${error.message}: ${JSON.stringify({state, quota, stderr: current.stderr()})}`, {cause: error});
+ }
+ // The writer is paused after rename. Verify the disk ourselves, then kill it;
+ // neither the checkpoint notification nor in-memory state counts as durability.
+ const persisted = (await readJson(path.join(dir, 'state.json'))).jobs[job.id];
+ assert.equal(persisted.providerId, `fake_${job.id}`); assert.equal(persisted.pending, false);
  let exit = once(current.proc, 'exit'); current.proc.kill('SIGKILL'); await exit;
+ assert.deepEqual((await readJson(path.join(dir, 'state.json'))).jobs[job.id], persisted);
  current = await child(dir); children.push(current.proc);
  const result = await finished(current.url, job.id); assert.equal(result.job.status, 'succeeded');
  assert.equal((await request(current.url, 'quota')).used, 1); assert.equal((await request(current.url, 'items')).items.length, 1);
@@ -219,7 +244,7 @@ test('request errors use documented codes and only server failure offers same-re
 
 for (const window of ['before-ledger', 'after-ledger']) test(`SIGKILL ${window}: persisted pending becomes unknown without a resubmission`, async t => {
  const dir = await directory(); let current = await child(dir, window); const children = [current.proc];
- t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill(); await done; } });
+ t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill('SIGKILL'); await done; } });
  const {job} = await create(current.url, `kill-${window}-001`);
  const checkpoint = await until(() => readJson(path.join(dir, 'checkpoint.json')), x => x?.id === job.id);
  assert.equal(checkpoint.window, window);
@@ -282,7 +307,7 @@ test('legacy saved items without outEnd refuse startup clearly and release owner
 test('upload size, pixel, malformed multipart and duplicate photo limits reject without charging', async t => {
  const app = await instance(t);
  const oversized = await create(app.url, 'photo-oversized-001', Buffer.alloc(MAX_PHOTO + 1));
- assert.equal(oversized.error.code, 'photo-invalid'); assert.ok(oversized.status >= 400);
+ assert.equal(oversized.error.code, 'photo-invalid'); assert.equal(oversized.status, 400);
  // This is a real, compressed 64,008,000-pixel PNG, not just a forged header.
  const hugePixels = await sharp({create: {width: 8001, height: 8000, channels: 3, background: '#112233'}}).png().toBuffer();
  assert.ok(hugePixels.length < MAX_PHOTO);
@@ -313,8 +338,66 @@ test('static encoded traversal and a directory symlink cannot escape the built w
  await fs.symlink(outside, path.join(webRoot, 'escape'), 'junction');
  const app = await instance(t, {webRoot});
  assert.equal((await fetch(app.url + '/')).status, 200);
- for (const route of ['/%2e%2e%2fprivate.js', '/%2e%2e%5cprivate.js', '/escape/private.js']) {
+ const relative = `${path.basename(outside)}/private.js`;
+ assert.equal(await fs.readFile(path.resolve(webRoot, '..', relative), 'utf8'), 'private sentinel');
+ for (const route of [`/%2e%2e%2f${relative}`, `/%2e%2e%5c${relative}`, '/escape/private.js']) {
   const result = await fetch(app.url + route);
   assert.equal(result.status, 404); assert.ok(!(await result.text()).includes('private sentinel'));
  }
+});
+
+
+test('legacy regenerateOf backfills a missing parent marker before another paid child can be created', async () => {
+ const dir = await directory(); let app = await startShootServer({port: 0, directory: dir, fakeOptions: {fault: 'step-failed', delayMs: 1}});
+ try {
+  const {job} = await create(app.url, 'legacy-regen-parent'); await finished(app.url, job.id);
+  const child = await request(app.url, `jobs/${job.id}/regenerate`, {confirm: true, clientKey: 'legacy-regen-child'});
+  await finished(app.url, child.job.id); await app.close();
+  const file = path.join(dir, 'state.json'), saved = await readJson(file);
+  delete saved.jobs[job.id].usedBy; delete saved.jobs[child.job.id].job.fromJob;
+  await fs.writeFile(file, JSON.stringify(saved));
+  app = await startShootServer({port: 0, directory: dir});
+  assert.equal((await readJson(file)).jobs[job.id].usedBy, child.job.id);
+  const refused = await request(app.url, `jobs/${job.id}/regenerate`, {confirm: true, clientKey: 'legacy-regen-another'});
+  assert.equal(refused.status, 409); assert.equal(refused.error.code, 'not-allowed');
+  assert.equal((await request(app.url, 'quota')).used, 2);
+ } finally { await app.close(); }
+});
+
+for (const failure of ['ENOENT', 'EACCES']) test(`the first save failure ${failure} returns 503 server, as do subsequent requests`, async t => {
+ const app = await instance(t), rename = fs.rename;
+ try {
+  fs.rename = async (source, target) => {
+   if (target === path.join(app.jobs.directory, 'state.json')) throw Object.assign(Error('private storage fault'), {code: failure});
+   return rename(source, target);
+  };
+  const first = await create(app.url, `first-save-${failure}`);
+  assert.equal(first.status, 503); assert.equal(first.error.code, 'server'); assert.equal(first.error.retry, 'same');
+  assert.ok(!first.error.message.includes('private storage fault'));
+  const next = await request(app.url, 'quota'); assert.equal(next.status, 503); assert.equal(next.error.code, 'server');
+  assert.equal((await readJson(path.join(app.jobs.directory, 'fake-ledger.json'), {calls: []})).calls.length, 0);
+ } finally { fs.rename = rename; }
+});
+
+test('real HTTP oversized multipart and multi-MiB JSON drain fully and return 413 without a charge', async t => {
+ const app = await instance(t);
+ for (const [type, bytes, code] of [
+  ['application/json', Buffer.alloc(4 * 1024 * 1024, 32), 'bad-request'],
+  ['multipart/form-data; boundary=too-large', Buffer.alloc(MAX_PHOTO + 128 * 1024, 32), 'photo-invalid']
+ ]) {
+  let incoming;
+  app.server.once('request', req => { incoming = req; });
+  const result = await new Promise((resolve, reject) => {
+   const req = http.request(app.url + '/api/shoot/jobs', {method: 'POST', headers: {'content-type': type, 'content-length': bytes.length}, agent: false}, res => {
+    const chunks = []; res.on('data', chunk => chunks.push(chunk));
+    res.on('end', () => { clearTimeout(timer); resolve({status: res.statusCode, ...JSON.parse(Buffer.concat(chunks).toString())}); });
+   });
+   const timer = setTimeout(() => { req.destroy(); reject(Error('Oversize HTTP response did not finish within 5s')); }, 5000);
+   req.on('error', error => { clearTimeout(timer); reject(error); }); req.end(bytes);
+  });
+  assert.equal(result.status, 413); assert.equal(result.error.code, code);
+  assert.equal(incoming.complete, true); assert.equal(incoming.readableEnded, true);
+ }
+ assert.equal((await request(app.url, 'quota')).used, 0);
+ assert.equal((await request(app.url, 'quota')).activeJobId, null);
 });

@@ -55,7 +55,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
   if (!template) { await release(); throw Error('Missing fake pot template'); }
   let closed = false, storageError = null, chain = Promise.resolve(), runner = Promise.resolve();
   const now = () => new Date().toISOString();
-  const save = async () => { try { await saveJson(path.join(directory, 'state.json'), store); } catch (error) { storageError = error; throw error; } };
+  const save = async () => { try { await saveJson(path.join(directory, 'state.json'), store); } catch (error) { storageError = error; throw apiError('server', 'Persistence failed; restart after fixing storage', 503); } };
   const serial = fn => { const result = chain.then(() => { if (storageError) throw apiError('server', 'Persistence failed; restart after fixing storage', 503); return fn(); }); chain = result.catch(() => {}); return result; };
   const active = () => Object.values(store.jobs).find(r => ['recognizing', 'generating'].includes(r.job.status));
   const get = id => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id)) throw apiError('not-found', 'No such job', 404); return r; };
@@ -64,7 +64,15 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
     record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id)}; await save();
   }
   // No automatic paid retry, including an interrupted call before providerId was saved.
-  try { for (const record of Object.values(store.jobs)) if (record.pending) await fail(record, 'unknown-submit'); }
+  try {
+    let restored = false;
+    for (const record of Object.values(store.jobs)) {
+      const parent = store.jobs[record.job.fromJob ?? record.job.regenerateOf];
+      if (parent && !parent.usedBy) { parent.usedBy = record.job.id; restored = true; }
+    }
+    if (restored) await save();
+    for (const record of Object.values(store.jobs)) if (record.pending) await fail(record, 'unknown-submit');
+  }
   catch (error) { await release(); throw error; }
   async function work(record) {
     const j = record.job, folder = path.join(directory, j.id);
@@ -148,7 +156,7 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
       const id = `j_${randomUUID()}`, folder = path.join(directory, id); await fs.mkdir(folder);
       if (photo) await keepPicture(photo, path.join(folder, 'photo.jpg'));
       else await fs.copyFile(path.join(directory, parent.job.id, 'photo.jpg'), path.join(folder, 'photo.jpg'));
-      const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: 1, error: null, itemId: null, regenerateOf: regenerateOf ?? null};
+      const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
       const record = {job: j, pending: false, providerId: null};
       if (parent) parent.usedBy = id;
       store.jobs[id] = record; store.keys[clientKey] = {id, fingerprint}; await save(); start(record); return publicJob(record);
