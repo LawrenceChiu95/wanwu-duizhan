@@ -135,3 +135,13 @@ test('review regressions: timeout highlights, simultaneous decision, zone orderi
   if(key==='simultaneous'){assert.equal(r.meta.resolvedByAttacker,true);assert.match(r.decisive.caption,/同时倒下/);assert.match(r.decisive.caption,/先撞.*判赢/);}
  }
 });
+
+test('the historical asset script refuses to overwrite the current catalog and models (task #79)',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const files=['data/catalog.json','data/models/slipper.glb','data/models/broom.glb'].map(f=>new URL('../../'+f,import.meta.url));
+ const before=await Promise.all(files.map(f=>readFile(f)));
+ const run=spawnSync(process.execPath,[new URL('../../sim/prepare-assets.mjs',import.meta.url).pathname],{encoding:'utf8'});
+ assert.equal(run.status,1);assert.match(run.stderr,/Nothing was written/);
+ const after=await Promise.all(files.map(f=>readFile(f)));
+ after.forEach((b,i)=>assert.ok(b.equals(before[i])));
+});
