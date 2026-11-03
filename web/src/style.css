@@ -528,6 +528,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .stamp:empty::before { content: "……"; -webkit-text-fill-color: rgba(255, 255, 255, 0.18); }
 .stamp:not(:empty) { animation: stamp 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 .sfine { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--mute); }
+.sfine.fake { color: #f3b26b; } /* ?shoot=fake only: the category is a dice roll, not what the photo shows */
 .snext { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; height: 52px; font-size: 14px; color: var(--mute); }
 .shead { flex: none; margin: 14px 16px 0; font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; letter-spacing: 0.04em; transform: skewX(-6deg); transform-origin: 0 100%;
   background: linear-gradient(170deg, #ffe0bd 20%, var(--c0) 70%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
