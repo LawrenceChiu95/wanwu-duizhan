@@ -84,7 +84,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         try {
           const photo = await fs.readFile(path.join(folder, 'photo.jpg'));
           const prompt = `把参考照片的主要物品改成废土朋克游戏道具。按${names[recognition.category]}算，但保留照片原物件的轮廓、比例、主要结构和材质特征，不替换成标准样本。少量工业黄漆、警示纹、划痕和旧布。不要加第二件物品、人体、背景、尖刺或夸大结构。完整单件，浅灰背景，均匀柔光。`;
-          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstMesh: !allowCreate && Boolean(state.tasks['multimodal-to-image']), signal});
+          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal});
         } catch (error) {
           if (error.code === 'busy' && state.pending) { delete state.pending; await save(); }
           if (state.pending) throw failure('unknown-submit');

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {Document, NodeIO} from '@gltf-transform/core';
@@ -374,6 +375,104 @@ test('transient query recovers inside bounded backoff without duplicate creation
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async ms => delays.push(ms)}}); t.after(() => jobs.close());
  const j = await jobs.create({photo: image, clientKey: 'query-backoff-001'}); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
  assert.deepEqual(delays, [1000, 2000]); assert.deepEqual(g.creates, ['image', 'mesh']);
+});
+
+for (const failedStage of ['token', 'upload']) test(`free retry after ${failedStage} failure submits each stage for the first time once`, async () => {
+ const directory = await dir(), g = gateway(); let broken = true;
+ const request = (url, options) => {
+  if (broken && (failedStage === 'token' ? url.endsWith('/token') : url.includes('/single/upload'))) throw Error('offline upload failure');
+  return g.fetch(url, options);
+ };
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async () => {}}});
+ try {
+  const j = await jobs.create({photo: image, clientKey: 'upload-first-stage-001'}), failed = await finish(jobs, j.id);
+  assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, false);
+  assert.deepEqual(g.creates, []);
+  broken = false; await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
+  assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
+  assert.equal((await jobs.create({photo: image, clientKey: 'upload-first-stage-001'})).id, j.id);
+  assert.deepEqual(g.creates, ['image', 'mesh']);
+ } finally { await jobs.close(); }
+});
+
+for (const stage of ['image', 'mesh']) test(`close collects the in-flight ${stage} creation ID before exiting`, {timeout: 5000}, async () => {
+ const directory = await dir(), g = gateway(); let entered = false, release, requestSignal;
+ const request = async (url, options) => {
+  if (url.endsWith('/create') && url.includes(stage === 'image' ? 'multimodal-to-image' : 'img-to-3d')) {
+   entered = true; requestSignal = options.signal;
+   await new Promise((resolve, reject) => { release = resolve; options.signal.addEventListener('abort', () => reject(options.signal.reason), {once: true}); });
+  }
+  return g.fetch(url, options);
+ };
+ let jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request}});
+ try {
+  const j = await jobs.create({photo: image, clientKey: 'close-create-001'}); await until(async () => entered, Boolean);
+  const closing = jobs.close(); await pause(10); assert.equal(requestSignal.aborted, false);
+  release(); await closing;
+  const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+  assert.equal(saved.providerState.tasks[stage === 'image' ? 'multimodal-to-image' : 'img-to-3d'], stage + '-id');
+  assert.equal(saved.providerState.pending, undefined); assert.equal(saved.job.status, 'generating');
+  assert.deepEqual(g.creates, stage === 'image' ? ['image'] : ['image', 'mesh']);
+  jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
+  assert.equal((await finish(jobs, j.id)).status, 'succeeded'); assert.deepEqual(g.creates, ['image', 'mesh']); assert.equal(g.visionCalls(), 1);
+ } finally { release?.(); await jobs.close(); }
+});
+
+test('keychain launcher and server survive direct plus forwarded SIGINT until the paid ID is saved', {skip: process.platform === 'win32', timeout: 10000}, async () => {
+ // Run the actual CLI files in a tiny isolated repo. Only security and outbound
+ // requests are stubbed; no real keychain, supplier or shared state is touched.
+ const repo = await fs.realpath(await dir()), tools = path.join(repo, 'tools/import-item'), shoot = path.join(tools, 'shoot');
+ await fs.mkdir(shoot, {recursive: true});
+ for (const file of ['start-real.mjs', 'server.mjs', 'jobs.mjs']) await fs.copyFile(path.join(REPO, 'tools/import-item/shoot', file), path.join(shoot, file));
+ for (const file of ['real.mjs', 'fake.mjs']) await fs.symlink(path.join(REPO, 'tools/import-item/shoot', file), path.join(shoot, file));
+ for (const file of ['state.mjs', 'origin.mjs']) await fs.symlink(path.join(REPO, 'tools/import-item', file), path.join(tools, file));
+ await fs.symlink(path.join(REPO, 'tools/import-item/node_modules'), path.join(tools, 'node_modules'));
+ for (const folder of ['sim', 'data']) await fs.symlink(path.join(REPO, folder), path.join(repo, folder));
+ await fs.writeFile(path.join(repo, 'package.json'), '{"type":"module"}');
+ const bin = path.join(repo, 'bin'); await fs.mkdir(bin);
+ await fs.writeFile(path.join(bin, 'security'), '#!/bin/sh\nprintf "offline-fixture-key\\n"\n', {mode: 0o700});
+ const hook = path.join(repo, 'offline.mjs'), entered = path.join(repo, 'creating'), released = path.join(repo, 'release');
+ await fs.writeFile(hook, `
+import fs from 'node:fs/promises';import net from 'node:net';import {setTimeout as pause} from 'node:timers/promises';
+const listen=net.Server.prototype.listen;net.Server.prototype.listen=function(port,...args){return listen.call(this,0,...args)};
+globalThis.fetch=async(url,options)=>{
+ const ok=d=>Response.json({c:'0',d});
+ if(url.includes('googleapis'))return Response.json(${JSON.stringify(geminiReply(result))});
+ if(url.endsWith('/token'))return Response.json({ousToken:'offline',globalDomain:'https://upload.example',blockSize:1000000});
+ if(url.includes('upload.example'))return ok(url.endsWith('/status')?{status:5,url:'https://assets.example/photo.jpg'}:{});
+ if(url.includes('multimodal-to-image/task/create')){
+  await fs.writeFile(${JSON.stringify(entered)},'started');
+  while(true){try{await fs.access(${JSON.stringify(released)});break}catch{await pause(10)}}
+  return ok('image-id');
+ }
+ throw Error('Unexpected offline request');
+};`);
+ const child = spawn(process.execPath, [path.join(shoot, 'start-real.mjs')], {detached: true, env: {...process.env, PATH: bin + path.delimiter + process.env.PATH, NODE_OPTIONS: '--import=' + pathToFileURL(hook).href}, stdio: ['ignore', 'pipe', 'pipe']});
+ const exited = once(child, 'exit'); let output = '', errors = '';
+ child.stdout.on('data', b => output += b); child.stderr.on('data', b => errors += b);
+ try {
+  const url = await until(async () => {
+   if (child.exitCode !== null || child.signalCode !== null) throw Error(`Offline launcher exited (${child.exitCode ?? child.signalCode}): ` + errors);
+   return output.match(/http:\/\/127\.0\.0\.1:\d+/)?.[0];
+  }, Boolean);
+  const form = new FormData(); form.append('photo', new Blob([image]), 'test.png'); form.append('clientKey', 'signal-launcher-001');
+  const response = await fetch(url + '/api/shoot/jobs', {method: 'POST', body: form}); assert.equal(response.status, 202); const {job} = await response.json();
+  await until(async () => fs.access(entered).then(() => true, () => false), Boolean);
+  process.kill(-child.pid, 'SIGINT'); await pause(30);
+  // A second interrupt must also be harmless while the same close is pending.
+  process.kill(-child.pid, 'SIGINT'); await pause(30);
+  assert.equal(child.exitCode, null); assert.equal(child.signalCode, null);
+  await fs.writeFile(released, 'continue');
+  assert.deepEqual(await exited, [0, null]);
+  const state = (await readJson(path.join(repo, '.aholo/shoot-real/state.json'))).jobs[job.id];
+  assert.equal(state.providerState.tasks['multimodal-to-image'], 'image-id'); assert.equal(state.providerState.pending, undefined);
+  assert.equal(state.providerState.tasks['img-to-3d'], undefined);
+  await assert.rejects(fs.access(path.join(repo, '.aholo/shoot-real/.owner')), {code: 'ENOENT'});
+  assert.doesNotMatch(output + errors, /offline-fixture-key/);
+ } finally {
+  try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
+  await exited;
+ }
 });
 
 test('close cancels an in-flight Aholo request and restart polls the saved image, never resubmits it', {timeout: 5000}, async () => {

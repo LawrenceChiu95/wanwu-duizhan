@@ -18,7 +18,7 @@ node tools/import-item/shoot/server.mjs
 - 上传：POST `/api/shoot/jobs`，multipart photo和clientKey。JPEG/PNG≤32MiB、≤64MP。同key同输入返回原job；不同输入409 key-conflict。
 - GET `/api/shoot/jobs/:id`查状态；GET `/api/shoot/items`取入库件。
 - 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null；旧记录可能没有 fromJob，前端按 null 处理，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
-- POST `/api/shoot/jobs/:id/retry`空body，续查已有阶段、下载或处理；真模式可在已知改图完成且模型从未提交过时补该单第一次建模（见下文）。busy通过POST jobs JSON `{fromJob,clientKey}`再次提交。每个busy或可重新生成的父任务只能产生一个子任务；原key重发仍返回该子任务，换key再用同一父任务409 not-allowed，重启后也一样。重新生成通过POST `/jobs/:id/regenerate` JSON `{confirm:true,clientKey}`，只对可重新生成的失败开放。
+- POST `/api/shoot/jobs/:id/retry`空body，续查已有阶段、下载或处理；真模式也可补该单从未提交过的阶段；无ID且无pending才允许首次提交（见下文）。busy通过POST jobs JSON `{fromJob,clientKey}`再次提交。每个busy或可重新生成的父任务只能产生一个子任务；原key重发仍返回该子任务，换key再用同一父任务409 not-allowed，重启后也一样。重新生成通过POST `/jobs/:id/regenerate` JSON `{confirm:true,clientKey}`，只对可重新生成的失败开放。
 - unknown-submit保留原记录、永不自动再提交；retry和regenerate均拒绝。它不占active位，新的clientKey可以拍另一件。活动任务冲突409 active-job并带activeJobId。
 - 成功一次原子提交同时公开itemId和/items。文件URL是根路径 `/api/shoot/files/<itemId>/model.glb`、photo.jpg、styled.jpg。只有入库文件可读。origin三段真实秒数，steps四步时间戳。
 - 新件必填 `outEnd: -1 | 1`：模型最长轴哪一端朝外。本轮假锅沿用锅样本 pan-lux3d 的规范化模型、凸包、弱点和 `outEnd=-1`；换 id 不换装向。未来生成模型要先按品类样本把三者一起规范朝向，不能只改字段。登记入口缺字段/非±1直接报错，旧内置件仍沿原 id 表。
@@ -84,11 +84,11 @@ node tools/import-item/shoot/start-real.mjs
 
 认物用 Gemini 3.5 Flash-Lite 的 Interactions（固定提示+JSON schema，store=false）；同任务一次请求，失败或崩溃不自动重认。供应商回包的clear、recognizable都必须为true才接受物品字段；拒答仍符合schema，物品字段填null，报photo-unclear、不建Aholo收费任务。清楚的单件东西即使不是日常物品或属于六类以外，也按最接近的六类之一算，inSix=false，不当成拒答；只有不清楚、无主体或多件主体不明确才拒答。物理数据是照片估计，不是测量；长边1–300cm、重量0.001–100kg，输出越界同样拒绝。子任务继承既有认物。
 
-Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建GLB；每阶段先落pending，收到任务ID才继续。未知结果不重提。官方明确并发满且没有已付费阶段时返回busy；每单改图和建模各最多一次被接受的创建。免费「再试」先续查原改图；它完成且建模从未提交过时，允许补该单第一次建模，这仍是原单费用的一部分。不新增确认接口或按钮。已有模型ID只查询和下载；有 pending 或创建结果不明时不补提。查询失败最多退避重试三次（1、2、4秒），仍失败就保留原ID供免费续查。单次404/403、未知业务码或旧签名URL失效都不证明任务过期；当前官方文档没有明确的任务过期码，不据此显示 expired 或引导再付费。供应商明确失败/取消才用 step-failed；将来核到明确任务过期契约后才能用 expired。
+Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建GLB；每阶段先落pending，收到任务ID才继续。未知结果不重提。官方明确并发满且没有已付费阶段时返回busy；每单改图和建模各最多一次被接受的创建。免费「再试」续查已有ID；该阶段从未被接受且无pending时，允许补原单的第一次提交，包括上传失败后第一次改图、改图完成后第一次建模，这仍是原单费用的一部分。不新增确认接口或按钮。已有模型ID只查询和下载；有 pending 或创建结果不明时不补提。查询失败最多退避重试三次（1、2、4秒），仍失败就保留原ID供免费续查。单次404/403、未知业务码或旧签名URL失效都不证明任务过期；当前官方文档没有明确的任务过期码，不据此显示 expired 或引导再付费。供应商明确失败/取消才用 step-failed；将来核到明确任务过期契约后才能用 expired。
 
 quota 新增 provider 字段（real/fake），供单件验收先确认后台模式；现有页面可忽略。真quota的limit/remaining/resetsAt仍null，used是可能已创建收费阶段的本地任务数，**不是余额、金额或两个阶段的账单次数**。任务charged=true包含尚不能确定是否扣费的pending窗口。Gemini看图单独按token计费，不在该标记里。后台不设置付费预算，必须先由Lead确认单件真实验收和账号费用范围，再启真模式。
 
-压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z，弱点半径按本件长边相对品类模板长边同比缩放。原付费GLB先完整拷到source.glb.part、再原子改名为source.glb，之后才替换网页model.glb；中途硬退出保留完整原模型，重启覆盖未完成临时件、免费续处理。已有源副本哈希不符时，只有原模型仍与下载哈希一致才恢复副本。磁盘读写失败可免费重做处理。两份原件都哈希不符时报 process-corrupt、超过64MiB时报 process-too-large，均不开放反复免费处理或重新付费；先人工修复本机原件。大小先 stat 再读文件/算哈希。完整且校验一致但格式不支持的模型仍报 process-unfixable。朝向：剪刀/锅/扫把沿原尖端/宽端规则；台灯/拖鞋依实际模板最长轴安装端的宽窄，枕头等两端判不清时用最长轴并在私有任务和物品 normalization.orientation 中记下回退原因。这里验证进程中断后的恢复；未加 fsync，不承诺断电持久性。正常关闭取消 Aholo 查询和等待，不等四十分钟；关闭期间已经收到的认物仍先保存，重启不再认一次。供应商ID和签名URL只留本机私有状态，不返回前端。
+压缩、碰撞与朝向沿用导入工具：本件照片估计的长度、重量、材质和新旧供现有评分；模型凸包弱点一起规范，朝外为+Z，弱点半径按本件长边相对品类模板长边同比缩放。原付费GLB先完整拷到source.glb.part、再原子改名为source.glb，之后才替换网页model.glb；中途硬退出保留完整原模型，重启覆盖未完成临时件、免费续处理。已有源副本哈希不符时，只有原模型仍与下载哈希一致才恢复副本。磁盘读写失败可免费重做处理。两份原件都哈希不符时报 process-corrupt、超过64MiB时报 process-too-large，均不开放反复免费处理或重新付费；先人工修复本机原件。大小先 stat 再读文件/算哈希。完整且校验一致但格式不支持的模型仍报 process-unfixable。朝向：剪刀/锅/扫把沿原尖端/宽端规则；台灯/拖鞋依实际模板最长轴安装端的宽窄，枕头等两端判不清时用最长轴并在私有任务和物品 normalization.orientation 中记下回退原因。这里验证进程中断后的恢复；未加 fsync，不承诺断电持久性。正常关闭取消 Aholo 查询和等待，不等四十分钟；已发出的收费创建不挂关闭信号，只保留120秒请求超时，先收ID落盘，关闭后不再发新创建。重复SIGINT/SIGTERM只收尾一次，启动器照旧转发。关闭期间已经收到的认物仍先保存，重启不再认一次。供应商ID和签名URL只留本机私有状态，不返回前端。
 
 单件验收：`node tools/import-item/shoot/check-real.mjs --photo /absolute/photo.jpg --key stable-test-key --allow-paid`。只向当前本机后台建一次任务，重复同照片和同key取原任务；失败只报结果，不自动再生成；再执行仍沿用原key。必须给绝对照片路径；没有 --allow-paid 时拒绝建任务。观察45分钟超时只表示脚本停止观察，不是任务失败：原任务和原key保留，用同照片、同key再执行只取原任务。脚本本身不读取密钥，须先启动获准的真后台；它不能证明页面五屏或真机手感。
 

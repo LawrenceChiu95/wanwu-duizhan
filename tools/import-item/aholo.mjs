@@ -53,7 +53,7 @@ async function download(url, file, request, cancelled) {
 }
 
 /** The key is only attached to the fixed official API gateway, never result/upload URLs. */
-export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstMesh = false, signal}) {
+export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstSubmit = false, signal}) {
   const waitPause = async ms => {
     signal?.throwIfAborted();
     if (!pause) return sleep(ms, undefined, {signal});
@@ -62,11 +62,11 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     try { await Promise.race([pause(ms), cancelled]); } finally { signal?.removeEventListener('abort', stop); }
     signal?.throwIfAborted();
   };
-  const send = async (url, {headers = {}, method = 'GET', body} = {}) => {
+  const send = async (url, {headers = {}, method = 'GET', body, cancelOnClose = true} = {}) => {
     let response;
     try {
-      signal?.throwIfAborted();
-      response = await request(https(url), {method, headers, body, redirect: 'error', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000)});
+      if (cancelOnClose) signal?.throwIfAborted();
+      response = await request(https(url), {method, headers, body, redirect: 'error', signal: cancelOnClose && signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000)});
     }
     catch { throw Error('Network request failed. Existing task IDs and pending flags are kept; rerun to resume, never recreate blindly.'); }
     if (!response.ok) { await response.body?.cancel(); throw Error(`HTTP ${response.status}; existing tasks are kept; no generation retry.`); }
@@ -76,14 +76,20 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     const response = await send(url, options);
     try { return JSON.parse((await limitedBody(response, 1024 * 1024)).toString()); } catch { throw Error('Invalid API reply; check the console. Pending task creation is not retried.'); }
   };
-  const api = (route, payload) => json(BASE + route, {headers: {Authorization: key, ...(payload ? {'Content-Type': 'application/json'} : {})}, ...(payload ? {method: 'POST', body: JSON.stringify(payload)} : {})});
+  const api = (route, payload, cancelOnClose = true) => json(BASE + route, {headers: {Authorization: key, ...(payload ? {'Content-Type': 'application/json'} : {})}, ...(payload ? {method: 'POST', body: JSON.stringify(payload)} : {}), cancelOnClose});
   const stamp = async name => { state.timestamps[name] ??= now(); await save(); };
   const create = async (stage, payload, timestamp) => {
     if (state.pending) throw Error(`Unconfirmed ${state.pending} creation. Check Aholo task history and record its ID before any retry; do not clear pending and resubmit blindly.`);
     signal?.throwIfAborted();
-    if (!allowCreate && !(allowFirstMesh && stage === 'img-to-3d' && state.tasks['multimodal-to-image'] && !state.tasks[stage])) throw Error('Resume cannot recreate a submitted stage');
+    if (state.tasks[stage]) throw Error('This stage already has a task ID; resume it instead of creating another');
+    if (!allowCreate && !allowFirstSubmit) throw Error('First submission is not enabled for this resume');
     state.pending = stage; await stamp(timestamp);
-    const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload));
+    // Shutdown can arrive while the pending marker is being saved. No request
+    // has left yet, so remove that marker and leave the first submit for restart.
+    if (signal?.aborted) { delete state.pending; await save(); signal.throwIfAborted(); }
+    // Once sent, collect the paid task ID even during shutdown. The request still
+    // has its 120-second timeout; only polling/uploads obey the close signal.
+    const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload, false));
     if (!['number', 'string'].includes(typeof id) || !/^[A-Za-z0-9_-]{1,128}$/.test(String(id))) throw Error('Creation reply has no valid task ID; pending is kept. Check the console before retrying.');
     state.tasks[stage] = id; delete state.pending; await save();
   };
