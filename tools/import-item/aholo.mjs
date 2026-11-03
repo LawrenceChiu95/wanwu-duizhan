@@ -53,7 +53,7 @@ async function download(url, file, request, cancelled) {
 }
 
 /** The key is only attached to the fixed official API gateway, never result/upload URLs. */
-export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstSubmit = false, signal}) {
+export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstSubmit = false, signal, onCreate}) {
   const waitPause = async ms => {
     signal?.throwIfAborted();
     if (!pause) return sleep(ms, undefined, {signal});
@@ -89,9 +89,12 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     if (signal?.aborted) { delete state.pending; await save(); signal.throwIfAborted(); }
     // Once sent, collect the paid task ID even during shutdown. The request still
     // has its 120-second timeout; only polling/uploads obey the close signal.
-    const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload, false));
-    if (!['number', 'string'].includes(typeof id) || !/^[A-Za-z0-9_-]{1,128}$/.test(String(id))) throw Error('Creation reply has no valid task ID; pending is kept. Check the console before retrying.');
-    state.tasks[stage] = id; delete state.pending; await save();
+    onCreate?.(true);
+    try {
+      const id = unwrap(await api(`/lux3d/v1/generate/${stage}/task/create`, payload, false));
+      if (!['number', 'string'].includes(typeof id) || !/^[A-Za-z0-9_-]{1,128}$/.test(String(id))) throw Error('Creation reply has no valid task ID; pending is kept. Check the console before retrying.');
+      state.tasks[stage] = id; delete state.pending; await save();
+    } finally { onCreate?.(false); }
   };
   const wait = async (id, timestamp) => {
     for (let i = 0; i < 240; i++) {

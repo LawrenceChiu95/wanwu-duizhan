@@ -257,9 +257,13 @@ test('lamp and slipper match the mounted template end for either source sign; sy
  assert.equal(pillow.shape.normalization.outwardEnd,undefined);
 });
 for(const id of ['lamp','slipper','pillow'])test(`CLI ${id} without mount metadata records unknown mount, not indistinguishable ends`,async()=>{
- const template={...originals.find(i=>i.id===id)};delete template.outEnd;
- const result=await prepareMesh(model,template,base.itemStandards[id]);
- assert.deepEqual(result.shape.normalization.orientation,{templateId:id,method:'longest-axis',reason:'template-mount-unknown'});
+ const s=await sandbox(),before=await s.catalog();delete before.items.find(i=>i.id===id).outEnd;
+ await saveJson(path.join(s.root,'data/catalog.json'),before);
+ const result=await run(s,['glb','--glb',s.glb,'--category',id,'--id',`cli-${id}`,'--name','安装端测试'],null,{env:{},fetch:()=>{throw Error('offline called network');}});
+ const item=(await s.catalog()).items.at(-1);
+ assert.equal(item.templateId,id);assert.equal(item.source.importRun,`cli-${id}`);
+ assert.deepEqual(item.normalization.orientation,{templateId:id,method:'longest-axis',reason:'template-mount-unknown'});
+ assert.equal(sha256(await fs.readFile(path.join(s.root,item.glb))),result.sha256);
 });
 test('opaque colour textures are stored as JPEG; transparent colour and data textures stay PNG (task #42, #45)',async()=>{
  const doc=await new NodeIO().readBinary(model),root=doc.getRoot(),first=root.listMaterials()[0];
