@@ -96,6 +96,8 @@ test('busy uses a new idempotent submit; retry cannot enter paid path', async ()
   await fs.writeFile(path.join(dir, 'state.json'), JSON.stringify(saved));
   app = await startShootServer({port: 0, directory: dir});
   assert.equal((await readJson(path.join(dir, 'state.json'))).jobs[job.id].usedBy, replies[0].job.id);
+  const replayed = await request(app.url, 'jobs', {fromJob: job.id, clientKey: 'busy-second-001'});
+  assert.equal(replayed.status, 202); assert.equal(replayed.job.id, replies[0].job.id); assert.equal(replayed.job.fromJob, job.id);
   assert.equal((await request(app.url, 'jobs', {fromJob: job.id, clientKey: 'busy-fourth-001'})).error.code, 'not-allowed');
   assert.equal((await request(app.url, 'quota')).used, 1);
  } finally { await app.close(); }
@@ -153,15 +155,35 @@ async function child(dir, window = null) {
  return {proc, url: JSON.parse(info.split('\n')[0]).url, stderr: () => stderr, checkpoint: () => checkpoint};
 }
 
+async function restartDiagnostics(dir, current) {
+ const detail = {};
+ try { detail.state = await readJson(path.join(dir, 'state.json')); } catch (error) { detail.stateError = error.message; }
+ try { detail.quota = await request(current.url, 'quota'); } catch (error) { detail.quotaError = error.message; }
+ try { detail.stderr = current.stderr(); } catch (error) { detail.stderrError = error.message; }
+ return detail;
+}
+
+test('hard restart diagnostics retain independent evidence when state or quota cannot be read', async () => {
+ const dir = await directory(), file = path.join(dir, 'state.json');
+ const app = await startShootServer({port: 0, directory: dir});
+ const current = {url: app.url, stderr: () => 'child stderr sentinel'};
+ try {
+  await fs.writeFile(file, '{broken JSON');
+  const invalid = await restartDiagnostics(dir, current);
+  assert.ok(invalid.stateError); assert.equal(invalid.quota.used, 0); assert.equal(invalid.stderr, 'child stderr sentinel');
+ } finally { await app.close(); }
+ await fs.writeFile(file, JSON.stringify({checkpoint: 'kept'}));
+ const exited = await restartDiagnostics(dir, current);
+ assert.deepEqual(exited.state, {checkpoint: 'kept'}); assert.ok(exited.quotaError); assert.equal(exited.stderr, 'child stderr sentinel');
+});
+
 test('real child hard restart resumes a known job, keeps output, and does not submit again', async t => {
  const dir = await directory(); let current = await child(dir, 'known'); const children = [current.proc];
  t.after(async () => { for (const p of children) if (p.exitCode === null && p.signalCode === null) { const done = once(p, 'exit'); p.kill('SIGKILL'); await done; } });
  const {job} = await create(current.url, 'hard-restart-001');
  try { await until(current.checkpoint, s => s?.checkpoint === 'known' && s.id === job.id); }
  catch (error) {
-  const state = await readJson(path.join(dir, 'state.json'));
-  const quota = await request(current.url, 'quota');
-  throw Error(`${error.message}: ${JSON.stringify({state, quota, stderr: current.stderr()})}`, {cause: error});
+  throw Error(`${error.message}: ${JSON.stringify(await restartDiagnostics(dir, current))}`, {cause: error});
  }
  // The writer is paused after rename. Verify the disk ourselves, then kill it;
  // neither the checkpoint notification nor in-memory state counts as durability.
@@ -364,8 +386,9 @@ test('legacy regenerateOf backfills a missing parent marker before another paid 
  } finally { await app.close(); }
 });
 
-for (const failure of ['ENOENT', 'EACCES']) test(`the first save failure ${failure} returns 503 server, as do subsequent requests`, async t => {
+for (const failure of ['ENOENT', 'EACCES', 'ENOSPC']) test(`the first save failure ${failure} returns 503 server, as do subsequent requests`, async t => {
  const app = await instance(t), rename = fs.rename;
+ const logged = t.mock.method(console, 'error', () => {});
  try {
   fs.rename = async (source, target) => {
    if (target === path.join(app.jobs.directory, 'state.json')) throw Object.assign(Error('private storage fault'), {code: failure});
@@ -375,6 +398,7 @@ for (const failure of ['ENOENT', 'EACCES']) test(`the first save failure ${failu
   assert.equal(first.status, 503); assert.equal(first.error.code, 'server'); assert.equal(first.error.retry, 'same');
   assert.ok(!first.error.message.includes('private storage fault'));
   const next = await request(app.url, 'quota'); assert.equal(next.status, 503); assert.equal(next.error.code, 'server');
+  assert.deepEqual(logged.mock.calls.map(call => call.arguments), [['Shoot persistence failed:', failure]]);
   assert.equal((await readJson(path.join(app.jobs.directory, 'fake-ledger.json'), {calls: []})).calls.length, 0);
  } finally { fs.rename = rename; }
 });

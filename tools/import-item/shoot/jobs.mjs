@@ -55,7 +55,13 @@ export async function openJobs({directory = path.join(REPO, '.aholo/shoot'), rep
   if (!template) { await release(); throw Error('Missing fake pot template'); }
   let closed = false, storageError = null, chain = Promise.resolve(), runner = Promise.resolve();
   const now = () => new Date().toISOString();
-  const save = async () => { try { await saveJson(path.join(directory, 'state.json'), store); } catch (error) { storageError = error; throw apiError('server', 'Persistence failed; restart after fixing storage', 503); } };
+  const save = async () => {
+    try { await saveJson(path.join(directory, 'state.json'), store); }
+    catch (error) {
+      if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); }
+      throw apiError('server', 'Persistence failed; restart after fixing storage', 503);
+    }
+  };
   const serial = fn => { const result = chain.then(() => { if (storageError) throw apiError('server', 'Persistence failed; restart after fixing storage', 503); return fn(); }); chain = result.catch(() => {}); return result; };
   const active = () => Object.values(store.jobs).find(r => ['recognizing', 'generating'].includes(r.job.status));
   const get = id => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id)) throw apiError('not-found', 'No such job', 404); return r; };
