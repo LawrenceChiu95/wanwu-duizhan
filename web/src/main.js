@@ -118,11 +118,13 @@ function renderCredits(items) {
 const SHOOT_KEEP = ['shoot', 'shootSpeed', 'shootFail', 'shootCat', 'shootSix'];
 // Items from the photo backend go to the sim's registerItems one at a time before the page shows, equips or replays
 // them (tools/import-item/shoot README): it checks each and recomputes its rating; one it turns down stays out, the rest come in.
-const simKnows = new Set();
+// Its checks don't change, so one turned down isn't offered again (and 拍一件 lets that job go, task #62).
+const simKnows = new Set(), simRefused = new Set();
 async function register(list) {
   const ok = [];
   for (const it of list) {
-    try { await registerItems([it]); simKnows.add(it.id); ok.push(it); } catch (e) { console.warn(`拍一件: ${it?.id} not registered: ${e.message}`); }
+    if (simRefused.has(it?.id)) continue;
+    try { await registerItems([it]); simKnows.add(it.id); ok.push(it); } catch (e) { simRefused.add(it?.id); console.warn(`拍一件: ${it?.id} not registered: ${e.message}`); }
   }
   return ok;
 }
@@ -152,11 +154,16 @@ async function main() {
   renderCredits(items);
 
   const mode = q.get('mode') === 'B' ? 'B' : 'A';
+  // An address can name a photo item the backend hasn't handed over yet (/items slow or down as the page opens, task #62):
+  // the page opens with the default build rather than an error, and takes the address's once the item comes in.
+  const late = {};
   const fromUrl = (key = 'mine') => {
     if (!q.has(key)) return null;
     const p = q.get(key).split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
-    if (p.length === 5 && b.parts.every(x => OFFER.includes(x.item) && ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) && q.getAll(key).length === 1) return b;
+    const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread) && q.getAll(key).length === 1;
+    if (shape && b.parts.every(x => OFFER.includes(x.item))) return b;
+    if (shape && shot && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
     throw Error(`${key}参数无效：格式为物品ID,out或hug,另一物品ID,out或hug,e180或e90；两件须是清单中不同的道具，${key}只能出现一次`);
   };
   const mine = structuredClone(fromUrl() ?? DEFAULT);
@@ -844,23 +851,33 @@ async function main() {
   // ---------- 拍一件 (task #47) ----------
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
   // The sim takes them first; one it turns down never shows up here, so the 好了 card waits for it (task #56 S2).
+  // The address's build, once its photo items are in, if the player hasn't changed that side in the meantime.
+  function takeLate() {
+    const ready = b => b && b.parts.every(x => OFFER.includes(x.item));
+    if (phase !== 'build') return;
+    if (ready(late.mine) && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
+    if (ready(late.foe) && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
+    for (const k of Object.keys(late)) if (ready(late[k])) delete late[k];
+  }
   async function addItems(list) {
-    if (!list.some(it => !byId.has(it.id))) return;
+    if (!list.some(it => !byId.has(it.id))) { takeLate(); return; }
     await register(list.filter(it => !byId.has(it.id)));
     const fresh = list.filter(it => !byId.has(it.id) && simKnows.has(it.id));
     if (!fresh.length) return;
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
     OFFER.splice(0, OFFER.length, ...offerOf(items));
+    takeLate();
   }
   let shoot = null;
   shoot0.then(async s => {
     if (!s) return;
     const {api} = s;
     try { await addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
+    takeLate();
     shoot = mountShoot({
       api, addItems, turns, loadModels, equip, equipLabel, openHow,
-      item: id => byId.get(id), name: id => NAMES[id], grade: rate, spec,
+      item: id => byId.get(id), refused: id => simRefused.has(id), name: id => NAMES[id], grade: rate, spec,
       seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
       goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
@@ -868,7 +885,7 @@ async function main() {
       onChange: () => {
         const s = shoot?.state;
         el.shootBtn.classList.toggle('run', Boolean(s?.job && !['succeeded', 'failed'].includes(s.job.status)));
-        el.shootBtn.classList.toggle('new', Boolean(s?.job?.status === 'succeeded' && !s.stored?.seen));
+        el.shootBtn.classList.toggle('new', Boolean(s?.made && !s.stored?.seen));
       }
     });
     el.shootBtn.hidden = false;
