@@ -368,7 +368,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* A still is the item itself, not a placeholder: it holds steady (task #39). */
 .card .ghost.still { animation: none; }
 @media (prefers-reduced-motion: reduce) { .card .ghost { animation: none; } }
-.card .photo { position: absolute; left: 0; top: 0; width: 34%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line); }
+.card .photo { position: absolute; left: 0; top: 0; width: 26%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line); }
+/* The original photo takes the top-left corner; the item sits below and right of it so the photo never covers it
+   (Elara d1c1f0ff: stood upright, tall items lost their tops under it). */
+.card .media:has(> .photo) > :is(.turn, .ghost) { inset: auto 0 0 auto; width: 92%; height: 92%; }
 .card .badge { position: absolute; right: 0; top: 0; font-size: 11px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); }
 .card .badge.own { background: var(--c0); color: #1a0900; font-weight: 700; }
 .card .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
