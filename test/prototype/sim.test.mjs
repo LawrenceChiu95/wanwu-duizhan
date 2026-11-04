@@ -13,7 +13,8 @@ const c=await loadRules();
 test('six licensed GLBs plus two Lux3D variants: preserved geometry, hashes and authored default mass',async()=>{
  // Only explicit default design metadata/mass may differ; historical geometry and source stay fixed.
  const designs=JSON.parse(await readFile(new URL('../../data/default-item-designs.json',import.meta.url))).items;
- const assetOnly=({rating,condition,mass,massBasis,...asset})=>asset;
+ // task #3: `card` only says how the 角色库 card holds the model; it is not geometry.
+ const assetOnly=({rating,condition,mass,massBasis,card,...asset})=>asset;
  // task #74 swapped only the slipper's look: its geometry is still the original's, whose source moved to collisionSource.
  const asOriginal=i=>{if(!i.collisionSource)return i;const {source,collisionSource:{note,...was},look,...rest}=i;return {...rest,source:was};};
  const all=await loadCatalog(),items=all.filter(i=>!i.generated);const original=JSON.parse(await readFile(new URL('./original-catalog-items.json',import.meta.url)));assert.deepEqual(items.filter(i=>i.id!=='broom').map(asOriginal).map(assetOnly),original.filter(i=>i.id!=='broom').map(assetOnly));const broom=items.find(i=>i.id==='broom'),oldBroom=original.find(i=>i.id==='broom');assert.equal(broom.standardLongSide,.8);assert.deepEqual(broom.hull,oldBroom.hull.map(v=>v.map(x=>x*(.8/1.2000000000000002))));assert.equal(items.length,8);assert.equal(items.filter(i=>!i.comparisonBase).length,6);
