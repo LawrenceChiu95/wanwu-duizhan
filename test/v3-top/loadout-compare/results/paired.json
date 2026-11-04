@@ -1,0 +1,62 @@
+[
+  {
+    "condition": "auto",
+    "pair": "pan-broom",
+    "best": "out-out-e90",
+    "worst": "hug-hug-e90",
+    "bestWinWorstLoss": 50,
+    "bestLossWorstWin": 17,
+    "winIndicatorChanged": 67,
+    "outcomeChanged": 67
+  },
+  {
+    "condition": "auto",
+    "pair": "scissors-pillow",
+    "best": "out-hug-e180",
+    "worst": "out-hug-e90",
+    "bestWinWorstLoss": 41,
+    "bestLossWorstWin": 10,
+    "winIndicatorChanged": 51,
+    "outcomeChanged": 51
+  },
+  {
+    "condition": "auto",
+    "pair": "lamp-slipper",
+    "best": "out-hug-e90",
+    "worst": "out-out-e180",
+    "bestWinWorstLoss": 43,
+    "bestLossWorstWin": 22,
+    "winIndicatorChanged": 65,
+    "outcomeChanged": 65
+  },
+  {
+    "condition": "ai-ai",
+    "pair": "pan-broom",
+    "best": "out-hug-e180",
+    "worst": "hug-hug-e180",
+    "bestWinWorstLoss": 37,
+    "bestLossWorstWin": 8,
+    "winIndicatorChanged": 45,
+    "outcomeChanged": 45
+  },
+  {
+    "condition": "ai-ai",
+    "pair": "scissors-pillow",
+    "best": "hug-hug-e180",
+    "worst": "out-out-e90",
+    "bestWinWorstLoss": 28,
+    "bestLossWorstWin": 14,
+    "winIndicatorChanged": 42,
+    "outcomeChanged": 42
+  },
+  {
+    "condition": "ai-ai",
+    "pair": "lamp-slipper",
+    "best": "out-hug-e180",
+    "worst": "hug-out-e90",
+    "bestWinWorstLoss": 33,
+    "bestLossWorstWin": 10,
+    "winIndicatorChanged": 43,
+    "outcomeChanged": 43
+  }
+]

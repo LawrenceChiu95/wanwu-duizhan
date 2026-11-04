@@ -1,0 +1,25 @@
+{
+  "base": "d08a698f7bc8c710279afc6929418bf5858448ed",
+  "sourceFilesUnchanged": 96,
+  "games": 4800,
+  "cells": 48,
+  "seedsPerCell": 100,
+  "smokeReplayHashesIdentical": 48,
+  "sampleReplayHashesIdentical": 6,
+  "browserReplayHashesIdentical": 6,
+  "unitTests": {
+    "pass": 4,
+    "fail": 0
+  },
+  "autoActionsZero": true,
+  "allAiAiCellsBothSidesDashAndBlock": true,
+  "node": "v25.5.0",
+  "nice": "20",
+  "browser": "156.0.8078.4",
+  "browserViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "totalTimeouts": 0,
+  "rawSha256": "8979daf4f228f6ca2de81934a87c44ef89ec9cabfa59cf026ecbbcc7e65a3fb1"
+}
