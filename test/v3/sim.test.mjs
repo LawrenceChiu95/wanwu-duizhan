@@ -53,13 +53,23 @@ test('real photo shapes stand normally when hugged, with the outward end up only
  const fixture=JSON.parse(await readFile(new URL('./photo-mount-fixtures.json',import.meta.url),'utf8'));
  for(const {slug,item,expected} of fixture.items){
   // The recorded end is the actual source-model top or head, not a label
-  // written by the importer: kettle/teddy +Y, spatula +X, dryer outlet -Z.
+  // written by the importer: kettle/teddy/dryer +Y, sideways spatula head +X.
   const tip=[0,0,0];tip[expected.upAxis]=expected.upSign;
   for(const mount of Object.keys(rules.top.slots)){
    const {quat:q}=mountTransform(item,mount,'hug',rules),up=rotate(q,tip);
    assert.ok(up[1]>.999999,`${slug} ${mount}: original top/head must face up`);
   }
  }
+});
+test('photo hug raises a negative outer end only once width reaches 110% of source height',()=>{
+ for(const width of [1.099,1.1,1.101]){
+  const item={photoPhysics:{hardness:.8},outEnd:-1,bounds:{min:[-width/2,-.5,-.2],max:[width/2,.5,.2]},hull:[[-width/2,-.5,-.2],[width/2,-.5,-.2],[-width/2,.5,-.2],[-width/2,-.5,.2]]};
+  const head=width<1.1?[0,1,0]:[-1,0,0];
+  for(const mount of Object.keys(rules.top.slots))assert.ok(rotate(mountTransform(item,mount,'hug',rules).quat,head)[1]>.999999);
+ }
+ // Near-symmetric shapes may have Y as the thinnest edge; it still stays up.
+ const item={photoPhysics:{hardness:.8},outEnd:-1,bounds:{min:[-.51,-.5,-.505],max:[.51,.5,.505]},hull:[[-.51,-.5,-.505],[.51,-.5,-.505],[-.51,.5,-.505],[-.51,-.5,.505]]};
+ for(const mount of Object.keys(rules.top.slots))assert.ok(rotate(mountTransform(item,mount,'hug',rules).quat,[0,1,0])[1]>.999999);
 });
 test('HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage',()=>{
  let shieldProof=false,coreWhilePartAlive=false;

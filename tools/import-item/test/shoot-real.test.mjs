@@ -174,7 +174,9 @@ test('offline real HTTP task: structured vision, two durable paid stages, geomet
   const [item] = await app.jobs.items(); validateRuntimeItem(item, catalog); assert.deepEqual(item.rating, rateItem(item, catalog.materials));
   assert.equal(item.material, 'metal'); assert.equal(item.condition, 'worn'); assert.equal(item.mass, .72);
   assert.equal(item.outEnd, -1); // The fixture's wide end is at -X; keeping Y-up must not flip it to +Z.
-  assert.equal(item.normalization.orientation.sourceUpAxis, 'Y');
+  const matrix = item.normalization.matrix;
+  for (const i of [1,2,4,6,8,9]) assert.equal(matrix[i], 0);
+  assert.ok(matrix[0] > 0 && matrix[0] === matrix[5] && matrix[5] === matrix[10]);
   assert.ok(Math.abs(Math.max(...item.bounds.max.map((v,i) => v - item.bounds.min[i])) - .42) < 1e-6);
   assert.ok(item.normalization.outwardEnd === 'wide');
   const publicText = JSON.stringify([done, item, await app.jobs.quota()]);

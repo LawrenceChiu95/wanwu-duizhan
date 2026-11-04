@@ -1,5 +1,5 @@
 {
-  "source": "Task 28 paid models, reprocessed Y-up in task 29. Positive Y is the original top on kettle and teddy; broad spatula head is +X; dryer outlet is -Z.",
+  "source": "Task 28 paid models, reprocessed Y-up in task 29. Kettle, teddy and near-upright dryer retain +Y; sideways spatula head is +X. Elara cc140f36: longest edge less than 10% above source height counts as upright.",
   "items": [
     {
       "slug": "kettle",
@@ -607,8 +607,8 @@
         }
       },
       "expected": {
-        "upAxis": 2,
-        "upSign": -1
+        "upAxis": 1,
+        "upSign": 1
       }
     }
   ]

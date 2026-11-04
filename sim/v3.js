@@ -42,9 +42,19 @@ export function itemAxes(item){const ext=item.bounds.max.map((v,i)=>v-item.bound
  * The inner end sinks `embed` into the core so it reads as stuck on. No non-uniform scale.
  */
 export function mountTransform(item,mount,orient,r){
- const d=slotDirection(r.top.slots[mount]),{long,thin}=itemAxes(item),cols=[null,null,null];
- if(orient==='out'){cols[long]=scale(d,item.outEnd??r.top.outEnd[item.id]??1);cols[thin]=UP;}else{const upEnd=item.photoPhysics&&long!==1?(item.outEnd??1):1;cols[long]=scale(UP,upEnd);cols[thin]=d;}
- const m=3-long-thin;cols[m]=cross(cols[(m+1)%3],cols[(m+2)%3]);
+ const d=slotDirection(r.top.slots[mount]),{long,thin,ext}=itemAxes(item),cols=[null,null,null];
+ if(orient==='out'){cols[long]=scale(d,item.outEnd??r.top.outEnd[item.id]??1);cols[thin]=UP;}
+ else{
+  let up=long,side=thin,sign=1;
+  if(item.photoPhysics){
+   // Near-upright photos keep their original top; only clearly sideways
+   // objects (longest edge at least 10% taller than Y) raise the outer end.
+   if(ext[long]<ext[1]*1.1){up=1;side=[0,2].sort((a,b)=>ext[a]-ext[b]||a-b)[0];}
+   else sign=item.outEnd??1;
+  }
+  cols[up]=scale(UP,sign);cols[side]=d;
+ }
+ const m=cols.indexOf(null);cols[m]=cross(cols[(m+1)%3],cols[(m+2)%3]);
  const q=basisQuat(...cols),nearest=Math.min(...item.hull.map(v=>dot(rotate(q,v),d)));
  return {offset:scale(d,r.core.radius-r.top.embed-nearest),quat:q,direction:d};
 }
