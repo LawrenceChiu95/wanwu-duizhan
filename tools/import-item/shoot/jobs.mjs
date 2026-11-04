@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {randomUUID, createHash} from 'node:crypto';
+import {randomUUID, createHash, randomBytes, createHmac, timingSafeEqual} from 'node:crypto';
 import sharp from 'sharp';
 import {fileURLToPath} from 'node:url';
 import {setTimeout as pause} from 'node:timers/promises';
@@ -19,7 +19,11 @@ export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
 const keyValid = key => typeof key === 'string' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
-const publicJob = record => copy({retakeUntil: null, ...record.job});
+const LOCAL = 'local'; // Trusted in-process tools only; never accepted from HTTP.
+const DEFAULT_LIMITS = {browser: {generation: 2, recognition: 5}, global: {generation: 160, recognition: 400}};
+const activeStatus = r => ['recognizing', 'generating'].includes(r.job.status);
+const dayAt = time => new Date(time + 8 * 3600000).toISOString().slice(0, 10);
+const resetAt = time => new Date(Date.parse(dayAt(time) + 'T00:00:00+08:00') + 86400000).toISOString();
 
 // A directory lock has only an empty PID subdirectory; stale ownership can be
 // recovered after a hard restart without removing any task or asset content.
@@ -38,7 +42,8 @@ async function own(directory) {
   return async () => { await fs.rmdir(owner); await fs.rmdir(lock); };
 }
 
-export async function openJobs({directory, repo = REPO, generator, fakeOptions, mode = 'fake', env = process.env, realOptions} = {}) {
+export async function openJobs({directory, repo = REPO, generator, fakeOptions, mode = 'fake', env = process.env, realOptions, clock = Date.now, limits = DEFAULT_LIMITS} = {}) {
+  for (const scope of ['browser', 'global']) for (const kind of ['generation', 'recognition']) if (!Number.isSafeInteger(limits[scope]?.[kind]) || limits[scope][kind] < 1) throw Error('Invalid daily shoot limits');
   if (!['real', 'fake'].includes(mode)) throw Error('Choose provider real or fake');
   if (!generator && mode === 'real') generator = realGenerator({env, ...realOptions});
   directory ??= path.join(repo, mode === 'real' ? '.aholo/shoot-real' : '.aholo/shoot');
@@ -50,6 +55,12 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     if (!store || !store.jobs || !store.keys || !Array.isArray(store.items)) throw Error('Invalid shoot state file');
     store.jobs = Object.assign(Object.create(null), store.jobs);
     store.keys = Object.assign(Object.create(null), store.keys);
+    store.sessionSecret ??= randomBytes(32).toString('hex');
+    if (!/^[a-f0-9]{64}$/.test(store.sessionSecret)) throw Error('Invalid shoot session secret');
+    // Unowned historical records stay local-only. A new visitor never inherits them.
+    for (const r of Object.values(store.jobs)) r.owner ??= LOCAL;
+    store.sequence ??= 0;
+    for (const r of Object.values(store.jobs)) r.queueOrder ??= ++store.sequence;
     const kind = generator?.real ? 'real' : 'fake';
     if ((store.provider ?? 'fake') !== kind && Object.keys(store.jobs).length) throw Error('Shoot data provider changed; use a separate state directory');
     store.provider = kind;
@@ -64,7 +75,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   let closed = false, storageError = null, chain = Promise.resolve(), runner = Promise.resolve();
   const abort = new AbortController();
   const retakeWaits = new Map();
-  const now = () => new Date().toISOString();
+  const now = () => new Date(clock()).toISOString();
   const save = async () => {
     try { await saveJson(path.join(directory, 'state.json'), store); }
     catch (error) {
@@ -73,21 +84,46 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     }
   };
   const serial = fn => { const result = chain.then(() => { if (storageError) throw apiError('server', 'Persistence failed; restart after fixing storage', 503); return fn(); }); chain = result.catch(() => {}); return result; };
-  const active = () => Object.values(store.jobs).find(r => ['recognizing', 'generating'].includes(r.job.status));
-  const get = id => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id)) throw apiError('not-found', 'No such job', 404); return r; };
+  const pending = () => Object.values(store.jobs).filter(activeStatus).sort((a, b) => a.queueOrder - b.queueOrder);
+  const active = owner => pending().find(r => owner === undefined || r.owner === owner);
+  const publicJob = record => copy({retakeUntil: null, ...record.job, queuePosition: activeStatus(record) && !record.job.steps[0].startedAt ? Math.max(0, pending().indexOf(record)) : null});
+  const get = (id, owner) => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id) || (owner !== undefined && r.owner !== owner)) throw apiError('not-found', 'No such job', 404); return r; };
+  const scopedKey = (owner, key) => owner === LOCAL ? key : `${owner}:${key}`;
+  const usage = (kind, day, owner) => Object.values(store.jobs).filter(r => (owner === undefined || r.owner === owner) && r.allowance?.[kind]?.day === day).length;
+  function checkQuota(kind, owner, skip) {
+    const day = dayAt(clock());
+    for (const scope of ['browser', 'global']) {
+      const n = usage(kind, day, scope === 'browser' ? owner : undefined) - (skip?.allowance?.[kind]?.day === day ? 1 : 0);
+      if (n >= limits[scope][kind]) throw apiError('quota', kind === 'generation' ? '今天的生成名额用完了，明天再来' : '今天的认物名额用完了，明天再来', 429, {kind, scope, resetsAt: resetAt(clock())});
+    }
+  }
+  // Reservations are committed with acceptance, before any provider call. Canceled
+  // pre-generation work returns its generation slot; recognition attempts stay used.
+  function reserve(record, kind) {
+    checkQuota(kind, record.owner, record);
+    (record.allowance ??= {})[kind] = {day: dayAt(clock())};
+  }
+  const sign = id => createHmac('sha256', store.sessionSecret).update(id).digest('hex');
+  function session(token) {
+    if (typeof token === 'string' && /^[a-f0-9-]{36}\.[a-f0-9]{64}$/.test(token)) {
+      const [id, sig] = token.split('.');
+      if (timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(sign(id), 'hex'))) return {owner: id, token};
+    }
+    const id = randomUUID(); return {owner: id, token: `${id}.${sign(id)}`};
+  }
   const charged = id => provider.real ? provider.charged(get(id).providerState) : provider.charged(id);
   const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
-  async function fail(record, code) {
-    record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id)}; await save();
+  async function fail(record, code, details = {}) {
+    if (!record.job.steps[0].startedAt || code === 'busy') delete record.allowance?.generation;
+    record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id), ...details}; await save();
   }
   // No automatic paid retry, including an interrupted call before providerId was saved.
   try {
-    let restored = false;
     for (const record of Object.values(store.jobs)) {
       const parent = store.jobs[record.job.fromJob ?? record.job.regenerateOf];
-      if (parent && !parent.usedBy) { parent.usedBy = record.job.id; restored = true; }
+      if (parent && !parent.usedBy) { parent.usedBy = record.job.id; }
     }
-    if (restored) await save();
+    await save(); // Persist session identity and legacy ownership before serving requests.
     for (const record of Object.values(store.jobs)) {
       if (record.pending || record.providerState?.pending) await fail(record, 'unknown-submit');
       else if (record.providerState?.recognitionPending && !record.job.recognition && record.job.status !== 'failed') await fail(record, 'recognition-interrupted');
@@ -101,7 +137,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       const wait = new AbortController(); retakeWaits.set(j.id, wait);
       try {
         const signal = AbortSignal.any([abort.signal, wait.signal]);
-        while (Date.now() < Date.parse(j.retakeUntil)) await pause(Date.parse(j.retakeUntil) - Date.now(), undefined, {signal});
+        while (clock() < Date.parse(j.retakeUntil)) await pause(Date.parse(j.retakeUntil) - clock(), undefined, {signal});
       }
       catch (error) { if (error.name !== 'AbortError') throw error; return false; }
       finally { retakeWaits.delete(j.id); }
@@ -110,6 +146,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     // local providerId is not a paid submission; its first step can submit.
     return serial(async () => {
       if (closed || j.status !== 'generating') return false;
+      if (!j.steps[0].startedAt) reserve(record, 'generation');
       j.steps[0].startedAt ??= now();
       if (provider.real) record.providerId ??= j.id;
       else if (!record.providerId) record.pending = true;
@@ -120,10 +157,11 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     const j = record.job, folder = path.join(directory, j.id);
     try {
       if (!j.recognition) {
+        await serial(async () => { reserve(record, 'generation'); reserve(record, 'recognition'); await save(); });
         const recognition = await provider.recognize(template, context(record));
         // A response received while closing is still valuable paid work: save it
         // before honoring shutdown, then leave later stages for restart.
-        await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; j.retakeUntil = !j.fromJob && !j.regenerateOf ? new Date(Date.now() + 5000).toISOString() : null; await save(); });
+        await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; j.retakeUntil = !j.fromJob && !j.regenerateOf ? new Date(clock() + 5000).toISOString() : null; await save(); });
       }
       if (!await waitForRetake(record)) return;
       if (!record.providerId) {
@@ -164,31 +202,35 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       // classification during close, just as a successful recognition is saved.
       if ((!closed || !j.recognition) && !storageError) await serial(async () => {
         if (!j.recognition && record.providerState) delete record.providerState.recognitionPending;
+        if (error.code === 'quota') { await fail(record, 'quota', {message: error.message, retry: 'none', kind: error.kind, scope: error.scope, resetsAt: error.resetsAt}); return; }
         await fail(record, Object.hasOwn(retryFor, error.code) ? error.code : j.recognition ? (j.steps[3].startedAt ? 'process' : 'download') : 'photo-unclear');
       });
     }
   }
-  function start(record) { runner = runner.then(() => closed ? undefined : work(record)).catch(error => { if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); } }); }
-  for (const record of Object.values(store.jobs)) if (['recognizing', 'generating'].includes(record.job.status)) start(record);
+  function start(record) {
+    runner = runner.then(() => !closed && activeStatus(record) ? work(record) : undefined).catch(error => { if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); } });
+  }
+  for (const record of pending()) start(record);
 
-  async function create({clientKey, photo, fromJob, regenerateOf, confirm}) {
+  async function create({clientKey, photo, fromJob, regenerateOf, confirm}, owner = LOCAL) {
     if (!keyValid(clientKey)) throw apiError('key-conflict', 'clientKey must contain 8–128 letters, digits, underscore or hyphen');
     let photoHash;
     if (photo) {
       if (!Buffer.isBuffer(photo) || photo.length > MAX_PHOTO) throw apiError('photo-invalid', 'Photo exceeds 32 MiB', 413);
       photoHash = hash(photo);
     }
+    const key = scopedKey(owner, clientKey);
     const fingerprint = hash(JSON.stringify({photoHash, fromJob, regenerateOf, confirm}));
     return serial(async () => {
       if (closed) throw apiError('server', 'Service closing', 503);
-      if (Object.hasOwn(store.keys, clientKey)) {
-        const old = store.keys[clientKey];
+      if (Object.hasOwn(store.keys, key)) {
+        const old = store.keys[key];
         if (old.fingerprint !== fingerprint) throw apiError('key-conflict', 'Same clientKey with different input', 409);
-        return publicJob(get(old.id));
+        return publicJob(get(old.id, owner));
       }
-      const parent = fromJob || regenerateOf ? get(fromJob ?? regenerateOf) : null;
+      const parent = fromJob || regenerateOf ? get(fromJob ?? regenerateOf, owner) : null;
       if (parent?.usedBy) throw apiError('not-allowed', 'This source job already created a replacement', 409);
-      const current = active();
+      const current = active(owner);
       if (current) throw apiError('active-job', 'A job is still active', 409, {activeJobId: current.job.id});
       if (regenerateOf && (confirm !== true || parent.job.error?.retry !== 'regenerate')) throw apiError('not-allowed', 'Explicit confirmation and a regeneratable failure required', 409);
       if (fromJob && parent.job.error?.code !== 'busy') throw apiError('not-allowed', 'fromJob is only for confirmed busy rejection', 409);
@@ -201,41 +243,54 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         await sharp(photo, {limitInputPixels: 64000000}).stats();
       } catch { throw apiError('photo-invalid', 'Invalid JPEG/PNG or pixel limit'); }
       }
+      checkQuota('generation', owner);
+      if (!parent?.job.recognition) checkQuota('recognition', owner);
       const id = `j_${randomUUID()}`, folder = path.join(directory, id); await fs.mkdir(folder);
       if (photo) await keepPicture(photo, path.join(folder, 'photo.jpg'));
       else await fs.copyFile(path.join(directory, parent.job.id, 'photo.jpg'), path.join(folder, 'photo.jpg'));
       const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, retakeUntil: null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: provider.real ? 90 : 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
-      const record = {job: j, pending: false, providerId: null};
+      const record = {owner, queueOrder: ++store.sequence, job: j, pending: false, providerId: null};
+      reserve(record, 'generation');
+      if (!j.recognition) reserve(record, 'recognition');
       if (parent) parent.usedBy = id;
-      store.jobs[id] = record; store.keys[clientKey] = {id, fingerprint}; await save(); start(record); return publicJob(record);
+      store.jobs[id] = record; store.keys[key] = {id, fingerprint}; await save(); start(record); return publicJob(record);
     });
   }
   return {
     directory,
+    cookieName: provider.real ? 'wanwu_shoot_real' : 'wanwu_shoot_fake',
+    session,
     waitingForPaidId: () => Boolean(provider.real && provider.waitingForPaidId?.()),
     create,
-    get: id => serial(() => publicJob(get(id))),
-    items: () => serial(() => copy(store.items)),
-    quota: () => serial(() => ({provider: provider.real ? 'real' : 'fake', limit: null, remaining: null, resetsAt: null, used: provider.real ? Object.values(store.jobs).filter(r => provider.charged(r.providerState)).length : provider.used(), activeJobId: active()?.job.id ?? null})),
-    retake: id => serial(async () => {
+    get: (id, owner) => serial(() => publicJob(get(id, owner))),
+    items: owner => serial(() => copy(store.items.filter(i => owner === undefined || Object.values(store.jobs).some(r => r.owner === owner && r.job.itemId === i.id)))),
+    quota: owner => serial(() => {
+      const day = dayAt(clock()), count = (kind, who) => usage(kind, day, who);
+      return {provider: provider.real ? 'real' : 'fake', limit: limits.browser.generation, remaining: Math.max(0, limits.browser.generation - count('generation', owner)), resetsAt: resetAt(clock()),
+        recognition: {limit: limits.browser.recognition, remaining: Math.max(0, limits.browser.recognition - count('recognition', owner))},
+        global: {limit: limits.global.generation, remaining: Math.max(0, limits.global.generation - count('generation')), recognition: {limit: limits.global.recognition, remaining: Math.max(0, limits.global.recognition - count('recognition'))}},
+        used: Object.values(store.jobs).filter(r => (owner === undefined || r.owner === owner) && charged(r.job.id)).length, activeJobId: active(owner)?.job.id ?? null};
+    }),
+    retake: (id, owner) => serial(async () => {
       if (closed) throw apiError('server', 'Service closing', 503);
-      const r = get(id), j = r.job;
+      const r = get(id, owner), j = r.job;
       if (j.status === 'failed' && j.error?.code === 'retake') return publicJob(r);
-      if (j.status !== 'generating' || !j.retakeUntil || Date.now() >= Date.parse(j.retakeUntil) || j.steps.some(s => s.startedAt) || r.pending || r.providerId) throw apiError('not-allowed', 'Generation has started or no retake window is open', 409);
+      if (j.status !== 'generating' || !j.retakeUntil || clock() >= Date.parse(j.retakeUntil) || j.steps.some(s => s.startedAt) || r.pending || r.providerId) throw apiError('not-allowed', 'Generation has started or no retake window is open', 409);
+      delete r.allowance?.generation;
       j.status = 'failed'; j.error = {code: 'retake', message: 'retake', retry: 'none', charged: false};
       await save(); retakeWaits.get(id)?.abort(); return publicJob(r);
     }),
-    retry: id => serial(async () => {
-      const r = get(id), current = active();
+    retry: (id, owner) => serial(async () => {
+      const r = get(id, owner), current = active(r.owner);
       if (r.job.error?.retry !== 'same' || !r.providerId || r.pending) throw apiError('not-allowed', 'This job cannot be retried', 409);
       if (current && current !== r) throw apiError('active-job', 'A job is still active', 409, {activeJobId: current.job.id});
       if (provider.real) r.freeRetry = true;
-      r.job.error = null; r.job.status = 'generating'; await save(); start(r); return publicJob(r);
+      r.queueOrder = ++store.sequence; r.job.error = null; r.job.status = 'generating'; await save(); start(r); return publicJob(r);
     }),
-    file: (id, name) => serial(() => {
+    file: (id, name, owner) => serial(() => {
       if (!['model.glb', 'photo.jpg', 'styled.jpg'].includes(name)) throw apiError('not-found', 'No such file', 404);
       const item = store.items.find(i => i.id === id), record = Object.values(store.jobs).find(r => r.job.itemId === id);
-      if (!item || !record) throw apiError('not-found', 'No such item', 404);
+      if (!item || !record || (owner !== undefined && record.owner !== owner)) throw apiError('not-found', 'No such item', 404);
       return path.join(directory, record.job.id, name);
     }),
     async close() { closed = true; abort.abort(); try { await runner; await chain; } finally { await release(); } }

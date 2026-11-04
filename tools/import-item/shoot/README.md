@@ -1,3 +1,5 @@
+> 多人、每日名额与排队的当前契约见本页末节及 SPEC「多人后台」。
+
 # 本机「拍一件」后台
 
 从仓库根运行，Node22：
@@ -6,7 +8,7 @@
 node tools/import-item/shoot/server.mjs
 ```
 
-地址 `http://127.0.0.1:4408`。同源服务已构建的 `web/dist` 和 `/api/shoot/`；没有构建好的游戏时API仍可用。它不启动构建，不监听局域网，没有口令或每日上限。本轮不供手机/Tailscale或外网使用；这些在下一轮接通。现有页面由Iris接本API，独立后端测试不能冒称完整五屏已联调。
+地址 `http://127.0.0.1:4408`。同源服务已构建的 `web/dist` 和 `/api/shoot/`；没有构建好的游戏时API仍可用。它不启动构建，不监听局域网，使用浏览器 cookie 隔离身份和每日名额，不设口令。本轮不供手机/Tailscale或外网使用；这些在下一轮接通。现有页面由Iris接本API，独立后端测试不能冒称完整五屏已联调。
 
 默认状态目录 `.aholo/shoot/`（已被Git忽略），有原子状态、假收费账本、每任务照片和模型。关页面不影响任务；重启会续已知任务。服务占用该目录，另一个服务不能同时写。只有旧PID明确不存在（ESRCH）时才自动回收空锁。PID被别的进程复用、无权限探测或锁记录不完整时，启动会拒绝，不承诺自动恢复。手动处理前先核对进程命令和数据目录，确认原服务已经退出；不要因为PID存在就停别人的进程。确认无本服务后，只用rmdir移除这份状态目录下对应的空 `.owner/<PID>` 和 `.owner`（不完整锁按实际空目录处理），不删除任务、账本或照片。
 
@@ -14,7 +16,7 @@ node tools/import-item/shoot/server.mjs
 
 ## 前端约定
 
-- 沿[Iris接口第2稿及后续裁决](https://raft-artifacts.com/p/lawrence-workspace/wanwu-mvp-spec)。`/quota` 的limit/remaining/resetsAt均null，used是假收费次数；不显示每天30次或剩几次。
+- 沿[Iris接口第2稿及后续裁决](https://raft-artifacts.com/p/lawrence-workspace/wanwu-mvp-spec)。`/quota` 当前额度字段见本页「多人、每日名额与排队」；used 是可能收费的任务数，不是今日额度。
 - 上传：POST `/api/shoot/jobs`，multipart photo和clientKey。JPEG/PNG≤32MiB、≤64MP。同key同输入返回原job；不同输入409 key-conflict。
 - GET `/api/shoot/jobs/:id`查状态；GET `/api/shoot/items`取入库件。
 - 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null；旧记录可能没有 fromJob，前端按 null 处理，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
@@ -30,7 +32,7 @@ node tools/import-item/shoot/server.mjs
 
 ## 请求错误补充（接口第2稿的后续约定）
 
-任务内的 download/process 等失败继续沿原表。请求级错误也返回 `{error:{code,message,retry,charged}}`；message 只进日志，界面按 code 显示下面的句子。本机本轮不用口令或每日上限，因此不产生 pass/quota。
+任务内的 download/process 等失败继续沿原表。请求级错误也返回 `{error:{code,message,retry,charged}}`；message 只进日志，界面按 code 显示下面的句子。本机不用口令；每日额度耗尽返回429 quota，字段见末节。
 
 | code | HTTP / 条件 | retry | 界面说 |
 |---|---|---|---|
@@ -124,3 +126,17 @@ quota 新增 provider 字段（real/fake），供单件验收先确认后台模�
 - 认物回包为 JSON null、steps 非数组或内容格式不符，均归 recognition-invalid，不误叫网络失败。
 - 认物前本机 photo.jpg 读盘失败报 photo-read / retry:none，不调用认物；认物已成功、尚无 Aholo ID 时读失败报 photo-upload / retry:same，不重花认物钱。已有改图或建模 ID 后读盘失败仍报 download / retry:same，修好照片可免费续原任务。改图提交前 token/上传失败报 photo-upload / retry:same，仍沿原任务免费补首次提交，不另认物或重复创建。
 - CLI 台灯/拖鞋/枕头模板缺 hull 或合法安装端时，normalization.orientation.reason 为 template-mount-unknown；有安装端但两端宽度无法区分仍为 template-ends-indistinguishable。
+
+## 多人、每日名额与排队
+
+后台仍仅监听本机，同源cookie隔离浏览器的任务、照片和角色；清cookie不会得到以前的件。无owner历史数据保存在本机维护域，不会送给新浏览器。不要把state.json、会话cookie或签名密钥发到浏览器、日志和仓库。CLI check-real自动保留私有cookie到忽略目录.aholo/shoot-client-cookie.json（0600），重新观察必须保留它及原key。
+
+每天台北午夜恢复：本浏览器生成2、认物5；全站生成160、认物400。接收照片时先预留两类名额，无生成额度不先花认物调用。认物失败/重拍释放生成预留，认物尝试仍计次数；明确busy释放生成预留，父任务再提交复用认物。免费续同任务不加次数；重新生成是新名额。used继续表示可能收费的任务数，不是今日额度使用数或金额。
+
+`/api/shoot/quota` 的limit/remaining为本浏览器生成额度，recognition={limit,remaining}，global={limit,remaining,recognition:{limit,remaining}}，resetsAt为台北下个零点ISO。429 error={code:'quota',kind:'generation'|'recognition',scope:'browser'|'global',resetsAt,...}。生成满message为「今天的生成名额用完了，明天再来」；认物满为「今天的认物名额用完了，明天再来」。预留与任务持久保存，重启不刷新名额。
+
+一台浏览器同时一件，多人按接受顺序串行做，关页面不中断，后台重启仍按原顺序续。job.queuePosition：第一步开始前0代表轮到，正整数为前面件数，第一步开始后/结束为null；recognizing也可能在排队。现有四步时间戳只在真开始时写。跨日排队尚未开始的阶段先核新的当天名额；不能绕过当天上限。已发生生成的免费续接仍属原任务。
+
+这轮不含外网启动配置、HTTPS Secure cookie、跨域、机器、账号或付费。页面排队展示/额度提示等Iris另接；当前后台通过不等于页面/手机验收。正式站点未来从main发布，当前PR等方案甲获批后才能合。
+
+真实与假后台分别用 wanwu_shoot_real / wanwu_shoot_fake cookie，切换后台不覆盖另一份身份。CLI在确认是真后台后才保存cookie；误连假后台不会丢掉原任务的主人。升级前旧单用户任务仍只能从可信本机维护入口读；不要拿旧key当新浏览器任务重发，以免另起付费任务。
