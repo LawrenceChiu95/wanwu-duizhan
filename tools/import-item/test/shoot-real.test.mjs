@@ -43,6 +43,9 @@ function gateway(options = {}) {
    const body = JSON.parse(request.body); assert.equal(body.store, false); assert.equal(body.model, 'gemini-3.5-flash-lite'); assert.equal(body.input[0].text, recognitionPrompt);
    assert.equal(body.input[1].mime_type, 'image/jpeg'); assert.equal((await sharp(Buffer.from(body.input[1].data, 'base64')).metadata()).format, 'jpeg');
    assert.deepEqual(body.response_format.schema.required.sort(), Object.keys(result).sort());
+   const temporary = options.visionFailures?.shift();
+   if (temporary === 'network') throw new TypeError('temporary transport failure');
+   if (temporary) return new Response('', {status: temporary});
    if (options.visionNetwork) throw Error('network ' + env.GEMINI_API_KEY);
    if (options.visionStatus) return new Response('private-body ' + env.GEMINI_API_KEY, {status: options.visionStatus});
    if (options.visionBadJson) return new Response('private malformed ' + env.GEMINI_API_KEY);
@@ -59,7 +62,7 @@ function gateway(options = {}) {
     if (options.busy === stage) return Response.json({c: 'GENERATION_CONCURRENCY_LIMIT_EXCEEDED', d: null});
     if (options.unknown === stage) throw Error('simulated lost reply ' + env.AHOLO_API_KEY);
     const payload = JSON.parse(request.body);
-    if (stage === 'mesh') assert.deepEqual(payload, {img: 'https://assets.example/styled.jpg', version: 'G1-Turbo', faceCount: 100000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false});
+    if (stage === 'mesh') assert.deepEqual(payload, {img: 'https://assets.example/styled.jpg', version: 'G1-Turbo', faceCount: 12000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false});
     return ok(stage + '-id');
    }
    if (u.pathname.endsWith('/get')) {
@@ -159,17 +162,21 @@ test('real startup names missing env keys before touching disk and refuses provi
 });
 
 test('offline real HTTP task: structured vision, two durable paid stages, geometry/rating, no provider secrets in public output', async t => {
- const directory = await dir(), g = gateway({directory, statuses: {image: [0, 1, 3], mesh: [1, 3]}});
+ const directory = await dir(), g = gateway({directory, visionFailures: ['network', 503], statuses: {image: [0, 1, 3], mesh: [1, 3]}});
  let app = await startShootServer({port: 0, directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
  try {
   const create = async () => { const form = new FormData(); form.append('photo', new Blob([image]), 'test.png'); form.append('clientKey', 'real-key-0001'); const response = await fetch(app.url + '/api/shoot/jobs', {method: 'POST', body: form}); assert.equal(response.status, 202); return (await response.json()).job; };
   const copies = await Promise.all(Array.from({length: 10}, create)); assert.equal(new Set(copies.map(j => j.id)).size, 1);
   const done = await finish(app.jobs, copies[0].id); assert.equal(done.status, 'succeeded');
   assert.equal(done.recognition.lengthMeters, .42); assert.equal(done.recognition.massKg, .72);
-  assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(g.observations, ['multimodal-to-image', 'img-to-3d']);
+  assert.equal(g.visionCalls(), 3); assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(g.observations, ['multimodal-to-image', 'img-to-3d']);
   assert.ok(done.steps.every(s => s.startedAt && s.endedAt));
   const [item] = await app.jobs.items(); validateRuntimeItem(item, catalog); assert.deepEqual(item.rating, rateItem(item, catalog.materials));
-  assert.equal(item.material, 'metal'); assert.equal(item.condition, 'worn'); assert.equal(item.mass, .72); assert.equal(item.outEnd, 1);
+  assert.equal(item.material, 'metal'); assert.equal(item.condition, 'worn'); assert.equal(item.mass, .72);
+  assert.equal(item.outEnd, -1); // The fixture's wide end is at -X; keeping Y-up must not flip it to +Z.
+  const matrix = item.normalization.matrix;
+  for (const i of [1,2,4,6,8,9]) assert.equal(matrix[i], 0);
+  assert.ok(matrix[0] > 0 && matrix[0] === matrix[5] && matrix[5] === matrix[10]);
   assert.ok(Math.abs(Math.max(...item.bounds.max.map((v,i) => v - item.bounds.min[i])) - .42) < 1e-6);
   assert.ok(item.normalization.outwardEnd === 'wide');
   const publicText = JSON.stringify([done, item, await app.jobs.quota()]);
@@ -184,8 +191,8 @@ test('offline real HTTP task: structured vision, two durable paid stages, geomet
 
 for (const options of [{visionReply: {status: 'failed', steps: []}}, {recognition: {...result, massKg: -1}}, {visionTimeout: true}]) test(`vision refusal/bounds/timeout never enters Aholo ${JSON.stringify(options)}`, async t => {
  const {jobs, g} = await open(t, options), j = await jobs.create({photo: image, clientKey: 'vision-fail-0001'}), done = await finish(jobs, j.id);
- assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), 1);
- assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), 1);
+ assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), options.visionTimeout ? 3 : 1);
+ assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), options.visionTimeout ? 3 : 1);
 });
 
 for (const flags of [{clear: false, recognizable: true}, {clear: true, recognizable: false}]) test(`schema-compliant unclear photo does not guess a category or create paid Aholo work ${JSON.stringify(flags)}`, async t => {
@@ -397,7 +404,7 @@ for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visi
   const j = await jobs.create({photo: image, clientKey: 'vision-classified-001'}), failed = await finish(jobs, j.id);
   assert.equal(failed.error.code, code); assert.equal(failed.error.retry, 'none'); assert.equal(failed.error.charged, false);
   await jobs.close(); jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
-  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, []);
+  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), options.visionStatus === 503 || options.visionNetwork ? 3 : 1); assert.deepEqual(g.creates, []);
   assert.ok(logs.length === 1 && logs[0].includes(code));
   for (const secret of [...Object.values(env), 'private-body', 'private malformed', 'https://']) assert.ok(!logs.join().includes(secret));
  } finally { console.error = log; await jobs?.close(); }

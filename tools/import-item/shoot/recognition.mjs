@@ -1,3 +1,4 @@
+import {setTimeout as sleep} from 'node:timers/promises';
 // Photo identity is unrestricted. The material family is only a physics input.
 const materials = ['metal', 'wood', 'plastic', 'cloth', 'rubber'];
 const conditions = ['intact', 'worn', 'damaged', 'unknown'];
@@ -41,27 +42,30 @@ async function replyJson(response) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 // This recognition-only path needs no Aholo key and cannot create 3D jobs.
-export async function recognizePhoto({photo, key, fetch: request = globalThis.fetch, timeoutMs = 10000}) {
+export async function recognizePhoto({photo, key, fetch: request = globalThis.fetch, timeoutMs = 10000, pause = sleep}) {
   if (!key?.trim()) throw Error('Recognition requires GEMINI_API_KEY');
-  let status = null;
-  try {
-    const response = await request('https://generativelanguage.googleapis.com/v1beta/interactions', {
-      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
-      headers: {'x-goog-api-key': key.trim(), 'Content-Type': 'application/json', 'Api-Revision': '2026-05-20'},
-      body: JSON.stringify({model: 'gemini-3.5-flash-lite', store: false,
-        input: [{type: 'text', text: recognitionPrompt}, {type: 'image', data: photo.toString('base64'), mime_type: 'image/jpeg'}],
-        generation_config: {max_output_tokens: 1024}, response_format: {type: 'text', mime_type: 'application/json', schema: recognitionSchema}})
-    });
-    status = response.status;
-    if (!response.ok) { await response.body?.cancel(); throw failure([401, 403].includes(status) ? 'recognition-auth' : status === 429 ? 'recognition-limit' : 'recognition-service'); }
-    const reply = await replyJson(response);
-    if (!reply || !Array.isArray(reply.steps)) throw failure('recognition-invalid');
-    const content = reply.steps.filter(step => step?.type === 'model_output').flatMap(step => step.content ?? []);
-    if (reply.status !== 'completed' || content.length !== 1 || !content[0] || content[0].type !== 'text' || typeof content[0].text !== 'string') throw failure('recognition-invalid');
-    return parseRecognition(JSON.parse(content[0].text));
-  } catch (error) {
-    const code = ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code) ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
-    if (code !== 'photo-unclear') console.error('Shoot recognition failed:', JSON.stringify({status, error: code}));
-    throw failure(code);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let status = null;
+    try {
+      const response = await request('https://generativelanguage.googleapis.com/v1beta/interactions', {
+        method: 'POST', redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
+        headers: {'x-goog-api-key': key.trim(), 'Content-Type': 'application/json', 'Api-Revision': '2026-05-20'},
+        body: JSON.stringify({model: 'gemini-3.5-flash-lite', store: false,
+          input: [{type: 'text', text: recognitionPrompt}, {type: 'image', data: photo.toString('base64'), mime_type: 'image/jpeg'}],
+          generation_config: {max_output_tokens: 1024}, response_format: {type: 'text', mime_type: 'application/json', schema: recognitionSchema}})
+      });
+      status = response.status;
+      if (!response.ok) { await response.body?.cancel(); throw failure([401, 403].includes(status) ? 'recognition-auth' : status === 429 ? 'recognition-limit' : 'recognition-service'); }
+      const reply = await replyJson(response);
+      if (!reply || !Array.isArray(reply.steps)) throw failure('recognition-invalid');
+      const content = reply.steps.filter(step => step?.type === 'model_output').flatMap(step => step.content ?? []);
+      if (reply.status !== 'completed' || content.length !== 1 || !content[0] || content[0].type !== 'text' || typeof content[0].text !== 'string') throw failure('recognition-invalid');
+      return parseRecognition(JSON.parse(content[0].text));
+    } catch (error) {
+      const code = ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code) ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
+      if (attempt < 2 && (code === 'recognition-network' || code === 'recognition-service' && status >= 500 && status <= 599)) { await pause(500 * (attempt + 1)); continue; }
+      if (code !== 'photo-unclear') console.error('Shoot recognition failed:', JSON.stringify({status, error: code}));
+      throw failure(code);
+    }
   }
 }

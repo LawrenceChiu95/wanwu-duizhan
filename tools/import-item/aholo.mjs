@@ -161,7 +161,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
       state.styledSha256 = sha256(await keepPicture(bytes, path.join(folder, 'styled.jpg'))); state.styledFile = 'styled.jpg'; await save();
     }
     if (stopAfter === 'styled') return path.join(folder, 'styled.jpg');
-    if (!state.tasks[meshStage]) await create(meshStage, {img: styled, version: 'G1-Turbo', faceCount: 100000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false}, 'mesh_submit');
+    if (!state.tasks[meshStage]) await create(meshStage, {img: styled, version: 'G1-Turbo', faceCount: 12000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false}, 'mesh_submit');
   }
   const outputs = await wait(state.tasks[meshStage], 'mesh_success_observed');
   if (stopAfter === 'model') return null;
