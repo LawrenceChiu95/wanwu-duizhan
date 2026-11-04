@@ -61,10 +61,10 @@ test('real photo shapes stand normally when hugged, with the outward end up only
   }
  }
 });
-test('photo hug raises a negative outer end only once width reaches 110% of source height',()=>{
- for(const width of [1.099,1.1,1.101]){
+test('photo hug raises a negative outer end only once width reaches 120% of source height',()=>{
+ for(const width of [1.199,1.2,1.201]){
   const item={photoPhysics:{hardness:.8},outEnd:-1,bounds:{min:[-width/2,-.5,-.2],max:[width/2,.5,.2]},hull:[[-width/2,-.5,-.2],[width/2,-.5,-.2],[-width/2,.5,-.2],[-width/2,-.5,.2]]};
-  const head=width<1.1?[0,1,0]:[-1,0,0];
+  const head=width<1.2?[0,1,0]:[-1,0,0];
   for(const mount of Object.keys(rules.top.slots))assert.ok(rotate(mountTransform(item,mount,'hug',rules).quat,head)[1]>.999999);
  }
  // Near-symmetric shapes may have Y as the thinnest edge; it still stays up.

@@ -48,8 +48,8 @@ export function mountTransform(item,mount,orient,r){
   let up=long,side=thin,sign=1;
   if(item.photoPhysics){
    // Near-upright photos keep their original top; only clearly sideways
-   // objects (longest edge at least 10% taller than Y) raise the outer end.
-   if(ext[long]<ext[1]*1.1){up=1;side=[0,2].sort((a,b)=>ext[a]-ext[b]||a-b)[0];}
+   // objects (longest edge at least 20% taller than Y) raise the outer end.
+   if(ext[long]<ext[1]*1.2){up=1;side=[0,2].sort((a,b)=>ext[a]-ext[b]||a-b)[0];}
    else sign=item.outEnd??1;
   }
   cols[up]=scale(UP,sign);cols[side]=d;

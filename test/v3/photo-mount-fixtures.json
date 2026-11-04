@@ -1,5 +1,5 @@
 {
-  "source": "Task 28 paid models, reprocessed Y-up in task 29. Kettle, teddy and near-upright dryer retain +Y; sideways spatula head is +X. Elara cc140f36: longest edge less than 10% above source height counts as upright.",
+  "source": "Task 28 real paid source geometry, reprocessed Y-up. Elara ab7586d0: longest edge less than 20% above height stays source +Y; at least 20% raises the outer end. Fixture expectations measured from these actual bounds.",
   "items": [
     {
       "slug": "kettle",
@@ -467,7 +467,7 @@
         }
       },
       "expected": {
-        "upAxis": 0,
+        "upAxis": 1,
         "upSign": 1
       }
     },
