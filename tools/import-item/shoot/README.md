@@ -22,7 +22,7 @@ node tools/import-item/shoot/server.mjs
 - POST `/api/shoot/jobs/:id/retry`空body，续查已有阶段、下载或处理；真模式也可补该单从未提交过的阶段；无ID且无pending才允许首次提交（见下文）。busy通过POST jobs JSON `{fromJob,clientKey}`再次提交。每个busy或可重新生成的父任务只能产生一个子任务；原key重发仍返回该子任务，换key再用同一父任务409 not-allowed，重启后也一样。重新生成通过POST `/jobs/:id/regenerate` JSON `{confirm:true,clientKey}`，只对可重新生成的失败开放。
 - unknown-submit保留原记录、永不自动再提交；retry和regenerate均拒绝。它不占active位，新的clientKey可以拍另一件。活动任务冲突409 active-job并带activeJobId。
 - 成功一次原子提交同时公开itemId和/items。文件URL是根路径 `/api/shoot/files/<itemId>/model.glb`、photo.jpg、styled.jpg。只有入库文件可读。origin三段真实秒数，steps四步时间戳。
-- 新件必填 `outEnd: -1 | 1`：模型最长轴哪一端朝外。本轮假锅沿用锅样本 pan-lux3d 的规范化模型、凸包、弱点和 `outEnd=-1`；换 id 不换装向。未来生成模型要先按品类样本把三者一起规范朝向，不能只改字段。登记入口缺字段/非±1直接报错，旧内置件仍沿原 id 表。
+- 新件必填 `outEnd: -1 | 1`：模型最长轴哪一端朝外。本轮假锅沿用锅样本 pan-lux3d 的规范化模型、凸包、弱点和 `outEnd=-1`；换 id 不换装向。新照片生成模型保留生成文件的世界Y向上，凸包和弱点与网格一起归一化；outEnd记实际最长轴的安装端，不能只改字段。旧六类存档和CLI沿既有品类朝向。登记入口缺字段/非±1直接报错，旧内置件仍沿原 id 表。
 - 页面启动先GET items、`await registerItems(items)`（sim/index.js），然后再显示/装配/回放；同样在任务成功后登记新件。返回的评分须与rateItem逐项一致，登记入口拒绝篡改、不替无效数据补分。内置id拒绝，同运行时id同数据可重复登记、不同数据报错。
 - 不接受跨源请求；Host固定127.0.0.1加实际端口，不开CORS。开发接入使用同源代理或本服务的已构建页面，不把服务改成裸露的0.0.0.0。Vite代理需changeOrigin=true，后台通过 `--frontend-origin http://localhost:5173` 显式允许实际开发页的精确Origin（按实际端口填）；只允许本地HTTP来源，仍不开CORS，不改写或信任任意外部Origin。
 
@@ -124,3 +124,13 @@ quota 新增 provider 字段（real/fake），供单件验收先确认后台模�
 - 认物回包为 JSON null、steps 非数组或内容格式不符，均归 recognition-invalid，不误叫网络失败。
 - 认物前本机 photo.jpg 读盘失败报 photo-read / retry:none，不调用认物；认物已成功、尚无 Aholo ID 时读失败报 photo-upload / retry:same，不重花认物钱。已有改图或建模 ID 后读盘失败仍报 download / retry:same，修好照片可免费续原任务。改图提交前 token/上传失败报 photo-upload / retry:same，仍沿原任务免费补首次提交，不另认物或重复创建。
 - CLI 台灯/拖鞋/枕头模板缺 hull 或合法安装端时，normalization.orientation.reason 为 template-mount-unknown；有安装端但两端宽度无法区分仍为 template-ends-indistinguishable。
+
+## 照片导入质量与暂时认物失败
+
+新照片保留源GLB的Y向上和原有朝向，仅等比缩放、居中；不再把最长轴统一躺到Z轴。outEnd按实际最长轴两端的宽窄选择，弱点也落在该轴安装端；战斗仍由装法变换决定摆放。旧六类存档与CLI朝向不变。三项评分继续从最终模型界、质量、材质计算，未改评分公式。
+
+大于15000面的网格直接以UV、法线和颜色误差减到约12000面，UV权重10；不先做忽略UV的几何减面。最终仍必须≤15000面，纹理沿512/JPEG或PNG既定规则处理。
+
+Gemini认物的网络错误或HTTP 5xx最多尝试三次（首次后等0.5秒，再失败等1秒）；每次保留原超时。认证、限流、照片不清或无效回包不重试。失败归类和安全日志不变。重试只在recognizePhoto内部，不能提交Aholo任务；Aholo创建、未知提交和已有ID续查的规则不变。
+
+改图提示词在shoot/prompt.mjs：物件身份和禁止新增底座、展台、比例尺等约束固定，photoStyle单独定义风格。风格替换不删除主体约束；已有花盆保留，不能在盆下增加承托板。

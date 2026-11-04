@@ -1,7 +1,7 @@
 import {readFile, stat} from 'node:fs/promises';
 import crypto from 'node:crypto';
 import {NodeIO, Logger} from '@gltf-transform/core';
-import {weld, simplify, compactPrimitive} from '@gltf-transform/functions';
+import {weld, compactPrimitive} from '@gltf-transform/functions';
 import {MeshoptSimplifier} from 'meshoptimizer';
 import sharp from 'sharp';
 import RAPIER from '@dimforge/rapier3d-compat';
@@ -71,26 +71,30 @@ export async function prepareMesh(raw, template, standard) {
   const doc = await io().readBinary(new Uint8Array(raw));
   const sourceTriangles = geometry(doc).triangles;
   await MeshoptSimplifier.ready;
-  if (sourceTriangles > 10000) await doc.transform(weld(), simplify({simplifier: MeshoptSimplifier, ratio: 10000 / sourceTriangles, error: .02}));
-  // Aholo's pot has many UV seams: topology-only simplification stops at 33K.
-  // Permit seam collapses with explicit UV/normal error weights, retaining the
-  // original vertex attributes and PBR materials. Do not use simplifySloppy.
-  const remaining = geometry(doc).triangles;
-  if (remaining > 15000) for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
-    const positions = primitive.getAttribute('POSITION');
-    const attributes = primitive.listSemantics().filter(s => s === 'NORMAL' || s.startsWith('TEXCOORD_') || s.startsWith('COLOR_')).map(s => primitive.getAttribute(s));
-    const stride = attributes.reduce((n, a) => n + a.getElementSize(), 0);
-    const values = new Float32Array(positions.getCount() * stride);
-    for (let i = 0; i < positions.getCount(); i++) {
-      let offset = i * stride;
-      for (const attribute of attributes) { const element = attribute.getElement(i, []); values.set(element, offset); offset += element.length; }
+  // Keep texture coordinates in the error metric from the FIRST collapse.
+  // A geometry-only first pass irreversibly distorts UVs on smooth surfaces.
+  if (sourceTriangles > 15000) {
+    await doc.transform(weld());
+    for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
+      const positions = primitive.getAttribute('POSITION');
+      const semantics = primitive.listSemantics().filter(s => s === 'NORMAL' || s.startsWith('TEXCOORD_') || s.startsWith('COLOR_'));
+      const attributes = semantics.map(s => primitive.getAttribute(s));
+      const stride = attributes.reduce((n, a) => n + a.getElementSize(), 0);
+      const values = new Float32Array(positions.getCount() * stride);
+      for (let i = 0; i < positions.getCount(); i++) {
+        let offset = i * stride;
+        for (const attribute of attributes) { const element = attribute.getElement(i, []); values.set(element, offset); offset += element.length; }
+      }
+      // UVs describe a whole texture atlas (0–1), unlike unit-length normals.
+      const weights = attributes.flatMap((a, i) => Array(a.getElementSize()).fill(semantics[i].startsWith('TEXCOORD_') ? 10 : 1));
+      const indices = primitive.getIndices();
+      const target = Math.max(3, Math.floor(indices.getCount() * 12000 / sourceTriangles / 3) * 3);
+      const [result] = stride ? MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, values, stride, weights, null, target, .03, ['Permissive'])
+        : MeshoptSimplifier.simplify(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, target, .03);
+      primitive.setIndices(indices.clone().setArray(result));
+      if (indices.listParents().length === 1) indices.dispose();
+      compactPrimitive(primitive);
     }
-    const indices = primitive.getIndices();
-    const target = Math.max(3, Math.floor(indices.getCount() * 12000 / remaining / 3) * 3);
-    const [result] = MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, values, stride, Array(stride).fill(1), null, target, .03, ['Permissive']);
-    primitive.setIndices(indices.clone().setArray(result));
-    if (indices.listParents().length === 1) indices.dispose();
-    compactPrimitive(primitive);
   }
   const textureSizes = [];
   // Colour textures with nothing transparent in them are stored as JPEG (task #42: as PNGs they were most of a 废土
@@ -147,7 +151,9 @@ export async function prepareMesh(raw, template, standard) {
   const flip = resolved && (outwardEnd === 'wide' ? widths[0] > widths[1] : widths[0] < widths[1]);
   const Y = [0, 0, 0], Z = [0, 0, 0]; Y[thinnest] = 1; Z[longest] = flip ? -1 : 1;
   const X = [Y[1] * Z[2] - Y[2] * Z[1], Y[2] * Z[0] - Y[0] * Z[2], Y[0] * Z[1] - Y[1] * Z[0]];
-  const axes = [X, Y, Z], scale = standard.longSideMeters / length, center = sourceBounds.max.map((v, i) => (v + sourceBounds.min[i]) / 2);
+  // New photos retain the generator's world Y-up; mounting rotates them later.
+  // Existing category imports keep their established longest-axis convention.
+  const axes = standard.preserveUp ? [[1, 0, 0], [0, 1, 0], [0, 0, 1]] : [X, Y, Z], scale = standard.longSideMeters / length, center = sourceBounds.max.map((v, i) => (v + sourceBounds.min[i]) / 2);
   const matrix = Array(16).fill(0); matrix[15] = 1;
   for (let r = 0; r < 3; r++) { for (let c = 0; c < 3; c++) matrix[c * 4 + r] = axes[r][c] * scale; matrix[12 + r] = -axes[r].reduce((s, a, k) => s + a * center[k], 0) * scale; }
   const wrapper = doc.createNode('item_meters_centered').setMatrix(matrix);
@@ -171,6 +177,8 @@ export async function prepareMesh(raw, template, standard) {
   const world = new RAPIER.World({x: 0, y: 0, z: 0}); let volume;
   try { volume = world.createCollider(descriptor.setMass(standard.massKg)).volume(); } finally { world.free(); }
   if (!(volume > 0) || !Number.isFinite(volume)) throw Error('Invalid hull volume');
-  const weak = final.points.reduce((a, b) => b[2] > a[2] ? b : a);
-  return {bytes: output, shape: {hull, bounds: finalBounds, volume, weakPoint: {pos: weak, radius: template.weakPoint.radius}, normalization: {matrix, sourceBounds, sourceVertices: current.points.length, orientation, ...(resolved ? {outwardEnd} : {})}}, report: {sourceTriangles, triangles: final.triangles, vertices: final.points.length, textureSizes, materials: check.getRoot().listMaterials().length, bytes: output.length, sha256: sha256(output), hullPoints: hull.length, longSideMeters: measured}};
+  const weakAxis = standard.preserveUp ? longest : 2, outEnd = standard.preserveUp && flip ? -1 : 1;
+  if (standard.preserveUp) { orientation.method = 'photo-upright'; orientation.sourceUpAxis = 'Y'; }
+  const weak = final.points.reduce((a, b) => b[weakAxis] * outEnd > a[weakAxis] * outEnd ? b : a);
+  return {bytes: output, shape: {...(standard.preserveUp ? {outEnd} : {}), hull, bounds: finalBounds, volume, weakPoint: {pos: weak, radius: template.weakPoint.radius}, normalization: {matrix, sourceBounds, sourceVertices: current.points.length, orientation, ...(resolved ? {outwardEnd} : {})}}, report: {sourceTriangles, triangles: final.triangles, vertices: final.points.length, textureSizes, materials: check.getRoot().listMaterials().length, bytes: output.length, sha256: sha256(output), hullPoints: hull.length, longSideMeters: measured}};
 }

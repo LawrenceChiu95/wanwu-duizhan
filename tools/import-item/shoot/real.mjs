@@ -5,6 +5,7 @@ import {prepareMesh, readGlb, sha256} from '../mesh.mjs';
 import {photoMassLimit} from '../../../sim/item-rating.js';
 
 import {recognizePhoto} from './recognition.mjs';
+import {photoPrompt} from './prompt.mjs';
 export {parseRecognition, recognitionPrompt, recognitionSchema} from './recognition.mjs';
 const failure = code => Object.assign(Error(code), {code});
 async function readPhoto(folder) {
@@ -29,7 +30,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
       const {state, save, folder} = context;
       if (state.recognitionPending) throw failure('recognition-interrupted');
       state.recognitionPending = true; await save();
-      return recognizePhoto({photo: await readPhoto(folder), key: geminiKey, fetch: request, timeoutMs});
+      return recognizePhoto({photo: await readPhoto(folder), key: geminiKey, fetch: request, timeoutMs, pause});
     },
     charged: state => Boolean(state?.pending || Object.keys(state?.tasks ?? {}).length),
     async step(step, _id, context, catalog) {
@@ -39,7 +40,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         // free resume can finish that first submission (Elara 0e7833a1).
         try {
           const photo = await readPhoto(folder);
-          const prompt = `只保留参考照片中识别出的${recognition.name ?? recognition.category}，去掉照片里的其他物品、桌面和背景，把选中主体改成废土朋克游戏道具。保留主体原有轮廓、比例、主要结构和材质特征，不替换成标准样本。同样物品的一双或一对保留原有成对结构，当作一个完整道具。少量工业黄漆、警示纹、划痕和旧布。不要添加主体以外的物品、人体、背景、尖刺或夸大结构。浅灰背景，均匀柔光。`;
+          const prompt = photoPrompt(recognition.name ?? recognition.category);
           await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, onCreate: value => { submitting = value; }});
         } catch (error) {
           if (error.code === 'busy' && state.pending) { delete state.pending; await save(); }
@@ -81,7 +82,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         }
         const raw = await readGlb(source);
         if (sha256(raw) !== state.downloadSha256) throw failure('process-corrupt');
-        const prepared = await prepareMesh(raw, {...template, outEnd: mountRules.top.outEnd[template.id] ?? 1}, {longSideMeters: lengthMeters, massKg});
+        const prepared = await prepareMesh(raw, {...template, outEnd: mountRules.top.outEnd[template.id] ?? 1}, {longSideMeters: lengthMeters, massKg, preserveUp: unrestricted});
         if (!unrestricted) {
           const templateLength = Math.max(...template.bounds.max.map((v, i) => v - template.bounds.min[i]));
           prepared.shape.weakPoint.radius *= lengthMeters / templateLength;
