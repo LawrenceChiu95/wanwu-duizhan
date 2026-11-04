@@ -41,7 +41,9 @@ function realApi(base = '/api/shoot') {
     const data = await res.json().catch(() => null);
     // No such path or method, and not in the backend's own JSON: this address has no 拍一件 backend behind it (task #62).
     // A gateway's 502 or 504 while the backend is down stays a server error, asked again later.
-    if (!res.ok) throw new ShootError(data?.error?.code ?? (res.status === 401 ? 'pass' : [404, 405, 501].includes(res.status) ? 'no-backend' : 'server'), {activeJobId: data?.activeJobId ?? null});
+    if (!res.ok) throw new ShootError(data?.error?.code ?? (res.status === 401 ? 'pass' : [404, 405, 501].includes(res.status) ? 'no-backend' : 'server'), {activeJobId: data?.activeJobId ?? null,
+      // A quota error says which allowance ran out (generation or recognition) and whose (this browser's or everyone's).
+      kind: data?.error?.kind ?? null, scope: data?.error?.scope ?? null});
     return data;
   };
   return {
