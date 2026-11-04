@@ -1162,6 +1162,10 @@
     },
     {
       "id": "pillow",
+      "card": {
+        "upright": false,
+        "yaw": 0.6
+      },
       "name": "枕头",
       "glb": "data/models/pillow.glb",
       "scale": 1,
@@ -1297,6 +1301,10 @@
     },
     {
       "id": "pan-lux3d",
+      "card": {
+        "upright": false,
+        "yaw": 0.6
+      },
       "name": "锅（Lux3D）",
       "glb": "data/models/pan-lux3d-mobile.glb",
       "scale": 1,
@@ -1967,6 +1975,10 @@
     },
     {
       "id": "wasteland-pot",
+      "card": {
+        "upright": false,
+        "yaw": 0.6
+      },
       "name": "废土锅",
       "category": "pot",
       "templateId": "pot",

@@ -20,6 +20,26 @@ const urlFor = glb => isUrl(glb) ? glb : Object.entries(urls).find(([key]) => ke
 const loader = new GLTFLoader();
 const cache = new Map();
 const loading = new Map();
+const poses = new Map();
+
+/**
+ * How a card holds the item (task #3, Elara 6c4b05c9: open a card and it already shows the side most like the photo,
+ * no turning). The game model is the generated one laid out for the fight by `normalization.matrix`; the card turns
+ * that layout back, so the item stands as it was made: Y up, and for a photo-made item (Aholo, Lux3D) facing +Z, the
+ * way the styled picture looks at it. That needs no one to set it per item, so a judge's own new photo gets it too.
+ * `card.yaw` (radians about Y, catalog) turns a model whose front is elsewhere; `card.upright: false` keeps the fight's
+ * layout for a model that does not stand the way it was made (the two pans and the pillow were made facing the camera
+ * edge-on or face-on; they keep the old three-quarter view, yaw 0.6).
+ */
+function cardPose(item) {
+  const pose = new THREE.Matrix4(), m = item.normalization?.matrix;
+  if (m && item.card?.upright !== false) {
+    const layout = new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().fromArray(m)), det = layout.determinant();
+    // The layout's uniform scale is the card fit's business; only its turn (and any mirroring) is undone.
+    if (Math.abs(det) > 1e-12) pose.setFromMatrix3(layout.multiplyScalar(1 / Math.cbrt(Math.abs(det))).invert());
+  }
+  return {pose, yaw: item.card?.yaw ?? 0};
+}
 
 /** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
 export function loadModels(items) {
@@ -45,6 +65,7 @@ async function loadOne(item) {
       }
     });
     cache.set(item.id, gltf.scene);
+    poses.set(item.id, cardPose(item));
   }
 }
 
@@ -82,8 +103,9 @@ export function instantiate(itemId, uniforms) {
 }
 
 /**
- * One item on its own turntable for the 角色库 cards and 看它怎么来的: lit like the stage, centred, and framed so the
- * whole turn fits a square. Drawn live by LiveTurns (livecards.js); null until the model has loaded.
+ * One item on its own turntable for the 角色库 cards and 看它怎么来的: stood as it was made (cardPose), lit like the
+ * stage, centred, and framed so the whole turn fits a square. `yaw` is the turn that faces its front to the camera.
+ * Drawn live by LiveTurns (livecards.js); null until the model has loaded.
  */
 export function turnRig(itemId, environment, zoom = 1) {
   const src = cache.get(itemId);
@@ -94,12 +116,13 @@ export function turnRig(itemId, environment, zoom = 1) {
   const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
   keyLight.position.set(2, 3, 2.5);
   scene.add(keyLight);
-  const obj = src.clone(true), spin = new THREE.Group();
+  const obj = src.clone(true), spin = new THREE.Group(), {pose, yaw} = poses.get(itemId);
+  obj.applyMatrix4(pose);
   spin.add(obj);
   scene.add(spin);
   const box = new THREE.Box3().setFromObject(obj), center = box.getCenter(new THREE.Vector3());
   obj.position.sub(center);
-  return {scene, camera: turnCamera(box.translate(center.negate()), zoom), spin};
+  return {scene, camera: turnCamera(box.translate(center.negate()), zoom), spin, yaw};
 }
 
 /**
@@ -120,18 +143,16 @@ function turnCamera(box, zoom = 1) {
 
 /**
  * The item's outline before its model has loaded, for an item without a still (task #37: a card must not sit empty and
- * look broken): the catalog hull, framed by the same turntable camera with its long side across the view, as an SVG path in a 0–100 square.
- * Null without a hull.
+ * look broken): the catalog hull, stood and turned as the card holds it, framed by the same turntable camera, as an SVG
+ * path in a 0–100 square. Null without a hull.
  */
 export function outlinePath(item) {
-  if (!item.hull?.length || !item.bounds) return null;
-  const box = new THREE.Box3(new THREE.Vector3(...item.bounds.min), new THREE.Vector3(...item.bounds.max));
-  const center = box.getCenter(new THREE.Vector3()), camera = turnCamera(box.clone().translate(center.clone().negate()));
-  // Long side across, turned a little so it reads as an object rather than a flat side view.
-  const size = box.getSize(new THREE.Vector3()), angle = (size.z > size.x ? Math.PI / 2 : 0) + 0.35;
-  const v = new THREE.Vector3(), turn = new THREE.Matrix4().makeRotationY(angle);
-  const pts = item.hull.map(([x, y, z]) => {
-    v.set(x, y, z).sub(center).applyMatrix4(turn).project(camera);
+  if (!item.hull?.length) return null;
+  const {pose, yaw} = cardPose(item), stood = item.hull.map(p => new THREE.Vector3(...p).applyMatrix4(pose));
+  const box = new THREE.Box3().setFromPoints(stood), center = box.getCenter(new THREE.Vector3());
+  const camera = turnCamera(box.clone().translate(center.clone().negate())), turn = new THREE.Matrix4().makeRotationY(yaw);
+  const pts = stood.map(v => {
+    v.sub(center).applyMatrix4(turn).project(camera);
     return [(v.x + 1) * 50, (1 - v.y) * 50];
   });
   // Convex hull of the projected points (monotone chain).
