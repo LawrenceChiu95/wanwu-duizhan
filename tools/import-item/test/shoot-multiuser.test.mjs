@@ -193,7 +193,7 @@ test('the CLI keeps its cookie for subsequent requests and a second observation 
  await fs.mkdir(path.dirname(script), {recursive: true}); await fs.copyFile(new URL('../shoot/check-real.mjs', import.meta.url), script);
  const image = path.join(dir, 'photo.png'); await fs.writeFile(image, photo);
  const source = `process.argv=['node','check-real','--photo',${JSON.stringify(image)},'--key','cli-cookie-key','--allow-paid'];
- let seen=[];globalThis.fetch=async(url,o)=>{seen.push(o.headers?.cookie??'');return Response.json(url.endsWith('quota')?{provider:process.env.TEST_SHOOT_PROVIDER??'real'}:{job:{id:'j_cli',status:'failed',error:{code:'unknown-submit'}}},{headers:{'set-cookie':'wanwu_shoot_'+(process.env.TEST_SHOOT_PROVIDER??'real')+'=fake-private-session; HttpOnly; SameSite=Strict'}})};
+ let seen=[];globalThis.fetch=async(url,o)=>{seen.push(o.headers?.cookie??'');const mode=process.env.TEST_SHOOT_PROVIDER??'real',provider=mode==='switch'?(url.endsWith('quota')?'real':'fake'):mode;return Response.json(url.endsWith('quota')?{provider}:{job:{id:'j_cli',status:'failed',error:{code:'unknown-submit'}}},{headers:{'set-cookie':'wanwu_shoot_'+provider+'=fake-private-session; HttpOnly; SameSite=Strict'}})};
  try{await import(${JSON.stringify(pathToFileURL(script).href)})}finally{console.log('HEADERS='+JSON.stringify(seen))}`;
  async function run(provider = 'real') {
   const p = spawn(process.execPath, ['--input-type=module', '-e', source], {env: {...process.env, TEST_SHOOT_PROVIDER: provider}}); let out = '', err = '';
@@ -203,6 +203,7 @@ test('the CLI keeps its cookie for subsequent requests and a second observation 
  }
  assert.deepEqual(await run(), ['', 'wanwu_shoot_real=fake-private-session']);
  assert.deepEqual(await run('fake'), ['wanwu_shoot_real=fake-private-session']);
+ assert.deepEqual(await run('switch'), ['wanwu_shoot_real=fake-private-session', 'wanwu_shoot_real=fake-private-session']);
  assert.deepEqual(await run(), ['wanwu_shoot_real=fake-private-session', 'wanwu_shoot_real=fake-private-session']);
  const cookieFile = path.join(dir, '.aholo/shoot-client-cookie.json'); assert.equal(JSON.parse(await fs.readFile(cookieFile)).cookie, 'wanwu_shoot_real=fake-private-session');
  if (process.platform !== 'win32') assert.equal((await fs.stat(cookieFile)).mode & 0o777, 0o600);

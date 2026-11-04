@@ -16,7 +16,7 @@ async function get(route, options = {}) {
   if (!response.ok) throw Error(`Local backend refused: ${reply.error?.code ?? response.status}; keep the same key, do not regenerate`);
   if (route === 'quota' && reply.provider !== 'real') throw Error('Backend is not the real provider; no photo submitted');
   const saved = response.headers.get('set-cookie')?.split(';')[0];
-  if (saved && saved !== cookie) {
+  if (saved?.startsWith('wanwu_shoot_real=') && saved !== cookie) {
     cookie = saved;
     await fs.mkdir(new URL('./', sessionFile), {recursive: true});
     await fs.writeFile(sessionFile, JSON.stringify({cookie}), {mode: 0o600});
