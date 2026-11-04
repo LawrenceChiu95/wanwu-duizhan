@@ -1,0 +1,2923 @@
+{
+  "source": "7366f02a14d6dd309998ec66451afb613c063dd610ef83df6a0a1a9dcd150db8",
+  "rows": [
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 0,
+      "swapped": false,
+      "aiSeeds": [
+        608135816,
+        3084996962
+      ],
+      "winner": 1,
+      "duration": 35.99166666666667,
+      "sha256": "794a88bceea9c2f05584b5bac8c92c8b72e2ca51a0cf16e577a631f2d168fd26"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 0,
+      "swapped": true,
+      "aiSeeds": [
+        3084996962,
+        608135816
+      ],
+      "winner": 1,
+      "duration": 18.591666666666665,
+      "sha256": "dcd27bde4e1ce0bf8a669c3ed3f68373d757d13be79aa89f3cff341c578d5926"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 1,
+      "swapped": false,
+      "aiSeeds": [
+        608135817,
+        3084996963
+      ],
+      "winner": 0,
+      "duration": 39.225,
+      "sha256": "af7fc49a6af23207edbf6baf783b257f56218d219699ec4aa285fddfbaf8d23c"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 1,
+      "swapped": true,
+      "aiSeeds": [
+        3084996963,
+        608135817
+      ],
+      "winner": 0,
+      "duration": 39.225,
+      "sha256": "f3adf5829eb11b114731d0280b1dd596d640992fe050913cb7a1e3198561854c"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 2,
+      "swapped": false,
+      "aiSeeds": [
+        608135818,
+        3084996960
+      ],
+      "winner": 1,
+      "duration": 37.85,
+      "sha256": "9f0e5b87462cd6775ed325b781ae866155e2cb514866e3a24ba7f604a1374c9f"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 2,
+      "swapped": true,
+      "aiSeeds": [
+        3084996960,
+        608135818
+      ],
+      "winner": 1,
+      "duration": 18.591666666666665,
+      "sha256": "86ae279931793b4a4378e7c462f374d23a2b62977f1b21fe3e23ba36ef59a0b7"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 3,
+      "swapped": false,
+      "aiSeeds": [
+        608135819,
+        3084996961
+      ],
+      "winner": 1,
+      "duration": 30.191666666666666,
+      "sha256": "47953904569e1f8ac1460845a03f8d62f3c8831c034e05b4688cf07ab5822af1"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 3,
+      "swapped": true,
+      "aiSeeds": [
+        3084996961,
+        608135819
+      ],
+      "winner": 1,
+      "duration": 18.591666666666665,
+      "sha256": "f3d86165a0f6d6a1eda0e7389fff33a461505e6091cfb947b9bc40a2cb599892"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 4,
+      "swapped": false,
+      "aiSeeds": [
+        608135820,
+        3084996966
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "e992a1953c4360d457e46ecb35716dd2dec34c38a57bee71de1d094d86dbe6fc"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 4,
+      "swapped": true,
+      "aiSeeds": [
+        3084996966,
+        608135820
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "08a0b650b31ae65c476903c63df797876a950b5998a0dbbb162087cdfb5aca93"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 5,
+      "swapped": false,
+      "aiSeeds": [
+        608135821,
+        3084996967
+      ],
+      "winner": 1,
+      "duration": 19.3,
+      "sha256": "b9f7136bb0cc3794e59895f3617e8143a0260bdef52180482bffed2e6b0da98a"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 5,
+      "swapped": true,
+      "aiSeeds": [
+        3084996967,
+        608135821
+      ],
+      "winner": 1,
+      "duration": 35.96666666666667,
+      "sha256": "5e2d902e6a6b9d69a8169450d37cc6c8bc506e8c3299bec3de89ff7ced90df7f"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 6,
+      "swapped": false,
+      "aiSeeds": [
+        608135822,
+        3084996964
+      ],
+      "winner": 1,
+      "duration": 27.933333333333334,
+      "sha256": "69be846040da594d8c7af0d71e5b2731f566514658cd81710de9d93e33ba3ebf"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 6,
+      "swapped": true,
+      "aiSeeds": [
+        3084996964,
+        608135822
+      ],
+      "winner": 0,
+      "duration": 27.40833333333333,
+      "sha256": "159ece9619d068cd0df7ed106657158d4a9f6554984b40a2d45d7ebde92741e6"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 7,
+      "swapped": false,
+      "aiSeeds": [
+        608135823,
+        3084996965
+      ],
+      "winner": 0,
+      "duration": 38.3,
+      "sha256": "f8c7854c8b6e2e7abf595d8afd8d4616cbf36f7e1a94222ad8c991ad89c6c44b"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 7,
+      "swapped": true,
+      "aiSeeds": [
+        3084996965,
+        608135823
+      ],
+      "winner": 0,
+      "duration": 35.675,
+      "sha256": "563c33325fceca59e0cb65e66437781893257736c9574839293a42c741cd9415"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 8,
+      "swapped": false,
+      "aiSeeds": [
+        608135808,
+        3084996970
+      ],
+      "winner": 1,
+      "duration": 37.85,
+      "sha256": "00daee228f33b80c781b9bcaf3acb83941d3ecc403c56fada9227f44eb694e00"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 8,
+      "swapped": true,
+      "aiSeeds": [
+        3084996970,
+        608135808
+      ],
+      "winner": 1,
+      "duration": 27.416666666666668,
+      "sha256": "60d5170ed504154248df25d7fb6a5a64a9e87a169a5564dc826a049557061b1b"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 9,
+      "swapped": false,
+      "aiSeeds": [
+        608135809,
+        3084996971
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "ab2f78009c902c6e803c1d0a4ee1e7635f3c6718006625a88b161d1223daf322"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 9,
+      "swapped": true,
+      "aiSeeds": [
+        3084996971,
+        608135809
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "d3a65c97b6bbcbd2b8e25e710a8c9c3376e6c29f0bdb64f3bb8505bd32625655"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 10,
+      "swapped": false,
+      "aiSeeds": [
+        608135810,
+        3084996968
+      ],
+      "winner": 0,
+      "duration": 34.625,
+      "sha256": "89c715f95f7e15abd87769df56dd1eb89dda45a98c537e7c47882f27a70ef01a"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 10,
+      "swapped": true,
+      "aiSeeds": [
+        3084996968,
+        608135810
+      ],
+      "winner": 0,
+      "duration": 35.21666666666667,
+      "sha256": "6baf9e9d2f9c9d6fc09e606350c7a7155fda63f7c31ef3c2d8e96d58c1b6ca93"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 11,
+      "swapped": false,
+      "aiSeeds": [
+        608135811,
+        3084996969
+      ],
+      "winner": 1,
+      "duration": 18.591666666666665,
+      "sha256": "92e65b3b598a0df28a7d4969f6c2e2f17a4702a6c4dc2cd85f6591727434e2d0"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 11,
+      "swapped": true,
+      "aiSeeds": [
+        3084996969,
+        608135811
+      ],
+      "winner": 0,
+      "duration": 36.358333333333334,
+      "sha256": "2c29b78afbc149ca82c75910f635c5d558210e622f9bf02468fd2894871442a0"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 12,
+      "swapped": false,
+      "aiSeeds": [
+        608135812,
+        3084996974
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "08a4940ded312a89487091f22dca568129d4013cd9d1aebbd1290573b1ec52a4"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 12,
+      "swapped": true,
+      "aiSeeds": [
+        3084996974,
+        608135812
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "9297bce2eb5d333ea7a6ef6729deacb8683bf6f6539d8e02164f647ff21a0166"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 13,
+      "swapped": false,
+      "aiSeeds": [
+        608135813,
+        3084996975
+      ],
+      "winner": 0,
+      "duration": 35.233333333333334,
+      "sha256": "17f8ef90f999329488315d2a5abfaaf5dd0f962515b78f4a3e946771f4aa64f9"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 13,
+      "swapped": true,
+      "aiSeeds": [
+        3084996975,
+        608135813
+      ],
+      "winner": 0,
+      "duration": 35.233333333333334,
+      "sha256": "384080d069251b7935ab27142e11a74a9939cacc8d1e606f0b2b96693c6c31c0"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 14,
+      "swapped": false,
+      "aiSeeds": [
+        608135814,
+        3084996972
+      ],
+      "winner": 1,
+      "duration": 23.733333333333334,
+      "sha256": "5eb231df40f83953190ead55558c81609273023ae5a9212946c58c78a07a2344"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 14,
+      "swapped": true,
+      "aiSeeds": [
+        3084996972,
+        608135814
+      ],
+      "winner": 1,
+      "duration": 37.85,
+      "sha256": "9a7f75ecbe6315a7bd12e681897b0fe27f2d5182d00c52a8cc01cd1079d4bd62"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 15,
+      "swapped": false,
+      "aiSeeds": [
+        608135815,
+        3084996973
+      ],
+      "winner": 1,
+      "duration": 18.591666666666665,
+      "sha256": "f32e9b9839eb629a7c94ce53c9c133d3af06397f3a7cc361073686458c1cd305"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 15,
+      "swapped": true,
+      "aiSeeds": [
+        3084996973,
+        608135815
+      ],
+      "winner": 1,
+      "duration": 39.416666666666664,
+      "sha256": "024c208d79bd1880311d9bb8a02baec7aac135159be92758abcce2b790a69352"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 16,
+      "swapped": false,
+      "aiSeeds": [
+        608135832,
+        3084996978
+      ],
+      "winner": 1,
+      "duration": 18.591666666666665,
+      "sha256": "55bf1d732e3bca4e2c87a536513a1a88f7592bc4f1615eb99a79a38b11de49ed"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 16,
+      "swapped": true,
+      "aiSeeds": [
+        3084996978,
+        608135832
+      ],
+      "winner": 1,
+      "duration": 27.758333333333333,
+      "sha256": "5976ac6574e52c84fbcc98406be4029f60ddbeed59000fcfd920b59bfc56a80e"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 17,
+      "swapped": false,
+      "aiSeeds": [
+        608135833,
+        3084996979
+      ],
+      "winner": 1,
+      "duration": 19.3,
+      "sha256": "555396f2f888430b0f2c16c678023ffbafa93c349005ad1521fff3f6107ac1ca"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 17,
+      "swapped": true,
+      "aiSeeds": [
+        3084996979,
+        608135833
+      ],
+      "winner": 1,
+      "duration": 37.858333333333334,
+      "sha256": "f82b410bc4d6b174e20b9d916d6552421e2c9da703442d27970b4ff3bd24f47d"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 18,
+      "swapped": false,
+      "aiSeeds": [
+        608135834,
+        3084996976
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "a5658da21454210c2dd040527d94d7501894c73ef7fbe234b331ecbeff1e99fd"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 18,
+      "swapped": true,
+      "aiSeeds": [
+        3084996976,
+        608135834
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "00cad7e49b9f531b4334f5e75db7c7495e04558b4d9faf5e42612a9617d98bf3"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 19,
+      "swapped": false,
+      "aiSeeds": [
+        608135835,
+        3084996977
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "e846cfd0348a79e054af762c56d7e327a33b4082faf9955db2a5b0db8c1b3010"
+    },
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "seed": 19,
+      "swapped": true,
+      "aiSeeds": [
+        3084996977,
+        608135835
+      ],
+      "winner": 1,
+      "duration": 21.45,
+      "sha256": "5dc4a70e8cf5e421732aeddc1a1bdc5ac5fffdc6123fd857022b09c5c8090db7"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 0,
+      "swapped": false,
+      "aiSeeds": [
+        608135816,
+        3084996962
+      ],
+      "winner": 0,
+      "duration": 35.15833333333333,
+      "sha256": "3fb852dee5b1826474c9ecb12f54536cc1ff949c660a8ffb82152f502bf7e2f8"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 0,
+      "swapped": true,
+      "aiSeeds": [
+        3084996962,
+        608135816
+      ],
+      "winner": 0,
+      "duration": 37.416666666666664,
+      "sha256": "7beed80b4b482e4bd488340ef8278b053b5ba8f6c6f440bebeb4c1e9f150819c"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 1,
+      "swapped": false,
+      "aiSeeds": [
+        608135817,
+        3084996963
+      ],
+      "winner": 0,
+      "duration": 35.5,
+      "sha256": "0877d76cdf37f68a655dd879015adb6c7b8c87e233b44350e0ff843caa5d3a44"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 1,
+      "swapped": true,
+      "aiSeeds": [
+        3084996963,
+        608135817
+      ],
+      "winner": 0,
+      "duration": 30.558333333333334,
+      "sha256": "a54bacb2854a4ef40a5664708f86e9f71cdcd15eaeda3ce6f3b6ac83080595d7"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 2,
+      "swapped": false,
+      "aiSeeds": [
+        608135818,
+        3084996960
+      ],
+      "winner": 0,
+      "duration": 31.433333333333334,
+      "sha256": "dd0de8e3901f3a876972bdd857f2fd7d6d528df8c19bd3fb97fb1e7f6ff4d4a0"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 2,
+      "swapped": true,
+      "aiSeeds": [
+        3084996960,
+        608135818
+      ],
+      "winner": 0,
+      "duration": 35.63333333333333,
+      "sha256": "02b9c759514ad92106bc7d13e5682c58786241b051665b54fa057e15ae9fda60"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 3,
+      "swapped": false,
+      "aiSeeds": [
+        608135819,
+        3084996961
+      ],
+      "winner": 1,
+      "duration": 34.44166666666666,
+      "sha256": "a9c5997bc339bc4302a7733dcd5f3b1cdeb05da60ea94509c25c4c0d88e5a6c4"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 3,
+      "swapped": true,
+      "aiSeeds": [
+        3084996961,
+        608135819
+      ],
+      "winner": 1,
+      "duration": 33.74166666666667,
+      "sha256": "4eca9ad559d73b19ec4a782a31f9605e06e91b50b418ef3399b21d2f37c5a70b"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 4,
+      "swapped": false,
+      "aiSeeds": [
+        608135820,
+        3084996966
+      ],
+      "winner": 0,
+      "duration": 33.90833333333333,
+      "sha256": "fb4f62abb3cae5ad45f75dc2d5776017e5a737e95c4bf32bea7b9aec4a2c92f3"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 4,
+      "swapped": true,
+      "aiSeeds": [
+        3084996966,
+        608135820
+      ],
+      "winner": 0,
+      "duration": 35.175,
+      "sha256": "0f4adbc7575fa4d4d4fada1b29e4cc987558a93e930238ffcc1a8337bcb2d32d"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 5,
+      "swapped": false,
+      "aiSeeds": [
+        608135821,
+        3084996967
+      ],
+      "winner": 1,
+      "duration": 33.775,
+      "sha256": "6e2802eda70f68ebf06df5ab40066d650515664b5d276b32d1939a54f006bb1b"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 5,
+      "swapped": true,
+      "aiSeeds": [
+        3084996967,
+        608135821
+      ],
+      "winner": 1,
+      "duration": 29.016666666666666,
+      "sha256": "28e9daccc8f4eb219b9a6de4bf12ce6fa5a2c639cb69419c328d7c94d634cd07"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 6,
+      "swapped": false,
+      "aiSeeds": [
+        608135822,
+        3084996964
+      ],
+      "winner": 1,
+      "duration": 36.416666666666664,
+      "sha256": "fc103b7a896d77efcb3329dc104aabf098d8183bdc503ba3c64a58940b7b399e"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 6,
+      "swapped": true,
+      "aiSeeds": [
+        3084996964,
+        608135822
+      ],
+      "winner": 1,
+      "duration": 38.94166666666666,
+      "sha256": "028ac805f433d47430e21f5b119bd8889a54985496c6c3b4697f8c21e130abb5"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 7,
+      "swapped": false,
+      "aiSeeds": [
+        608135823,
+        3084996965
+      ],
+      "winner": 1,
+      "duration": 34.38333333333333,
+      "sha256": "09c8cb33504ba232974a164b3b678d0a2a5d0460bb46b82390d91bbb6d6f65f8"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 7,
+      "swapped": true,
+      "aiSeeds": [
+        3084996965,
+        608135823
+      ],
+      "winner": 1,
+      "duration": 34.6,
+      "sha256": "7e7e02fedd925465abf48e60c9fec49a4a6bb3437a33f723ffea4f7551ada2f7"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 8,
+      "swapped": false,
+      "aiSeeds": [
+        608135808,
+        3084996970
+      ],
+      "winner": 0,
+      "duration": 34.025,
+      "sha256": "413fb8e9d6f17ffcdbc6894801ef89d4cc5dd6f54fabe79d66540c27640d05fd"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 8,
+      "swapped": true,
+      "aiSeeds": [
+        3084996970,
+        608135808
+      ],
+      "winner": 0,
+      "duration": 34.733333333333334,
+      "sha256": "64de7667b02dd46795c2aa21a5856bdaa36e93f4f284badc22ce433ee2b69700"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 9,
+      "swapped": false,
+      "aiSeeds": [
+        608135809,
+        3084996971
+      ],
+      "winner": 0,
+      "duration": 31.216666666666665,
+      "sha256": "821ab303aa548bfef540e6bbae3f62a4c83205af3ffea6f302def0fcdf7de6ff"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 9,
+      "swapped": true,
+      "aiSeeds": [
+        3084996971,
+        608135809
+      ],
+      "winner": 0,
+      "duration": 35.1,
+      "sha256": "df05223c9d642c3df54c34c82ecb55331fade42390816ccc524ff22403a8df45"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 10,
+      "swapped": false,
+      "aiSeeds": [
+        608135810,
+        3084996968
+      ],
+      "winner": 1,
+      "duration": 40.06666666666666,
+      "sha256": "1928614b964386cea9984c72add04cf8e2661a3561624ae24fa5e12de1c023bd"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 10,
+      "swapped": true,
+      "aiSeeds": [
+        3084996968,
+        608135810
+      ],
+      "winner": 1,
+      "duration": 36.06666666666666,
+      "sha256": "c87c4de4ec350cf9feebfeb075932feaef3270eefd0d785f24a54ecea9a996da"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 11,
+      "swapped": false,
+      "aiSeeds": [
+        608135811,
+        3084996969
+      ],
+      "winner": 1,
+      "duration": 34.36666666666667,
+      "sha256": "7d16bd6d8e8fe854e2ceb51e977d8941ee269eea7b100a687d556efa202a8e79"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 11,
+      "swapped": true,
+      "aiSeeds": [
+        3084996969,
+        608135811
+      ],
+      "winner": 0,
+      "duration": 29.65833333333333,
+      "sha256": "b054467a6d960282de40af2e69af99e0d37a59d5ea369549646d14dad5081f2f"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 12,
+      "swapped": false,
+      "aiSeeds": [
+        608135812,
+        3084996974
+      ],
+      "winner": 1,
+      "duration": 33.84166666666667,
+      "sha256": "cea6ddaf880150c60b639c30435bf5157f011dce6ec397e65ae5e2b6a1c1240e"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 12,
+      "swapped": true,
+      "aiSeeds": [
+        3084996974,
+        608135812
+      ],
+      "winner": 1,
+      "duration": 29.78333333333333,
+      "sha256": "0d5dea182ba31b82dce1acca4338a2ece40dd0da516319cb3970c210fc9d2c4b"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 13,
+      "swapped": false,
+      "aiSeeds": [
+        608135813,
+        3084996975
+      ],
+      "winner": 0,
+      "duration": 34.575,
+      "sha256": "b91d51d77f949d00bec720db0d87d5fc7fbad1fe6b3611e35e34da6f7160db84"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 13,
+      "swapped": true,
+      "aiSeeds": [
+        3084996975,
+        608135813
+      ],
+      "winner": 1,
+      "duration": 39.38333333333333,
+      "sha256": "a3ac5c1ea40d2d37dee8de0a63b4e555c6312e9317da21cf462db590078b1501"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 14,
+      "swapped": false,
+      "aiSeeds": [
+        608135814,
+        3084996972
+      ],
+      "winner": 0,
+      "duration": 22.983333333333334,
+      "sha256": "65b53b9eb3015a7591401b61dd3ab193a8526b0a66a52b6ae71f103b6e408462"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 14,
+      "swapped": true,
+      "aiSeeds": [
+        3084996972,
+        608135814
+      ],
+      "winner": 1,
+      "duration": 35.53333333333333,
+      "sha256": "62d7febed2b34aad8fa4593a0b470141755d33dce8277663f758f41486a149af"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 15,
+      "swapped": false,
+      "aiSeeds": [
+        608135815,
+        3084996973
+      ],
+      "winner": 0,
+      "duration": 39,
+      "sha256": "524810984bfd775ece4719b31d73b2b9fe39ce784f826b1bb8070db872fa5fdf"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 15,
+      "swapped": true,
+      "aiSeeds": [
+        3084996973,
+        608135815
+      ],
+      "winner": 0,
+      "duration": 31.4,
+      "sha256": "e2af692a22efc37b7c1e39701706bf6c4cbbe9bd73f318c7f6f0733906d049d2"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 16,
+      "swapped": false,
+      "aiSeeds": [
+        608135832,
+        3084996978
+      ],
+      "winner": 1,
+      "duration": 41.45,
+      "sha256": "0c353bd5fd828638bc6222272343ee0fc19352091ebb50fc7bfc12b705d4682b"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 16,
+      "swapped": true,
+      "aiSeeds": [
+        3084996978,
+        608135832
+      ],
+      "winner": 1,
+      "duration": 38.766666666666666,
+      "sha256": "4485d5cc48dbf51de7934ccebc389437a9035ba401d4b3c67e04ae8dd897577e"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 17,
+      "swapped": false,
+      "aiSeeds": [
+        608135833,
+        3084996979
+      ],
+      "winner": 1,
+      "duration": 33.766666666666666,
+      "sha256": "3284a1862837c9d66f22c60cee3b142d947befd13c713fadd10767ae3c7c8d2c"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 17,
+      "swapped": true,
+      "aiSeeds": [
+        3084996979,
+        608135833
+      ],
+      "winner": 0,
+      "duration": 35.4,
+      "sha256": "3437fb401c1400253ed5628c918d34bbadee3489c043389b3183978ff207c346"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 18,
+      "swapped": false,
+      "aiSeeds": [
+        608135834,
+        3084996976
+      ],
+      "winner": 0,
+      "duration": 32.36666666666667,
+      "sha256": "c174af7c49b880ab68e4481279f203f037e6979ee0c382752e9fb643883dbc6d"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 18,
+      "swapped": true,
+      "aiSeeds": [
+        3084996976,
+        608135834
+      ],
+      "winner": 0,
+      "duration": 37.81666666666666,
+      "sha256": "74d1b09208d654bf75483b3b775f3916712421c2de5a7e905c0c9a9db79e6b4c"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 19,
+      "swapped": false,
+      "aiSeeds": [
+        608135835,
+        3084996977
+      ],
+      "winner": 1,
+      "duration": 29.25,
+      "sha256": "982aaacf66b3eb0215641e6d7da03951e14f5dc327050bb0f55ac5aecfe63661"
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "seed": 19,
+      "swapped": true,
+      "aiSeeds": [
+        3084996977,
+        608135835
+      ],
+      "winner": 1,
+      "duration": 29.641666666666666,
+      "sha256": "e7e5d8ccdab6ab0ab0617d5099298738fc440a6d9e04fc17d573d579567ca5f0"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 0,
+      "swapped": false,
+      "aiSeeds": [
+        608135816,
+        3084996962
+      ],
+      "winner": 0,
+      "duration": 36.28333333333333,
+      "sha256": "ea77e4bc0d01477580c2f9e51d393e9de37a4471a46db92b72f74455e0fef1d4"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 0,
+      "swapped": true,
+      "aiSeeds": [
+        3084996962,
+        608135816
+      ],
+      "winner": 0,
+      "duration": 27.724999999999998,
+      "sha256": "7b87feea000eda4ccd05bfe0b4e4eb6b9d752cf1c1f8e12c0038f56042538c61"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 1,
+      "swapped": false,
+      "aiSeeds": [
+        608135817,
+        3084996963
+      ],
+      "winner": 0,
+      "duration": 33.59166666666667,
+      "sha256": "00af22cbf67c02d6a03841b76df002b6a5a43b6ebf6740782a1b53a4ce25eaa0"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 1,
+      "swapped": true,
+      "aiSeeds": [
+        3084996963,
+        608135817
+      ],
+      "winner": 1,
+      "duration": 34.24166666666667,
+      "sha256": "5f07a162e9f60b854808313d21944d7a35bb4cbeeadbf2ac7669b35991fa8bd3"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 2,
+      "swapped": false,
+      "aiSeeds": [
+        608135818,
+        3084996960
+      ],
+      "winner": 1,
+      "duration": 27.858333333333334,
+      "sha256": "603a1495c7beb5b65a67ff503c2bfc94728ea6c4baf2cb297627e74d828c26c5"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 2,
+      "swapped": true,
+      "aiSeeds": [
+        3084996960,
+        608135818
+      ],
+      "winner": 0,
+      "duration": 34.34166666666667,
+      "sha256": "367bc544be4b417bd68d25605498fca65cfc5e5aef9eca01d4de4b0ce350aea1"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 3,
+      "swapped": false,
+      "aiSeeds": [
+        608135819,
+        3084996961
+      ],
+      "winner": 1,
+      "duration": 33.2,
+      "sha256": "59163ab560487c5f31a49f34d2e140ed70aab4b77b147e24ff34cc4e2a0dc0ee"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 3,
+      "swapped": true,
+      "aiSeeds": [
+        3084996961,
+        608135819
+      ],
+      "winner": 1,
+      "duration": 33.25,
+      "sha256": "4e0977520c96615a5c46d5b03ce435d46812ee42fb15ddaaf053381152c2007b"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 4,
+      "swapped": false,
+      "aiSeeds": [
+        608135820,
+        3084996966
+      ],
+      "winner": 0,
+      "duration": 29.891666666666666,
+      "sha256": "c8c91f7c1982a3dd7527b0717d47381059212cfeffcd3f382f835c0af4862dba"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 4,
+      "swapped": true,
+      "aiSeeds": [
+        3084996966,
+        608135820
+      ],
+      "winner": 1,
+      "duration": 37.55,
+      "sha256": "88037a5439d22ae8c7028168deea8fd318f3ed87c0379dc826f107a0d7c2fc70"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 5,
+      "swapped": false,
+      "aiSeeds": [
+        608135821,
+        3084996967
+      ],
+      "winner": 1,
+      "duration": 37.9,
+      "sha256": "c2e2b996d269d26f19b60556e54aee93d24da09d07222db54e494bb2566f1e0e"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 5,
+      "swapped": true,
+      "aiSeeds": [
+        3084996967,
+        608135821
+      ],
+      "winner": 0,
+      "duration": 33.266666666666666,
+      "sha256": "b3b56b8b71be1cd48ca3c15618ce94fa0384fae62e859788604742d99f586243"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 6,
+      "swapped": false,
+      "aiSeeds": [
+        608135822,
+        3084996964
+      ],
+      "winner": 1,
+      "duration": 28.633333333333333,
+      "sha256": "9156229d52fc405a7431eab8c1fe5fc66775ae13e6347dac175debcb1564a1e0"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 6,
+      "swapped": true,
+      "aiSeeds": [
+        3084996964,
+        608135822
+      ],
+      "winner": 0,
+      "duration": 33.71666666666667,
+      "sha256": "5657db62e26ddd3acefa641874709743f0858d05ecea08aee8c365be2cd631d8"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 7,
+      "swapped": false,
+      "aiSeeds": [
+        608135823,
+        3084996965
+      ],
+      "winner": 1,
+      "duration": 32.833333333333336,
+      "sha256": "81abbd9d47940ff88e07650cc52457ef61cff69bbf19b7adb89204ac2f5c2432"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 7,
+      "swapped": true,
+      "aiSeeds": [
+        3084996965,
+        608135823
+      ],
+      "winner": 0,
+      "duration": 31.983333333333334,
+      "sha256": "dbeb5b8eef91de0c09618beb7e251b8879c98f71f5c0c585ab85abecab7fe41d"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 8,
+      "swapped": false,
+      "aiSeeds": [
+        608135808,
+        3084996970
+      ],
+      "winner": 0,
+      "duration": 36.03333333333333,
+      "sha256": "a5b0d7ed7f6c72eaa94a7857002abf07f0742891d1416dbe7105379bb7f273ba"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 8,
+      "swapped": true,
+      "aiSeeds": [
+        3084996970,
+        608135808
+      ],
+      "winner": 0,
+      "duration": 28.775,
+      "sha256": "fe636b6ae988e8af538fe8bcbae72e2433676ccb1dc76d586b23949d905fac92"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 9,
+      "swapped": false,
+      "aiSeeds": [
+        608135809,
+        3084996971
+      ],
+      "winner": 0,
+      "duration": 28.441666666666666,
+      "sha256": "52fb920a943a7e50b68803fc917e99ec9294aae8a12ae9c9a533056ffc259daa"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 9,
+      "swapped": true,
+      "aiSeeds": [
+        3084996971,
+        608135809
+      ],
+      "winner": 1,
+      "duration": 33.358333333333334,
+      "sha256": "d646754f3c92f64cb08f561a604a593de9f3ee5a1e9e7722f9907e41e7375048"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 10,
+      "swapped": false,
+      "aiSeeds": [
+        608135810,
+        3084996968
+      ],
+      "winner": 0,
+      "duration": 32.53333333333333,
+      "sha256": "79b4771e9fb83f83e9348794a7905bb249e280c762391167c8bf91f63f5bc1f7"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 10,
+      "swapped": true,
+      "aiSeeds": [
+        3084996968,
+        608135810
+      ],
+      "winner": 1,
+      "duration": 34.81666666666666,
+      "sha256": "dc15260505778d0759d3874c37f57f10b40cc99c84e16242a4b6be9615e065fa"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 11,
+      "swapped": false,
+      "aiSeeds": [
+        608135811,
+        3084996969
+      ],
+      "winner": 0,
+      "duration": 30.325,
+      "sha256": "82916456e035656bf51e54022d03e0d6bd9cb60d83955832c98e17ee852d6bcb"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 11,
+      "swapped": true,
+      "aiSeeds": [
+        3084996969,
+        608135811
+      ],
+      "winner": 1,
+      "duration": 36.53333333333333,
+      "sha256": "32599f11009c6fd820f0a8104952c3a92ebe2732678018b5f8b954e8c98607f7"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 12,
+      "swapped": false,
+      "aiSeeds": [
+        608135812,
+        3084996974
+      ],
+      "winner": 0,
+      "duration": 30.966666666666665,
+      "sha256": "bdf0eef563d67350bebe58315f13c2eaff81c0a0ff4e7e2190720f0042d4e7e8"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 12,
+      "swapped": true,
+      "aiSeeds": [
+        3084996974,
+        608135812
+      ],
+      "winner": 0,
+      "duration": 38.1,
+      "sha256": "68aba6067c04d9c9fde16971bad8092bd2e6c0f9c377c2b0ccdab6d5035c2004"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 13,
+      "swapped": false,
+      "aiSeeds": [
+        608135813,
+        3084996975
+      ],
+      "winner": 1,
+      "duration": 30.966666666666665,
+      "sha256": "68d7ec4e183954d634153f553f4bb199fe9392296456a4f2b348600dba75e830"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 13,
+      "swapped": true,
+      "aiSeeds": [
+        3084996975,
+        608135813
+      ],
+      "winner": 0,
+      "duration": 33.1,
+      "sha256": "f852ed00a41c743dd71e82ca07ce2ad869eb1c7d68fe02b7f4fb8c57ed312da6"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 14,
+      "swapped": false,
+      "aiSeeds": [
+        608135814,
+        3084996972
+      ],
+      "winner": 0,
+      "duration": 37.358333333333334,
+      "sha256": "346624b042cccb02a9db1b58a7083012f079c55704ff75fe1b053e5498fab51c"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 14,
+      "swapped": true,
+      "aiSeeds": [
+        3084996972,
+        608135814
+      ],
+      "winner": 0,
+      "duration": 28.841666666666665,
+      "sha256": "65c1f5dc476093b8d69e1e5fe9e50b264f4127989b834e1b71538c417f9b87a2"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 15,
+      "swapped": false,
+      "aiSeeds": [
+        608135815,
+        3084996973
+      ],
+      "winner": 1,
+      "duration": 28.65833333333333,
+      "sha256": "c968804cf18453bee3a7eb42f1a6ba788b466e681a8bb2ba52506d5f08839aaf"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 15,
+      "swapped": true,
+      "aiSeeds": [
+        3084996973,
+        608135815
+      ],
+      "winner": 0,
+      "duration": 25.6,
+      "sha256": "5e8cc30e591160f625073bee82b2d5c8a48504e30d56a7a8eca9e33904c5fe9f"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 16,
+      "swapped": false,
+      "aiSeeds": [
+        608135832,
+        3084996978
+      ],
+      "winner": 1,
+      "duration": 34.775,
+      "sha256": "b7422ac602e7a9bbf6d2dc2c4bf77c9ab8b5ca5a142e937b7e7db45f8243971e"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 16,
+      "swapped": true,
+      "aiSeeds": [
+        3084996978,
+        608135832
+      ],
+      "winner": 0,
+      "duration": 36.733333333333334,
+      "sha256": "0f97a00cf02d0abbb7fde3e427d2075d6782035872d9988f47aa16a552bc47cf"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 17,
+      "swapped": false,
+      "aiSeeds": [
+        608135833,
+        3084996979
+      ],
+      "winner": 0,
+      "duration": 36.958333333333336,
+      "sha256": "9b1c4a544007af4d7f96d3714df5973cba869897968d28a1644099b284766c08"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 17,
+      "swapped": true,
+      "aiSeeds": [
+        3084996979,
+        608135833
+      ],
+      "winner": 0,
+      "duration": 33.55833333333333,
+      "sha256": "f0949386bbfd578d8e140a4c777730ba01e9c8f656a5ef1a6660c735c7451358"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 18,
+      "swapped": false,
+      "aiSeeds": [
+        608135834,
+        3084996976
+      ],
+      "winner": 0,
+      "duration": 28.441666666666666,
+      "sha256": "b414b74cd239992cc92f1312284bd584e9de5749a860f1a6da2fd44a88c27eee"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 18,
+      "swapped": true,
+      "aiSeeds": [
+        3084996976,
+        608135834
+      ],
+      "winner": 0,
+      "duration": 33.708333333333336,
+      "sha256": "64ea3817bebbfd5c5e276fbe7989a2f3c04122773c68bdc61ff9613a3bce0256"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 19,
+      "swapped": false,
+      "aiSeeds": [
+        608135835,
+        3084996977
+      ],
+      "winner": 1,
+      "duration": 33.7,
+      "sha256": "71fa768b87613b1f4e160cab0a8c8f4e66da009b9c7bb881bf0a3ea4e3988fde"
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "seed": 19,
+      "swapped": true,
+      "aiSeeds": [
+        3084996977,
+        608135835
+      ],
+      "winner": 0,
+      "duration": 26.616666666666667,
+      "sha256": "966126e663ebb2d0516e9e03409a975d4bd443d47319e1ea5df6d26cdace2f86"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 0,
+      "swapped": false,
+      "aiSeeds": [
+        608135816,
+        3084996962
+      ],
+      "winner": 0,
+      "duration": 23.166666666666668,
+      "sha256": "fe9fe24a0df02dd7fedd77c554e815441637db5368d10ffa1e79751d7b7fbec1"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 0,
+      "swapped": true,
+      "aiSeeds": [
+        3084996962,
+        608135816
+      ],
+      "winner": 1,
+      "duration": 25.891666666666666,
+      "sha256": "0340da2d0f2a4665f821e2332975b148b171e151b2c97888d246f43b4a4f447a"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 1,
+      "swapped": false,
+      "aiSeeds": [
+        608135817,
+        3084996963
+      ],
+      "winner": 1,
+      "duration": 27.716666666666665,
+      "sha256": "ca9977c5594ac719067a211e312b961ed883ada902ebf1ffd505a43149f4aecd"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 1,
+      "swapped": true,
+      "aiSeeds": [
+        3084996963,
+        608135817
+      ],
+      "winner": 0,
+      "duration": 29.758333333333333,
+      "sha256": "2c7d1b6a14f8e282250c2d4546d0ab7268ef87665bc32f732740433643175377"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 2,
+      "swapped": false,
+      "aiSeeds": [
+        608135818,
+        3084996960
+      ],
+      "winner": 0,
+      "duration": 24.858333333333334,
+      "sha256": "9302b6bddb26a723bd9fa3882ff1848896dec73d190d53b5ea936198d73f50b1"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 2,
+      "swapped": true,
+      "aiSeeds": [
+        3084996960,
+        608135818
+      ],
+      "winner": 0,
+      "duration": 34.49166666666667,
+      "sha256": "4e3e5998032df33e02c2e752516bf04b144fffb0fef11de4b21a4eb4748b1dfe"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 3,
+      "swapped": false,
+      "aiSeeds": [
+        608135819,
+        3084996961
+      ],
+      "winner": 0,
+      "duration": 26.28333333333333,
+      "sha256": "6fa87f48889f1bce2beb130a87aaaf6bbb3d57ddb104aa278160be4a6c65652b"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 3,
+      "swapped": true,
+      "aiSeeds": [
+        3084996961,
+        608135819
+      ],
+      "winner": 1,
+      "duration": 31.191666666666666,
+      "sha256": "112e8eb2a281162ce20f3a9f0c04d8f2fbe5b2369dd7d71af920f1ca85b6067b"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 4,
+      "swapped": false,
+      "aiSeeds": [
+        608135820,
+        3084996966
+      ],
+      "winner": 0,
+      "duration": 29.28333333333333,
+      "sha256": "4f5febe2ee47fc2f59fb9868b48b5952208a14a452078b945a64a8d74fcc42de"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 4,
+      "swapped": true,
+      "aiSeeds": [
+        3084996966,
+        608135820
+      ],
+      "winner": 0,
+      "duration": 30.608333333333334,
+      "sha256": "92e2aaf6b7144d7dd8349395caaee111ed73da834f3759a1abf06f1c3ca179d3"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 5,
+      "swapped": false,
+      "aiSeeds": [
+        608135821,
+        3084996967
+      ],
+      "winner": 0,
+      "duration": 30.508333333333333,
+      "sha256": "4da2345787e2c425c5dd3c25db3890c6f0406f71cb431739e63e523ced5b4870"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 5,
+      "swapped": true,
+      "aiSeeds": [
+        3084996967,
+        608135821
+      ],
+      "winner": 0,
+      "duration": 30.224999999999998,
+      "sha256": "77b79e148838fe7ba5862cb736d751a5f443a7ba9dbe24dc56e285b9bc7c47fd"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 6,
+      "swapped": false,
+      "aiSeeds": [
+        608135822,
+        3084996964
+      ],
+      "winner": 0,
+      "duration": 28.95,
+      "sha256": "9c8f8fc5708fe25f345db771036c23e520cf0409934f9c5b298183b3a966cd33"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 6,
+      "swapped": true,
+      "aiSeeds": [
+        3084996964,
+        608135822
+      ],
+      "winner": 0,
+      "duration": 38.6,
+      "sha256": "1cb6a6c7f711cacddd6f01092828aa90ce19a9e6421a3de25f45f9929b71e807"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 7,
+      "swapped": false,
+      "aiSeeds": [
+        608135823,
+        3084996965
+      ],
+      "winner": 0,
+      "duration": 24.95,
+      "sha256": "d24ab5a1447059a38d79948508c11ef0f21761a65abcab37900e178725fed5e1"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 7,
+      "swapped": true,
+      "aiSeeds": [
+        3084996965,
+        608135823
+      ],
+      "winner": 0,
+      "duration": 29.325,
+      "sha256": "88eeb61c6adf732100c7c63b3331bee3a4461aba51ea7563ad1af3c5785307a1"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 8,
+      "swapped": false,
+      "aiSeeds": [
+        608135808,
+        3084996970
+      ],
+      "winner": 0,
+      "duration": 30.091666666666665,
+      "sha256": "f78c27492530a7127d19c83ead2d6f525956c7f1ca0076f89b52a64f04f3bd7e"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 8,
+      "swapped": true,
+      "aiSeeds": [
+        3084996970,
+        608135808
+      ],
+      "winner": 1,
+      "duration": 30.95,
+      "sha256": "f2a521d9cbe73f2671312e19946a196abdb610fdd3edf4c9b666084ed0d6f945"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 9,
+      "swapped": false,
+      "aiSeeds": [
+        608135809,
+        3084996971
+      ],
+      "winner": 0,
+      "duration": 35.05833333333333,
+      "sha256": "e901c7b0e47d982bbec4b6e00c9709704ae851f99fbc4f47e1f7e008edd13082"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 9,
+      "swapped": true,
+      "aiSeeds": [
+        3084996971,
+        608135809
+      ],
+      "winner": 1,
+      "duration": 24.358333333333334,
+      "sha256": "87180a1e87fb0fd1ce4f15b0fa18dece97e6fa1c6c55e4c49b2f900fa93b6680"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 10,
+      "swapped": false,
+      "aiSeeds": [
+        608135810,
+        3084996968
+      ],
+      "winner": 1,
+      "duration": 31.316666666666666,
+      "sha256": "ba751d60759b736fbb66fa451c6a4b7e13f2bab2934a280fa4a729ecfcce31e5"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 10,
+      "swapped": true,
+      "aiSeeds": [
+        3084996968,
+        608135810
+      ],
+      "winner": 1,
+      "duration": 36.50833333333333,
+      "sha256": "1d4c9f7a06aef312b144c8a2db23915234334e5b12a9a793fc4d14a25287f62a"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 11,
+      "swapped": false,
+      "aiSeeds": [
+        608135811,
+        3084996969
+      ],
+      "winner": 0,
+      "duration": 25.633333333333333,
+      "sha256": "67b1555642e8106da54fbca8cd7718a6fd2564f35099be66f4f45e145b109f60"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 11,
+      "swapped": true,
+      "aiSeeds": [
+        3084996969,
+        608135811
+      ],
+      "winner": 1,
+      "duration": 29.625,
+      "sha256": "a38cffb3af61a192c12607393a3e2028880fc4c5842ebf0745cfaf312bdd99d4"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 12,
+      "swapped": false,
+      "aiSeeds": [
+        608135812,
+        3084996974
+      ],
+      "winner": 0,
+      "duration": 28.541666666666668,
+      "sha256": "11a25d6e8ae527786ac777991d63fddded7a2bbcf89862fccb5e98a64873d06a"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 12,
+      "swapped": true,
+      "aiSeeds": [
+        3084996974,
+        608135812
+      ],
+      "winner": 0,
+      "duration": 25.175,
+      "sha256": "46f349df322da4ef2a20824765fc88e553259fe8b225881c9183d6f58df277fb"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 13,
+      "swapped": false,
+      "aiSeeds": [
+        608135813,
+        3084996975
+      ],
+      "winner": 0,
+      "duration": 29.483333333333334,
+      "sha256": "4ca12e4ab0ad7d7f609fbbfd99ee7bb8e4be12a96eeced104e53646bfa6443b0"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 13,
+      "swapped": true,
+      "aiSeeds": [
+        3084996975,
+        608135813
+      ],
+      "winner": 1,
+      "duration": 29.416666666666668,
+      "sha256": "567ae97578d9fe73cdec06362495ec227691cb693a7aafd38ab68361ec5b5cf0"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 14,
+      "swapped": false,
+      "aiSeeds": [
+        608135814,
+        3084996972
+      ],
+      "winner": 0,
+      "duration": 23.641666666666666,
+      "sha256": "5b2c8db68237741b61f18ffec7fc9bcc24db191774a814c8af73049902d4dbf8"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 14,
+      "swapped": true,
+      "aiSeeds": [
+        3084996972,
+        608135814
+      ],
+      "winner": 1,
+      "duration": 25.366666666666667,
+      "sha256": "e9b495781f33949736d5bab9583bda03aec9ee6adefe6a5e4aa3c18cb66018be"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 15,
+      "swapped": false,
+      "aiSeeds": [
+        608135815,
+        3084996973
+      ],
+      "winner": 0,
+      "duration": 34.55,
+      "sha256": "378692eb6cd861a31aea8aae77dbbe6f59cf0ce9bc8547e7f939a0aa0bf28357"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 15,
+      "swapped": true,
+      "aiSeeds": [
+        3084996973,
+        608135815
+      ],
+      "winner": 1,
+      "duration": 24.766666666666666,
+      "sha256": "918e1d16c6e4e9b85f0909bcdd1a567eecd63bde051a0c5ae8ef8b1cd582692d"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 16,
+      "swapped": false,
+      "aiSeeds": [
+        608135832,
+        3084996978
+      ],
+      "winner": 0,
+      "duration": 28.291666666666668,
+      "sha256": "83db6fa2d18a09435c92bdbf1a9bcba6a4c508a905ca8fd05660d122ece23b24"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 16,
+      "swapped": true,
+      "aiSeeds": [
+        3084996978,
+        608135832
+      ],
+      "winner": 1,
+      "duration": 31.958333333333332,
+      "sha256": "285dba99af89ac380c6b3fe173ef8da3f1335fed001e138888e36489260eabe7"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 17,
+      "swapped": false,
+      "aiSeeds": [
+        608135833,
+        3084996979
+      ],
+      "winner": 1,
+      "duration": 28.091666666666665,
+      "sha256": "d1502f203142d43f81913de0647c20d046148eb49e6b8807d3ff31c59cff0495"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 17,
+      "swapped": true,
+      "aiSeeds": [
+        3084996979,
+        608135833
+      ],
+      "winner": 1,
+      "duration": 33.675,
+      "sha256": "8489dcb99f3f3e4e02a99e2ed0e940156aaaeb23f6267c77f74001cb2dbe4da5"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 18,
+      "swapped": false,
+      "aiSeeds": [
+        608135834,
+        3084996976
+      ],
+      "winner": 1,
+      "duration": 19.991666666666667,
+      "sha256": "5a716889c6b851fd4aa4103580cf71438541559297063400571ea703f5b62f0b"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 18,
+      "swapped": true,
+      "aiSeeds": [
+        3084996976,
+        608135834
+      ],
+      "winner": 0,
+      "duration": 26.40833333333333,
+      "sha256": "5c751f34bbabba923b2442b3b485983578431134b40d93dd5aa10cd58a4a6776"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 19,
+      "swapped": false,
+      "aiSeeds": [
+        608135835,
+        3084996977
+      ],
+      "winner": 0,
+      "duration": 29.741666666666667,
+      "sha256": "2cf3a42d23ccc6732c09bbd9638abf4193ab321ef96206d31d4d46a0ac5ffe6b"
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "seed": 19,
+      "swapped": true,
+      "aiSeeds": [
+        3084996977,
+        608135835
+      ],
+      "winner": 1,
+      "duration": 24.341666666666665,
+      "sha256": "29405a8c8441fd551106d8e22447ce636f47f3c121983defc4b04fdce763b92b"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 0,
+      "swapped": false,
+      "aiSeeds": [
+        608135816,
+        3084996962
+      ],
+      "winner": 0,
+      "duration": 20.241666666666667,
+      "sha256": "14fe92dc079d82fb88f1df2fc7b72da5c6ceb731deeabc77460d40c039b2ea9e"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 0,
+      "swapped": true,
+      "aiSeeds": [
+        3084996962,
+        608135816
+      ],
+      "winner": 0,
+      "duration": 26.358333333333334,
+      "sha256": "bc6cd6f0e4028350bd5841d81193a57bc46c49e6eff44ae4aaea83bbe1d1d39a"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 1,
+      "swapped": false,
+      "aiSeeds": [
+        608135817,
+        3084996963
+      ],
+      "winner": 1,
+      "duration": 27.991666666666667,
+      "sha256": "c17e1e1c7fd4af99a9cc6f95595adba02290ee8cabf47c624af950ac2c6d63a9"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 1,
+      "swapped": true,
+      "aiSeeds": [
+        3084996963,
+        608135817
+      ],
+      "winner": 1,
+      "duration": 27.599999999999998,
+      "sha256": "00e26847ad417424a58222c49d7ef759a0bca2d0b9dcd530f229e8d8def110dd"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 2,
+      "swapped": false,
+      "aiSeeds": [
+        608135818,
+        3084996960
+      ],
+      "winner": 1,
+      "duration": 37.78333333333333,
+      "sha256": "8f07473ec19e47aca3e29afeff4b565f5ac5c611a645f5636e76b6616549b71b"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 2,
+      "swapped": true,
+      "aiSeeds": [
+        3084996960,
+        608135818
+      ],
+      "winner": 1,
+      "duration": 28.724999999999998,
+      "sha256": "a64bf0f8e0e7dbe81ecc31205e35b24a7a9c903d597aee19a1e2314d9a145d62"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 3,
+      "swapped": false,
+      "aiSeeds": [
+        608135819,
+        3084996961
+      ],
+      "winner": 0,
+      "duration": 32.108333333333334,
+      "sha256": "c88edd1ccabc19963347348b385f60b5004ecbf1a5832b9ae0407d0e5607ac8b"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 3,
+      "swapped": true,
+      "aiSeeds": [
+        3084996961,
+        608135819
+      ],
+      "winner": 0,
+      "duration": 30.849999999999998,
+      "sha256": "f9de3f52211a628b8ed61e095968d2e29946b5d4faf08b047325edf6d6cf7e60"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 4,
+      "swapped": false,
+      "aiSeeds": [
+        608135820,
+        3084996966
+      ],
+      "winner": 0,
+      "duration": 34.55833333333333,
+      "sha256": "74650e661d5f61fffecbc9627e662d90f7cdea4585f19e01f5c05ff55b60e651"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 4,
+      "swapped": true,
+      "aiSeeds": [
+        3084996966,
+        608135820
+      ],
+      "winner": 1,
+      "duration": 20.416666666666668,
+      "sha256": "43e98a59adecf299f7a7d5a21cbfbbb55c183fe487000c84b30908f12fb39416"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 5,
+      "swapped": false,
+      "aiSeeds": [
+        608135821,
+        3084996967
+      ],
+      "winner": 0,
+      "duration": 30.349999999999998,
+      "sha256": "fb14379a838ea693abea18448d8a0132466c91328a3bd35ae3e3e3b253b894cc"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 5,
+      "swapped": true,
+      "aiSeeds": [
+        3084996967,
+        608135821
+      ],
+      "winner": 1,
+      "duration": 26.458333333333332,
+      "sha256": "d42115e1dd1deebc1240d6ee6d5efd9110385a80001d1cb39fdf03f7e0b10bde"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 6,
+      "swapped": false,
+      "aiSeeds": [
+        608135822,
+        3084996964
+      ],
+      "winner": 0,
+      "duration": 30.825,
+      "sha256": "6413f1abf2c885552ce2fb12317200fbac8688f7b9deabddefa826fb8377981d"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 6,
+      "swapped": true,
+      "aiSeeds": [
+        3084996964,
+        608135822
+      ],
+      "winner": 1,
+      "duration": 32.90833333333333,
+      "sha256": "edf6bd61f30dcca5ecbf500535a331dfa7c600429e7724bca47ba834c92fcb56"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 7,
+      "swapped": false,
+      "aiSeeds": [
+        608135823,
+        3084996965
+      ],
+      "winner": 1,
+      "duration": 35.53333333333333,
+      "sha256": "7d8d2c1a30b4f7b45f2128645458661164db02ff1b58a1b60edbbd88b061aa6a"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 7,
+      "swapped": true,
+      "aiSeeds": [
+        3084996965,
+        608135823
+      ],
+      "winner": 1,
+      "duration": 34.45,
+      "sha256": "066dc7da0158f8fc545ce8dce93436da9e737c9aed09cad659405022b7186372"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 8,
+      "swapped": false,
+      "aiSeeds": [
+        608135808,
+        3084996970
+      ],
+      "winner": 1,
+      "duration": 33.90833333333333,
+      "sha256": "5daf491e166731a5de95006769bb11b729be5ea3fc86e3f983cef99d2833ca9e"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 8,
+      "swapped": true,
+      "aiSeeds": [
+        3084996970,
+        608135808
+      ],
+      "winner": 0,
+      "duration": 30.583333333333332,
+      "sha256": "ebacc024f451107546ae4db74fe7069bf7418a86eadac03678aef281d556fabb"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 9,
+      "swapped": false,
+      "aiSeeds": [
+        608135809,
+        3084996971
+      ],
+      "winner": 1,
+      "duration": 31.416666666666668,
+      "sha256": "81048f18b735e1e86835fcdbb6754b785dd51303e81a5a84ed2514fa553418a9"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 9,
+      "swapped": true,
+      "aiSeeds": [
+        3084996971,
+        608135809
+      ],
+      "winner": 1,
+      "duration": 21.7,
+      "sha256": "2f88f93353ca7ca68ebe2833a48701769cf3ed5894d36f2cb8fd3052816b445f"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 10,
+      "swapped": false,
+      "aiSeeds": [
+        608135810,
+        3084996968
+      ],
+      "winner": 1,
+      "duration": 26.766666666666666,
+      "sha256": "5bd8a6c6723385a3a1a6d5e0d6534d1a946535202c598be8b32d5b4c96d2d845"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 10,
+      "swapped": true,
+      "aiSeeds": [
+        3084996968,
+        608135810
+      ],
+      "winner": 0,
+      "duration": 30.416666666666668,
+      "sha256": "0d4812452f5ec9245fd8adab803a52381040d47b960ecfcbabfe604985d4d1c5"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 11,
+      "swapped": false,
+      "aiSeeds": [
+        608135811,
+        3084996969
+      ],
+      "winner": 1,
+      "duration": 29.4,
+      "sha256": "677b7a0033a278edd89cc672a5a82f310e4efa4e63ba38846ff26f2c48511eb0"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 11,
+      "swapped": true,
+      "aiSeeds": [
+        3084996969,
+        608135811
+      ],
+      "winner": 1,
+      "duration": 19.7,
+      "sha256": "0426ad185d7c9b78d1e2e8a7e8aaba65532a52eba5aae7d18855ca0aa19f9295"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 12,
+      "swapped": false,
+      "aiSeeds": [
+        608135812,
+        3084996974
+      ],
+      "winner": 0,
+      "duration": 33.63333333333333,
+      "sha256": "cbfd9d4a5304490415f55975d1bcf81b74073caea7fc3bf93bcfa8d3d88c9516"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 12,
+      "swapped": true,
+      "aiSeeds": [
+        3084996974,
+        608135812
+      ],
+      "winner": 0,
+      "duration": 20.85,
+      "sha256": "27a31fee74ed0743a25eb2867bdefcb9ea641b8c4f15d60498d03f2b37e8b6c4"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 13,
+      "swapped": false,
+      "aiSeeds": [
+        608135813,
+        3084996975
+      ],
+      "winner": 1,
+      "duration": 24.075,
+      "sha256": "a0ef610e439e3408a4877803ee06fd4665a442cf59eceb22e087e38fda741c56"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 13,
+      "swapped": true,
+      "aiSeeds": [
+        3084996975,
+        608135813
+      ],
+      "winner": 1,
+      "duration": 22.608333333333334,
+      "sha256": "9bfec01072606bdbd0e93ca11b1a2a34a66b2f5c7525dc00bad0d59a32139c0f"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 14,
+      "swapped": false,
+      "aiSeeds": [
+        608135814,
+        3084996972
+      ],
+      "winner": 0,
+      "duration": 35.28333333333333,
+      "sha256": "2e2cdc6e23918d7eb50aa9a0b33cc1be1ac7da1bed952a76c5fef2db88d0f983"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 14,
+      "swapped": true,
+      "aiSeeds": [
+        3084996972,
+        608135814
+      ],
+      "winner": 0,
+      "duration": 31.666666666666668,
+      "sha256": "168b637e4aaf4558dbe72e22e110be8d42fcaafb996dd56a144a41caadb9b3c8"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 15,
+      "swapped": false,
+      "aiSeeds": [
+        608135815,
+        3084996973
+      ],
+      "winner": 0,
+      "duration": 25.775,
+      "sha256": "d4542d862fd59e366eac1e52564dc60be56961ecabcb3a358719d70bc8b5c3ee"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 15,
+      "swapped": true,
+      "aiSeeds": [
+        3084996973,
+        608135815
+      ],
+      "winner": 0,
+      "duration": 28.25,
+      "sha256": "dc40e5afaa9b8dd98da1fd2c53e4cdec38b50bbe78cec4ba69e71b01ab99175e"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 16,
+      "swapped": false,
+      "aiSeeds": [
+        608135832,
+        3084996978
+      ],
+      "winner": 1,
+      "duration": 30.916666666666668,
+      "sha256": "8d8faa4c1670278505c83d234d016447015044eacd10b2cc3a58950aee6d7c8f"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 16,
+      "swapped": true,
+      "aiSeeds": [
+        3084996978,
+        608135832
+      ],
+      "winner": 1,
+      "duration": 26.708333333333332,
+      "sha256": "b41c61d0503027946bdd253be8d0c37215a9092ab260f63ab5460f1ae0f7ee6e"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 17,
+      "swapped": false,
+      "aiSeeds": [
+        608135833,
+        3084996979
+      ],
+      "winner": 1,
+      "duration": 29.241666666666667,
+      "sha256": "a43431964f8350c820da4ebb09fb8f493e4fe2538b18012b08665e0ec04d3e51"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 17,
+      "swapped": true,
+      "aiSeeds": [
+        3084996979,
+        608135833
+      ],
+      "winner": 0,
+      "duration": 23.383333333333333,
+      "sha256": "45fea61580819d794fe7f7ebef6c10422996f528f88c346c2d38f67a937f18c5"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 18,
+      "swapped": false,
+      "aiSeeds": [
+        608135834,
+        3084996976
+      ],
+      "winner": 0,
+      "duration": 22.216666666666665,
+      "sha256": "08022aaca9176679189fc1474fc3cfe61abd0fe6f23bcd77710368c605670239"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 18,
+      "swapped": true,
+      "aiSeeds": [
+        3084996976,
+        608135834
+      ],
+      "winner": 1,
+      "duration": 31.341666666666665,
+      "sha256": "d352a02b004129f5e6c51a4b1eea3b8baa258405d9112bcc9ace8ac590f805bb"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 19,
+      "swapped": false,
+      "aiSeeds": [
+        608135835,
+        3084996977
+      ],
+      "winner": 1,
+      "duration": 29.666666666666668,
+      "sha256": "01ff84d184f19cc55b2817f289fee840bb099fd831c3c16d384a6ab6581d9aeb"
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "seed": 19,
+      "swapped": true,
+      "aiSeeds": [
+        3084996977,
+        608135835
+      ],
+      "winner": 1,
+      "duration": 29.091666666666665,
+      "sha256": "45db8e3b553af52f300fe666c4d9faad9b13184b50b90c09aca34df546d95e6d"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 0,
+      "swapped": false,
+      "aiSeeds": [
+        608135816,
+        3084996962
+      ],
+      "winner": 0,
+      "duration": 30.5,
+      "sha256": "71ba4ae835c9e9f4bbe8c7479d951ecc33b78064094ac5051056e81cd49628a3"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 0,
+      "swapped": true,
+      "aiSeeds": [
+        3084996962,
+        608135816
+      ],
+      "winner": 0,
+      "duration": 35.016666666666666,
+      "sha256": "a1f8dd38f64afc6753df5a55aecf7864f6e2025a2b6673b61cacdeb5d4f9a7c7"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 1,
+      "swapped": false,
+      "aiSeeds": [
+        608135817,
+        3084996963
+      ],
+      "winner": 1,
+      "duration": 33.375,
+      "sha256": "f97507ac5fa21f14c1b4b308e6d3db95bbec1742ee3a06f85dacddf3c3f6d424"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 1,
+      "swapped": true,
+      "aiSeeds": [
+        3084996963,
+        608135817
+      ],
+      "winner": 1,
+      "duration": 28.483333333333334,
+      "sha256": "c2c9db6c58fa10bb0ca31f5a82ba2eaff34c86c6fff4230dbc34e343a5d8ad42"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 2,
+      "swapped": false,
+      "aiSeeds": [
+        608135818,
+        3084996960
+      ],
+      "winner": 0,
+      "duration": 24.483333333333334,
+      "sha256": "f44fdb1a7d13377dc270cc0f9ce35ce1e1cae70e0e19316034d68f661af01ae8"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 2,
+      "swapped": true,
+      "aiSeeds": [
+        3084996960,
+        608135818
+      ],
+      "winner": 1,
+      "duration": 26.633333333333333,
+      "sha256": "2701658f605b7f69a33dbedceac2cb322145984e816b0c3325f26950906f6b22"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 3,
+      "swapped": false,
+      "aiSeeds": [
+        608135819,
+        3084996961
+      ],
+      "winner": 1,
+      "duration": 28.75,
+      "sha256": "5ff17ca1bfe3c2aeecab95de5d7d75bedc199887c5248b7d4714cce4464369d6"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 3,
+      "swapped": true,
+      "aiSeeds": [
+        3084996961,
+        608135819
+      ],
+      "winner": 1,
+      "duration": 30.991666666666667,
+      "sha256": "0781905afa490ae2aebb2a9a13e0f740386178c181b2888a294b3b52941e2ddc"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 4,
+      "swapped": false,
+      "aiSeeds": [
+        608135820,
+        3084996966
+      ],
+      "winner": 0,
+      "duration": 32.65833333333333,
+      "sha256": "7658480e37b2576115b45f8d3c834458cc9a39f4a85e5883c45a5a594ff3eda9"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 4,
+      "swapped": true,
+      "aiSeeds": [
+        3084996966,
+        608135820
+      ],
+      "winner": 0,
+      "duration": 30.883333333333333,
+      "sha256": "7af4db5f7d51dd5d85196aeb55b20d2cbe3738dd1fd77d814921028230ecbf20"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 5,
+      "swapped": false,
+      "aiSeeds": [
+        608135821,
+        3084996967
+      ],
+      "winner": 1,
+      "duration": 26.425,
+      "sha256": "9e46e37b1fcb3d7cd27a6b04217eab10b38237ca0b66a3b011418b230d1d0e53"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 5,
+      "swapped": true,
+      "aiSeeds": [
+        3084996967,
+        608135821
+      ],
+      "winner": 0,
+      "duration": 39.875,
+      "sha256": "f36c7b2b6c3faaece74798f195398b68cca4990ac4b4d3eed53dead48f643ab9"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 6,
+      "swapped": false,
+      "aiSeeds": [
+        608135822,
+        3084996964
+      ],
+      "winner": 1,
+      "duration": 30.558333333333334,
+      "sha256": "10cd7042960963bc2c004cf90968c7297cc6d94aa4c942dc10c81e1d810ca9e5"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 6,
+      "swapped": true,
+      "aiSeeds": [
+        3084996964,
+        608135822
+      ],
+      "winner": 0,
+      "duration": 37.55833333333333,
+      "sha256": "1a3423f354c8359fca4245df56bea9f07d75408ee0152b793a457dee9b6d0d89"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 7,
+      "swapped": false,
+      "aiSeeds": [
+        608135823,
+        3084996965
+      ],
+      "winner": 1,
+      "duration": 24.216666666666665,
+      "sha256": "b3b7a55780566c7c50d83ddf09277572db2adaa0625467321314fa31bae9825a"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 7,
+      "swapped": true,
+      "aiSeeds": [
+        3084996965,
+        608135823
+      ],
+      "winner": 1,
+      "duration": 29.608333333333334,
+      "sha256": "45780fb05037a56b972b6d315b1e0cc7cf167fc0ea0acaea9765e173c7016461"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 8,
+      "swapped": false,
+      "aiSeeds": [
+        608135808,
+        3084996970
+      ],
+      "winner": 1,
+      "duration": 37.041666666666664,
+      "sha256": "2c08b7636bbafc2079c2a62d6f48bc1515743e93c9ce09271c93e9d44d29a4d8"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 8,
+      "swapped": true,
+      "aiSeeds": [
+        3084996970,
+        608135808
+      ],
+      "winner": 0,
+      "duration": 29.591666666666665,
+      "sha256": "d69101aa93deea7ab5de256f8e6c91cd0dcd47c639d2a73a0b1b9cf270aed1c7"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 9,
+      "swapped": false,
+      "aiSeeds": [
+        608135809,
+        3084996971
+      ],
+      "winner": 0,
+      "duration": 30.683333333333334,
+      "sha256": "ab84103c489947084edac7c39f040f87a84329175c08a32e905d9bcc16cfb5a5"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 9,
+      "swapped": true,
+      "aiSeeds": [
+        3084996971,
+        608135809
+      ],
+      "winner": 1,
+      "duration": 33.61666666666667,
+      "sha256": "10f87e89c49f4b97fbf609452de747059caff13e506b47eeee7eef501b3e4346"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 10,
+      "swapped": false,
+      "aiSeeds": [
+        608135810,
+        3084996968
+      ],
+      "winner": 1,
+      "duration": 26.258333333333333,
+      "sha256": "7a0e2d2555e38c0931419cfd9facd419d44b95ca7ebd1822fb2347f9483c61d3"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 10,
+      "swapped": true,
+      "aiSeeds": [
+        3084996968,
+        608135810
+      ],
+      "winner": 0,
+      "duration": 29.575,
+      "sha256": "ab4cc410aaf98e9658d28da2e922459ae8602bd18f8151852f407c34036e3c7d"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 11,
+      "swapped": false,
+      "aiSeeds": [
+        608135811,
+        3084996969
+      ],
+      "winner": 1,
+      "duration": 24.566666666666666,
+      "sha256": "490c9efc4b9667d94f5c117fb71574d63960a02b488d40517d77e3c66c854465"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 11,
+      "swapped": true,
+      "aiSeeds": [
+        3084996969,
+        608135811
+      ],
+      "winner": 0,
+      "duration": 33.55,
+      "sha256": "c944791c23a103eac283b785508d2970a36f58e17575af356a23396360589357"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 12,
+      "swapped": false,
+      "aiSeeds": [
+        608135812,
+        3084996974
+      ],
+      "winner": 0,
+      "duration": 30.40833333333333,
+      "sha256": "ac6a28df82e86626da55bcab02fc44b270417c0678f0dc06a1edc0ddd850606c"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 12,
+      "swapped": true,
+      "aiSeeds": [
+        3084996974,
+        608135812
+      ],
+      "winner": 0,
+      "duration": 28.7,
+      "sha256": "870c5e136e2686bb45b3db424fc9b17da3953eb6bd92d46c80840ea47f2e10bd"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 13,
+      "swapped": false,
+      "aiSeeds": [
+        608135813,
+        3084996975
+      ],
+      "winner": 1,
+      "duration": 29.625,
+      "sha256": "b528fbc7fc3c4740a8dead31e367d7a93d41b800aa31417fb5621a8584b85e80"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 13,
+      "swapped": true,
+      "aiSeeds": [
+        3084996975,
+        608135813
+      ],
+      "winner": 0,
+      "duration": 21.775,
+      "sha256": "82974aeb55030514179f768849d948e4414b39cbf6f817942e401f45af72eada"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 14,
+      "swapped": false,
+      "aiSeeds": [
+        608135814,
+        3084996972
+      ],
+      "winner": 1,
+      "duration": 37.34166666666667,
+      "sha256": "58f28359d7c3789b9210f9e695b2f56e03394e3e13bb6bc987f00c17c843b03e"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 14,
+      "swapped": true,
+      "aiSeeds": [
+        3084996972,
+        608135814
+      ],
+      "winner": 0,
+      "duration": 24.233333333333334,
+      "sha256": "9b655e5f899c500133410aa3f6ffb119aa154364709c754a450a73a61592054b"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 15,
+      "swapped": false,
+      "aiSeeds": [
+        608135815,
+        3084996973
+      ],
+      "winner": 0,
+      "duration": 26.483333333333334,
+      "sha256": "859c0cc7708b484385947109ace9ea6821405521eb827cd4750f65e61f32149c"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 15,
+      "swapped": true,
+      "aiSeeds": [
+        3084996973,
+        608135815
+      ],
+      "winner": 1,
+      "duration": 31.025,
+      "sha256": "755fbfc9d012219c416a015590f714292dced22a5d81b25cea60c43b328725f1"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 16,
+      "swapped": false,
+      "aiSeeds": [
+        608135832,
+        3084996978
+      ],
+      "winner": 1,
+      "duration": 24.125,
+      "sha256": "ab7f33376f880b6f7df2f6a2af20eab8f042238c35962491001d1746aaa7814a"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 16,
+      "swapped": true,
+      "aiSeeds": [
+        3084996978,
+        608135832
+      ],
+      "winner": 0,
+      "duration": 26.116666666666667,
+      "sha256": "662b2e1f8c3d3b8341d5e414ab8dcddbc32440ec2d6198e554d370483b0c7f70"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 17,
+      "swapped": false,
+      "aiSeeds": [
+        608135833,
+        3084996979
+      ],
+      "winner": 0,
+      "duration": 36.74166666666667,
+      "sha256": "ba70c2922672e2d5771a8ff5587b1a1effe7c3280f0b78ad9d0fca2a07036169"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 17,
+      "swapped": true,
+      "aiSeeds": [
+        3084996979,
+        608135833
+      ],
+      "winner": 0,
+      "duration": 34.93333333333333,
+      "sha256": "2e215c320b267200d2ca47fcf66ad05fba36be775275fe6560b6a72c721d727e"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 18,
+      "swapped": false,
+      "aiSeeds": [
+        608135834,
+        3084996976
+      ],
+      "winner": 0,
+      "duration": 33.15,
+      "sha256": "4bdc0e9d4b3f450dc80e6b83d8b2a968780ebd85989ebe1da50a8a7419818a4a"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 18,
+      "swapped": true,
+      "aiSeeds": [
+        3084996976,
+        608135834
+      ],
+      "winner": 1,
+      "duration": 29.591666666666665,
+      "sha256": "593ea1c7b74b863b258d3de133c623d1f3231fb9cc6d01b6cbe7623abbbcd8de"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 19,
+      "swapped": false,
+      "aiSeeds": [
+        608135835,
+        3084996977
+      ],
+      "winner": 1,
+      "duration": 33.78333333333333,
+      "sha256": "c29975f0993c0c863b5807c5322f350d1ed18f84c64f34a0e4e6fd07eb6a0e2c"
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "seed": 19,
+      "swapped": true,
+      "aiSeeds": [
+        3084996977,
+        608135835
+      ],
+      "winner": 1,
+      "duration": 33.80833333333333,
+      "sha256": "a104bfa25dce9a3579bafa17aa53730b74be005179f7b392a08c5f1a8ffad2af"
+    }
+  ],
+  "summary": [
+    {
+      "fixture": "pan-broom/out-out-e180",
+      "score": 0.25,
+      "follow": 2,
+      "pairs": 20
+    },
+    {
+      "fixture": "pan-broom/hug-hug-e90",
+      "score": 0.5,
+      "follow": 4,
+      "pairs": 20
+    },
+    {
+      "fixture": "scissors-pillow/out-out-e180",
+      "score": 0.625,
+      "follow": 13,
+      "pairs": 20
+    },
+    {
+      "fixture": "scissors-pillow/hug-hug-e90",
+      "score": 0.6,
+      "follow": 12,
+      "pairs": 20
+    },
+    {
+      "fixture": "lamp-slipper/out-out-e180",
+      "score": 0.425,
+      "follow": 7,
+      "pairs": 20
+    },
+    {
+      "fixture": "lamp-slipper/hug-hug-e90",
+      "score": 0.5,
+      "follow": 12,
+      "pairs": 20
+    }
+  ]
+}

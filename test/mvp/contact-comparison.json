@@ -1,0 +1,75 @@
+{
+  "before": "b60d50a",
+  "after": "a13ba36",
+  "oldEventCount": 5,
+  "newEventCount": 7,
+  "addedEvents": [
+    {
+      "t": 0,
+      "type": "start"
+    },
+    {
+      "t": 2,
+      "type": "result",
+      "winner": null,
+      "reason": "timeout",
+      "why": {
+        "kind": "timeout",
+        "criterion": "draw",
+        "coreRatios": [
+          1,
+          1
+        ],
+        "partHp": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "physicalEventsEqual": true,
+  "diagnosticsEqual": true,
+  "oldTopLevelKeys": [
+    "rules",
+    "diagnostics",
+    "events"
+  ],
+  "newTopLevelKeys": [
+    "rules",
+    "diagnostics",
+    "events"
+  ],
+  "rulesChanges": [
+    {
+      "field": "rules.arenaRadius",
+      "before": 4.2,
+      "after": 2.2
+    },
+    {
+      "field": "rules.top.itemHp.broom",
+      "before": 0.9,
+      "after": 1.1
+    },
+    {
+      "field": "rules.top.itemPower.broom",
+      "before": 0.9,
+      "after": 0.48
+    },
+    {
+      "field": "rules.top.orientPower",
+      "before": null,
+      "after": {
+        "out": 1.2,
+        "hug": 0.85
+      }
+    },
+    {
+      "field": "rules.top.orientReceive",
+      "before": null,
+      "after": {
+        "out": 1.15,
+        "hug": 0.85
+      }
+    }
+  ]
+}

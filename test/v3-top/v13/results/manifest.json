@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "base": "bbaaeb7",
+  "sources": {
+    "sim/v3.js": "5a32a8f9dc5eb2371530d2080bf083b8387bccd14245e97d3afabb4fbacd1a82",
+    "sim/v3-rules.json": "d28fa1ea4ebd54f5a54b5da70bc5f155b319bfb899cbb362a77ac2a83da3b5c5",
+    "sim/index.js": "b04f070c52b0ba2423f802068f86ddfc3006480c59c30c68bb36c6ef7111d7e4",
+    "sim/math.js": "207e4ef5e9b670a48e94e7521d121d860f21fd8e612674bf41027f2a2ff873dd",
+    "sim/package-lock.json": "032c5d73eda70bfaeb72816babe5f1dc95f1e0425c03b0ccb65c9059895cf968",
+    "data/catalog.json": "9c87de27c4829b9dbfd8afa2270ac7ff5dfe8e8f95d4ee1e9f04180463e82fc6",
+    "test/v3-top/impact-probe.mjs": "a7fe86356dca4afd3102d9f8c53d2fc9cc66e561914a112840af77718a9d06d8",
+    "test/v3-top/v13/experiment.mjs": "1966b3cac23d60c7b9a3711da851bc4328eeda05ed5f5b2f685cdd364a453935",
+    "test/v3-top/v13/measure.mjs": "c4a6cee77cbfbd9e501d3b902da624ab691ed4966b025389bcedbbba930a2f6a",
+    "test/v3-top/v13/run.mjs": "aeed1f9031047c6c17e5aa598894504abbdfbac82132f2c15c744f73449c238c"
+  },
+  "fixtures": [
+    {
+      "id": "pan-broom/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "broom",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pan-broom/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "broom",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scissors-pillow/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "scissors",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "pillow",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scissors-pillow/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "scissors",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "pillow",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lamp-slipper/out-out-e180",
+      "definition": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "mount": "e0",
+            "orient": "out"
+          },
+          {
+            "item": "slipper",
+            "mount": "e180",
+            "orient": "out"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lamp-slipper/hug-hug-e90",
+      "definition": {
+        "parts": [
+          {
+            "item": "lamp-lux3d",
+            "mount": "e0",
+            "orient": "hug"
+          },
+          {
+            "item": "slipper",
+            "mount": "e90",
+            "orient": "hug"
+          }
+        ]
+      }
+    }
+  ],
+  "mash": [
+    {
+      "step": 60,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 300,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 612,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 924,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 1164,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 1548,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 1716,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 2172,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 2268,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 2796,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 2820,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 3372,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 3420,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 3924,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 4044,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 4476,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 4668,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 5028,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 5292,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 5580,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 5916,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 6132,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 6540,
+      "side": 0,
+      "action": "block"
+    },
+    {
+      "step": 6684,
+      "side": 0,
+      "action": "dash"
+    },
+    {
+      "step": 7164,
+      "side": 0,
+      "action": "block"
+    }
+  ],
+  "primarySeeds": 100,
+  "sensitivitySeeds": 100,
+  "fairSeeds": 200,
+  "swapSeeds": 20,
+  "feelSeeds": 50,
+  "causalSeeds": 10,
+  "fingerprint": "40e8980f8ad3140329201324b43b257baeea63df9797c8222969119b6b63c157",
+  "planned": 7500
+}

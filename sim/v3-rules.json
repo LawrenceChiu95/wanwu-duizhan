@@ -43,13 +43,16 @@
     "planeDamping": 1.5,
     "tangentialDamping": 2.5,
     "maxCorrectionPerStep": 0.02,
-    "itemPower": {"scissors": 1.6, "slipper": 1.35, "broom": 0.9, "pillow": 0.8},
-    "itemHp": {"scissors": 1.4, "slipper": 1.3, "broom": 0.9, "pillow": 0.75},
+    "itemStats": {"hpBase": 0.4, "hpScale": 0.01, "powerBase": 0.6, "powerScale": 0.01, "attackBase": 6, "attackScale": 0.15, "defenseBase": 2, "defenseScale": 0.06},
+    "referenceHardness": 1.2,
+    "softHugReceive": {"cloth": 0.7, "rubber": 0.8},
+    "orientPower": {"out": 1.05, "hug": 0.95},
+    "orientReceive": {"out": 1.15, "hug": 0.85},
     "damageRamp": [
       [0, 0.75],
       [15, 0.9],
       [30, 1.3],
-      [40, 1.8]
+      [40, 4.5]
     ]
   },
   "initialGap": 0.35,
@@ -67,6 +70,7 @@
   "minimumImpulse": 0.001,
   "counterSpeedMultiplier": 2,
   "roleMassPower": 0.25,
+  "clashRelativeTolerance": 0.00001,
   "tipBonus": 0.3,
   "recoilDamageFraction": 0.03,
   "weakCritChance": 0.5,
@@ -79,10 +83,10 @@
   "tierDamage": [10, 18, 26, 34],
   "overlapIterations": 8,
   "overlapTolerance": 0.0005,
-  "arenaRadius": 4.2,
+  "arenaRadius": 2.2,
   "damageScale": {
     "A": 0.8,
-    "B": 1
+    "B": 1.5
   },
   "manual": {
     "chargeTime": 0.3,
@@ -93,12 +97,13 @@
     "dashThrust": 8,
     "dashCooldown": 4.5,
     "dashDamage": 1.25,
+    "dashAlignment": 0.9,
     "dashRecoil": 1.6,
-    "blockTime": 1,
+    "blockTime": 0.25,
     "blockCooldown": 5,
     "blockDamage": 0.3,
     "blockRecoil": 0.3,
     "bounceRecoil": 2.6,
-    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "dashChance": 0.25, "blockRange": 2.8, "blockReact": 0.15}
+    "ai": {"think": 0.1, "dashRange": [0.5, 2.6], "blockLead": 0.15, "reactionJitter": 0.05}
   }
 }

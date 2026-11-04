@@ -1,0 +1,836 @@
+[
+  {
+    "source": {
+      "file": "m8-seed2891.json",
+      "sha256": "7369495c3c48377703f5f01f1f92c7ee48a93c6fb0a9ba1df3eee6024d2fea0f",
+      "code": "ce19eace59f13eb981c6e49ab419aedf38c5483b"
+    },
+    "options": {
+      "fighters": [
+        {
+          "parts": [
+            {
+              "item": "wasteland-broom",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "pillow",
+              "mount": "e180",
+              "orient": "hug"
+            }
+          ]
+        },
+        {
+          "parts": [
+            {
+              "item": "pan-lux3d",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "lamp-lux3d",
+              "mount": "e180",
+              "orient": "hug"
+            }
+          ]
+        }
+      ],
+      "seed": 2891,
+      "mode": "A",
+      "manual": {
+        "sides": [
+          "input",
+          "ai"
+        ],
+        "blockTime": 0.25,
+        "aiSeeds": [
+          608133571,
+          3084999209
+        ],
+        "inputs": [
+          {
+            "step": 27,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 45,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 586,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 1131,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 1387,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 1674,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 2060,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 2216,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 2670,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 2760,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 3305,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 3842,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 3878,
+            "side": 0,
+            "action": "dash"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "winner": 1,
+      "duration": 35.45,
+      "physics": {
+        "meta": "ba2393cf31b6551070781f119821cefcf239d7ba288cc82a3567bd61949a4dcd",
+        "frames": "56cbb9f74261f58cb653330938ddd5dec75d970edbd6789a900e0c1e64e28e98",
+        "eventsBeforeResult": "65612138ecb4b29baced9eb044e8378d6cb0d63a45a68fabc2365f7b5229f653"
+      }
+    },
+    "legacy": {
+      "meta": {
+        "winner": 1,
+        "reason": "ko"
+      },
+      "frames": [
+        {
+          "t": 35.45,
+          "fighters": [
+            {
+              "pos": [
+                0.6553817391395569,
+                -0.0853380635380745,
+                0.11522595584392548
+              ],
+              "quat": [
+                0.2026405781507492,
+                -0.17015451192855835,
+                0.46077415347099304,
+                0.8471548557281494
+              ],
+              "hp": 0,
+              "maxHp": 160,
+              "core": {
+                "id": "core",
+                "item": null,
+                "mount": "core",
+                "orient": "core",
+                "pos": [
+                  0.6553817391395569,
+                  -0.0853380635380745,
+                  0.11522595584392548
+                ],
+                "quat": [
+                  0.2026405781507492,
+                  -0.17015451192855835,
+                  0.46077415347099304,
+                  0.8471548557281494
+                ],
+                "hp": 0,
+                "maxHp": 160,
+                "alive": false
+              },
+              "parts": [
+                {
+                  "id": "part-0",
+                  "item": "wasteland-broom",
+                  "mount": "e0",
+                  "orient": "out",
+                  "pos": [
+                    0.3038393259048462,
+                    -0.03079075925052166,
+                    0.22541463375091553
+                  ],
+                  "quat": [
+                    -0.041203517466783524,
+                    -0.9988871216773987,
+                    -0.02291851118206978,
+                    -0.0011787408730015159
+                  ],
+                  "hp": 0,
+                  "maxHp": 67.8,
+                  "alive": false
+                },
+                {
+                  "id": "part-1",
+                  "item": "pillow",
+                  "mount": "e180",
+                  "orient": "hug",
+                  "pos": [
+                    0.6782696843147278,
+                    0.027385331690311432,
+                    -0.07859630882740021
+                  ],
+                  "quat": [
+                    -0.17694731056690216,
+                    -0.8403620719909668,
+                    0.46756696701049805,
+                    0.20943336188793182
+                  ],
+                  "hp": 2.3844407176766724,
+                  "maxHp": 80.4,
+                  "alive": true
+                }
+              ],
+              "velocity": [
+                2.4991374015808105,
+                -0.53946852684021,
+                -0.13721251487731934
+              ],
+              "angularVelocity": [
+                -8.007588386535645,
+                10.805615425109863,
+                6.683239936828613
+              ],
+              "mass": 1.25,
+              "centerOfMass": [
+                0.6617299318313599,
+                -0.038161057978868484,
+                0.03768071532249451
+              ]
+            },
+            {
+              "pos": [
+                0.38686808943748474,
+                -0.01579897478222847,
+                0.1562613844871521
+              ],
+              "quat": [
+                -0.15926969051361084,
+                -0.6909383535385132,
+                0.23639433085918427,
+                -0.6643456816673279
+              ],
+              "hp": 74.50577279315553,
+              "maxHp": 160,
+              "core": {
+                "id": "core",
+                "item": null,
+                "mount": "core",
+                "orient": "core",
+                "pos": [
+                  0.38686808943748474,
+                  -0.01579897478222847,
+                  0.1562613844871521
+                ],
+                "quat": [
+                  -0.15926969051361084,
+                  -0.6909383535385132,
+                  0.23639433085918427,
+                  -0.6643456816673279
+                ],
+                "hp": 74.50577279315553,
+                "maxHp": 160,
+                "alive": true
+              },
+              "parts": [
+                {
+                  "id": "part-0",
+                  "item": "pan-lux3d",
+                  "mount": "e0",
+                  "orient": "out",
+                  "pos": [
+                    -0.1612708866596222,
+                    -0.05732746049761772,
+                    -0.19860368967056274
+                  ],
+                  "quat": [
+                    -0.3288487195968628,
+                    -0.7505505084991455,
+                    -0.34438514709472656,
+                    -0.45818257331848145
+                  ],
+                  "hp": 0,
+                  "maxHp": 81,
+                  "alive": false
+                },
+                {
+                  "id": "part-1",
+                  "item": "lamp-lux3d",
+                  "mount": "e180",
+                  "orient": "hug",
+                  "pos": [
+                    -0.3803873360157013,
+                    0.059686049818992615,
+                    -0.18593905866146088
+                  ],
+                  "quat": [
+                    -0.43400976061820984,
+                    -0.6595314741134644,
+                    -0.12748932838439941,
+                    0.6003335118293762
+                  ],
+                  "hp": 0,
+                  "maxHp": 54,
+                  "alive": false
+                }
+              ],
+              "velocity": [
+                -2.256720542907715,
+                0.756755530834198,
+                0.288199782371521
+              ],
+              "angularVelocity": [
+                5.4953227043151855,
+                3.3526620864868164,
+                -0.3488849401473999
+              ],
+              "mass": 0.75,
+              "centerOfMass": [
+                0.38686808943748474,
+                -0.01579897478222847,
+                0.1562613844871521
+              ]
+            }
+          ]
+        }
+      ],
+      "events": [
+        {
+          "t": 35.45,
+          "type": "hit",
+          "attacker": 1,
+          "target": 0,
+          "part": "core",
+          "targetPart": "core",
+          "item": "__core",
+          "targetItem": "__core",
+          "mount": "core",
+          "targetMount": "core",
+          "orient": "core",
+          "targetOrient": "core",
+          "point": [
+            0.5234815603396304,
+            -0.048325677246495724,
+            0.14407769185407482
+          ],
+          "impulse": 3.6944022178649902,
+          "closingSpeed": 4.998874998214673,
+          "role": "attack",
+          "strikeAttacker": 1,
+          "clash": false,
+          "normalSpeeds": [
+            1.4632986741368386,
+            3.5355763240778346
+          ],
+          "attackScores": [
+            1.5472499678629712,
+            3.2902245069131726
+          ],
+          "masses": [
+            1.25,
+            0.75
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "weakContact": false,
+          "weak": false,
+          "criticalRoll": null,
+          "criticalChance": 0.5,
+          "roleMultiplier": 1,
+          "tipMultiplier": 1,
+          "score": 3.6944022178649902,
+          "tier": 2,
+          "hardness": 1,
+          "matchup": 1,
+          "itemPower": 1,
+          "attackMultiplier": 1,
+          "receiveMultiplier": 1,
+          "rawDamage": 63.31520000000002,
+          "damageCap": 48,
+          "damage": 3.0684590879999902,
+          "damageBeforeHpClamp": 48,
+          "dash": false,
+          "shield": false,
+          "parry": false,
+          "dashAttempt": false,
+          "dashQuality": null,
+          "alignment": null,
+          "caption": "核心受撞，掉血了",
+          "hpAfter": 0
+        }
+      ],
+      "decisive": {
+        "why": {
+          "attacker": 1,
+          "attackerPart": "core",
+          "attackerItem": null,
+          "attackerOrient": "core",
+          "target": 0,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "wasteland-broom",
+              "orient": "out",
+              "t": 16.708333333333332
+            }
+          ],
+          "loserPartsLeft": 1,
+          "dash": false
+        },
+        "eventIndex": 0
+      }
+    }
+  },
+  {
+    "source": {
+      "file": "m3-seed9099.json",
+      "sha256": "c26fa1f86f6d7b36a297c7de3f8a47152da8ac044c9c3d4b6470b1974e03e793",
+      "code": "ce19eace59f13eb981c6e49ab419aedf38c5483b"
+    },
+    "options": {
+      "fighters": [
+        {
+          "parts": [
+            {
+              "item": "wasteland-broom",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "pillow",
+              "mount": "e180",
+              "orient": "hug"
+            }
+          ]
+        },
+        {
+          "parts": [
+            {
+              "item": "pan-lux3d",
+              "mount": "e0",
+              "orient": "out"
+            },
+            {
+              "item": "lamp-lux3d",
+              "mount": "e180",
+              "orient": "hug"
+            }
+          ]
+        }
+      ],
+      "seed": 9099,
+      "mode": "A",
+      "manual": {
+        "sides": [
+          "input",
+          "ai"
+        ],
+        "blockTime": 0.25,
+        "aiSeeds": [
+          608127235,
+          3085005545
+        ],
+        "inputs": [
+          {
+            "step": 28,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 40,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 581,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 629,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 1124,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 1666,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 1879,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 2207,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 2566,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 2751,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 3169,
+            "side": 0,
+            "action": "block"
+          },
+          {
+            "step": 3295,
+            "side": 0,
+            "action": "dash"
+          },
+          {
+            "step": 3838,
+            "side": 0,
+            "action": "dash"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "winner": 0,
+      "duration": 33.125,
+      "physics": {
+        "meta": "985d888769569a991c037269cc0aa57515881a8dbe49c4a2b2b594e38f94f597",
+        "frames": "11c51aeb62ccade09acbfaccad340b5d0a4d0459d76b796c90a33a94c709c514",
+        "eventsBeforeResult": "9f9a6a0860fb07ca844aa9947d26fdb3fd903129f966dba7404c112dba022040"
+      }
+    },
+    "legacy": {
+      "meta": {
+        "winner": 0,
+        "reason": "ko"
+      },
+      "frames": [
+        {
+          "t": 33.125,
+          "fighters": [
+            {
+              "pos": [
+                0.9764934778213501,
+                -0.004780637100338936,
+                -0.20584705471992493
+              ],
+              "quat": [
+                0.017586544156074524,
+                -0.1811356395483017,
+                0.12464766204357147,
+                0.9753684997558594
+              ],
+              "hp": 88.31090366666666,
+              "maxHp": 160,
+              "core": {
+                "id": "core",
+                "item": null,
+                "mount": "core",
+                "orient": "core",
+                "pos": [
+                  0.9764934778213501,
+                  -0.004780637100338936,
+                  -0.20584705471992493
+                ],
+                "quat": [
+                  0.017586544156074524,
+                  -0.1811356395483017,
+                  0.12464766204357147,
+                  0.9753684997558594
+                ],
+                "hp": 88.31090366666666,
+                "maxHp": 160,
+                "alive": true
+              },
+              "parts": [
+                {
+                  "id": "part-0",
+                  "item": "wasteland-broom",
+                  "mount": "e0",
+                  "orient": "out",
+                  "pos": [
+                    -0.6846578121185303,
+                    -0.1289404034614563,
+                    -0.248052179813385
+                  ],
+                  "quat": [
+                    -0.06415301561355591,
+                    0.74591463804245,
+                    -0.2402312457561493,
+                    0.6178873777389526
+                  ],
+                  "hp": 0,
+                  "maxHp": 67.8,
+                  "alive": false
+                },
+                {
+                  "id": "part-1",
+                  "item": "pillow",
+                  "mount": "e180",
+                  "orient": "hug",
+                  "pos": [
+                    -0.04792158305644989,
+                    0.05016704648733139,
+                    -0.23243658244609833
+                  ],
+                  "quat": [
+                    -0.076022207736969,
+                    -0.3840325176715851,
+                    0.5719854831695557,
+                    0.7208137512207031
+                  ],
+                  "hp": 0,
+                  "maxHp": 80.4,
+                  "alive": false
+                }
+              ],
+              "velocity": [
+                2.7472281455993652,
+                0.1944766640663147,
+                -3.1803958415985107
+              ],
+              "angularVelocity": [
+                -0.5736826658248901,
+                3.8339059352874756,
+                2.386141061782837
+              ],
+              "mass": 0.75,
+              "centerOfMass": [
+                0.9764934778213501,
+                -0.004780637100338936,
+                -0.20584705471992493
+              ]
+            },
+            {
+              "pos": [
+                0.741392195224762,
+                -0.02212737314403057,
+                -0.05465378612279892
+              ],
+              "quat": [
+                -0.004381480626761913,
+                0.8879944086074829,
+                -0.04741546884179115,
+                0.45738208293914795
+              ],
+              "hp": 0,
+              "maxHp": 160,
+              "core": {
+                "id": "core",
+                "item": null,
+                "mount": "core",
+                "orient": "core",
+                "pos": [
+                  0.741392195224762,
+                  -0.02212737314403057,
+                  -0.05465378612279892
+                ],
+                "quat": [
+                  -0.004381480626761913,
+                  0.8879944086074829,
+                  -0.04741546884179115,
+                  0.45738208293914795
+                ],
+                "hp": 0,
+                "maxHp": 160,
+                "alive": false
+              },
+              "parts": [
+                {
+                  "id": "part-0",
+                  "item": "pan-lux3d",
+                  "mount": "e0",
+                  "orient": "out",
+                  "pos": [
+                    -0.3803021013736725,
+                    -0.1524885892868042,
+                    -0.4345158338546753
+                  ],
+                  "quat": [
+                    0.1794649064540863,
+                    -0.6121513843536377,
+                    0.32875749468803406,
+                    -0.6964062452316284
+                  ],
+                  "hp": 0,
+                  "maxHp": 81,
+                  "alive": false
+                },
+                {
+                  "id": "part-1",
+                  "item": "lamp-lux3d",
+                  "mount": "e180",
+                  "orient": "hug",
+                  "pos": [
+                    0.5999570488929749,
+                    -0.008170202374458313,
+                    0.04577817767858505
+                  ],
+                  "quat": [
+                    0.04741546884179115,
+                    0.45738208293914795,
+                    -0.004381480626761913,
+                    -0.8879944086074829
+                  ],
+                  "hp": 34.44244845533334,
+                  "maxHp": 54,
+                  "alive": true
+                }
+              ],
+              "velocity": [
+                -1.4069256782531738,
+                -0.07670292258262634,
+                1.535679817199707
+              ],
+              "angularVelocity": [
+                1.2139711380004883,
+                8.426617622375488,
+                -4.183627605438232
+              ],
+              "mass": 2.049999952316284,
+              "centerOfMass": [
+                0.6508216857910156,
+                -0.018804781138896942,
+                0.009935162961483002
+              ]
+            }
+          ]
+        }
+      ],
+      "events": [
+        {
+          "t": 33.125,
+          "type": "hit",
+          "attacker": 0,
+          "target": 1,
+          "part": "core",
+          "targetPart": "core",
+          "item": "__core",
+          "targetItem": "__core",
+          "mount": "core",
+          "targetMount": "core",
+          "orient": "core",
+          "targetOrient": "core",
+          "point": [
+            0.8559662447656111,
+            -0.017042882870529602,
+            -0.13494650199735528
+          ],
+          "impulse": 5.174932479858398,
+          "closingSpeed": 5.39371224484538,
+          "role": "attack",
+          "strikeAttacker": 0,
+          "clash": false,
+          "normalSpeeds": [
+            3.9782705910867406,
+            1.4154416537586398
+          ],
+          "attackScores": [
+            3.7021979428883025,
+            1.6936763946444984
+          ],
+          "masses": [
+            0.75,
+            2.049999952316284
+          ],
+          "matchupMultipliers": [
+            1,
+            1
+          ],
+          "weakContact": false,
+          "weak": false,
+          "criticalRoll": null,
+          "criticalChance": 0.5,
+          "roleMultiplier": 1,
+          "tipMultiplier": 1,
+          "score": 5.174932479858398,
+          "tier": 3,
+          "hardness": 1,
+          "matchup": 1,
+          "itemPower": 1,
+          "attackMultiplier": 1,
+          "receiveMultiplier": 1,
+          "rawDamage": 62.56,
+          "damageCap": 48,
+          "damage": 30.827885697066655,
+          "damageBeforeHpClamp": 48,
+          "dash": false,
+          "shield": false,
+          "parry": false,
+          "dashAttempt": false,
+          "dashQuality": null,
+          "alignment": null,
+          "caption": "核心受撞，掉血了",
+          "hpAfter": 0
+        }
+      ],
+      "decisive": {
+        "why": {
+          "attacker": 0,
+          "attackerPart": "core",
+          "attackerItem": null,
+          "attackerOrient": "core",
+          "target": 1,
+          "targetPart": "core",
+          "targetItem": null,
+          "targetOrient": "core",
+          "weak": false,
+          "loserBroken": [
+            {
+              "item": "pan-lux3d",
+              "orient": "out",
+              "t": 27.825
+            }
+          ],
+          "loserPartsLeft": 1,
+          "dash": false
+        },
+        "eventIndex": 0
+      }
+    }
+  }
+]

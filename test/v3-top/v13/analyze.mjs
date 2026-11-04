@@ -1,0 +1,66 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {fixtures,median} from './experiment.mjs';
+const dir=new URL(process.env.V13_RESULTS??'./results/',import.meta.url),rows=(await readFile(new URL('rounds.ndjson',dir),'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);
+const manifest=JSON.parse(await readFile(new URL('manifest.json',dir),'utf8'));
+if(!process.argv.includes('--partial'))assert.equal(rows.length,manifest.planned);
+const mean=xs=>xs.length?xs.reduce((s,x)=>s+x,0)/xs.length:null;
+const percent=xs=>xs.length?100*mean(xs):null;
+const rate=xs=>({n:xs.length,wins:xs.filter(x=>x.winner===0).length,draws:xs.filter(x=>x.winner===null).length,timeouts:xs.filter(x=>x.reason==='timeout').length,score:percent(xs.map(x=>x.score))});
+const paired=(a,b)=>{
+ const bySeed=new Map(b.map(x=>[x.seed,x])),d=a.filter(x=>bySeed.has(x.seed)).map(x=>x.score-bySeed.get(x.seed).score),m=mean(d);
+ const se=d.length>1?Math.sqrt(d.reduce((s,x)=>s+(x-m)**2,0)/(d.length-1)/d.length):null;
+ return {n:d.length,pp:m===null?null:100*m,ci95:se===null?null:[100*(m-1.96*se),100*(m+1.96*se)],flipped:d.filter(x=>x!==0).length};
+};
+const metrics=xs=>({n:xs.length,pacePass:xs.filter(x=>x.pacePass).length,duration:{median:median(xs.map(x=>x.duration)),min:xs.length?Math.min(...xs.map(x=>x.duration)):null,max:xs.length?Math.max(...xs.map(x=>x.duration)):null},
+ approach:median(xs.map(x=>x.approachMedian).filter(x=>x!==null)),separation:median(xs.map(x=>x.separationMedian).filter(x=>x!==null)),first:median(xs.map(x=>x.first).filter(x=>x!==null)),medianGap:median(xs.map(x=>x.medianGap).filter(x=>x!==null)),maxGap:xs.length?Math.max(...xs.map(x=>x.maxGap??0)):null,
+ scrapeCount:xs.reduce((s,x)=>s+x.scrapeCount,0),scrapeSeconds:xs.reduce((s,x)=>s+x.scrapeDuration,0),rubs:xs.reduce((s,x)=>s+x.rubs,0),maxResidual:xs.length?Math.max(...xs.map(x=>x.residual)):null,
+ actions:[0,1].map(i=>({press:mean(xs.map(x=>x.actions[i].press)),dash:mean(xs.map(x=>x.actions[i].dash)),perfect:mean(xs.map(x=>x.actions[i].perfect)),contactOnly:mean(xs.map(x=>x.actions[i].contactOnly??0)),empty:mean(xs.map(x=>x.actions[i].empty)),dashEnd:Object.fromEntries(['full','glance','miss','blocked'].map(k=>[k,mean(xs.map(x=>x.actions[i].dashEnd[k]))]))})),
+ failures:xs.filter(x=>!x.pacePass).map(x=>({seed:x.seed,duration:x.duration,first:x.first,medianGap:x.medianGap,maxGap:x.maxGap,reason:x.reason,replaySha256:x.replaySha256}))});
+const comparisons=[],fairness=[],swaps=[],feel=[],causal=[];
+for(const f of fixtures){
+ for(const window of [.2,.25,.3]){
+  const scene=rows.filter(x=>x.fixture===f.id&&x.window===window&&['primary','sensitivity'].includes(x.stage));
+  const timing=scene.filter(x=>x.condition==='timing'),mash=scene.filter(x=>x.condition==='mash'),idle=scene.filter(x=>x.condition==='idle');
+  comparisons.push({fixture:f.id,window,timing:rate(timing),mash:rate(mash),idle:rate(idle),timingMinusMash:paired(timing,mash),timingMinusIdle:paired(timing,idle),timingMetrics:metrics(timing),mashMetrics:metrics(mash),idleMetrics:metrics(idle)});
+ }
+ const fs=rows.filter(x=>x.fixture===f.id&&x.stage==='fair'),r=rate(fs);
+ const left=fs.filter(x=>x.condition==='ai-left'),right=new Map(fs.filter(x=>x.condition==='ai-right').map(x=>[x.seed,x]));
+ const pairs=left.filter(x=>right.has(x.seed)).map(x=>({seed:x.seed,first:x.winner,swapped:right.get(x.seed).winner,openingHalfTurn:x.openingHalfTurn??false,firstSha:x.replaySha256,swappedSha:right.get(x.seed).replaySha256}));
+ for(const a of left){const b=right.get(a.seed);if(b){assert.deepEqual(a.aiSeeds,[...b.aiSeeds].reverse(),'AI profiles did not travel to opposite seats');assert.equal(a.openingHalfTurn,b.openingHalfTurn,'paired matches changed their global orientation');assert.equal(a.role0StartsLeft,b.role0StartsLeft,'paired matches changed physical seat assignment');}}
+ const decided=pairs.filter(x=>x.first!==null&&x.swapped!==null);
+ fairness.push({fixture:f.id,...r,physicalLeftScore:percent(fs.map(x=>x.physicalLeftScore??x.score)),byHalfTurn:[false,true].map(openingHalfTurn=>{const group=fs.filter(x=>(x.openingHalfTurn??false)===openingHalfTurn);return {openingHalfTurn,...rate(group),physicalLeftScore:percent(group.map(x=>x.physicalLeftScore??x.score))};}),pass:r.n===400&&pairs.length===200&&r.score>=45&&r.score<=55,pairCount:pairs.length,winnerFollowsProfile:decided.filter(x=>x.first===1-x.swapped).length,winnerFollowsSeat:decided.filter(x=>x.first===x.swapped).length,decidedPairs:decided.length,drawPairs:pairs.filter(x=>x.first===null||x.swapped===null).length,profileFollowPercent:percent(decided.map(x=>x.first===1-x.swapped?1:0)),pairs,byOrientation:['ai-left','ai-right'].map(condition=>({condition,...rate(fs.filter(x=>x.condition===condition))})),uniqueInputFlows:[0,1].map(side=>new Set(fs.map(x=>x.aiPressSha256?.[side])).size),metrics:metrics(fs)});
+ const swap=rows.filter(x=>x.fixture===f.id&&x.stage==='swap'),a=swap.filter(x=>x.condition==='flow-left'),b=swap.filter(x=>x.condition==='flow-right'),swapped=new Map(b.map(x=>[x.seed,x]));
+ swaps.push({fixture:f.id,originalLeft:rate(a),swappedLeft:rate(b),sameStreamScoreBefore:percent(a.map(x=>x.score)),sameStreamScoreAfter:percent(b.map(x=>1-x.score)),paired:a.filter(x=>swapped.has(x.seed)).map(x=>({seed:x.seed,winnerBefore:x.winner,winnerAfter:swapped.get(x.seed).winner,mirrored:x.winner===null?swapped.get(x.seed).winner===null:swapped.get(x.seed).winner===1-x.winner}))});
+ for(const mode of ['A','B']){
+  const rs=rows.filter(x=>x.fixture===f.id&&x.stage==='feel'&&x.mode===mode),before=rs.filter(x=>x.version==='v12'),after=rs.filter(x=>x.version==='v13');
+  feel.push({fixture:f.id,condition:'auto',mode,before:metrics(before),after:metrics(after),approachChange:median(after.map(x=>x.approachMedian))-median(before.map(x=>x.approachMedian)),separationChange:median(after.map(x=>x.separationMedian))-median(before.map(x=>x.separationMedian))});
+ }
+ const old=rows.filter(x=>x.fixture===f.id&&x.stage==='old-ai'),now=rows.filter(x=>x.fixture===f.id&&x.stage==='primary'&&x.condition==='timing');
+ feel.push({fixture:f.id,condition:'timing',mode:'A',before:metrics(old),after:metrics(now),beforeRate:rate(old),afterRate:rate(now)});
+ const cs=rows.filter(x=>x.fixture===f.id&&x.stage==='causal'),comparable=cs.filter(x=>x.countComparable);
+ causal.push({fixture:f.id,n:cs.length,comparable:comparable.length,exactScore:percent(comparable.map(x=>x.exactScore)),delayedScore:percent(comparable.map(x=>x.score)),pp:percent(comparable.map(x=>x.exactScore-x.score)),excluded:cs.filter(x=>!x.countComparable).map(x=>({seed:x.seed,requested:x.requested,accepted:x.delayedAccepted}))});
+}
+const sensitivity=[.2,.25,.3].map(window=>({window,medianPP:median(comparisons.filter(x=>x.window===window).map(x=>x.timingMinusMash.pp))}));
+const summary={fingerprint:manifest.fingerprint,rows:rows.length,planned:manifest.planned,complete:rows.length===manifest.planned,sensitivity,timingPass:sensitivity.find(x=>x.window===.25).medianPP>=15&&rows.length===manifest.planned,fairPass:fairness.every(x=>x.pass),comparisons,fairness,swaps,feel,causal};
+await writeFile(new URL('summary.json',dir),JSON.stringify(summary,null,2)+'\n');
+const pct=x=>Number.isFinite(x)?x.toFixed(1):'未跑',num=x=>Number.isFinite(x)?x.toFixed(2):'未跑';
+let md='# 第13版固定样本对照\n\n默认挡窗0.25秒；同一固定对手、六种预先确定的装法，结论不能外推所有装法或真人。所有胜负得分默认按角色0（原左方，始终由同一方操作），不是屏幕物理左侧；开局整场半圈后角色0可能在右。平局单列且计半分；差值区间是同种子配对的正态近似95%区间。\n\n';
+md+='| 场景 | 挡窗 | 择时赢/局 | 乱按赢/局 | 择时−乱按(点，95%区间) | 不按赢/局 |\n|---|---:|---:|---:|---:|---:|\n';
+for(const x of comparisons)md+=`| ${x.fixture} | ${x.window} | ${x.timing.wins}/${x.timing.n} | ${x.mash.wins}/${x.mash.n} | ${pct(x.timingMinusMash.pp)} (${x.timingMinusMash.ci95?.map(pct).join('～')??'未跑'}) | ${x.idle.wins}/${x.idle.n} |\n`;
+md+='\n六场景差值中位：'+sensitivity.map(x=>`${x.window}秒 ${pct(x.medianPP)}点`).join('；')+'。默认15点线：'+(summary.timingPass?'通过':'未通过')+'。\n\n';
+md+='| 同装法，两边都择时 | 角色0赢 | 平 | 超时 | 角色0得分率 | 物理左侧得分率 | 45–55%角色0 |\n|---|---:|---:|---:|---:|---:|---|\n';
+for(const x of fairness)md+=`| ${x.fixture} | ${x.wins}/${x.n} | ${x.draws} | ${x.timeouts} | ${pct(x.score)}% | ${pct(x.physicalLeftScore)}% | ${x.pass?'过':'未过'} |\n`;
+md+='\n上表为200个种子×2套AI反应流互换；配对非独立。每对保留相同物品、中心对称开局和同一个整场半圈标记；只把AI反应流交换角色。角色0为公平目标，物理左侧数字另报；这只分摊引擎座位偏差，不表示物理左侧偏差已消除。\n\n| 场景 | AI流原位/换位角色0得分 | 胜者跟反应流/非平配对 | 胜者仍跟座位 | 含平局配对 | 独特输入流(角色0/1) |\n|---|---:|---:|---:|---:|---|\n';
+for(const x of fairness)md+=`| ${x.fixture} | ${x.byOrientation.map(o=>pct(o.score)).join('/')}% | ${x.winnerFollowsProfile}/${x.decidedPairs} | ${x.winnerFollowsSeat} | ${x.drawPairs} | ${x.uniqueInputFlows.join('/')} |\n`;
+md+='\n| 场景 | 是否整场半圈 | 局数 | 角色0得分 | 物理左侧得分 |\n|---|---|---:|---:|---:|\n';
+for(const x of fairness)for(const g of x.byHalfTurn)md+=`| ${x.fixture} | ${g.openingHalfTurn?'是':'否'} | ${g.n} | ${pct(g.score)}% | ${pct(g.physicalLeftScore)}% |\n`;
+md+='\n互换按键流只作座位偏差核查，不并进上表的公平样本；同装法、同种子，固定两条按键流在左右互换。\n\n| 场景 | 原角色0得分 | 互换后角色0得分 | 原按键流从角色0→1的得分 | 胜者随控制流镜像/配对 |\n|---|---:|---:|---:|---:|\n';
+for(const x of swaps)md+=`| ${x.fixture} | ${pct(x.originalLeft.score)}% | ${pct(x.swappedLeft.score)}% | ${pct(x.sameStreamScoreBefore)}→${pct(x.sameStreamScoreAfter)}% | ${x.paired.filter(p=>p.mirrored).length}/${x.paired.length} |\n`;
+md+='\n| 场景/模式 | 条件 | 20–40秒等节奏线，旧→新 | 时长中位，旧→新 | 撞前接近速度，旧→新 | 撞后分离速度，旧→新 |\n|---|---|---:|---:|---:|---:|\n';
+for(const x of feel)md+=`| ${x.fixture}/${x.mode} | ${x.condition} | ${x.before.pacePass}/${x.before.n}→${x.after.pacePass}/${x.after.n} | ${num(x.before.duration.median)}→${num(x.after.duration.median)} | ${num(x.before.approach)}→${num(x.after.approach)} | ${num(x.before.separation)}→${num(x.after.separation)} |\n`;
+md+='\n撞前速度取接触段第一次求解前的接触点法向相对速度；分离速度取撞后0.05–0.25秒质心距离变化，不把冲量当速度。逐局失败、刮蹭时长/次数、动作接纳数和原始完整SHA见summary.json/rounds.ndjson。\n\n';
+md+='| 同一按键流整体延后0.25秒 | 次数可比/样本 | 原得分率 | 延后得分率 | 差(点) |\n|---|---:|---:|---:|---:|\n';
+for(const x of causal)md+=`| ${x.fixture} | ${x.comparable}/${x.n} | ${pct(x.exactScore)} | ${pct(x.delayedScore)} | ${pct(x.pp)} |\n`;
+md+='\n按键被冷却或提前结束吞掉的样本不用于解释时机收益；样本每场景仅10局，不能据此推真人水平。原始输入由种子与模拟重建，每条记录留输入SHA；重放原AI已接纳输入的逐帧物理SHA必须完全一致才纳入。\n';
+await writeFile(new URL('AUDIT.md',dir),md);console.log(JSON.stringify({rows:summary.rows,sensitivity,timingPass:summary.timingPass,fairPass:summary.fairPass,fairness:fairness.map(({fixture,score,pass})=>({fixture,score,pass}))},null,2));

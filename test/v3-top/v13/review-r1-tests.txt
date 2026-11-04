@@ -1,0 +1,39 @@
+✔ six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass (20.302834ms)
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.455417ms)
+✔ real simulations: deterministic replay, A/B initial state, physical separation and HP accounting (620.526875ms)
+✔ 162 unique layouts, same-seed contact reversal and timeout percentage decision (452.717667ms)
+✔ compound COM follows layout; world part transforms and per-part hit identity (396.442708ms)
+✔ invalid input fails explicitly (1.201458ms)
+✔ attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker (0.329833ms)
+✔ weakpoint chance is gated by physical contact, with an exact deterministic threshold (0.103041ms)
+✔ recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker (267.684917ms)
+✔ near-static normal approach never chooses an attacker from seed parity (0.454709ms)
+✔ review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions (332.860667ms)
+✔ block includes its first/last step, excludes the next step; empty block still consumes full cooldown (888.7275ms)
+✔ block cooldown accepts exactly 600 steps later, and its replay retains blockTime (297.694042ms)
+✔ full dash uses pre-impact alignment, a real contact and the post-cap multiplier; shield produces one result (54.488958ms)
+✔ a guarded new contact during shared damage cooldown succeeds without damage, once per window (53.397417ms)
+✔ dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus (118.016667ms)
+✔ dash timeout is a miss and a zero locked direction never invents a full alignment or NaN (54.702875ms)
+✔ opening is seed-independent, with a half-turn of every same-loadout collider, COM and angular velocity (6.215ms)
+✔ invalid sensitivity value fails; automatic mode retains no manual state (54.980417ms)
+✔ explicit new schema, deterministic full replay, A/B identical initial geometry (216.014917ms)
+✔ equator slots and orientations, standard dimensions, inner end sunk into the core (3.079625ms)
+✔ HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage (2.728125ms)
+✔ one attachment and bare core still rotate, collide and can win; losing all parts is not KO (188.767125ms)
+✔ detachment removes collider, preserves surviving point velocity and rotation without kick (1.382708ms)
+✔ damage ramp is piecewise linear and never applies without a hit (0.312708ms)
+✔ damage tiers and weak cap; near-static approach never gains damage from seed (0.404667ms)
+✔ invalid user selection fails before simulation (3.122125ms)
+✔ sustained real surface contact is reported and repeated rubbing is not a new attack (53.220084ms)
+✔ same-step double break: less overkill wins, exact tie is a draw; reason keeps the decided loser and its broken parts (207.169083ms)
+✔ manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical (857.700583ms)
+✔ manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap (64.564333ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7357.337125

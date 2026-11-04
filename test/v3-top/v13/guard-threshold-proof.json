@@ -1,0 +1,57 @@
+{
+  "sourceSha256": "5a32a8f9dc5eb2371530d2080bf083b8387bccd14245e97d3afabb4fbacd1a82",
+  "productionChanged": false,
+  "fixture": "Injected manifold impulse 0.0005 at step 124; unmodified real Rapier impact at step 125. Only maxDuration=1.3 and spinRate=0 are overridden in memory.",
+  "minimumImpulse": 0.001,
+  "samples": [
+    {
+      "step": 124,
+      "impulse": 0.0005,
+      "injected": true
+    },
+    {
+      "step": 125,
+      "impulse": 4.380655288696289,
+      "injected": false
+    }
+  ],
+  "actualResults": [
+    {
+      "t": 1.0416666666666667,
+      "type": "blockResult",
+      "side": 0,
+      "outcome": "perfect",
+      "pressStep": 124,
+      "resolvedStep": 125,
+      "point": [
+        0.0013954490423202515,
+        0,
+        0
+      ],
+      "attacker": 1,
+      "damageApplied": false
+    }
+  ],
+  "negativeControl": {
+    "change": "Remove only the impulse check from newEpisode in an in-memory module",
+    "results": [
+      {
+        "t": 1.0333333333333332,
+        "type": "blockResult",
+        "side": 0,
+        "outcome": "perfect",
+        "pressStep": 124,
+        "resolvedStep": 124,
+        "point": [
+          0.010680928230285658,
+          0,
+          0
+        ],
+        "attacker": 1,
+        "damageApplied": false
+      }
+    ]
+  },
+  "actualReplaySha256": "28e4e71b86f6da54f96384b0f3556e35e3a4e65e940fbd0b7154d12b32cbcc49",
+  "negativeReplaySha256": "8bfd7c814bafc3ef771e120821140fabe5c3852cd3cb9c5353410199c0043689"
+}

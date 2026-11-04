@@ -26,42 +26,44 @@
       <div class="core"><i class="ball"></i><div class="bar"><i class="chip"></i><i class="fill"></i></div></div>
       <div class="parts"></div>
     </div>
-    <div class="mid"><span class="clock" id="clock">0</span><span class="slowtag" id="slowtag">慢放</span></div>
+    <div class="mid"><span class="clock" id="clock">0</span><button type="button" class="mute" id="muteBtn" aria-label="关掉声音"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path class="w1" d="M15.5 9a4 4 0 0 1 0 6" /><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11" /><path class="x" d="M16 9.5l5 5M21 9.5l-5 5" /></svg></button><span class="slowtag" id="slowtag">慢放</span></div>
     <div class="side s1">
       <div class="who"><b>对手</b></div>
       <div class="core"><div class="bar"><i class="chip"></i><i class="fill"></i></div><i class="ball"></i></div>
       <div class="parts"></div>
     </div>
+    <div class="camseg" id="camSeg" role="radiogroup" aria-label="镜头">
+      <svg viewBox="0 0 24 24"><path d="M3 8.5h11v9H3z" /><path d="M14 11.5l6-3.5v10l-6-3.5" /></svg>
+      <button type="button" data-cam="new" role="radio">俯视</button>
+      <button type="button" data-cam="slow" role="radio">慢三成</button>
+      <button type="button" data-cam="v4" role="radio">原速</button>
+    </div>
   </header>
 
   <header id="foe">
     <span class="vs">VS</span><span class="label">对手</span><span id="foeParts"></span>
+    <button type="button" class="swap" id="foeBtn" aria-label="换个对手"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5" /><path d="M20 16H6l3.5 3.5" /></svg><span>换个对手</span></button>
   </header>
 
   <div id="banner" aria-live="polite"></div>
   <div id="caption" aria-live="polite"><span class="tag">决胜</span><p id="captionText"></p></div>
 
   <section id="build">
-    <div class="bhead"><b>你的陀螺</b><span>两件装在核心两侧</span>
-      <div class="seg ctl" role="radiogroup" aria-label="怎么打">
-        <button type="button" data-control="auto" role="radio">自动</button>
-        <button type="button" data-control="manual" role="radio"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M12 10.5V9a1.5 1.5 0 0 1 3 0v2.5" /><path d="M15 11a1.5 1.5 0 0 1 3 0v3.5a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.6-2.2L4.5 15.8a1.5 1.5 0 0 1 2.3-1.9L9 16" /></svg>手动</button>
-      </div>
-    </div>
+    <div class="bhead"><b>你的陀螺</b><span>两件装在核心两侧</span></div>
     <div class="slots">
       <div class="slot" data-slot="0">
         <button type="button" class="item" data-pick="0"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
-          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
-          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着<em class="role def">守</em></button>
         </div>
         <p class="hint"></p>
       </div>
       <div class="slot" data-slot="1">
         <button type="button" class="item" data-pick="1"><span class="nm"><b></b><i class="lux">Lux3D</i></span><small class="spec"></small><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
-          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出</button>
-          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着</button>
+          <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
+          <button type="button" data-orient="hug" role="radio"><svg viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>贴着<em class="role def">守</em></button>
         </div>
         <p class="hint"></p>
       </div>
@@ -71,31 +73,95 @@
         <button type="button" data-spread="e180" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M15.5 12H22" /></svg>对面</button>
         <button type="button" data-spread="e90" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M12 15.5V22" /></svg>挨着</button>
       </div>
-      <button type="button" class="go" id="goBtn"><span>开打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
+      <button type="button" class="go" id="goBtn" disabled><span>开打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>
 
+  <!-- 首局提示 (MVP §4-1): three lines in the first match, each shown once ever. -->
+  <div id="coach" hidden aria-live="polite"><span class="tag" id="coachTag"></span><b id="coachText"></b></div>
   <div id="pad" hidden>
-    <button type="button" class="pad dash" id="dashBtn" aria-label="冲"><i class="cd"></i><svg viewBox="0 0 24 24"><path d="M2.5 8h5M1.5 12h7M2.5 16h5" /><path d="M11 5l7 7-7 7" /><path d="M16 5l7 7-7 7" /></svg><span>冲</span></button>
-    <button type="button" class="pad block" id="blockBtn" aria-label="挡"><i class="cd"></i><svg viewBox="0 0 24 24"><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.3-7.5 10-4.4-1.7-7.5-5.4-7.5-10V5.8z" /><path d="M12 7v9" /></svg><span>挡</span></button>
+    <button type="button" class="pad dash" id="dashBtn" aria-label="冲"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M2.5 8h5M1.5 12h7M2.5 16h5" /><path d="M11 5l7 7-7 7" /><path d="M16 5l7 7-7 7" /></svg><b class="left" aria-hidden="true"></b><span>冲</span></button>
+    <button type="button" class="pad block" id="blockBtn" aria-label="挡"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.3-7.5 10-4.4-1.7-7.5-5.4-7.5-10V5.8z" /><path d="M12 7v9" /></svg><b class="left" aria-hidden="true"></b><span>挡</span></button>
   </div>
 
   <section id="result" hidden>
     <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
+    <div class="rbuild" id="resultBuild"></div>
     <p class="why" id="whyLine"></p>
+    <!-- 结算 (MVP 规格 §4-7): up to three numbers from this match, then one tip from the rules below. -->
+    <ul class="stats" id="statsList"></ul>
+    <p class="tip" id="tipLine"></p>
     <div class="actions">
       <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
+      <button type="button" id="sameBtn" class="ghost">原样再来</button>
       <button type="button" id="againBtn" class="primary"><span>换个装法再打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>
 
   <button id="creditsBtn" class="link" type="button">素材署名</button>
 
-  <div id="sheet" hidden>
+  <!-- 角色库 (MVP 规格 §4-3): full screen, opened from a slot; tap a card to install it there. -->
+  <section id="library" hidden aria-label="角色库">
+    <header class="lhead">
+      <button type="button" class="back" id="libBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg>拼装</button>
+      <b>角色库</b>
+      <!-- 拍一件 (D2): shown once a shoot backend is on (?shoot=fake now; the real one from 11-13). -->
+      <button type="button" class="shoot" id="shootBtn" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button>
+    </header>
+    <div class="lsub"><b id="libTitle"></b><span id="libCount"></span></div>
+    <div class="lgrades" id="libGrades"></div>
+    <div class="lgrid" id="libGrid"></div>
+  </section>
+
+  <!-- 拍一件 (MVP 规格 §4-5, task #47): photo → 认物 → 生成中 → 好了, or 失败; drawn by shoot.js. Under 看它怎么来的. -->
+  <section id="shootView" hidden aria-label="拍一件">
+    <header class="lhead">
+      <button type="button" class="back" id="shootBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg><span id="shootBackText">角色库</span></button>
+      <b>拍一件</b>
+      <span class="squota" id="shootQuota"></span>
+    </header>
+    <ol class="ssteps" id="shootSteps"><li><i></i>1 拍照</li><li><i></i>2 认物</li><li><i></i>3 生成</li><li><i></i>4 好了</li></ol>
+    <div class="sbody" id="shootBody"></div>
+    <input type="file" id="shootCam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="shootAlbum" accept="image/*" hidden>
+  </section>
+  <div id="shootAsk" hidden>
     <div class="panel">
-      <div class="head"><b id="sheetTitle">换一件</b><button type="button" class="close" id="sheetClose" aria-label="关闭">×</button></div>
-      <div class="grid" id="sheetGrid"></div>
+      <div class="head"><b>重新生成？</b></div>
+      <p id="shootAskText"></p>
+      <div class="sfoot"><button type="button" class="sghost" id="shootAskNo"><span>先不了</span></button><button type="button" class="go" id="shootAskYes"><span>确认，重新生成</span></button></div>
+    </div>
+  </div>
+  <!-- 拍一件 under way while the player is elsewhere: how far it has got, then 好了 (task #47). -->
+  <button type="button" id="shootTag" hidden></button>
+
+  <!-- 看它怎么来的 (MVP 规格 §4-4): this item's real generation, replayed in about ten seconds from its record. -->
+  <section id="howView" hidden aria-label="看它怎么来的">
+    <header class="lhead">
+      <button type="button" class="back" id="howBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg>角色库</button>
+      <b id="howTitle"></b>
+      <span></span>
+    </header>
+    <div class="hstage">
+      <img class="hshot" id="howShot" alt="">
+      <canvas class="turn" id="howTurn"></canvas>
+      <span class="hcat">品类<b id="howCat"></b></span>
+      <span class="hnow" id="howNow"></span>
+      <button type="button" class="hreplay" id="howReplay"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重放</button>
+    </div>
+    <div class="hbar" id="howBar"><i></i><i></i><i></i></div>
+    <ol class="hsteps" id="howSteps"></ol>
+    <div class="htotal"><b id="howTotal"></b></div>
+    <div class="hfoot"><button type="button" class="go" id="howEquip"><span>装上它</span></button></div>
+  </section>
+
+  <!-- 换个对手 (MVP 规格 §4-2): the computer's builds, strong to weak. -->
+  <div id="foeSheet" hidden>
+    <div class="panel">
+      <div class="head"><b>换个对手</b><button type="button" class="close" id="foeClose" aria-label="关闭">×</button></div>
+      <p class="fsub">强弱按电脑拿这套装法、对一批固定对手的胜率排</p>
+      <div id="foeList" role="radiogroup" aria-label="对手"></div>
     </div>
   </div>
 

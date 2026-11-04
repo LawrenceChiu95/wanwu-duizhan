@@ -1,0 +1,64 @@
+✔ six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass (9.017625ms)
+✔ A impulse/hardness; B material and defense; weak point exactly doubles (0.152291ms)
+✔ real simulations: deterministic replay, A/B initial state, physical separation and HP accounting (288.490333ms)
+✔ 162 unique layouts, same-seed contact reversal and timeout percentage decision (132.197042ms)
+✔ compound COM follows layout; world part transforms and per-part hit identity (118.567667ms)
+✔ invalid input fails explicitly (0.577042ms)
+✔ attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker (0.304833ms)
+✔ weakpoint chance is gated by physical contact, with an exact deterministic threshold (0.047292ms)
+✔ recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker (104.989583ms)
+✔ near-static normal approach never chooses an attacker from seed parity (0.220833ms)
+✔ review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions (123.813958ms)
+✔ explicit new schema, deterministic full replay, A/B identical initial geometry (104.034709ms)
+✔ equator slots and orientations, standard dimensions, inner end sunk into the core (1.478166ms)
+✔ HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage (1.39225ms)
+✔ one attachment and bare core still rotate, collide and can win; losing all parts is not KO (75.440291ms)
+✔ detachment removes collider, preserves surviving point velocity and rotation without kick (0.464583ms)
+✔ damage ramp is piecewise linear and never applies without a hit (0.08825ms)
+✔ damage tiers and weak cap; near-static approach never gains damage from seed (0.118833ms)
+✔ invalid user selection fails before simulation (0.963083ms)
+✔ sustained real surface contact is reported and repeated rubbing is not a new attack (19.319625ms)
+✖ same-step double break: less overkill wins, exact tie is a draw, reason told from the decided loser (batch seed 228) (83.103333ms)
+✔ manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical (453.732917ms)
+✖ manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap (86.901125ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 21
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2695.981667
+
+✖ failing tests:
+
+test at test/v3/sim.test.mjs:93:1
+✖ same-step double break: less overkill wins, exact tie is a draw, reason told from the decided loser (batch seed 228) (83.103333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'ko' !== 'double-ko'
+  
+      at TestContext.<anonymous> (file:///Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-v13-timing/test/v3/sim.test.mjs:98:9)
+      at async Test.run (node:internal/test_runner/test:1116:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:786:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ko',
+    expected: 'double-ko',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/v3/sim.test.mjs:125:1
+✖ manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap (86.901125ms)
+  AssertionError [ERR_ASSERTION]: a parry
+      at TestContext.<anonymous> (file:///Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-v13-timing/test/v3/sim.test.mjs:129:9)
+      at async Test.run (node:internal/test_runner/test:1116:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:786:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

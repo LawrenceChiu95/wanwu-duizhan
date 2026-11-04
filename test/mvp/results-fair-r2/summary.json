@@ -1,0 +1,50 @@
+{
+  "stage": "fair",
+  "planned": 2400,
+  "completed": 2400,
+  "complete": true,
+  "scenes": [
+    {
+      "scene": "pan-broom/out-out-e180",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.25,
+      "pass": true
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 48.25,
+      "pass": true
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.25,
+      "pass": true
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 51,
+      "pass": true
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.5,
+      "pass": true
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.25,
+      "pass": true
+    }
+  ]
+}

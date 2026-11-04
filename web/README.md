@@ -1,0 +1,1 @@
+测试双方装法用 `?mine=pan-lux3d,out,pillow,hug,e180&foe=broom,out,pillow,hug,e180&seed=7`（锅+枕头对扫把+枕头）；`mine`、`foe`都按`物品ID,out或hug,另一物品ID,out或hug,e180或e90`填写，两件选清单中不同道具，`out`伸出/`hug`贴着、`e180`对面/`e90`挨着；省略参数保持各自原默认装法。空值、错值或重复参数均明确报错，开打不可用；修正链接后刷新再试。

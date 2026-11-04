@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import RAPIER from '../../sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs';
 import {simulateV3,createV3Match,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner} from '../../sim/v3.js';
 import {loadRules,strikeRoles}from'../../sim/index.js';
@@ -8,6 +9,7 @@ import{vec,arr,add,sub,rotate,euler,length,random}from'../../sim/math.js';
 import{definition}from'./probe.mjs';
 const digest=r=>crypto.createHash('sha256').update(JSON.stringify(r)).digest('hex');
 const c=await loadRules(),rules=await loadV3Rules(),catalog=await loadCatalog();
+const designs=JSON.parse(await readFile(new URL('../../data/default-item-designs.json',import.meta.url),'utf8')).items;
 const simulations=[];
 for(const mode of ['A','B'])for(const [left,right]of [['broom','pot'],['scissors','pillow'],['lamp-lux3d','pan-lux3d']])simulations.push(await simulateV3({fighters:[definition(left),definition(right)],mode,seed:1}));
 test('explicit new schema, deterministic full replay, A/B identical initial geometry',async()=>{
@@ -15,10 +17,27 @@ test('explicit new schema, deterministic full replay, A/B identical initial geom
  assert.equal(digest(a),digest(again));assert.equal(a.meta.schemaVersion,3);assert.deepEqual(a.meta.initial,simulations[3].meta.initial);
  for(const r of simulations){assert.equal(r.frames[0].t,0);assert.equal(r.frames.at(-1).t,r.meta.duration);assert.ok(r.frames.every(fr=>fr.fighters.every(f=>[...f.pos,...f.quat,...f.velocity,...f.angularVelocity,...f.centerOfMass,f.hp,f.mass,...f.parts.flatMap(p=>[p.hp,...p.pos,...p.quat])].every(Number.isFinite))));assert.ok(r.decisive.t1-r.decisive.t0<=2.5+1e-8);}
 });
+test('authored wasteland broom and pot finish with finite physics in both modes',async()=>{
+ for(const mode of ['A','B']){
+  const r=await simulateV3({fighters:[definition('wasteland-broom'),definition('wasteland-pot')],mode,seed:1});
+  assert.ok(['ko','double-ko','timeout'].includes(r.meta.reason));
+  assert.ok(r.meta.duration>0&&r.meta.duration<=rules.maxDuration);
+  assert.equal(r.frames.at(-1).t,r.meta.duration);
+  for(const frame of r.frames)for(const f of frame.fighters){
+   assert.ok([...f.pos,...f.quat,...f.velocity,...f.angularVelocity,...f.centerOfMass,f.hp,f.mass,...f.parts.flatMap(p=>[p.hp,...p.pos,...p.quat])].every(Number.isFinite));
+  }
+  for(const [side,id]of ['wasteland-broom','wasteland-pot'].entries()){
+   assert.equal(r.meta.initial[side].parts[0].item,id);
+   assert.equal(r.meta.initial[side].definition.parts[0].item,id);
+   const expectedMass=rules.core.mass+r.meta.initial[side].definition.parts.reduce((sum,p)=>sum+catalog.find(item=>item.id===p.item).mass,0);
+   assert.ok(Math.abs(r.frames[0].fighters[side].mass-expectedMass)<1e-5,`${mode} ${id}: rigid-body mass must include the core and both authored attachments`);
+  }
+ }
+});
 test('equator slots and orientations, standard dimensions, inner end sunk into the core',()=>{
  const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0),unit=k=>[0,1,2].map(i=>i===k?1:0);
  assert.ok(Object.keys(rules.top.slots).length>=4);assert.deepEqual(rules.top.orients,['out','hug']);
- for(const item of catalog){assert.equal(item.mass,c.itemStandards[item.category].massKg);const span=Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]));assert.ok(Math.abs(span-c.itemStandards[item.category].longSideMeters)<1e-6);
+ for(const item of catalog){assert.equal(item.mass,designs.find(d=>d.id===item.id)?.massKg??c.itemStandards[item.category].massKg);const span=Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]));assert.ok(Math.abs(span-c.itemStandards[item.category].longSideMeters)<1e-6);
   const {long,thin}=itemAxes(item);
   for(const mount of Object.keys(rules.top.slots))for(const orient of rules.top.orients){
    const {offset,quat:q,direction:d}=mountTransform(item,mount,orient,rules),points=item.hull.map(v=>add(offset,rotate(q,v)));
@@ -74,7 +93,8 @@ test('damage ramp is piecewise linear and never applies without a hit',()=>{
  assert.ok(tierDamage({...base,ramp:1.5}).damage<=55*rules.maxHitFraction+1e-9);
 });
 test('damage tiers and weak cap; near-static approach never gains damage from seed',()=>{
- const item=c.items[0],target=c.items.find(i=>i.id==='pillow'),args={attacker:item,target,materials:c.materials,matchups:c.matchups,maxHp:70,rules};
+ // Use the designed heavy pot so both modes actually exceed the cap; low-attack scissors need not.
+ const item=c.items.find(i=>i.id==='pan-lux3d'),target=c.items.find(i=>i.id==='pillow'),args={attacker:item,target,materials:c.materials,matchups:c.matchups,maxHp:70,rules};
  for(const mode of ['A','B']){const d=tierDamage({...args,mode,impulse:100,weak:true});assert.ok(d.damage<=28);assert.ok(d.rawDamage>d.damageCap);assert.equal(d.damageCap,28);}
  for(const seed of [0,1])assert.equal(strikeRoles({normal:[1,0,0],velocities:[[0,20,0],[0,-20,0]],tipRatios:[1,1],tipBonus:.3,seed,minimumSpeed:rules.minimumClosingSpeed}).attacker,null);
 });
@@ -90,19 +110,32 @@ test('sustained real surface contact is reported and repeated rubbing is not a n
  for(const ep of r.meta.diagnostics.scrapeEpisodes)assert.ok(!r.events.some(e=>e.damage>0&&e.t>ep.start+.1+1e-8&&e.t<=ep.end+1e-8));
  await(await import('node:fs/promises')).writeFile(new URL('./contact-proof.json',import.meta.url),JSON.stringify({rules:r.meta.rules,diagnostics:r.meta.diagnostics,events:r.events},null,2)+'\n');
 });
-test('same-step double break: less overkill wins, exact tie is a draw, reason told from the decided loser (batch seed 228)',async()=>{
+test('same-step double break: less overkill wins, exact tie is a draw; reason keeps the decided loser and its broken parts',async()=>{
  assert.equal(doubleKoWinner([3,5]),0);assert.equal(doubleKoWinner([5,3]),1);assert.equal(doubleKoWinner([4,4]),null);assert.equal(doubleKoWinner([0,0]),null);
- // test/v3-top/batch.mjs 240 A, game 228: both cores broke in one step; the right side had already lost both items.
- const r=await simulateV3({fighters:[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'scissors',mount:'e90',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:228});
+ // v13 intentionally changed the opening, so old batch seed 228 is no longer a double KO.
+ // Keep both regressions: a controlled real same-step double KO, then a normal-rules KO after two detachments.
+ const {simulateWithRules}=await import('../v3-top/variant.mjs');
+ const double=await simulateWithRules({core:{hp:1},attachmentHp:.01,maxHitFraction:100000,recoilDamageFraction:.5});
+ const r=await double({fighters:[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'scissors',mount:'e90',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}],mode:'A',seed:0});
  const ko=r.events.find(e=>e.type==='ko');
  assert.equal(r.meta.reason,'double-ko');assert.deepEqual(ko.targets,[0,1]);
  const over=[0,1].map(i=>r.events.filter(e=>e.t===ko.t&&e.target===i&&e.targetPart==='core'&&e.damage>0).reduce((n,e)=>n+e.damageBeforeHpClamp-e.damage,0));
  assert.deepEqual(ko.overkill,over);assert.ok(over[0]<over[1]);
  assert.equal(r.meta.winner,0);assert.equal(ko.winner,0);assert.equal(ko.target,1);
- const why=r.decisive.why,broken=r.events.filter(e=>e.type==='break'&&e.target===1);
- assert.equal(why.target,1);assert.equal(why.attacker,0);assert.equal(broken.length,2);assert.equal(why.loserPartsLeft,0);
- assert.deepEqual(why.loserBroken.map(b=>b.item).sort(),['lamp-lux3d','pan-lux3d']);
+ const why=r.decisive.why;
+ assert.equal(why.target,1);assert.equal(why.attacker,0);
  assert.equal(r.decisive.eventIndex,r.events.indexOf(r.events.findLast(e=>e.t===ko.t&&e.target===1&&e.targetPart==='core'&&e.hpAfter===0)));
+ // MVP shortens broom geometry and changes category/orient damage, so normal seed 2 no longer
+ // loses after two detachments. A controlled high-core/low-part-HP fight keeps the same real
+ // collision -> break -> later core KO -> loser-facts regression without asserting an old balance outcome.
+ // Use the shipping arena and derive the loser from the real outcome.
+ const afterBreaks=await simulateWithRules({core:{hp:500},attachmentHp:1});
+ const detached=await afterBreaks({fighters:[{parts:[{item:'pan-lux3d',mount:'e90',orient:'out'},{item:'broom',mount:'e270',orient:'out'}]},{parts:[{item:'pan-lux3d',mount:'e90',orient:'out'},{item:'lamp-lux3d',mount:'e270',orient:'hug'}]}],mode:'A',seed:2,manual:{sides:['ai','ai']}});
+ assert.equal(detached.meta.reason,'ko');assert.ok([0,1].includes(detached.meta.winner));
+ const loser=1-detached.meta.winner,broken=detached.events.filter(e=>e.type==='break'&&e.target===loser),whyBroken=detached.decisive.why,koBroken=detached.events.find(e=>e.type==='ko');
+ assert.equal(whyBroken.target,loser);assert.equal(whyBroken.attacker,detached.meta.winner);assert.equal(broken.length,2);assert.ok(broken.every(e=>e.t<koBroken.t));assert.equal(whyBroken.loserPartsLeft,0);
+ assert.deepEqual(whyBroken.loserBroken.map(b=>b.item).sort(),detached.meta.initial[loser].parts.map(p=>p.item).sort());
+ assert.equal(detached.decisive.eventIndex,detached.events.indexOf(detached.events.findLast(e=>e.t===koBroken.t&&e.target===loser&&e.targetPart==='core'&&e.hpAfter===0)));
 });
 test('manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical',async()=>{
  const fighters=[{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
@@ -123,8 +156,11 @@ test('manual mode: presses taken per fixed step and recorded; replaying the same
  assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
 });
 test('manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap',async()=>{
- const fighters=[{parts:[{item:'broom',mount:'e0',orient:'out'},{item:'pillow',mount:'e180',orient:'hug'}]},{parts:[{item:'pan-lux3d',mount:'e0',orient:'out'},{item:'lamp-lux3d',mount:'e180',orient:'hug'}]}];
- const r=await simulateV3({fighters,mode:'A',seed:3,manual:{sides:['ai','ai']}}),M=r.meta.rules.manual;
+ // The old AI seed 3 no longer parries after the opening/window changed. Keep every damage/recoil
+ // assertion, using explicit presses and zero spin so the timing fixture has a straight real impact.
+ const {simulateWithRules}=await import('../v3-top/variant.mjs');
+ const simulate=await simulateWithRules({top:{spinRate:0},initialGap:1});
+ const fighters=[{parts:[]},{parts:[]}],r=await simulate({fighters,mode:'A',seed:3,manual:{sides:['input','input'],inputs:[{step:1,side:0,action:'dash'},{step:44,side:1,action:'block'},{step:700,side:0,action:'dash'}]}}),M=r.meta.rules.manual;
  const parry=r.events.find(e=>e.type==='parry'),landed=r.events.find(e=>(e.type==='hit'||e.type==='weak')&&e.dash&&!e.shield&&e.role==='attack');
  assert.ok(parry,'a parry');assert.ok(landed,'a landed lunge');
  assert.ok(r.events.some(e=>e.type==='dash'&&e.phase==='end'&&e.outcome==='blocked'&&e.side===parry.attacker&&e.t===parry.t));

@@ -1,3 +1,5 @@
+import {itemSignature, validateRuntimeItem} from './runtime-items.js';
+export {ratingScores,itemHardness} from './item-rating.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import {add,sub,scale,length,vec,arr,quat,qarr,euler,rotate,inverseRotate,random} from './math.js';
 let initialized;
@@ -5,14 +7,30 @@ const ready=()=>initialized??=(RAPIER.init());
 const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 let catalogPromise;
+const runtimeItems=new Map();
 async function readCatalog(){
  const url=new URL('../data/catalog.json',import.meta.url);
  if(url.protocol==='file:') {const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}
  const response=await fetch(url);if(!response.ok)throw Error(`Catalog HTTP ${response.status}`);return response.json();
 }
 /** Catalog entries. GLBs are already centered, in meters; scale=1. */
-export async function loadCatalog(){const c=await (catalogPromise??=readCatalog());return structuredClone(c.items);}
-export async function loadRules(){const c=await (catalogPromise??=readCatalog());return structuredClone(c);}
+export async function loadCatalog(){return (await loadRules()).items;}
+export async function loadRules(){const c=await (catalogPromise??=readCatalog());return structuredClone({...c,items:[...c.items,...runtimeItems.values()]});}
+/** Backend items must be registered before they are displayed, equipped or replayed. */
+export async function registerItems(items){
+ const c=await (catalogPromise??=readCatalog());
+ if(!Array.isArray(items))throw Error('Runtime items must be an array');
+ const next=new Map(runtimeItems),builtIn=new Set(c.items.map(i=>i.id));
+ for(const input of items){
+  const item=validateRuntimeItem(input,c);
+  if(builtIn.has(item.id))throw Error(`Runtime item conflicts with built-in ID: ${item.id}`);
+  if(next.has(item.id)&&itemSignature(next.get(item.id))!==itemSignature(item))throw Error(`Runtime item ID has different data: ${item.id}`);
+  next.set(item.id,item);
+ }
+ // Entire batch has passed before any item becomes visible.
+ runtimeItems.clear();for(const [id,item] of next)runtimeItems.set(id,item);
+ return structuredClone(items);
+}
 export function zoneRadius(t,a){return a.zoneStartRadius+(a.zoneEndRadius-a.zoneStartRadius)*Math.max(0,Math.min(1,(t-a.zoneShrinkStart)/(a.zoneShrinkEnd-a.zoneShrinkStart)));}
 export function zoneDamageRate(t,maxHp,a){return maxHp*a.zoneDamageMaxFraction*Math.max(0,Math.min(1,(t-a.zoneDamageStart)/(a.maxDuration-a.zoneDamageStart)));}
 export function contactDamage({mode,impulse,attacker,target,materials,matchups,weak}){

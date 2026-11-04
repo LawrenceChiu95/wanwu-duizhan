@@ -1,0 +1,27 @@
+
+> test
+> node --test --test-concurrency=1
+
+✔ offline CLI needs no key: PBR/UV survive, used geometry is centered at category size, originals untouched (333.615792ms)
+✔ photo dispatch uses fake upload/image/model/download, exactly two paid creates and eight timestamps (206.136042ms)
+✔ large-photo block uploads use query init, sequential multipart chunks, and the same pipeline (165.648292ms)
+✔ unknown creation persists pending; rerun makes no network request and never creates again (49.203334ms)
+✔ interrupted poll resumes existing image task; download failure retries download without more creation (126.179458ms)
+✔ failed tasks and expired results stop explicitly; rerunning never regenerates (128.195959ms)
+✔ invalid GLB, external resources and unsupported animated inputs fail before catalog writes (152.048792ms)
+✔ existing IDs, changed run inputs and occupied locks cannot overwrite assets or start paid work (188.065208ms)
+✔ exclusive catalog lock rejects another writer while held and releases after failure (17.884042ms)
+✔ checked-in knife, pot, broom meet mobile budgets, original baselines and PBR contract (49.506042ms)
+✔ orientation follows category for either source sign; checked-in pot/broom heads and weak points face out (303.111667ms)
+✔ changing only name and ID after paid work starts resumes the same default run (127.299042ms)
+✔ explicit concurrency rejection exposes its code; clearing only confirmed pending preserves paid image task (131.300875ms)
+✔ an explicitly selected pre-review photo run may change name/ID without repeating its paid image task (76.354166ms)
+✔ all category dimensions are at most 0.8m; both broom GLBs, hulls and weakpoints share the new uniform scale (138.526917ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4023.446208

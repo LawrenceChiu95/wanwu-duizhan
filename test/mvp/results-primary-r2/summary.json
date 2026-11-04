@@ -1,0 +1,139 @@
+{
+  "stage": "primary",
+  "planned": 3000,
+  "completed": 3000,
+  "complete": true,
+  "groups": [
+    {
+      "radius": 2.2,
+      "condition": "autoA",
+      "n": 600,
+      "durationMedian": 30.966666666666665,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.0106635249080154,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "autoB",
+      "n": 600,
+      "durationMedian": 35.13333333333333,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.32499999999999996,
+      "firstDamageWorst": 0.36666666666666664,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.0186789330887436,
+      "durationPass": false,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "manual",
+      "n": 600,
+      "durationMedian": 27.65416666666667,
+      "over45Pct": 0.16666666666666669,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.207070784311942,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "timing",
+      "n": 600,
+      "durationMedian": 31.97083333333333,
+      "over45Pct": 0.5,
+      "firstDamageMedian": 0.375,
+      "firstDamageWorst": 0.4,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.207507043092688,
+      "durationPass": true,
+      "firstDamagePass": true
+    },
+    {
+      "radius": 2.2,
+      "condition": "idle",
+      "n": 600,
+      "durationMedian": 24.97083333333333,
+      "over45Pct": 0,
+      "firstDamageMedian": 0.35833333333333334,
+      "firstDamageWorst": 0.3833333333333333,
+      "noDamage": 0,
+      "over1Second": 0,
+      "initialOutside": 0,
+      "maxCoreOuter": 2.207176598678739,
+      "durationPass": false,
+      "firstDamagePass": true
+    }
+  ],
+  "timing": [
+    {
+      "scene": "pan-broom/out-out-e180",
+      "byRadius": [
+        {
+          "radius": 2.2,
+          "deltaPoints": 8.000000000000002
+        }
+      ]
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "byRadius": [
+        {
+          "radius": 2.2,
+          "deltaPoints": 15.000000000000002
+        }
+      ]
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "byRadius": [
+        {
+          "radius": 2.2,
+          "deltaPoints": 24.000000000000004
+        }
+      ]
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "byRadius": [
+        {
+          "radius": 2.2,
+          "deltaPoints": 16
+        }
+      ]
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "byRadius": [
+        {
+          "radius": 2.2,
+          "deltaPoints": 38
+        }
+      ]
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "byRadius": [
+        {
+          "radius": 2.2,
+          "deltaPoints": 15.000000000000002
+        }
+      ]
+    }
+  ]
+}

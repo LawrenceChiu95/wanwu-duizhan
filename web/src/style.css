@@ -9,8 +9,9 @@
   --bg: #070912;
   --plate: rgba(13, 18, 33, 0.9);
   --line: rgba(160, 190, 255, 0.14);
-  --display: "Smiley", -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
-  --body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  /* Chinese system fonts before the rest: a fallback to a Japanese face draws 角 and the like the Japanese way (远夏 11-01). */
+  --display: "Smiley", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, sans-serif;
+  --body: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   --slant: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
   font-family: var(--body);
   color: var(--ink);
@@ -56,7 +57,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #flash { position: absolute; inset: 0; pointer-events: none; background: #fff; opacity: 0; mix-blend-mode: screen; }
 
 /* ---------- Fight HUD: a slanted name plate, the core bar, and two piece tags per side ---------- */
-#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 10px) 10px 14px; display: grid; grid-template-columns: 1fr 44px 1fr; align-items: start; gap: 6px; pointer-events: none;
+#hud { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 10px) 10px 14px; display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); align-items: start; gap: 6px; pointer-events: none;
   background: linear-gradient(rgba(7, 9, 18, 0.96) 0%, rgba(7, 9, 18, 0.7) 65%, transparent); }
 .who { display: flex; margin-bottom: 6px; }
 .s1 .who { justify-content: flex-end; }
@@ -87,6 +88,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pc.gone .mini { visibility: hidden; }
 .pc.gone::after { content: "碎"; position: absolute; right: 8px; top: 50%; transform: translateY(-50%) rotate(-8deg); font-family: var(--display); font-size: 13px; color: #ff5a6e; }
 .s1 .pc.gone::after { right: auto; left: 8px; }
+/* Names longer than two characters (imported items such as 废土扫把) drop the orientation icon and shrink with the
+   screen, so name, bar and 碎 never overlap; 碎 takes the bar's place instead of sitting over the name. A tag's text
+   width is about 25vw - 35px, so three characters fit at 13px down to ~350 px and four at 12px on 390 (10px on 360);
+   below that the name is cut with an ellipsis. */
+.pc.long .ico { display: none; }
+.pc.long b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: clamp(9px, calc(8.3vw - 16.5px), 13px); }
+.pc.long .mini { min-width: 9px; }
+.pc.long4 b { font-size: clamp(9px, calc(6.25vw - 12.4px), 12px); }
+.pc.long.gone .mini { display: none; }
+.pc.long.gone::after { position: static; flex: none; margin-left: auto; transform: rotate(-8deg); }
+.s1 .pc.long.gone::after { margin-left: 0; margin-right: auto; }
 /* The blow just now, on the HUD: the striking piece lights in its side's colour, the piece or core bar hit flashes. */
 .pc.strike0 { background: var(--c0); color: #1a0900; }
 .pc.strike1 { background: var(--c1); color: #02101c; }
@@ -95,12 +107,26 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pc.hurt { background: rgba(255, 255, 255, 0.8); color: #0a0f1c; }
 .bar.hurt { filter: brightness(2.2); box-shadow: inset 0 0 0 2px #fff; }
 .pc .ico { width: 12px; height: 12px; stroke-width: 2.6; color: var(--mute); }
-.mid { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mid { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mid .slowtag { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); z-index: 1; }
 .clock { width: 40px; height: 34px; display: grid; place-items: center; font-family: var(--display); font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums;
   background: rgba(255, 255, 255, 0.06); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
 .slowtag { font-family: var(--display); font-size: 12px; color: #1a1400; padding: 2px 6px 1px; opacity: 0; transition: opacity 0.2s; white-space: nowrap;
   background: repeating-linear-gradient(135deg, var(--hot) 0 6px, #ffd21a 6px 12px); clip-path: var(--slant); }
 .slowtag.on { opacity: 1; }
+/* Camera toggle: a slim row under the HUD plates, part of the HUD (the 冲/挡 buttons stay alone at the bottom). */
+.camseg { grid-column: 1 / -1; justify-self: center; pointer-events: auto; display: flex; align-items: center; gap: 2px; margin-top: 2px; padding: 2px 3px 2px 8px; height: 24px;
+  background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--line); clip-path: var(--slant); }
+.camseg svg { width: 14px; height: 14px; stroke-width: 2; color: var(--mute); margin-right: 3px; }
+.camseg button { height: 18px; padding: 0 9px; font-family: var(--display); font-size: 12px; line-height: 18px; color: var(--mute); white-space: nowrap; }
+.camseg button[aria-checked="true"] { color: #0a0f1c; background: #e9eefc; clip-path: var(--slant); }
+/* Sound on/off under the clock. */
+.mute { pointer-events: auto; width: 30px; height: 26px; display: grid; place-items: center; color: rgba(243, 246, 255, 0.72); background: rgba(255, 255, 255, 0.06); clip-path: var(--slant); }
+.mute svg { width: 17px; height: 17px; stroke-width: 2; }
+.mute .x { display: none; }
+.mute.off { color: rgba(243, 246, 255, 0.4); }
+.mute.off .w1, .mute.off .w2 { display: none; }
+.mute.off .x { display: inline; }
 
 /* ---------- Opponent line on the build screen ---------- */
 #foe { position: absolute; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 14px) 12px 18px; display: flex; align-items: center; justify-content: center; gap: 8px; pointer-events: none;
@@ -110,6 +136,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #foeParts { display: flex; gap: 10px; color: #d5ddef; }
 #foeParts span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-family: var(--display); font-size: 16px; }
 #foeParts svg { width: 15px; height: 15px; color: var(--c1l); opacity: 0.8; }
+#foe .swap { pointer-events: auto; display: flex; align-items: center; gap: 4px; height: 30px; margin-left: 2px; padding: 0 10px; border-radius: 15px; box-shadow: inset 0 0 0 1.5px var(--line);
+  background: var(--plate); color: var(--c1l); font-size: 13px; font-weight: 600; white-space: nowrap; }
+#foe .swap svg { width: 15px; height: 15px; }
+@media (max-width: 380px) { #foe .swap span { display: none; } #foe .swap { padding: 0 8px; } }
+
+/* 「你」 over the player's top: an orange plate with a chevron pointing down at it. */
+.me { position: absolute; left: 0; top: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; pointer-events: none; opacity: 0; will-change: transform, opacity;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 10px rgba(255, 138, 61, 0.55)); }
+.me b { font-family: var(--display); font-weight: 400; font-size: 17px; line-height: 1; padding: 4px 10px 3px; color: #1a0900; background: linear-gradient(100deg, #ffd9b0, var(--c0) 60%); clip-path: var(--slant); }
+.me i { width: 14px; height: 8px; margin-top: -1px; background: var(--c0); clip-path: polygon(0 0, 100% 0, 50% 100%); animation: meBob 0.9s ease-in-out infinite alternate; }
+@keyframes meBob { to { transform: translateY(2px); } }
 
 /* Core HP rings drawn around each core (screen space). */
 .ring { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
@@ -123,11 +160,12 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .num.block { font-size: 17px; color: #d9f6ff; letter-spacing: 0.08em; }
 .call { position: absolute; left: 0; top: 0; z-index: 3; display: flex; align-items: baseline; gap: 6px; padding: 3px 11px 2px; white-space: nowrap; pointer-events: none; will-change: transform, opacity;
   font-family: var(--display); line-height: 1.1; clip-path: var(--slant); }
-.call b { font-weight: 400; font-size: 23px; }
+.call b { font-weight: 400; font-size: 23px; max-width: 7.2em; overflow: hidden; text-overflow: ellipsis; } /* a long photo name (task #84) stays a short plate */
 .call em { font-style: normal; font-size: 16px; color: #1a1400; background: var(--hot); padding: 0 5px; }
 .call.t0 { background: linear-gradient(90deg, rgba(255, 94, 20, 0.95), rgba(255, 150, 80, 0.95)); color: #1a0900; }
 .call.t1 { background: linear-gradient(90deg, rgba(20, 119, 224, 0.95), rgba(80, 190, 255, 0.95)); color: #02101c; }
-.call.block { padding: 2px 9px 1px; background: rgba(7, 9, 18, 0.88); color: #d9f6ff; }
+/* 「护住」 often lands on a white model: a solid near-black plate with a thin cyan rim keeps it legible (Elara 80e885bc). */
+.call.block { padding: 2px 9px 1px; background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); }
 .call.block b { font-size: 17px; letter-spacing: 0.08em; }
 .callpin { position: absolute; left: 0; top: 0; z-index: 2; width: 2px; pointer-events: none; will-change: transform, opacity; }
 .callpin::after { content: ""; position: absolute; left: -2px; bottom: -3px; width: 6px; height: 6px; border-radius: 50%; background: inherit; }
@@ -151,9 +189,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .bhead { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
 .bhead b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--c0); }
 .bhead span { font-size: 12px; color: var(--mute); }
-.bhead .ctl { margin-left: auto; height: 32px; width: 124px; flex: none; }
-.bhead .ctl button { font-size: 15px; }
-.bhead .ctl svg { width: 15px; height: 15px; }
 .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .slot { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 9px 8px 8px; min-width: 0;
   background: linear-gradient(160deg, rgba(255, 138, 61, 0.1), rgba(13, 18, 33, 0.92) 45%); box-shadow: inset 0 0 0 1px rgba(255, 138, 61, 0.28);
@@ -161,8 +196,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .slot::after { content: ""; position: absolute; right: 0; top: 0; width: 23px; height: 1px; background: rgba(255, 138, 61, 0.5); transform-origin: right top; transform: translateX(-16px) rotate(45deg) translateX(16px); }
 .slot .no { position: absolute; right: 18px; top: 2px; font-style: normal; font-family: var(--display); font-size: 34px; line-height: 1; color: transparent; -webkit-text-stroke: 1px rgba(255, 138, 61, 0.45); pointer-events: none; }
 .item { position: relative; height: 50px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 26px 0 9px; background: rgba(255, 255, 255, 0.06); min-width: 0; text-align: left; clip-path: polygon(0 0, 100% 0, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
-.item .nm { display: flex; align-items: center; gap: 5px; min-width: 0; }
-.item b { font-family: var(--display); font-weight: 400; font-size: 23px; line-height: 1; white-space: nowrap; }
+.item .nm { display: flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; }
+.item b { font-family: var(--display); font-weight: 400; font-size: 23px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-bottom: 2px; }
 .item .spec { font-size: 10.5px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .item svg { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: var(--mute); }
 .lux { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.02em; color: #0a0f1c; background: #b8f06a; padding: 1px 3px; white-space: nowrap; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); padding: 1px 5px; }
@@ -186,6 +221,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes shine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
 
 /* ---------- Manual mode: two thumb buttons in the room below the arena ---------- */
+#coach { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 98px); z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  margin: 0 auto; width: max-content; max-width: calc(100% - 24px); padding: 8px 16px 9px; border-radius: 12px; background: rgba(8, 11, 22, 0.92); box-shadow: inset 0 0 0 1px var(--line), 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: none; animation: rise 0.25s ease-out both; }
+#coach .tag { font-size: 11px; color: var(--mute); }
+#coach b { font-size: 17px; font-weight: 700; }
+/* A small pointer down to the button the line is about. */
+#coach::after { content: ""; position: absolute; bottom: -7px; left: calc(50% - 7px); width: 14px; height: 14px; background: inherit; transform: rotate(45deg); box-shadow: 1px 1px 0 var(--line); }
+#coach[data-at="dash"] { margin-left: 0; } #coach[data-at="dash"]::after { left: 24%; }
+#coach[data-at="block"] { margin-right: 0; } #coach[data-at="block"]::after { left: auto; right: 24%; }
 #pad { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 18px); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; z-index: 2; }
 .pad { position: relative; height: 76px; display: flex; align-items: center; justify-content: center; gap: 10px; overflow: hidden; touch-action: none;
   font-family: var(--display); font-size: 36px; line-height: 1; letter-spacing: 0.04em; transition: filter 0.2s, transform 0.08s; }
@@ -204,10 +248,20 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pad.cooling { color: #f4f7ff; background: #10141e; filter: none; }
 .pad.cooling .cd { opacity: 1; }
 .pad.cooling span { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
-.pad.cooling svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9)); }
+.pad.cooling svg { display: none; }
+/* While cooling the icon gives way to the whole seconds still to wait (same 32px box, so the label does not move). */
+.pad .left { display: none; position: relative; min-width: 32px; font: inherit; font-size: 28px; font-variant-numeric: tabular-nums; text-align: center; line-height: 36px; border-radius: 8px; background: rgba(6, 8, 14, 0.78); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.pad.cooling .left { display: block; }
 .pad.ready::after { content: ""; position: absolute; top: 0; bottom: 0; width: 34%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: shine 2.2s ease-in-out infinite; }
 .pad.on { animation: padOn 0.16s ease-in-out infinite alternate; }
-.pad:active { transform: translateY(2px) scale(0.985); }
+/* Touchdown: the button sinks and lights from inside until the finger lifts (the cooldown fill and the deny shake stay as they are). */
+.pad .press { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.28s ease-out;
+  background: radial-gradient(120% 140% at 50% 115%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.18) 45%, transparent 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85); }
+.pad.down { transform: translateY(4px) scale(0.965); transition: filter 0.05s, transform 0.04s; }
+.pad.down .press { opacity: 1; transition: none; }
+.pad.dash.down { filter: brightness(1.18) drop-shadow(0 0 26px rgba(255, 140, 50, 0.95)); }
+.pad.block.down { filter: brightness(1.12) drop-shadow(0 0 26px rgba(120, 220, 255, 0.95)); }
+.pad.cooling.down { filter: brightness(1.3); }
 .pad.pop { animation: padPop 0.42s ease-out; }
 .pad.deny { animation: padDeny 0.26s linear; }
 .pad.deny::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: rgba(255, 255, 255, 0.22); animation: padDenyFlash 0.26s ease-out forwards; }
@@ -216,6 +270,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes padDenyFlash { to { opacity: 0; } }
 @keyframes padOn { to { filter: brightness(1.35) drop-shadow(0 0 22px rgba(255, 255, 255, 0.6)); } }
 .call.dash em { background: #fff; color: #1a0900; }
+.call em.guard { background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); letter-spacing: 0.08em; }
 .call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
 .call.parry b { font-size: 28px; }
 
@@ -232,6 +287,20 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #result.win .winner { background: linear-gradient(100deg, #fff1e0, var(--c0) 55%, var(--c0d)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(255, 138, 61, 0.35)); }
 #result.lose .winner { color: #dfe7f7; }
 .why { margin: 8px 0 14px; font-size: 16px; line-height: 1.45; font-weight: 600; color: #dfe7f7; text-wrap: balance; }
+.why .row, #caption .row { display: block; }
+.why .row + .row { font-weight: 500; color: #b6c2da; }
+.why .w, #caption .w { white-space: nowrap; }
+.seg .role { font-family: var(--body); font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 15px; padding: 0 3px; margin-left: 1px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
+.seg button[aria-checked="true"] .role { background: rgba(0, 0, 0, 0.22); }
+/* Narrow phones: the word 攻 / 守 says it, the out / hug picture gives way. */
+@media (max-width: 380px) { .seg.orient svg { display: none; } }
+.stats { list-style: none; margin: -4px 0 10px; padding: 0; display: flex; justify-content: center; gap: 6px; }
+.stats:empty { display: none; }
+.stats li { flex: 1; max-width: 33%; min-width: 0; padding: 6px 4px 5px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 1px; }
+.stats b { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats span { font-size: 11px; color: var(--mute); }
+.tip { margin: 0 0 12px; font-size: 13.5px; line-height: 1.45; color: var(--c0l); text-wrap: balance; }
+.tip:empty { display: none; }
 .actions { display: flex; gap: 8px; }
 .actions button { height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--display); font-size: 19px; }
 .actions .ghost { flex: 0 0 auto; padding: 0 16px; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px var(--line); clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
@@ -242,21 +311,299 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 
 .link { position: absolute; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 5px); font-size: 10px; color: var(--mute); opacity: 0.7; padding: 2px 0; }
 #pad:not([hidden]) ~ .link { display: none; }
+/* The 决胜 caption runs along the bottom; the credits link steps aside while it is up (Elara 11-02 a788037f).
+   visibility, not opacity, so it can't be tabbed to or opened from the keyboard while unseen (PR #18 S1). */
+#caption.on ~ .link { visibility: hidden; }
 
 /* ---------- Sheets ---------- */
-#sheet, #credits { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
+#credits, #foeSheet { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
 .panel { width: 100%; max-height: 80%; overflow: auto; background: #0c111f; padding: 16px 14px calc(env(safe-area-inset-bottom) + 18px); box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 138, 61, 0.35); user-select: text; -webkit-user-select: text; animation: rise 0.25s ease-out both; }
 .head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .head b { font-family: var(--display); font-weight: 400; font-size: 22px; }
 .close { margin-left: auto; width: 36px; height: 36px; font-size: 24px; line-height: 1; color: var(--mute); }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.grid button { position: relative; height: 70px; background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
-.grid button b { font-family: var(--display); font-weight: 400; font-size: 22px; }
-.grid button small { font-size: 10.5px; color: var(--mute); display: flex; align-items: center; gap: 4px; }
-.grid button.sel { background: rgba(255, 138, 61, 0.14); box-shadow: inset 0 0 0 2px var(--c0); }
-.grid button:disabled { opacity: 0.35; }
-.grid button .used { position: absolute; right: 12px; top: 6px; font-size: 10px; color: var(--mute); }
+/* 换个对手: one row per computer build; level tag, its two pieces as on the VS line, and the spread. */
+.fsub { margin: -6px 0 10px; font-size: 12px; color: var(--mute); }
+#foeList { display: flex; flex-direction: column; gap: 8px; }
+.frow { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px; border-radius: 10px; text-align: left; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); }
+.frow[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--c1); background: rgba(61, 180, 255, 0.1); }
+.frow .lvl { flex: none; min-width: 40px; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 7px; border-radius: 11px; text-align: center; color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
+.frow .lvl.hi { color: #1a0900; background: var(--c0); box-shadow: none; }
+.frow .lvl.mid { color: var(--ink); background: rgba(255, 255, 255, 0.14); box-shadow: none; }
+.frow .lvl.lo { color: #04121f; background: var(--c1l); box-shadow: none; }
+.frow .fparts { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.frow .fparts span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; font-family: var(--display); font-size: 18px; }
+.frow .fparts svg { width: 15px; height: 15px; color: var(--c1l); opacity: 0.8; }
+.frow small { flex: none; font-size: 12px; color: var(--mute); }
+/* ---------- 角色库 ----------
+   Layout only: colours come from the variables above, so the art pass (凡朔) can restyle it without touching the markup. */
+#library { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; }
+.lhead { flex: none; height: 52px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 12px; padding-top: env(safe-area-inset-top);
+  box-sizing: content-box; border-bottom: 1px solid var(--line); background: var(--plate); }
+.lhead > b { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 0.04em; }
+.lhead .back { justify-self: start; display: flex; align-items: center; gap: 2px; height: 40px; padding-right: 8px; color: var(--mute); font-size: 15px; }
+.lhead .shoot { justify-self: end; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 17px; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.lhead .shoot svg { width: 16px; height: 16px; }
+.lsub { flex: none; padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 2px; }
+.lsub b { font-size: 16px; font-weight: 650; }
+.lsub span { font-size: 12px; color: var(--mute); }
+.lgrid { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; grid-auto-rows: max-content;
+  padding: 4px 14px calc(env(safe-area-inset-bottom) + 24px); }
+@media (min-aspect-ratio: 3/4) { .lgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.card { position: relative; display: flex; flex-direction: column; border-radius: 12px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); }
+.card.own { box-shadow: inset 0 0 0 2px var(--c0); background: rgba(255, 138, 61, 0.08); }
+.card.used { opacity: 0.45; }
+.card .pick { display: flex; flex-direction: column; align-items: stretch; text-align: left; padding: 8px 10px 6px; gap: 2px; }
+.card .pick:disabled { cursor: default; }
+.card .media { position: relative; display: block; aspect-ratio: 1; margin: 0 -2px 4px; overflow: hidden; }
+/* The 3D is drawn live into the canvas (livecards.js); 载入中 until its model has arrived. */
+.card .turn { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* Before the model is drawn the card shows the item's still (or its styled picture; else its outline, breathing faintly);
+   the 3D fades in over it (task #37: an empty card looked broken). */
+.card .turn { opacity: 0; transition: opacity 0.4s ease-out; }
+.card .turn[data-drawn] { opacity: 1; }
+.card .ghost { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity 0.4s ease-out; animation: ghost 1.6s ease-in-out infinite alternate; }
+.card svg.ghost path { fill: rgba(223, 231, 247, 0.07); stroke: rgba(223, 231, 247, 0.22); stroke-width: 0.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.card .media:has(> .turn[data-drawn]) .ghost { opacity: 0; animation: none; }
+@keyframes ghost { from { opacity: 0.55; } to { opacity: 1; } }
+/* A still is the item itself, not a placeholder: it holds steady (task #39). */
+.card .ghost.still { animation: none; }
+@media (prefers-reduced-motion: reduce) { .card .ghost { animation: none; } }
+.card .photo { position: absolute; left: 0; top: 0; width: 34%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line); }
+.card .badge { position: absolute; right: 0; top: 0; font-size: 11px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); }
+.card .badge.own { background: var(--c0); color: #1a0900; font-weight: 700; }
+.card .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.card .nm b { font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.card .cat { flex: none; font-size: 11px; line-height: 17px; padding: 0 5px; border-radius: 4px; color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
+.card .spec { font-size: 12px; color: var(--mute); }
+.card .how, .card .src { margin: 2px 10px 0; padding: 7px 0 9px; border-top: 1px solid var(--line); font-size: 12.5px; }
+/* 等级 (Elara 11-02 79a528bb): S gold, A purple, B blue, C green, D grey; the letter in the display face, slanted. */
+.gS { --g1: #ffe08a; --g2: #ff9d2e; } .gA { --g1: #dcaaff; --g2: #9a5cff; } .gB { --g1: #8fd0ff; --g2: #3c86ff; }
+.gC { --g1: #9be8b2; --g2: #3fae68; } .gD { --g1: #c3c9d4; --g2: #7b8494; }
+.grade, .big, .rates i, .lgrades i, .rbuild .grade { font-style: normal; font-family: var(--display); color: var(--g2);
+  background: linear-gradient(170deg, var(--g1) 30%, var(--g2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.grade { flex: none; display: inline-block; margin-right: 3px; font-size: 1.15em; line-height: 1; transform: skewX(-8deg); }
+.lgrades { flex: none; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding: 0 14px 10px; font-size: 12px; color: var(--mute); }
+.lgrades span { color: var(--ink); font-variant-numeric: tabular-nums; }
+.lgrades i { margin-right: 3px; font-size: 18px; display: inline-block; transform: skewX(-8deg); }
+.lgrades small { flex-basis: 100%; font-size: 11px; color: var(--mute); }
+.card .nm { gap: 8px; }
+.card .big { flex: none; font-size: 40px; line-height: 0.9; margin: 2px 0 0 -1px; display: inline-block; transform: skewX(-8deg); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--g2) 45%, transparent)); }
+.card .rates { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; margin: 3px 0 1px; font-size: 12px; line-height: 18px; color: var(--mute); }
+.card .rates i { font-size: 15px; text-align: right; }
+.rbuild { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 8px; margin: 2px 0 8px; font-size: 13px; }
+.rbuild:empty { display: none; }
+.rbuild .rw { font-size: 11px; color: var(--mute); }
+.rbuild .rw.vs { margin-left: 10px; }
+/* An S card: a gold edge and glow, and a light sweeping across its letter now and then. */
+.card.gradeS { --restS: inset 0 0 0 1px rgba(255, 215, 120, 0.55), 0 0 22px -6px rgba(255, 170, 60, 0.55); box-shadow: var(--restS); background: rgba(255, 200, 90, 0.06); } /* flat: the live canvas clears to this colour (livecards.js backdrop) */
+.card.gradeS.own { --restS: inset 0 0 0 2px var(--c0), 0 0 22px -6px rgba(255, 170, 60, 0.55); }
+.card.gradeS .big { background-image: linear-gradient(110deg, var(--g2) 0 35%, #fff8dc 45%, var(--g1) 55%, var(--g2) 65%); background-size: 300% 100%; animation: shine 3.6s ease-in-out 1s infinite; }
+@keyframes shine { 0%, 55% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+/* 翻牌: dealt face down, then turned over; the face shows halfway, then the letter stamps in. */
+.card .cover { position: absolute; inset: 0; z-index: 2; display: none; place-items: center; border-radius: 12px; pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 8px, transparent 8px 16px), linear-gradient(160deg, #1b2440, #0c1020 70%);
+  box-shadow: inset 0 0 0 1px rgba(160, 190, 255, 0.22), inset 0 0 0 6px #0b0f1d, inset 0 0 0 7px rgba(255, 138, 61, 0.35); }
+.card .cover i { font-style: normal; font-family: var(--display); font-size: 64px; color: rgba(255, 138, 61, 0.55); transform: skewX(-8deg); }
+.card.down .cover, .card.turning .cover { display: grid; }
+.card.turning { animation: deal 0.66s cubic-bezier(0.4, 0, 0.3, 1) both; }
+.card.turning .cover { animation: off 0.66s step-end both; }
+.card.turning .big { animation: stamp 0.42s cubic-bezier(0.2, 1.6, 0.4, 1) 0.33s both; }
+.card.turning.gradeS .big { animation: stamp 0.42s cubic-bezier(0.2, 1.6, 0.4, 1) 0.33s both, shine 3.6s ease-in-out 1.6s infinite; }
+.card.turning.gradeS::after { content: ""; position: absolute; inset: -14px; z-index: 3; border-radius: 22px; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 226, 140, 0.75), rgba(255, 170, 60, 0.28) 55%, transparent); animation: burst 0.9s ease-out 0.33s both; }
+@keyframes deal { 0% { transform: perspective(900px) rotateY(0); } 50% { transform: perspective(900px) rotateY(90deg) scale(1.04); } 50.01% { transform: perspective(900px) rotateY(-90deg) scale(1.04); } 100% { transform: perspective(900px) rotateY(0); } }
+@keyframes off { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes stamp { 0% { transform: skewX(-8deg) scale(2.4); opacity: 0; } 100% { transform: skewX(-8deg) scale(1); opacity: 1; } }
+@keyframes burst { 0% { opacity: 0; transform: scale(0.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.15); } }
+/* By grade (task #55): S stamps in hard with a big gold burst and the card glowing then settling; A a smaller violet
+   burst; B the letter stamps in; C and D just turn over. */
+.card.turning.gradeS { animation: deal 0.66s cubic-bezier(0.4, 0, 0.3, 1) both, glowS 1.6s ease-out 0.33s; }
+.card.turning.gradeS .big { animation: stampS 0.55s cubic-bezier(0.2, 1, 0.4, 1) 0.33s both, shine 3.6s ease-in-out 1.6s infinite; }
+.card.turning.gradeS::after { inset: -28px; border-radius: 30px; animation-duration: 1.2s; }
+.card.turning.gradeA::after { content: ""; position: absolute; inset: -10px; z-index: 3; border-radius: 18px; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(220, 170, 255, 0.55), rgba(154, 92, 255, 0.2) 55%, transparent); animation: burst 0.75s ease-out 0.33s both; }
+.card.turning.gradeC .big, .card.turning.gradeD .big { animation: none; }
+@keyframes stampS { 0% { transform: skewX(-8deg) scale(3.4); opacity: 0; } 55% { transform: skewX(-8deg) scale(0.88); opacity: 1; } 78% { transform: skewX(-8deg) scale(1.08); } 100% { transform: skewX(-8deg) scale(1); opacity: 1; } }
+@keyframes glowS { 0% { box-shadow: inset 0 0 0 2px #ffe08a, 0 0 80px 10px rgba(255, 190, 80, 0.9); } 100% { box-shadow: var(--restS); } }
+/* The glow ends on the card's own resting edge (orange once equipped) and lets go of it, so 装着 shows (task #63). */
+/* 拍一件's 好了: the card's holder rises to the middle over a dimmed screen, and settles back after (turnOver in main.js). */
+.sstage { flex: none; position: relative; z-index: 2; transform-origin: 50% calc(50% + 7px); transition: transform 0.42s cubic-bezier(0.3, 0, 0.2, 1), filter 0.42s; }
+.sstage.lifted { transform: translate(var(--dx), var(--dy)) scale(var(--k)); filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.75)); transition-duration: 0.38s; }
+/* Over 拍一件's frame only, not the whole window (a desktop's centred frame, task #63). */
+.sdim { position: absolute; inset: 0; z-index: 1; background: rgba(4, 6, 14, 0.74); opacity: 0; pointer-events: none; transition: opacity 0.42s; }
+.sstage.lifted ~ .sdim { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  /* The by-grade S rules weigh more than .card.turning, so they are named again here (PR #58 B1). */
+  .card.turning, .card.turning .big, .card.turning.gradeS::after, .card.turning.gradeA::after, .card.gradeS .big,
+  .card.turning.gradeS, .card.turning.gradeS .big { animation: none; }
+  .card.turning .cover, .card.turning.gradeS::after, .card.turning.gradeA::after { display: none; }
+}
+.card .how { display: flex; align-items: center; gap: 5px; font-weight: 650; text-align: left; }
+.card .how svg { width: 12px; height: 12px; }
+.card .src { color: var(--mute); display: block; }
+/* ---------- 看它怎么来的 ---------- */
+#howView { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; overflow-y: auto; }
+.hstage { position: relative; flex: none; margin: 12px 14px 0; aspect-ratio: 1 / 0.9; max-height: 46vh; border-radius: 12px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.hshot { position: absolute; top: 36px; bottom: 38px; left: 10px; width: calc(100% - 20px); height: calc(100% - 74px); object-fit: contain; animation: fade 0.35s ease-out both; }
+/* The picture and the 3D sit between the category tag above and the step caption and 重放 below, never under them. */
+#howTurn { position: absolute; top: 36px; left: 50%; height: calc(100% - 74px); width: auto; aspect-ratio: 1; transform: translateX(-50%); opacity: 0; transition: opacity 0.35s; }
+#howTurn.on { opacity: 1; }
+.hcat { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mute); }
+.hcat b { font-size: 12px; line-height: 20px; padding: 0 8px; border-radius: 10px; color: #1a0900; background: var(--c0); }
+.hnow { position: absolute; left: 10px; bottom: 9px; font-size: 12px; color: var(--mute); }
+.hreplay { position: absolute; right: 8px; bottom: 6px; display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; background: var(--plate); box-shadow: inset 0 0 0 1px var(--line); }
+.hreplay svg { width: 13px; height: 13px; }
+.hbar { flex: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 10px 14px 4px; }
+.hbar i { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--c0) calc(var(--fill, 0) * 100%), rgba(255, 255, 255, 0.1) 0); }
+.hsteps { flex: none; list-style: none; margin: 0 14px; padding: 0; }
+.hsteps li { display: grid; grid-template-columns: 26px 1fr 40px auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); opacity: 0.45; transition: opacity 0.25s; }
+.hsteps li.done, .hsteps li.now { opacity: 1; }
+.hsteps .n { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--line); }
+.hsteps li.done .n { background: var(--ink); color: var(--bg); box-shadow: none; }
+.hsteps li.now .n { box-shadow: inset 0 0 0 2px var(--c0); color: var(--c0); }
+.hsteps b { font-size: 15px; font-weight: 650; }
+.hsteps img, .hsteps .mini3d { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: rgba(255, 255, 255, 0.05); }
+.hsteps .mini3d { display: block; }
+.hsteps .sec { font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; text-align: right; min-width: 52px; }
+.htotal { flex: none; margin: 10px 14px 0; font-size: 15px; }
+.htotal b { font-weight: 700; }
+.hfoot { flex: 1; display: flex; align-items: flex-end; padding: 14px 14px calc(env(safe-area-inset-bottom) + 18px); }
+.hfoot .go { width: 100%; }
+.hfoot .go:disabled { opacity: 0.45; }
+/* ---------- 拍一件 (task #47) ---------- */
+/* Under 看它怎么来的 (same layer, earlier in the page), over the 角色库. */
+#shootView { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; }
+.lhead .squota { justify-self: end; font-size: 12px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lhead .shoot.run::after, .lhead .shoot.new::after { content: ""; width: 7px; height: 7px; border-radius: 50%; margin-left: 2px; background: var(--c0); }
+.lhead .shoot.run::after { animation: ghost 0.9s ease-in-out infinite alternate; }
+.lhead .shoot.new { box-shadow: inset 0 0 0 1.5px var(--c0); color: var(--c0l); }
+.ssteps { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 0; padding: 12px 14px 2px; list-style: none; font-size: 12px; color: var(--mute); }
+.ssteps li { display: flex; flex-direction: column; gap: 6px; white-space: nowrap; }
+.ssteps i { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); }
+.ssteps li.done i { background: var(--ink); }
+.ssteps li.done { color: var(--ink); }
+.ssteps li.now { color: var(--ink); font-weight: 700; }
+.ssteps li.now i { background: linear-gradient(90deg, var(--c0l), var(--c0)); box-shadow: 0 0 10px rgba(255, 138, 61, 0.5); }
+.ssteps li.bad i { background: #ff5a6a; box-shadow: 0 0 10px rgba(255, 90, 106, 0.45); }
+.ssteps li.hold i { background: #ffc94d; box-shadow: none; }
+.sbody { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.sframe { position: relative; flex: none; margin: 12px 14px 0; aspect-ratio: 4 / 3.2; max-height: 44vh; border-radius: 14px; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 40%, #141b30, #0a0e1a); box-shadow: inset 0 0 0 1px var(--line); }
+.sframe > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* 拍照: an empty viewfinder, orange corners. */
+.sframe.pick { display: grid; place-items: center;
+  --k: linear-gradient(var(--c0), var(--c0));
+  background: var(--k) 14px 14px / 26px 3px, var(--k) 14px 14px / 3px 26px, var(--k) right 14px top 14px / 26px 3px, var(--k) right 14px top 14px / 3px 26px,
+    var(--k) 14px bottom 14px / 26px 3px, var(--k) 14px bottom 14px / 3px 26px, var(--k) right 14px bottom 14px / 26px 3px, var(--k) right 14px bottom 14px / 3px 26px,
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 18px), radial-gradient(120% 90% at 50% 40%, #141b30, #0a0e1a);
+  background-repeat: no-repeat; aspect-ratio: 1 / 1.05; max-height: 54vh; }
+.sview { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.sview svg { width: 54px; height: 54px; stroke-width: 1.5; color: var(--c0l); margin-bottom: 6px; filter: drop-shadow(0 0 16px rgba(255, 138, 61, 0.5)); }
+.sview b { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 0.04em; }
+.sview small { font-size: 13px; color: var(--mute); }
+.ssix { flex: none; margin: 14px 14px 0; font-size: 12px; color: var(--mute); }
+.ssix div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ssix i { font-style: normal; font-size: 14px; line-height: 30px; padding: 0 12px; color: var(--ink); background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--line); clip-path: var(--slant); }
+.snote { flex: none; margin: 12px 16px 0; font-size: 13px; line-height: 1.5; color: var(--mute); }
+.snote.warn { color: #ffc94d; }
+.serr { flex: none; margin: 6px 16px 0; min-height: 0; font-size: 13px; color: #ff8a96; }
+.serr:empty { display: none; }
+.sfoot { flex: 1; display: flex; align-items: flex-end; gap: 10px; padding: 16px 14px calc(env(safe-area-inset-bottom) + 18px); }
+.sfoot .go { flex: 1.5; }
+.sfoot .go small { font-family: var(--body); font-size: 12px; letter-spacing: 0; font-weight: 700; opacity: 0.75; margin-left: 2px; }
+.sghost { flex: 1; height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--display); font-size: 19px; letter-spacing: 0.04em; white-space: nowrap;
+  background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1.5px var(--line); clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.sghost svg { width: 19px; height: 19px; }
+.sghost:active { transform: translateY(1px); }
+.sfoot .sghost:only-child { flex: none; width: 100%; }
+/* 认物: the photo scanned top to bottom, then the category stamped in. */
+.sframe.scan::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(255, 138, 61, 0.09) 1px, transparent 1px) 0 0 / 100% 22px; pointer-events: none; transition: opacity 0.3s; }
+.sline { position: absolute; left: 0; right: 0; top: 0; height: 30%; background: linear-gradient(transparent, rgba(255, 138, 61, 0.28) 85%, #ffc08f 100%); animation: scan 1.5s ease-in-out infinite alternate; pointer-events: none; z-index: 1; }
+.sframe.got .sline { animation: none; opacity: 0; transition: opacity 0.3s; }
+.sframe.got::after { opacity: 0; }
+@keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(240%); } }
+.stag { position: absolute; left: 10px; top: 10px; z-index: 2; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 10px; color: #1a0900; background: var(--c0); clip-path: var(--slant); }
+.srec { flex: none; margin: 18px 16px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.srec .lbl { font-size: 13px; color: var(--mute); }
+.stamp { font-family: var(--display); font-weight: 400; font-size: 40px; line-height: 1.1; letter-spacing: 0.02em; transform: skewX(-8deg); min-height: 44px;
+  background: linear-gradient(170deg, #ffd9b0 20%, var(--c0) 60%, var(--c0d)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.stamp:empty::before { content: "……"; -webkit-text-fill-color: rgba(255, 255, 255, 0.18); }
+.stamp:not(:empty) { animation: stamp 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.sfine { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--mute); }
+.sfine.fake { color: #f3b26b; } /* ?shoot=fake only: the category is a dice roll, not what the photo shows */
+.snext { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; height: 52px; font-size: 14px; color: var(--mute); }
+.shead { flex: none; margin: 14px 16px 0; font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; letter-spacing: 0.04em; transform: skewX(-6deg); transform-origin: 0 100%;
+  background: linear-gradient(170deg, #ffe0bd 20%, var(--c0) 70%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+/* 生成中: the photo with a light passing over it, the step it is on, then time left, the bar and the four steps. */
+.sframe.gen { aspect-ratio: 4 / 2.8; }
+.ssweep { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 192, 143, 0.28) 50%, transparent 70%) 0 0 / 250% 100%; animation: sweep 2.4s ease-in-out infinite; pointer-events: none; }
+@keyframes sweep { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+.sframe.gen::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 55%, rgba(5, 7, 13, 0.85)); }
+.scat { position: absolute; left: 10px; top: 10px; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 10px; color: #1a0900; background: var(--c0); clip-path: var(--slant); }
+.snow { position: absolute; left: 12px; bottom: 10px; font-family: var(--display); font-size: 18px; letter-spacing: 0.03em; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
+.seta { flex: none; margin: 14px 16px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.seta b { font-size: 17px; font-weight: 650; }
+.seta em { font-style: normal; font-family: var(--display); font-weight: 400; font-size: 24px; color: var(--c0l); margin-left: 2px; }
+.seta small { font-size: 12px; color: var(--mute); white-space: nowrap; }
+.sbar { flex: none; margin: 8px 14px 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.sbar i { display: block; height: 100%; width: calc(var(--fill, 0) * 100%); border-radius: 3px; background: linear-gradient(90deg, var(--c0l), var(--c0)); box-shadow: 0 0 12px rgba(255, 138, 61, 0.6); transition: width 0.3s linear; }
+.sgsteps li { grid-template-columns: 26px 1fr auto; }
+.sgsteps .n svg { width: 14px; height: 14px; stroke-width: 3; }
+.sgsteps .sec { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.sgsteps li.now .sec { color: var(--c0l); }
+.spin { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.18); border-top-color: var(--c0); animation: spin 0.7s linear infinite; }
+/* 失败 / 核实中 */
+.sframe.bad > img { filter: grayscale(0.7) brightness(0.55); }
+.sframe.bad::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2px rgba(255, 90, 106, 0.55); border-radius: 14px; background: linear-gradient(transparent 40%, rgba(80, 10, 20, 0.45)); }
+.sframe.held > img { filter: grayscale(0.5) brightness(0.6); }
+.sframe.held::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2px rgba(255, 201, 77, 0.5); border-radius: 14px; }
+.sbadge { position: absolute; left: 10px; top: 10px; z-index: 1; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; line-height: 24px; padding: 0 12px; color: #fff; background: #e23a50; clip-path: var(--slant); }
+.sframe.held .sbadge { color: #241700; background: #ffc94d; }
+.sbadge svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.smsg { flex: none; margin: 18px 16px 0; }
+.smsg b { display: block; font-size: 19px; font-weight: 700; line-height: 1.45; }
+.smsg.held b { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 0.03em; color: #ffe2a0; }
+.spass { display: block; width: 100%; margin-top: 12px; height: 46px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-size: 16px; color: var(--ink); background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1.5px var(--line); outline: none; user-select: text; -webkit-user-select: text; }
+.spass:focus { box-shadow: inset 0 0 0 2px var(--c0); }
+/* 好了: the photo and the 3D side by side, then the grade card turning over. The 3D is the reward, so it gets the wider
+   column and a square pane its (square) canvas fills edge to edge (Elara 69a1c60d); the photo takes the same height. */
+.spair { flex: none; display: grid; grid-template-columns: 2fr 3fr; gap: 10px; margin: 12px 14px 0; }
+.spair figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.spair .pane { position: relative; display: block; border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.04); }
+.spair figure:first-child .pane { flex: 1; }
+.spair figure:last-child .pane { width: min(100%, 42vh); aspect-ratio: 1; align-self: center; }
+.spair .pane::after { content: ""; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
+.spair img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.spair canvas { display: block; width: 100%; aspect-ratio: 1; opacity: 0; transition: opacity 0.4s; }
+.spair canvas[data-drawn] { opacity: 1; }
+.spair figcaption { font-size: 12px; color: var(--mute); text-align: center; }
+.card.sreveal { flex: none; margin: 14px 14px 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; padding: 14px 16px; }
+.sreveal .big { font-size: 70px; line-height: 0.85; padding-right: 4px; }
+.sreveal .sname { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.sreveal .nm b { font-family: var(--display); font-weight: 400; font-size: 24px; letter-spacing: 0.02em; }
+.sreveal .sname small { font-size: 13px; color: #c7d2ea; font-variant-numeric: tabular-nums; }
+.card.sreveal .rates { margin: 0; padding-left: 14px; border-left: 1px solid var(--line); }
+.sdone { flex: none; margin: 12px 16px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 13px; color: var(--mute); }
+.sdone > svg { width: 15px; height: 15px; color: #8ee6a8; stroke-width: 3; }
+.sdone button { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 650; color: var(--ink); }
+.sdone button svg { width: 11px; height: 11px; }
+#shootAsk { position: absolute; inset: 0; z-index: 8; display: flex; align-items: flex-end; background: rgba(2, 4, 9, 0.6); }
+#shootAsk .panel { width: 100%; padding: 18px 16px 0; background: #0d1222; box-shadow: 0 -1px 0 var(--line); border-radius: 16px 16px 0 0; animation: rise 0.22s ease-out both; }
+#shootAsk .head b { font-family: var(--display); font-weight: 400; font-size: 24px; }
+#shootAsk p { margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: #c7d2ea; }
+#shootAsk .sfoot { padding-left: 0; padding-right: 0; }
+/* The tag over the build and result screens while a job runs elsewhere. */
+#shootTag { position: absolute; left: 12px; right: 12px; top: calc(env(safe-area-inset-top) + 62px); z-index: 4; width: max-content; margin: 0 auto; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px);
+  height: 36px; padding: 0 18px 0 18px; white-space: nowrap; font-size: 13px; background: rgba(13, 18, 33, 0.94); box-shadow: inset 0 0 0 1px var(--line), 0 8px 22px rgba(0, 0, 0, 0.45);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); animation: rise 0.3s ease-out both; }
+#shootTag b { font-weight: 700; }
+#shootTag small { color: var(--mute); font-size: 12px; font-variant-numeric: tabular-nums; }
+#shootTag svg { width: 15px; height: 15px; stroke-width: 2.6; }
+#shootTag .ring { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(var(--c0) calc(var(--fill) * 360deg), rgba(255, 255, 255, 0.12) 0); -webkit-mask: radial-gradient(circle, transparent 5px, #000 5.5px); mask: radial-gradient(circle, transparent 5px, #000 5.5px); }
+#shootTag.done { padding-left: 16px; color: #1a0900; background: linear-gradient(100deg, #ffd0a0, var(--c0) 50%, var(--c0d)); box-shadow: none; filter: drop-shadow(0 0 14px rgba(255, 120, 40, 0.5)); }
+#shootTag.bad { padding-left: 16px; color: #ffd5da; background: rgba(70, 14, 24, 0.95); box-shadow: inset 0 0 0 1px rgba(255, 90, 106, 0.5); }
+@media (prefers-reduced-motion: reduce) { .sline, .ssweep, .lhead .shoot.run::after { animation: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 #creditsBody { font-size: 13px; line-height: 1.55; color: #c7d2ea; }
 #creditsBody ul { margin: 0 0 10px; padding-left: 18px; }
 #creditsBody h4 { margin: 12px 0 6px; font-size: 13px; color: var(--ink); }
@@ -272,6 +619,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .bhead span { display: none; }
   .pad { height: 66px; font-size: 30px; }
   .pad svg { width: 26px; height: 26px; }
+  .pad .left { min-width: 26px; font-size: 26px; }
   .call b { font-size: 20px; }
   .call em { font-size: 14px; }
   .call.parry b { font-size: 24px; }
@@ -290,3 +638,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   #foeParts span { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .go::after, .actions .primary::after { animation: none; } }
+/* 第 13 版: the one-word verdict on the player's own 冲 / 挡, small and quick (over its own top only). */
+.num.verdict { transform-origin: 0 50%; font-size: 17px; letter-spacing: 0.12em; padding: 1px 8px 0; clip-path: var(--slant); text-shadow: none; }
+.num.verdict.perfect { font-size: 20px; color: #071018; background: linear-gradient(90deg, #ffffff, #c9f4ff); }
+.num.verdict.glance { color: #ffd2b0; background: rgba(40, 18, 6, 0.78); }
+.num.verdict.dud { color: #b9c1ca; background: rgba(7, 9, 18, 0.78); }
+.num.verdict.held { color: #d9f6ff; background: rgba(7, 9, 18, 0.82); }

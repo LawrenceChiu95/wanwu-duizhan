@@ -1,0 +1,83 @@
+{
+  "decision": "Elara 3fdf7628 S1; no simulation rerun",
+  "r8Source": "results-strength-r2",
+  "fairSource": "results-fair-r2",
+  "fairComplete": true,
+  "fairRounds": 2400,
+  "fairSeedsPerScene": 200,
+  "scenes": [
+    {
+      "scene": "pan-broom/out-out-e180",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.25,
+      "pass": true,
+      "index0BiasPoints": 2.25
+    },
+    {
+      "scene": "pan-broom/hug-hug-e90",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 48.25,
+      "pass": true,
+      "index0BiasPoints": -1.75
+    },
+    {
+      "scene": "scissors-pillow/out-out-e180",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.25,
+      "pass": true,
+      "index0BiasPoints": 2.25
+    },
+    {
+      "scene": "scissors-pillow/hug-hug-e90",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 51,
+      "pass": true,
+      "index0BiasPoints": 1
+    },
+    {
+      "scene": "lamp-slipper/out-out-e180",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.5,
+      "pass": true,
+      "index0BiasPoints": 2.5
+    },
+    {
+      "scene": "lamp-slipper/hug-hug-e90",
+      "n": 400,
+      "pairedSeeds": 200,
+      "scorePct": 52.25,
+      "pass": true,
+      "index0BiasPoints": 2.25
+    }
+  ],
+  "pooledIndex0ScorePct": 51.416666666666664,
+  "pooledIndex0BiasPoints": 1.4166666666666643,
+  "lampBestOrient": "out",
+  "lampRawScorePct": 64.75,
+  "lampSeatSignByOpponent": {
+    "scissors": -1,
+    "lamp-lux3d": 0,
+    "broom": 1,
+    "pan-lux3d": 1,
+    "slipper": 1,
+    "pillow": 1
+  },
+  "lampNetSeatCoefficient": 0.5,
+  "lampEstimatedSeatContributionPoints": 0.7083333333333321,
+  "lampCorrectedSensitivityEstimatePct": 64.04166666666667,
+  "above65AfterPointCorrection": false,
+  "sensitivityRangeUsingSceneBiasExtremaPct": [
+    63.5,
+    65.625
+  ],
+  "assumptions": [
+    "Treat six mirrored two-item fixture mean index0 advantage as a constant transferable seat effect for R8 single-item matchups.",
+    "R8 and fair use different loadouts; this is a sensitivity calculation, not an identified unbiased item win rate or a confidence interval.",
+    "Index0 is player identity, not literal screen left because opening half-turn can rotate the arena."
+  ]
+}

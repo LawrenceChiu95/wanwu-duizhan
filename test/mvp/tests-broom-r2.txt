@@ -1,0 +1,268 @@
+TAP version 13
+# Subtest: physical fence bounces an outward core without creating fighter hits or HP loss
+ok 1 - physical fence bounces an outward core without creating fighter hits or HP loss
+  ---
+  duration_ms: 78.909167
+  type: 'test'
+  ...
+# Subtest: category stats agree for original and generated assets, while mounting keeps per-item outward ends
+ok 2 - category stats agree for original and generated assets, while mounting keeps per-item outward ends
+  ---
+  duration_ms: 19.452583
+  type: 'test'
+  ...
+# Subtest: out trades protection for damage, hug trades damage for protection, before existing hit caps
+ok 3 - out trades protection for damage, hug trades damage for protection, before existing hit caps
+  ---
+  duration_ms: 0.158083
+  type: 'test'
+  ...
+# Subtest: timeout compares ratios, then live-part HP, ignores dead parts, and never breaks a complete tie by side
+ok 4 - timeout compares ratios, then live-part HP, ignores dead parts, and never breaks a complete tie by side
+  ---
+  duration_ms: 0.835459
+  type: 'test'
+  ...
+# Subtest: terminal result follows final guard resolution/frame and carries timeout facts even with no impacts
+ok 5 - terminal result follows final guard resolution/frame and carries timeout facts even with no impacts
+  ---
+  duration_ms: 551.588417
+  type: 'test'
+  ...
+# Subtest: a full 60-second real-contact match awards timeout by final core ratios and emits consistent terminal facts
+ok 6 - a full 60-second real-contact match awards timeout by final core ratios and emits consistent terminal facts
+  ---
+  duration_ms: 372.653625
+  type: 'test'
+  ...
+# Subtest: ready fires once at each used cooldown boundary before accepting the same-step press; replay stays identical
+ok 7 - ready fires once at each used cooldown boundary before accepting the same-step press; replay stays identical
+  ---
+  duration_ms: 58.221958
+  type: 'test'
+  ...
+# Subtest: six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass
+ok 8 - six licensed GLBs plus two Lux3D variants: measured geometry, hashes and category mass
+  ---
+  duration_ms: 9.101
+  type: 'test'
+  ...
+# Subtest: A impulse/hardness; B material and defense; weak point exactly doubles
+ok 9 - A impulse/hardness; B material and defense; weak point exactly doubles
+  ---
+  duration_ms: 0.178
+  type: 'test'
+  ...
+# Subtest: real simulations: deterministic replay, A/B initial state, physical separation and HP accounting
+ok 10 - real simulations: deterministic replay, A/B initial state, physical separation and HP accounting
+  ---
+  duration_ms: 265.633
+  type: 'test'
+  ...
+# Subtest: 162 unique layouts, same-seed contact reversal and timeout percentage decision
+ok 11 - 162 unique layouts, same-seed contact reversal and timeout percentage decision
+  ---
+  duration_ms: 555.504291
+  type: 'test'
+  ...
+# Subtest: compound COM follows layout; world part transforms and per-part hit identity
+ok 12 - compound COM follows layout; world part transforms and per-part hit identity
+  ---
+  duration_ms: 171.129584
+  type: 'test'
+  ...
+# Subtest: invalid input fails explicitly
+ok 13 - invalid input fails explicitly
+  ---
+  duration_ms: 0.630666
+  type: 'test'
+  ...
+# Subtest: attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker
+ok 14 - attack role uses pre-impact normal speed and tip; simultaneous KO explicitly favors that attacker
+  ---
+  duration_ms: 0.293833
+  type: 'test'
+  ...
+# Subtest: weakpoint chance is gated by physical contact, with an exact deterministic threshold
+ok 15 - weakpoint chance is gated by physical contact, with an exact deterministic threshold
+  ---
+  duration_ms: 0.115
+  type: 'test'
+  ...
+# Subtest: recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker
+ok 16 - recorded real impacts: critical exceeds ordinary cap, missed weakpoint stays ordinary, counter changes attacker
+  ---
+  duration_ms: 119.457833
+  type: 'test'
+  ...
+# Subtest: near-static normal approach never chooses an attacker from seed parity
+ok 17 - near-static normal approach never chooses an attacker from seed parity
+  ---
+  duration_ms: 0.605625
+  type: 'test'
+  ...
+# Subtest: review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions
+ok 18 - review regressions: timeout highlights, simultaneous decision, zone ordering and critical captions
+  ---
+  duration_ms: 219.833042
+  type: 'test'
+  ...
+# Subtest: block includes its first/last step, excludes the next step; empty block still consumes full cooldown
+ok 19 - block includes its first/last step, excludes the next step; empty block still consumes full cooldown
+  ---
+  duration_ms: 557.907
+  type: 'test'
+  ...
+# Subtest: block cooldown accepts exactly 600 steps later, and its replay retains blockTime
+ok 20 - block cooldown accepts exactly 600 steps later, and its replay retains blockTime
+  ---
+  duration_ms: 284.581125
+  type: 'test'
+  ...
+# Subtest: full dash uses pre-impact alignment, a real contact and the post-cap multiplier; shield produces one result
+ok 21 - full dash uses pre-impact alignment, a real contact and the post-cap multiplier; shield produces one result
+  ---
+  duration_ms: 45.745958
+  type: 'test'
+  ...
+# Subtest: a guarded new contact during shared damage cooldown succeeds without damage, once per window
+ok 22 - a guarded new contact during shared damage cooldown succeeds without damage, once per window
+  ---
+  duration_ms: 126.232125
+  type: 'test'
+  ...
+# Subtest: a below-threshold touch does not consume the guard before a real impact in the same window
+ok 23 - a below-threshold touch does not consume the guard before a real impact in the same window
+  ---
+  duration_ms: 6.995709
+  type: 'test'
+  ...
+# Subtest: dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus
+ok 24 - dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus
+  ---
+  duration_ms: 78.828666
+  type: 'test'
+  ...
+# Subtest: dash timeout is a miss and a zero locked direction never invents a full alignment or NaN
+ok 25 - dash timeout is a miss and a zero locked direction never invents a full alignment or NaN
+  ---
+  duration_ms: 42.79925
+  type: 'test'
+  ...
+# Subtest: seeded global half-turn changes only seating; same-loadout collider, COM and spin symmetry remain
+ok 26 - seeded global half-turn changes only seating; same-loadout collider, COM and spin symmetry remain
+  ---
+  duration_ms: 4.268792
+  type: 'test'
+  ...
+# Subtest: global half-turn is seeded, recorded, and never swaps fighter definitions or input ownership
+ok 27 - global half-turn is seeded, recorded, and never swaps fighter definitions or input ownership
+  ---
+  duration_ms: 28.387875
+  type: 'test'
+  ...
+# Subtest: invalid sensitivity value fails; automatic mode retains no manual state
+ok 28 - invalid sensitivity value fails; automatic mode retains no manual state
+  ---
+  duration_ms: 45.796875
+  type: 'test'
+  ...
+# Subtest: relative score ties clash on both sides; real advantage and below-speed contacts retain their meaning
+ok 29 - relative score ties clash on both sides; real advantage and below-speed contacts retain their meaning
+  ---
+  duration_ms: 0.245458
+  type: 'test'
+  ...
+# Subtest: a real head-on clash deals two capped main blows and both defenders can resolve one guard
+ok 30 - a real head-on clash deals two capped main blows and both defenders can resolve one guard
+  ---
+  duration_ms: 23.951583
+  type: 'test'
+  ...
+# Subtest: AI reaction delays are seeded, bounded, replayed, and carry with the profile on seat swap
+ok 31 - AI reaction delays are seeded, bounded, replayed, and carry with the profile on seat swap
+  ---
+  duration_ms: 631.635875
+  type: 'test'
+  ...
+# Subtest: explicit new schema, deterministic full replay, A/B identical initial geometry
+ok 32 - explicit new schema, deterministic full replay, A/B identical initial geometry
+  ---
+  duration_ms: 177.746208
+  type: 'test'
+  ...
+# Subtest: equator slots and orientations, standard dimensions, inner end sunk into the core
+ok 33 - equator slots and orientations, standard dimensions, inner end sunk into the core
+  ---
+  duration_ms: 4.081791
+  type: 'test'
+  ...
+# Subtest: HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage
+ok 34 - HP belongs to real contacted collider; strongest pair once per episode; no zone or time damage
+  ---
+  duration_ms: 1.633708
+  type: 'test'
+  ...
+# Subtest: one attachment and bare core still rotate, collide and can win; losing all parts is not KO
+ok 35 - one attachment and bare core still rotate, collide and can win; losing all parts is not KO
+  ---
+  duration_ms: 110.327959
+  type: 'test'
+  ...
+# Subtest: detachment removes collider, preserves surviving point velocity and rotation without kick
+ok 36 - detachment removes collider, preserves surviving point velocity and rotation without kick
+  ---
+  duration_ms: 0.549208
+  type: 'test'
+  ...
+# Subtest: damage ramp is piecewise linear and never applies without a hit
+ok 37 - damage ramp is piecewise linear and never applies without a hit
+  ---
+  duration_ms: 0.126791
+  type: 'test'
+  ...
+# Subtest: damage tiers and weak cap; near-static approach never gains damage from seed
+ok 38 - damage tiers and weak cap; near-static approach never gains damage from seed
+  ---
+  duration_ms: 0.210083
+  type: 'test'
+  ...
+# Subtest: invalid user selection fails before simulation
+ok 39 - invalid user selection fails before simulation
+  ---
+  duration_ms: 1.344625
+  type: 'test'
+  ...
+# Subtest: sustained real surface contact is reported and repeated rubbing is not a new attack
+ok 40 - sustained real surface contact is reported and repeated rubbing is not a new attack
+  ---
+  duration_ms: 30.395542
+  type: 'test'
+  ...
+# Subtest: same-step double break: less overkill wins, exact tie is a draw; reason keeps the decided loser and its broken parts
+ok 41 - same-step double break: less overkill wins, exact tie is a draw; reason keeps the decided loser and its broken parts
+  ---
+  duration_ms: 317.022333
+  type: 'test'
+  ...
+# Subtest: manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical
+ok 42 - manual mode: presses taken per fixed step and recorded; replaying the same presses is byte-identical
+  ---
+  duration_ms: 859.19775
+  type: 'test'
+  ...
+# Subtest: manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap
+ok 43 - manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap
+  ---
+  duration_ms: 78.815542
+  type: 'test'
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7514.604958

@@ -14,6 +14,7 @@ export class Overlay {
     this.bannerEl = els.banner;
     this.nums = [];
     this.calls = [];
+    this.verdicts = [];
     this.flash = 0;
     this.banner = {age: 0, dur: 0};
     this.p = {x: 0, y: 0};
@@ -27,6 +28,12 @@ export class Overlay {
       this.layer.append(svg);
       return {svg, track, arc, hp: 1, shown: 1};
     });
+    // 「你」 over the player's top (side 0, orange, in both modes): a plate with a chevron pointing down at it.
+    this.me = document.createElement('div');
+    this.me.className = 'me';
+    this.me.innerHTML = '<b>你</b><i></i>';
+    this.layer.append(this.me);
+    this.meShown = 0;
   }
 
   /** Floating word anchored to a world point, drifting up. */
@@ -42,7 +49,7 @@ export class Overlay {
    * thin pin so it does not sit on the tops (about half a metre up, in screen px). Plates that would land on one another
    * stack upward, so a quick exchange stays readable; each is gone within CALL_TIME.
    */
-  callout(point, side, name, {crit = false, dash = false, cls = ''} = {}) {
+  callout(point, side, name, {crit = false, dash = false, cls = '', guard = false} = {}) {
     const el = document.createElement('div');
     el.className = `call t${side} ${cls}${dash ? ' dash' : ''}`;
     if (dash) { const em = document.createElement('em'); em.textContent = '冲'; el.append(em); }
@@ -50,6 +57,8 @@ export class Overlay {
     b.textContent = name;
     el.append(b);
     if (crit) { const em = document.createElement('em'); em.textContent = '暴击'; el.append(em); }
+    // 护住: the hit landed on the other side's hugging piece; said in the same plate so two plates never pile on one spot.
+    if (guard) { const em = document.createElement('em'); em.className = 'guard'; em.textContent = '护住'; el.append(em); }
     this.layer.append(el);
     const at = new THREE.Vector3().copy(point), w = el.offsetWidth, h = el.offsetHeight, p = this.stage.project(at, {x: 0, y: 0});
     const base = Math.max(18, Math.round(this.stage.screenRadius(at, 0.55)));
@@ -61,7 +70,7 @@ export class Overlay {
         const q = this.stage.project(c.at, {x: 0, y: 0});
         if (!q || Math.abs(q.x - p.x) >= (w + c.w) / 2 + 4) continue;
         const bottom = p.y - base - lift, top = bottom - h, cbottom = q.y - c.base - c.lift, ctop = cbottom - c.h;
-        if (top < cbottom + 3 && bottom > ctop - 3) { lift = p.y - base - ctop + 3; moved = true; }
+        if (top < cbottom + 6 && bottom > ctop - 6) { lift = p.y - base - ctop + 6; moved = true; }
       }
     }
     // The pin runs from the contact point up to the lowest plate only (a lifted plate would have it cross the others).
@@ -69,6 +78,21 @@ export class Overlay {
     if (lift === 0) { pin = document.createElement('i'); pin.className = `callpin t${side}`; pin.style.height = `${base}px`; this.layer.append(pin); }
     this.calls.push({el, pin, at, age: 0, w, h, base, lift});
   }
+  /**
+   * 第 13 版: a one-word verdict on the player's own 冲 / 挡, beside its top (right of the core, level with it, flipped
+   * left near the screen edge) so it never lands on the 「你」 tag above. It follows the top, nudges up a little and is
+   * gone within `dur`; a newer one replaces the old.
+   */
+  verdict(fighter, text, cls, dur = 0.85) {
+    for (const v of this.verdicts) v.el.remove();
+    const el = document.createElement('div');
+    el.className = `num verdict ${cls}`;
+    el.textContent = text;
+    this.layer.append(el);
+    this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight}];
+  }
+  /** Floating words of one kind (a class, e.g. 'broke') still up: let them fade out now, over about a third of a second. */
+  hurry(cls) { for (const n of this.nums) if (n.el.classList.contains(cls)) n.age = Math.max(n.age, n.dur * 0.8); }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
   showBanner(text, color, dur = 1.1) {
     this.bannerEl.textContent = text;
@@ -77,7 +101,8 @@ export class Overlay {
   }
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
   clear() {
-    for (const n of [...this.nums, ...this.calls]) { n.el.remove(); n.pin?.remove(); }
+    for (const n of [...this.nums, ...this.calls, ...this.verdicts]) { n.el.remove(); n.pin?.remove(); }
+    this.verdicts = [];
     this.nums = [];
     this.calls = [];
     this.flash = 0;
@@ -110,6 +135,16 @@ export class Overlay {
       c.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${t < 0.12 ? 0.7 + 2.5 * t : 1})`;
       if (c.pin) { c.pin.style.opacity = fade; c.pin.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; }
     }
+    for (let k = this.verdicts.length - 1; k >= 0; k--) {
+      const v = this.verdicts[k];
+      v.age += dt;
+      const t = v.age / v.dur;
+      if (t >= 1 || !stage.project(v.f.center, p)) { v.el.remove(); this.verdicts.splice(k, 1); continue; }
+      const r = stage.screenRadius(v.f.center, stage.coreRadius * 1.6) + 6;
+      const x = p.x + r + v.w <= W - 6 ? p.x + r : p.x - r - v.w, y = p.y - v.h / 2 - ease(Math.min(1, t * 1.6)) * 10;
+      v.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
+      v.el.style.transform = `translate(${x}px, ${y}px) scale(${t < 0.1 ? 0.7 + 3 * t : 1})`;
+    }
     this.flash *= Math.exp(-dt * 11);
     this.flashEl.style.opacity = this.flash > 0.01 ? this.flash.toFixed(3) : 0;
     if (this.banner.dur > 0) {
@@ -119,6 +154,36 @@ export class Overlay {
       this.bannerEl.style.transform = `scale(${1.25 - 0.25 * ease(Math.min(1, t * 4))})`;
       if (t >= 1) this.banner.dur = 0;
     }
+    // 「你」: rides just above the player's top (above its pieces' reach), always on top of everything.
+    const me = stage.fighters[0];
+    const meOn = showRings && stage.showMe && me && me.dim < 0.6 && stage.project(me.center, p);
+    this.meShown += ((meOn ? 1 : 0) - this.meShown) * (1 - Math.exp(-dt * 12));
+    if (this.meShown > 0.02 && me && stage.project(me.center, p)) {
+      // Capped, so on a close camera (昨天的镜头) it stays by the player's core instead of landing on the other top;
+      // and slid sideways when the other core sits right where it would go.
+      const r = Math.min(64, stage.screenRadius(me.center, stage.reachOf(me) + 0.1) * 0.95);
+      let x = p.x;
+      const y = Math.max(stage.view.top + 34, p.y - r - 4), foe = stage.fighters[1], q = {x: 0, y: 0};
+      if (foe?.core.visible && stage.project(foe.center, q)) {
+        const fr = stage.screenRadius(foe.center, stage.coreRadius) + 4;
+        if (Math.abs(q.x - x) < 20 + fr && q.y > y - 44 - fr && q.y < y + fr) x = q.x + Math.sign(x - q.x || 1) * (20 + fr);
+      }
+      this.meDx = (this.meDx ?? 0) + (x - p.x - (this.meDx ?? 0)) * (1 - Math.exp(-dt * 14));
+      x = Math.min(W - 22, Math.max(22, p.x + this.meDx));
+      // A hit's plate wins over the marker for the moment it is up: the marker steps out of the way entirely (a faint one
+      // behind a plate still read as two labels on top of each other, Elara 11-02 a788037f). Boxes with 6 px to spare.
+      const mw = (this.meW ??= this.me.offsetWidth || 40) / 2 + 6, mh = (this.meH ??= this.me.offsetHeight || 32) + 6;
+      let under = false;
+      for (const c of this.calls) {
+        if (!stage.project(c.at, q)) continue;
+        const cx = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, q.x)), cy = q.y - c.base - c.lift;
+        if (Math.abs(cx - x) < c.w / 2 + mw && cy > y - mh && cy - c.h < y + 6) { under = true; break; }
+      }
+      // Out of the way at once; back in over a few frames.
+      this.meCovered = under ? 1 : (this.meCovered ?? 0) * Math.exp(-dt * 16);
+      this.me.style.opacity = (this.meShown * (1 - this.meCovered)).toFixed(3);
+      this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+    } else this.me.style.opacity = 0;
     // Life ring around each core: the core is the thing that must not break.
     this.rings.forEach((r, i) => {
       const f = stage.fighters[i];

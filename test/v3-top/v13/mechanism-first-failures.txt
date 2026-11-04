@@ -1,0 +1,51 @@
+✔ block includes its first/last step, excludes the next step; empty block still consumes full cooldown (1724.1515ms)
+✔ block cooldown accepts exactly 600 steps later, and its replay retains blockTime (968.230875ms)
+✔ full dash uses pre-impact alignment, a real contact and the post-cap multiplier; shield produces one result (88.923208ms)
+✖ dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus (224.398166ms)
+✖ dash timeout is a miss and zero initial separation never invents a full alignment or NaN (50.447584ms)
+✔ opening is seed-independent, with a half-turn of every same-loadout collider, COM and angular velocity (10.54475ms)
+✔ invalid sensitivity value fails; automatic mode retains no manual state (96.837583ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3508.432
+
+✖ failing tests:
+
+test at test/v3-top/v13/timing.test.mjs:47:1
+✖ dash locks at press and does not turn to follow; a real off-axis hit is a glance without dash bonus (224.398166ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(hits.length)
+  
+      at TestContext.<anonymous> (file:///Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-v13-timing/test/v3-top/v13/timing.test.mjs:52:64)
+      at async Test.run (node:internal/test_runner/test:1116:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:786:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test/v3-top/v13/timing.test.mjs:55:1
+✖ dash timeout is a miss and zero initial separation never invents a full alignment or NaN (50.447584ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'glance' !== 'miss'
+  
+      at TestContext.<anonymous> (file:///Users/lawrence/Projects/agent-copies.noindex/wanwu-duizhan-v13-timing/test/v3-top/v13/timing.test.mjs:59:48)
+      at async Test.run (node:internal/test_runner/test:1116:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:786:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'glance',
+    expected: 'miss',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
