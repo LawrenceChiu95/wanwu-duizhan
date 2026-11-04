@@ -38,32 +38,23 @@ test('photo import keeps source world Y upright and uses the actual outward end'
   }
 });
 
-test('simplification preserves an interior UV feature that flat geometry cannot describe',async()=>{
-  const d=new Document(),b=d.createBuffer(),positions=[],uv=[],indices=[],n=200,qx=.483,qy=.527;
-  for(let y=0;y<=n;y++)for(let x=0;x<=n;x++){
-    const u=x/n,v=y/n;positions.push(u,v,0);
-    uv.push(u+.25*Math.exp(-((u-qx)**2+(v-qy)**2)/.0025),v);
+test('photo sources keep their topology and UV seam attributes; oversized sources fail before decimation',async()=>{
+  const d=new Document(),b=d.createBuffer(),positions=[],uv=[],indices=[];
+  // Disconnected tetrahedra have separate atlas islands at the same positions.
+  // A collapse must never join their UV islands. 3,000 tetrahedra = 12K faces.
+  for(let i=0;i<3000;i++){
+    const k=positions.length/3,x=(i%20)*.02,y=(Math.floor(i/20)%20)*.02,z=Math.floor(i/400)*.02;
+    positions.push(x,y,z,x+.01,y,z,x,y+.01,z,x,y,z+.01);
+    uv.push(0,0,.1,0,0,.1,.1,.1);indices.push(k,k+2,k+1,k,k+1,k+3,k+1,k+2,k+3,k+2,k,k+3);
   }
-  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const i=y*(n+1)+x;indices.push(i,i+1,i+n+2,i,i+n+2,i+n+1);}
-  // Give the otherwise planar test object a nonzero physical volume.
-  const tip=positions.length/3;positions.push(.5,.5,-.2);uv.push(.5,.5);
-  for(let x=0;x<n;x++)indices.push(tip,x+1,x,tip,n*(n+1)+x,n*(n+1)+x+1);
-  for(let y=0;y<n;y++)indices.push(tip,y*(n+1),(y+1)*(n+1),tip,(y+1)*(n+1)+n,y*(n+1)+n);
   const pos=d.createAccessor().setType('VEC3').setArray(new Float32Array(positions)).setBuffer(b),tex=d.createAccessor().setType('VEC2').setArray(new Float32Array(uv)).setBuffer(b);
   const ix=d.createAccessor().setType('SCALAR').setArray(new Uint32Array(indices)).setBuffer(b);
-  d.getRoot().setDefaultScene(d.createScene().addChild(d.createNode().setMesh(d.createMesh().addPrimitive(d.createPrimitive().setAttribute('POSITION',pos).setAttribute('TEXCOORD_0',tex).setIndices(ix)))));
-  const raw=Buffer.from(await new NodeIO().writeBinary(d));
-  const prepared=await prepareMesh(raw,{id:'photo',weakPoint:{radius:.01}},{longSideMeters:1,massKg:1,preserveUp:true});
-  assert.ok(prepared.report.triangles<=15000);assert.ok(prepared.report.triangles<indices.length/3);
-  const out=await new NodeIO().readBinary(prepared.bytes),p=out.getRoot().listMeshes()[0].listPrimitives()[0],a=p.getAttribute('POSITION'),t=p.getAttribute('TEXCOORD_0'),ixs=p.getIndices().getArray();
-  let centerU;
-  for(let i=0;i<ixs.length;i+=3){
-    const v=[ixs[i],ixs[i+1],ixs[i+2]],ps=v.map(j=>a.getElement(j,[]));
-    if(ps.some(q=>Math.abs(q[2])>1e-7))continue;
-    const [[ax,ay],[bx,by],[cx,cy]]=ps,den=(by-cy)*(ax-cx)+(cx-bx)*(ay-cy);if(Math.abs(den)<1e-10)continue;
-    const wa=((by-cy)*(qx-cx)+(cx-bx)*(qy-cy))/den,wb=((cy-ay)*(qx-cx)+(ax-cx)*(qy-cy))/den,wc=1-wa-wb;
-    if(Math.min(wa,wb,wc)<-1e-5)continue;
-    centerU=v.map(j=>t.getElement(j,[])[0]).reduce((s,u,k)=>s+u*[wa,wb,wc][k],0);break;
-  }
-  assert.ok(Number.isFinite(centerU),'center lies in a retained front face');assert.ok(Math.abs(centerU-(qx+.25))<.02,`UV peak moved to ${centerU}`);
+  const primitive=d.createPrimitive().setAttribute('POSITION',pos).setAttribute('TEXCOORD_0',tex).setIndices(ix);
+  const mesh=d.createMesh().addPrimitive(primitive);d.getRoot().setDefaultScene(d.createScene().addChild(d.createNode().setMesh(mesh)));
+  const raw=Buffer.from(await new NodeIO().writeBinary(d)),template={id:'photo',weakPoint:{radius:.01}},standard={longSideMeters:.4,massKg:1,preserveUp:true};
+  const prepared=await prepareMesh(raw,template,standard),out=await new NodeIO().readBinary(prepared.bytes),p=out.getRoot().listMeshes()[0].listPrimitives()[0];
+  assert.equal(prepared.report.triangles,12000);assert.deepEqual(p.getIndices().getArray(),ix.getArray());
+  assert.deepEqual(p.getAttribute('TEXCOORD_0').getArray(),tex.getArray());assert.deepEqual(p.getAttribute('POSITION').getArray(),pos.getArray());
+  mesh.addPrimitive(primitive.clone());const oversized=Buffer.from(await new NodeIO().writeBinary(d));
+  await assert.rejects(prepareMesh(oversized,template,standard),/above 15000; request a low-poly source/);
 });

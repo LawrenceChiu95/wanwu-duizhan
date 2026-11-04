@@ -62,7 +62,7 @@ function gateway(options = {}) {
     if (options.busy === stage) return Response.json({c: 'GENERATION_CONCURRENCY_LIMIT_EXCEEDED', d: null});
     if (options.unknown === stage) throw Error('simulated lost reply ' + env.AHOLO_API_KEY);
     const payload = JSON.parse(request.body);
-    if (stage === 'mesh') assert.deepEqual(payload, {img: 'https://assets.example/styled.jpg', version: 'G1-Turbo', faceCount: 100000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false});
+    if (stage === 'mesh') assert.deepEqual(payload, {img: 'https://assets.example/styled.jpg', version: 'G1-Turbo', faceCount: 12000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false});
     return ok(stage + '-id');
    }
    if (u.pathname.endsWith('/get')) {

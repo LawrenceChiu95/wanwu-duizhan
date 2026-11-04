@@ -56,7 +56,7 @@ function gateway(options={}) {
     const payload=JSON.parse(request.body);
     if(route.includes('img-to-3d')&&options.rejectMeshOnce&&!rejected){rejected=true;return Response.json({c:'GENERATION_CONCURRENCY_LIMIT_EXCEEDED',d:null});}
     if(route.includes('multimodal-to-image')){assert.equal(payload.img,'https://photo.example/upload.png');assert.ok(payload.prompt.includes('锅'));return reply('image-id');}
-    assert.deepEqual(payload,{img:'https://photo.example/styled.png',version:'G1-Turbo',faceCount:100000,enablePbr:true,outputFormat:['zip','glb'],aiPredictSize:false});return reply('mesh-id');
+    assert.deepEqual(payload,{img:'https://photo.example/styled.png',version:'G1-Turbo',faceCount:12000,enablePbr:true,outputFormat:['zip','glb'],aiPredictSize:false});return reply('mesh-id');
    }
    if(route.endsWith('/task/get')) {
     const isImage=u.searchParams.get('taskid')==='image-id';

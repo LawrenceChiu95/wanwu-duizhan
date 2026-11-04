@@ -43,7 +43,7 @@ export function itemAxes(item){const ext=item.bounds.max.map((v,i)=>v-item.bound
  */
 export function mountTransform(item,mount,orient,r){
  const d=slotDirection(r.top.slots[mount]),{long,thin}=itemAxes(item),cols=[null,null,null];
- if(orient==='out'){cols[long]=scale(d,item.outEnd??r.top.outEnd[item.id]??1);cols[thin]=UP;}else{cols[long]=UP;cols[thin]=d;}
+ if(orient==='out'){cols[long]=scale(d,item.outEnd??r.top.outEnd[item.id]??1);cols[thin]=UP;}else{const upEnd=item.photoPhysics&&long!==1?(item.outEnd??1):1;cols[long]=scale(UP,upEnd);cols[thin]=d;}
  const m=3-long-thin;cols[m]=cross(cols[(m+1)%3],cols[(m+2)%3]);
  const q=basisQuat(...cols),nearest=Math.min(...item.hull.map(v=>dot(rotate(q,v),d)));
  return {offset:scale(d,r.core.radius-r.top.embed-nearest),quat:q,direction:d};

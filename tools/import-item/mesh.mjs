@@ -1,7 +1,7 @@
 import {readFile, stat} from 'node:fs/promises';
 import crypto from 'node:crypto';
 import {NodeIO, Logger} from '@gltf-transform/core';
-import {weld, compactPrimitive} from '@gltf-transform/functions';
+import {weld, simplify, compactPrimitive} from '@gltf-transform/functions';
 import {MeshoptSimplifier} from 'meshoptimizer';
 import sharp from 'sharp';
 import RAPIER from '@dimforge/rapier3d-compat';
@@ -70,27 +70,28 @@ export async function prepareMesh(raw, template, standard) {
   validateGlb(raw);
   const doc = await io().readBinary(new Uint8Array(raw));
   const sourceTriangles = geometry(doc).triangles;
-  await MeshoptSimplifier.ready;
-  // Keep texture coordinates in the error metric from the FIRST collapse.
-  // A geometry-only first pass irreversibly distorts UVs on smooth surfaces.
-  if (sourceTriangles > 15000) {
-    await doc.transform(weld());
-    for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
+  // New paid photo models request 12K triangles from the provider. Keep their
+  // geometry and UVs unchanged: local decimation introduced visible atlas blocks.
+  if (standard.preserveUp && sourceTriangles > 15000) throw Error(`Generated photo mesh has ${sourceTriangles} triangles, above 15000; request a low-poly source`);
+  if (!standard.preserveUp) {
+    await MeshoptSimplifier.ready;
+    if (sourceTriangles > 10000) await doc.transform(weld(), simplify({simplifier: MeshoptSimplifier, ratio: 10000 / sourceTriangles, error: .02}));
+    // Aholo's pot has many UV seams: topology-only simplification stops at 33K.
+    // Permit seam collapses with explicit UV/normal error weights, retaining the
+    // original vertex attributes and PBR materials. Do not use simplifySloppy.
+    const remaining = geometry(doc).triangles;
+    if (remaining > 15000) for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
       const positions = primitive.getAttribute('POSITION');
-      const semantics = primitive.listSemantics().filter(s => s === 'NORMAL' || s.startsWith('TEXCOORD_') || s.startsWith('COLOR_'));
-      const attributes = semantics.map(s => primitive.getAttribute(s));
+      const attributes = primitive.listSemantics().filter(s => s === 'NORMAL' || s.startsWith('TEXCOORD_') || s.startsWith('COLOR_')).map(s => primitive.getAttribute(s));
       const stride = attributes.reduce((n, a) => n + a.getElementSize(), 0);
       const values = new Float32Array(positions.getCount() * stride);
       for (let i = 0; i < positions.getCount(); i++) {
         let offset = i * stride;
         for (const attribute of attributes) { const element = attribute.getElement(i, []); values.set(element, offset); offset += element.length; }
       }
-      // UVs describe a whole texture atlas (0–1), unlike unit-length normals.
-      const weights = attributes.flatMap((a, i) => Array(a.getElementSize()).fill(semantics[i].startsWith('TEXCOORD_') ? 10 : 1));
       const indices = primitive.getIndices();
-      const target = Math.max(3, Math.floor(indices.getCount() * 12000 / sourceTriangles / 3) * 3);
-      const [result] = stride ? MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, values, stride, weights, null, target, .03, ['Permissive'])
-        : MeshoptSimplifier.simplify(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, target, .03);
+      const target = Math.max(3, Math.floor(indices.getCount() * 12000 / remaining / 3) * 3);
+      const [result] = MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, values, stride, Array(stride).fill(1), null, target, .03, ['Permissive']);
       primitive.setIndices(indices.clone().setArray(result));
       if (indices.listParents().length === 1) indices.dispose();
       compactPrimitive(primitive);
