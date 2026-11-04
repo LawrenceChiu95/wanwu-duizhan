@@ -53,7 +53,7 @@ test('real photo shapes stand normally when hugged, with the outward end up only
  const fixture=JSON.parse(await readFile(new URL('./photo-mount-fixtures.json',import.meta.url),'utf8'));
  for(const {slug,item,expected} of fixture.items){
   // The recorded end is the actual source-model top or head, not a label
-  // written by the importer: kettle/teddy/dryer +Y, sideways spatula head +X.
+  // written by the importer: all four source fixtures stay +Y under the 120% rule.
   const tip=[0,0,0];tip[expected.upAxis]=expected.upSign;
   for(const mount of Object.keys(rules.top.slots)){
    const {quat:q}=mountTransform(item,mount,'hug',rules),up=rotate(q,tip);
