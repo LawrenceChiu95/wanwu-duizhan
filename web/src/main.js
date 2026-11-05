@@ -733,7 +733,7 @@ async function main() {
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
-    el.tipLine.textContent = tipLine(stats, m.winner);
+    el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
     showOutcome(outcome);
     $('replayBtn').hidden = pb.slowAt === null;

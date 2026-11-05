@@ -86,11 +86,16 @@ export function pickStats(s, winner) {
   return out.slice(0, 3);
 }
 
-/** One tip, by fixed rules, for the next match. */
-export function tipLine(s, winner) {
+// Not won against a ladder opponent that is beaten by a build rather than by timing: the tip points at the build without
+// saying which (Elara e675765a: 长臂猿 is the stage that teaches changing builds).
+const FOE_TIP = {chang: '它够得远，光靠时机很难赢，换一套装法再来'};
+
+/** One tip, by fixed rules, for the next match. `foe`: the ladder opponent's id, when it was one. */
+export function tipLine(s, winner, foe = null) {
   const mine = s.firstBroken[0];
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
+  if (FOE_TIP[foe]) return FOE_TIP[foe];
   if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;
   if (mine?.orient === 'out') {
     if (PREFERRED_ORIENT[mine.item] === 'hug') return `先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`;
