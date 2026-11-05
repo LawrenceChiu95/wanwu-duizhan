@@ -219,8 +219,10 @@ async function main() {
   const BUILD_KEY = 'wanwu-build';
   const keptArg = (() => { try { return localStorage.getItem(BUILD_KEY); } catch { return null; } })();
   const mine = structuredClone((q.has('mine') ? fromUrl() : keptArg && readBuild('mine', keptArg)) ?? DEFAULT);
-  // ?foe= (measurements) fights that build with the old 换个对手 list and keeps no progress; otherwise the ladder.
+  // ?foe= (measurements) keeps no progress: ?foe=mang|wen|chang fights that one of the three, its build and play, with no
+  // picking (Wren's recordings, Elara f01a2add); a build fights it with the old 换个对手 list and the old play. Otherwise the ladder.
   const ladderOn = !q.has('foe');
+  const pinned = q.getAll('foe').length === 1 ? LADDER.findIndex(f => f.id === q.get('foe')) : -1;
   const ladder = (() => {
     let kept = null;
     try { kept = JSON.parse(localStorage.getItem(LADDER_KEY)); } catch { /* no storage, or not ours */ }
@@ -232,7 +234,7 @@ async function main() {
     return {won, open, at: at < 0 ? LADDER.length - 1 : at};
   })();
   const keepLadder = () => { try { localStorage.setItem(LADDER_KEY, JSON.stringify({won: [...ladder.won], at: LADDER[ladder.at].id})); } catch { /* no storage here */ } };
-  let FOE = structuredClone(ladderOn ? LADDER[ladder.at].build : fromUrl('foe') ?? DEFAULT_FOE);
+  let FOE = structuredClone(ladderOn ? LADDER[ladder.at].build : pinned >= 0 ? LADDER[pinned].build : fromUrl('foe') ?? DEFAULT_FOE);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
   // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).
@@ -252,8 +254,8 @@ async function main() {
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
-  // The ladder opponent of the match on screen (null with ?foe=), and what its result did to the ladder (worked out once:
-  // the result shows again after 重看).
+  // Which of the three the match on screen is against (null with a build in ?foe=), and what its result did to the ladder
+  // (worked out once: the result shows again after 重看).
   let fought = null, outcome = null;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
@@ -267,11 +269,14 @@ async function main() {
   const markHtml = (i, cls = '') => `<span class="ft f${i + 1}${cls}">${LADDER[i].mark}</span>`;
   function renderFoe() {
     el.foeParts.innerHTML = partsHtml(FOE);
-    if (!ladderOn) return;
-    const f = LADDER[ladder.at];
+    const at = ladderOn ? ladder.at : pinned;
+    if (at < 0) return;
+    const f = LADDER[at];
     el.foe.classList.add('ladder');
-    $('foeMark').className = `ft f${ladder.at + 1}`; $('foeMark').textContent = f.mark; $('foeMark').hidden = false;
+    $('foeMark').className = `ft f${at + 1}`; $('foeMark').textContent = f.mark; $('foeMark').hidden = false;
     $('foeLabel').textContent = f.name;
+    $('foeBtn').hidden = !ladderOn;
+    if (!ladderOn) return;
     // The number is how many are won (as the ladder's 已赢 N/3); the ring marks the one being fought.
     const won = LADDER.filter(g => ladder.won.has(g.id)).length;
     $('foeBtn').setAttribute('aria-label', `三个对手，已赢 ${won} 个，现在打第 ${ladder.at + 1} 个`);
@@ -645,7 +650,7 @@ async function main() {
     if (phase !== 'build' || !el.error.hidden) return;
     const id = ++runId;
     if (!fixedSeed) seed = randomSeed();
-    fought = ladderOn ? ladder.at : null;
+    fought = ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
     outcome = null;
     phase = 'computing';
     el.go.disabled = true;
@@ -661,7 +666,9 @@ async function main() {
     live = null;
     if (control === 'manual') {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
-      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {})}});
+      // The opponent's play is fixed with its build as 开打 is pressed; one without its own (a build in ?foe=) plays the old way.
+      const ai = fought === null ? null : LADDER[fought].ai;
+      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false};
@@ -700,8 +707,9 @@ async function main() {
     setTimeout(() => coach(0), 400);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
+    // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${waits('foe') ? `&foe=${q.get('foe')}` : ''}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
@@ -738,7 +746,7 @@ async function main() {
   // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个), the first over the last
   // one is the 三个都赢了 ending (随便挑 opens the ladder). Losing, a draw, or ?foe= leave the result as it was.
   function ladderOutcome(winner) {
-    if (fought === null || winner !== 0) return {act: 'again'};
+    if (!ladderOn || winner !== 0) return {act: 'again'};
     const id = LADDER[fought].id, first = !ladder.won.has(id);
     ladder.won.add(id);
     keepLadder();
