@@ -1,8 +1,9 @@
 /**
  * 评委版 (task #4, Elara 51c72819): `npm run build:judge` builds this page with __JUDGE__ on. A judge opens a link on a
- * phone and plays with the nine default items; nothing calls a backend, so the static files keep working on any host.
- * 拍一件 doesn't shoot: it replays one real generation (this flip-flop: a real photo through 认物, 改图 and 建模, Sol's
- * task 26 run, job j_a3187a76), so a judge sees the items come from photos without being handed a made-up one.
+ * phone and plays with the nine default items, and 拍一件 shoots through the backend at the same origin (Elara edd90212);
+ * when it can't now, the nine still play. Beside 拍照 is one real generation to replay (this flip-flop: a real photo
+ * through 认物, 改图 and 建模, Sol's task 26 run, job j_a3187a76), so a judge sees how an item comes from a photo before
+ * trying, or instead. With ?shoot=off nothing calls a backend and 拍一件 is only that replay.
  * Loaded only when __JUDGE__ is on, so its pictures and model stay out of the normal build.
  */
 import itemJson from '../../data/showcase/flipflop/item.json';

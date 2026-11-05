@@ -13,7 +13,7 @@
  *                         Also: slow (the 3D step takes 11 minutes), offline (polls fail for ten seconds),
  *                         server-poll (polls get a server error for ten seconds), server-items (the first two
  *                         item fetches after it is done get a server error), server-create (sending the photo always
- *                         gets a server error), forbidden-poll (polls get forbidden for ten seconds, as a backend
+ *                         gets a server error), offline-create (sending the photo never gets through), forbidden-poll (polls get forbidden for ten seconds, as a backend
  *                         started for another page address would answer), refused (the first item made comes out in a form
  *                         the game's registerItems turns down: scale 2; photos after it come out fine).
  *   ?shootItemsSlow=15000 item fetches don't answer until that many ms after the page loaded (main.js waits 5 s at start).
@@ -33,6 +33,14 @@
  *                         takes the name too. &shootMat=不锈钢 adds materialName. The model and numbers still come from
  *                         the six; the game takes such an item once sim/runtime-items.js accepts any category (Sol, task #84).
  *   ?shootReset=1         forget every fake job, item and the page's current job
+ * Many players at once (评委自己拍, Elara 6dee70f7; fields as agreed with Sol df0613d4 f056c835). None of these is on by
+ * default, so the stage copies behave as before:
+ *   ?shootGen=2           this browser's generations a day; ?shootRecog=5 its 认物 a day. A new photo holds one of each
+ *                         before 认物 (a 认物 is spent even if retaken; a retake gives the generation back), so a photo
+ *                         that can't be generated is turned away before anything is spent.
+ *   ?shootAllGen=N        what is left today for everyone (generations); ?shootAllRecog=N the same for 认物.
+ *   ?shootQueue=3         a new photo has three people ahead of it before 认物; ?shootQueueGen=2 two more ahead once the
+ *                         retake moment is over, before generation starts. ?shootQueueSec=40 how long each one ahead takes.
  */
 import {loadCatalog} from '../../sim/index.js';
 import {loadV3Rules} from '../../sim/v3.js';
@@ -60,8 +68,7 @@ const RETRY = {'photo-invalid': 'none', 'photo-unclear': 'none', pass: 'none', q
   download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same'};
 const KEY_FORM = /^[A-Za-z0-9_-]{8,128}$/;
 const VERSION = 3; // 3: the first two photos are fixed (第 22 版), so a browser that tried 第 21 版 starts again
-// No daily limit this round (Elara 71be6494): /quota reports limit and remaining as null; a quota error only comes from ?shootFail=quota.
-const LIMIT = null;
+// No daily limit unless asked for (?shootGen and the rest): /quota then reports limit and remaining as null.
 
 const read = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* full or blocked: the fake forgets */ } };
@@ -95,6 +102,10 @@ export async function fakeApi(q) {
   const save = () => write(KEY, st);
   save();
   const used = () => st.used.day === today() ? st.used.n : 0;
+  const usedRecog = () => st.used.day === today() ? st.used.r ?? 0 : 0;
+  const num = k => q.has(k) ? Math.max(0, Number(q.get(k)) || 0) : null;
+  const LIMIT = {gen: num('shootGen'), recog: num('shootRecog'), allGen: num('shootAllGen'), allRecog: num('shootAllRecog')};
+  const AHEAD = num('shootQueue') ?? 0, AHEAD_GEN = num('shootQueueGen') ?? 0, PER = (num('shootQueueSec') || 40) * 1000;
 
   const stageMs = (rec, s) => (rec.slow && STAGES[s][0] === 'model' ? 660 : STAGES[s][1]) * 1000;
   // Brings a job up to the clock: which stage it is in, whether a planned failure has struck, and the item once done.
@@ -102,12 +113,13 @@ export async function fakeApi(q) {
     if (rec.done) return;
     const now = vnow();
     let t = rec.t0;
+    if (now < t) return; // still waiting its turn for 认物
     for (let s = rec.from; s < STAGES.length; s++) {
       const d = stageMs(rec, s);
       rec.times[s] = [t, null];
       if (s >= 1 && !rec.charged && !(rec.fail?.code === 'busy' && rec.fail.stage === s)) {
         rec.charged = true;
-        st.used = {day: today(), n: used() + 1};
+        st.used = {day: today(), n: used() + 1, r: usedRecog()};
       }
       if (rec.fail?.stage === s && now >= t + rec.fail.frac * d) {
         rec.done = {status: 'failed', error: {code: rec.fail.code, message: '', retry: RETRY[rec.fail.code], charged: rec.charged}, stage: s};
@@ -118,8 +130,9 @@ export async function fakeApi(q) {
       // A new photo's 认物 is in: nothing is paid for until the moment to say 不是它 has passed (task #85).
       if (s === 0) {
         rec.retakeUntil = t + RETAKE_MS;
-        if (now < rec.retakeUntil) return;
-        t = rec.retakeUntil;
+        rec.genAt = rec.retakeUntil + (rec.aheadGen ?? 0) * PER; // then waiting its turn for generation
+        if (now < rec.genAt) return;
+        t = rec.genAt;
       }
     }
     const n = st.items.length + 1, base = rec.recognition.name ?? `我拍的${CAT_NAME[rec.cat]}`;
@@ -134,10 +147,13 @@ export async function fakeApi(q) {
   function view(rec) {
     advance(rec);
     save();
-    const stage = rec.done ? null : rec.times.findIndex((x, s) => s >= rec.from && x && x[1] == null);
+    const stage = rec.done ? null : rec.times.findIndex((x, s) => s >= rec.from && x && x[1] == null), now = vnow();
+    // People ahead while waiting its turn, 0 once it is being worked on but no step has started, null after that.
+    const queuePosition = rec.done || rec.times[1] ? null : now < rec.t0 ? Math.ceil((rec.t0 - now) / PER)
+      : rec.genAt && now >= rec.retakeUntil && now < rec.genAt ? Math.ceil((rec.genAt - now) / PER) : 0;
     return {
       id: rec.id, clientKey: rec.clientKey, createdAt: iso(rec.createdAt),
-      status: rec.done?.status ?? (stage === 0 ? 'recognizing' : 'generating'),
+      status: rec.done?.status ?? (stage === 0 || (rec.from === 0 && !rec.times[0]) ? 'recognizing' : 'generating'), queuePosition,
       recognition: rec.times[0]?.[1] != null || rec.from > 0 ? rec.recognition : null, retakeUntil: iso(rec.retakeUntil),
       steps: STEP_KEYS.map((key, i) => ({key, startedAt: iso(rec.times[i + 1]?.[0]), endedAt: iso(rec.times[i + 1]?.[1])})),
       estimateSeconds: ESTIMATE, error: rec.done?.error ?? null, itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
@@ -160,6 +176,19 @@ export async function fakeApi(q) {
     return old;
   }
   const active = () => Object.values(st.jobs).find(r => (advance(r), !r.done));
+  // What is left today: a running job not yet charged holds one generation.
+  const held = () => { const r = active(); return r && !r.charged ? 1 : 0; };
+  const left = (limit, spent) => limit == null ? null : Math.max(0, limit - spent);
+  const allowance = () => ({gen: left(LIMIT.gen, used() + held()), allGen: left(LIMIT.allGen, used() + held()),
+    recog: left(LIMIT.recog, usedRecog()), allRecog: left(LIMIT.allRecog, usedRecog())});
+  // A photo needs a generation and a 认物 left; 再提交 and 重新生成 only a generation.
+  function mayStart(photo) {
+    const a = allowance();
+    if (a.gen === 0) throw new ShootError('quota', {kind: 'generation', scope: 'browser'});
+    if (a.allGen === 0) throw new ShootError('quota', {kind: 'generation', scope: 'global'});
+    if (photo && a.recog === 0) throw new ShootError('quota', {kind: 'recognition', scope: 'browser'});
+    if (photo && a.allRecog === 0) throw new ShootError('quota', {kind: 'recognition', scope: 'global'});
+  }
   function recognise(cat) {
     const src = catalog.find(i => i.id === SOURCE[cat]);
     const lengthMeters = +Math.max(...src.bounds.max.map((v, i) => v - src.bounds.min[i])).toFixed(2);
@@ -205,25 +234,29 @@ export async function fakeApi(q) {
       await tick(300);
       const sig = `${photo.size}:${photo.type}`;
       if (failCode === 'server-create') throw new ShootError('server');
+      if (failCode === 'offline-create') throw new ShootError('offline');
       const seen = sameKey(clientKey, null, 'create');
       if (seen) { if (st.jobs[seen.id].sig !== sig) throw new ShootError('key-conflict'); return seen; }
       const where = FAIL_AT[failCode];
       if (failCode === 'pass' && !getPass()) throw new ShootError('pass');
       if (where === 'create' && failCode !== 'pass') throw new ShootError(failCode);
       if (!/^image\/(jpeg|png)$/.test(photo.type) || photo.size > 32 * 2 ** 20) throw new ShootError('photo-invalid');
+      if (active()) throw new ShootError('active-job', {activeJobId: active().id});
+      mayStart(true);
       const at = Array.isArray(where) ? [failStage ? STAGES.findIndex(x => x[0] === failStage) : where[0], failStage ? 0.5 : where[1]] : null;
       const key = PHOTO + (st.seq + 1);
       write(key, await keepPhoto(photo));
       if (failCode === 'server-items') itemsFail = 2;
       const cat = someCat(Object.values(st.jobs).filter(r => r.kind === 'create').length);
-      return open(clientKey, {photo: key, sig, cat, recognition: recognise(cat), slow: failCode === 'slow', parent: null, kind: 'create',
+      st.used = {day: today(), n: used(), r: usedRecog() + 1};
+      return open(clientKey, {t0: vnow() + AHEAD * PER, aheadGen: AHEAD_GEN, photo: key, sig, cat, recognition: recognise(cat), slow: failCode === 'slow', parent: null, kind: 'create',
         offline: failCode === 'offline' ? 'offline' : failCode === 'server-poll' ? 'server' : failCode === 'forbidden-poll' ? 'forbidden' : null,
         refused: failCode === 'refused' && !Object.values(st.jobs).some(r => r.refused), fail: at && at[0] >= 0 ? {code: failCode, stage: at[0], frac: at[1]} : null});
     },
     async resubmit(fromJob, clientKey) {
       await tick(300);
       down(clientKey);
-      return sameKey(clientKey, fromJob, 'resubmit') ?? again(child(fromJob, 'resubmit'), clientKey, 'resubmit', {});
+      return sameKey(clientKey, fromJob, 'resubmit') ?? (mayStart(false), again(child(fromJob, 'resubmit'), clientKey, 'resubmit', {}));
     },
     async job(id) {
       await tick(120);
@@ -254,10 +287,13 @@ export async function fakeApi(q) {
     async regenerate(id, clientKey) {
       await tick(300);
       down(clientKey);
-      return sameKey(clientKey, id, 'regenerate') ?? again(child(id, 'regenerate'), clientKey, 'regenerate', {regenerateOf: id});
+      return sameKey(clientKey, id, 'regenerate') ?? (mayStart(false), again(child(id, 'regenerate'), clientKey, 'regenerate', {regenerateOf: id}));
     },
     async quota() {
-      return {limit: LIMIT, used: used(), remaining: null, resetsAt: null, activeJobId: active()?.id ?? null};
+      const a = allowance(), midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+      return {limit: LIMIT.gen, used: used(), remaining: a.gen, recognition: {limit: LIMIT.recog, remaining: a.recog},
+        global: {limit: LIMIT.allGen, remaining: a.allGen, recognition: {limit: LIMIT.allRecog, remaining: a.allRecog}},
+        resetsAt: Object.values(LIMIT).some(v => v != null) ? midnight.toISOString() : null, activeJobId: active()?.id ?? null};
     },
     // Built on every read from the item it copies, so a rebuilt page's still and model URLs are the current ones.
     async items() {

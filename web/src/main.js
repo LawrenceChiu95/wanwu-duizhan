@@ -12,7 +12,7 @@ import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
 import {shootApi} from './shoot-api.js';
-import {catLabel, mountShoot} from './shoot.js';
+import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
 
 const $ = id => document.getElementById(id);
 const el = {
@@ -160,11 +160,21 @@ async function main() {
   const q = new URLSearchParams(location.search);
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
-  // 评委版 (judge.js, task #4): no backend at all; 拍一件 replays one real generation instead.
+  // 评委版 (judge.js, task #4): 拍一件 talks to this origin's backend (Elara edd90212), with one real generation beside it.
   const judge = __JUDGE__ ? await import('./judge.js') : null;
   // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
-  // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with.
-  const shoot0 = __JUDGE__ ? Promise.resolve(null) : shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
+  // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with. The 评委版
+  // gives all of it, /quota then the items, 3 s together before 开始玩 (Sol e0a86865), and skips the items when /quota
+  // says no photo can be taken now (Elara c1bc2dac); what isn't back by then is asked again once the page is up.
+  const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
+  const shoot0 = shootApi(q, __JUDGE__).then(async api => {
+    if (!api) return null;
+    if (!__JUDGE__) return {api, items: await within(api.items(), 5000) ?? [], again: true};
+    const by = performance.now() + 3000;
+    const quota = await readQuota(api, true, 3000);
+    const sent = shootOpen(quota) ? await within(api.items(), by - performance.now()) : [];
+    return {api, quota, items: sent ?? [], again: sent === null || Boolean(quota.late)};
+  });
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
   if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
@@ -951,7 +961,7 @@ async function main() {
     el.howNote.hidden = !shown;
     if (shown) el.howNote.textContent = judge.photoCredit;
     el.howEquip.disabled = other;
-    el.howEquip.querySelector('span').textContent = shown ? '回角色库' : other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
+    el.howEquip.querySelector('span').textContent = shown ? (el.shoot.hidden ? '回角色库' : '回拍一件') : other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
     turns.prune();
     turns.show(el.howTurn, id);
     el.how.hidden = false;
@@ -1030,12 +1040,22 @@ async function main() {
   }
   let shoot = null;
   shoot0.then(async s => {
+    // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how one real item was made.
+    if (!s && judge) {
+      el.shootBtn.lastChild.textContent = '拍一件示例';
+      el.shootBtn.hidden = false;
+      el.shootBtn.onclick = () => openHow(judge.showcase.id);
+    }
     if (!s) return;
     const {api} = s;
-    try { await addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
+    // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
+    // doesn't wait for these.
+    const more = s.again && api.items().then(addItems).catch(() => {});
+    if (!judge) await more;
     takeLate();
     shoot = mountShoot({
       api, addItems, turns, loadModels, equip, equipLabel, openHow,
+      strict: Boolean(judge), quota: s.quota, sample: judge && (() => openHow(judge.showcase.id)),
       item: id => byId.get(id), refused: id => simRefused.has(id), name: id => NAMES[id], grade: rate, spec,
       seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
@@ -1051,12 +1071,6 @@ async function main() {
     el.shootBtn.onclick = () => shoot.open('library');
     window.__top.shoot = shoot;
   }).catch(showError);
-  // 评委版: the 角色库's 拍一件 shows how one real item was made (no camera, nothing generated).
-  if (judge) {
-    el.shootBtn.lastChild.textContent = '拍一件示例';
-    el.shootBtn.hidden = false;
-    el.shootBtn.onclick = () => openHow(judge.showcase.id);
-  }
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
