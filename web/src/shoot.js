@@ -337,7 +337,9 @@ export function mountShoot(ctx) {
         // 认物 breaking is always our fault, whatever the job says about retrying (Elara 139c00fb).
         : (kind === 'fail' && (job.error.charged === false || code.startsWith('recognition-'))) || (kind === 'err' && lastSend && code !== 'pass') ? '这次没算次数' : '';
       const btns = code === 'pass' ? [go('pass', '确定')]
-        : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', '不算次数')]
+        // Again after 认物 broke is a new go: it takes one of today's photos once made (Elara 704b790a). After a paid stage
+        // broke, today's photo is taken already.
+        : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', code.startsWith('recognition-') ? '做成才算' : '不算次数')]
         : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
         : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会多算一次')]
         : ['photo-invalid', 'photo-unclear', 'key-conflict', 'refused', 'process-corrupt', 'process-too-large'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
