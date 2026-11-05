@@ -11,7 +11,7 @@ import sharp from 'sharp';
 import {setTimeout as pause} from 'node:timers/promises';
 import {keychainEnvironment, startReal} from '../shoot/start-real.mjs';
 import {realGenerator, parseRecognition, recognitionPrompt, recognitionSchema} from '../shoot/real.mjs';
-import {startShootServer} from '../shoot/server.mjs';
+import {startShootServer, browserFetch as fetch} from './http-client.mjs';
 import {openJobs, REPO} from '../shoot/jobs.mjs';
 import {readJson} from '../state.mjs';
 import {rateItem, photoMassLimit} from '../../../sim/item-rating.js';
@@ -346,7 +346,7 @@ test('hard exit during source copy resumes processing from the intact paid model
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => { calls++; throw Error('must not call network'); }}});
  try {
   assert.equal((await finish(jobs, job.id)).status, 'succeeded'); assert.equal(calls, 0);
-  assert.equal((await jobs.create({photo: image, clientKey: 'copy-exit-real-001'})).id, job.id);
+  assert.equal((await jobs.create({photo: image, clientKey: 'copy-exit-real-001'}, record.owner)).id, job.id);
   assert.deepEqual(await fs.readFile(path.join(directory, job.id, 'source.glb')), model);
   assert.equal((await jobs.items()).length, 1);
  } finally { await jobs.close(); }
@@ -391,7 +391,7 @@ for (const stage of ['vision', 'image', 'mesh']) for (const window of ['before',
  let calls = 0; const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => {calls++;throw Error('no resubmit');}}});
  try {
   const failed = await jobs.get(job.id); assert.equal(failed.error.code, stage === 'vision' ? 'recognition-interrupted' : 'unknown-submit'); assert.equal(failed.error.retry, 'none');
-  assert.equal((await jobs.create({photo: image, clientKey: 'real-hard-exit-001'})).id, job.id); assert.equal(calls, 0); assert.equal((await jobs.quota()).activeJobId, null);
+  assert.equal((await jobs.create({photo: image, clientKey: 'real-hard-exit-001'}, disk.jobs[job.id].owner)).id, job.id); assert.equal(calls, 0); assert.equal((await jobs.quota()).activeJobId, null);
  } finally { await jobs.close(); }
 });
 
