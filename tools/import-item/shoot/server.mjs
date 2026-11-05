@@ -51,7 +51,8 @@ async function jsonBody(req, allowed) {
   catch (error) { if (error.status) throw error; throw apiError('bad-request', 'Invalid JSON'); }
   return fields(parsed, allowed);
 }
-export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, previewAccessCode = null, ...options} = {}) {
+export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, previewAccessCode = null, headerIdentity = false, ...options} = {}) {
+  if (typeof headerIdentity !== 'boolean' || (headerIdentity && (!publicOrigin || privateOrigin || previewAccessCode))) throw Error('Header identity requires a dedicated public API');
   if (privateOrigin !== null) {
     const u = new URL(privateOrigin), parts = u.hostname.split('.').map(Number);
     if (publicOrigin || u.protocol !== 'http:' || u.origin !== privateOrigin || parts.length !== 4 || !parts.every(n => Number.isInteger(n) && n >= 0 && n <= 255) || parts[0] !== 100 || parts[1] < 64 || parts[1] > 127 || !options.budget) throw Error('Private mode requires exact Tailscale HTTP origin and budget');
@@ -97,10 +98,24 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
         if (!['GET', 'HEAD'].includes(req.method)) throw apiError('not-found', 'Unknown route', 404);
         return await staticFile(req, res, webRoot, route);
       }
-      const cookies = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(jobs.cookieName + '='));
-      const identity = jobs.session(cookies.length === 1 ? cookies[0].slice(jobs.cookieName.length + 1) : null);
+      // ModelScope embeds the game cross-site, where Safari can block cookies.
+      // This dedicated mode requires an explicitly saved bearer identity. An
+      // invalid/missing token must never silently become another paying owner.
+      let identity;
+      if (headerIdentity) {
+        const token = req.headers['x-shoot-session'];
+        if (route === '/api/shoot/session' && req.method === 'POST') {
+          await body(req, 0);
+          if (token !== undefined) throw apiError('session', 'Session creation must not replace an existing identity', 401);
+          return json(200, {token: jobs.session(null).token});
+        }
+        if (typeof token !== 'string' || (identity = jobs.session(token)).token !== token) throw apiError('session', 'Missing or invalid shoot session', 401);
+      } else {
+        const cookies = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(jobs.cookieName + '='));
+        identity = jobs.session(cookies.length === 1 ? cookies[0].slice(jobs.cookieName.length + 1) : null);
+        res.setHeader('set-cookie', `${jobs.cookieName}=${identity.token}; Path=${publicOrigin ? '/api/shoot' : '/'}; HttpOnly; SameSite=Strict; Max-Age=31536000${publicOrigin ? '; Secure' : ''}`);
+      }
       const owner = identity.owner;
-      res.setHeader('set-cookie', `${jobs.cookieName}=${identity.token}; Path=${publicOrigin ? '/api/shoot' : '/'}; HttpOnly; SameSite=Strict; Max-Age=31536000${publicOrigin ? '; Secure' : ''}`);
       if (req.method === 'GET' && route === '/api/shoot/quota') return json(200, await jobs.quota(owner));
       if (req.method === 'GET' && route === '/api/shoot/items') return json(200, {items: await jobs.items(owner)});
       if (req.method === 'POST' && route === '/api/shoot/jobs') {
@@ -150,7 +165,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let config = {};
   if (values.config) {
     if (!path.isAbsolute(values.config)) throw Error('Config path must be absolute');
-    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'previewAccessCode', 'budget', 'limits']);
+    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'previewAccessCode', 'headerIdentity', 'budget', 'limits']);
     if (config.port !== 4330 || !path.isAbsolute(config.directory ?? '') || !(config.publicOrigin || config.privateOrigin) || !config.budget) throw Error('Public config requires port 4330, absolute private directory, HTTPS origin and budget');
     process.umask(0o077);
   }

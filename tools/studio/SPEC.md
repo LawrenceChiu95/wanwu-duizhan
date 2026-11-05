@@ -18,7 +18,7 @@
 先做无供应商私有 Docker 探针和本地隔离测试；传输实现全 diff 稳定后交 Iris 只读独立审查，再启用公开假供应商端到端验证。正式游戏部署、真人和手机体验分层报告，不以 Running 代替验收。
 
 ## 网页打包阶段（Elara edd90212）
-- 比赛和试玩交直接应用域名。Studio 介绍放「开始玩」链接；嵌套时拍照入口由 Iris 提供新窗口，现成角色仍可在嵌套内玩。
+- 比赛和试玩交直接应用域名。Studio 介绍放「开始玩」链接；原定嵌套时拍照另开窗口；已被下方嵌套页身份裁决替代。现成角色仍在嵌套内玩。
 - 镜像只带已审的静态构建。启动时读取不可变构建、异步压缩一次，接请求前完成；不在请求中压缩或读私件。按实际输出字节生成 ETag（gzip 与原文分开），HTML no-store，带构建hash的JS/CSS/wasm长期immutable，模型/贴图及其他文件no-cache强制回源验证。保留同名模型在下次构建更换内容时能取得新字节。
 - 网页入镜像和以上缓存完成、增量只读复核及公开假验证通过前，不交可玩链接；现有4330/Funnel不变。
 
@@ -26,3 +26,10 @@
 - main 47e357f 的 `web/npm run build:judge` 构建九件现成角色，关闭真实拍照；复制构建出的 dist（含现有 pack-web-models 处理）作为 Docker 上下文 web/。不从本分支较旧的 web 构建，不把私有仓库源码整份上传公开空间。
 - Studio 介绍页加「开始玩」链接。Iris复核镜像/缓存增量后部署，Wren按iPhone Safari UA测大陆、390宽打一局，Elara看截图亲测后交用户链接。
 - 静态链接先交，Mac连接继续查。匿名浏览器UA的health已200；工具默认UA403不是隐私设置，管理页与OpenAPI均已核公开，尚不能据此断言平台不支持WebSocket。
+
+## 嵌套页身份（Elara 67271212、24b57d1e，替代新窗口方案）
+- Wren ffd7dff5 实测导航均回 Studio 外框。专用魔搭后台 `headerIdentity: true`；既有 Fanshuo 4330 不启用，仍用 cookie。
+- 页面先 POST `/api/shoot/session`（空正文、无旧令牌）取 `{token}`，存入 localStorage 并回读成功才允许拍照。此后所有 API/私件请求携带 `X-Shoot-Session`。沿用 Mac 既有签名身份与持久 sessionSecret，不发供应商密钥。
+- 会话模式下缺失/错误令牌返回401/session，不降级到 cookie、不重发身份、不自动重放提交。页面保留原 token/job/clientKey，先去打现成角色；存储失效不能以新身份悄悄重试付费。
+- 照片、改图及 GLB 带头 fetch 转 Blob URL，令牌不进 URL、日志或截图。Mac owner 校验、幂等及额度沿用；云网关透明传递请求头。
+- 先用假供应商验证令牌隔离、掉线丢回包同任务、重启后同身份重取及私件串读拒绝，再交 Iris 独立审查。上线仍需创空间内 iPhone Safari 真点拍照/相册、生成中刷新续接验证；UA模拟不代替实体手机。
