@@ -40,7 +40,7 @@ function cardPose(item) {
     // The layout's uniform scale is the card fit's business; only its turn (and any mirroring) is undone.
     if (Math.abs(det) > 1e-12) pose.setFromMatrix3(layout.multiplyScalar(1 / Math.cbrt(Math.abs(det))).invert());
   }
-  return {pose, yaw: item.card?.yaw ?? 0};
+  return {pose, yaw: item.card?.yaw ?? 0, swing: item.card?.swing ?? 0};
 }
 
 /** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
@@ -119,13 +119,13 @@ export function turnRig(itemId, environment, zoom = 1) {
   const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
   keyLight.position.set(2, 3, 2.5);
   scene.add(keyLight);
-  const obj = src.clone(true), spin = new THREE.Group(), {pose, yaw} = poses.get(itemId);
+  const obj = src.clone(true), spin = new THREE.Group(), {pose, yaw, swing} = poses.get(itemId);
   obj.applyMatrix4(pose);
   spin.add(obj);
   scene.add(spin);
   const box = new THREE.Box3().setFromObject(obj), center = box.getCenter(new THREE.Vector3());
   obj.position.sub(center);
-  return {scene, camera: turnCamera(box.translate(center.negate()), zoom), spin, yaw};
+  return {scene, camera: turnCamera(box.translate(center.negate()), zoom), spin, yaw, swing};
 }
 
 /**

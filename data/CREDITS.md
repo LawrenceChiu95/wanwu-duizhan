@@ -24,7 +24,7 @@ Two generated variants and their generation receipts are in [lux3d/RECEIPT.md](l
 
 | Variant | Input photograph attribution |
 |---|---|
-| 锅（Lux3D） | “Frying pan” — kevin dooley, CC BY; https://www.flickr.com/photos/12836528@N00/4565041679 |
+| 锅（Lux3D） | “Out of the Frying Pan” — docoverachiever, CC BY 2.0; https://www.flickr.com/photos/90692748@N04/47347731882 |
 | 台灯（Lux3D） | “Art Deco Mica Table Lamp” — Artdecodude, CC BY; https://www.flickr.com/photos/62920259@N03/5771792573 |
 
 Both variants retain their existing counterpart's catalog attack/defense/material and legacy HP values; actual fighter HP is uniformly 140 for singles and assemblies. Geometry, volume and the surface weak point come from the supplied meshes; mass is the same category reference value as the counterpart. Different collision geometry can still produce different outcomes. The pan is centered and rotated with its long axis along Z at 0.38 m; the lamp stays Y-up at 0.45 m. These are consistent prototype scales, not dimensions measured from photographs.

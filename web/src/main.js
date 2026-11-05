@@ -74,7 +74,10 @@ for (const type of ['pointerdown', 'touchend', 'keydown', 'click']) addEventList
 // Short buzzes on the big moments where the phone supports it (iOS ignores this).
 const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } catch { /* not allowed */ } };
 
-const isLux = id => id.endsWith('-lux3d');
+// The default items Lux3D made from a photo, and who made them when it wasn't us (Elara 907b6fa5): each gets the Lux3D tag
+// on the build screen and in 角色库, and its source line says so. 废土刀 is 凡朔's run (PR #6, same source sha256).
+const LUX = {'pan-lux3d': '', 'lamp-lux3d': '', 'wasteland-knife': '凡朔', 'wasteland-pot': '', 'wasteland-broom': ''};
+const isLux = id => Object.hasOwn(LUX, id);
 // Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 // The result reason as HTML: 谁撞碎了谁 on the first row, 剩血 on its own row after reasonLine's \n; item names and 核心 are
@@ -90,19 +93,20 @@ const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.part
 const HINT = {out: '攻：撞人更疼，自己易碎', hug: '守：替核心挡，少掉血'};
 const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 
-function renderCredits(items, extra = '') {
+// 评委版 shows its own list instead (judge.js): only what is in that build, in Chinese, one line per thing.
+function renderCredits(items, md = creditsMd) {
   const link = s => s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
   const html = [];
   let list = false, tableHead = false;
   const close = () => { if (list) html.push('</ul>'); list = false; };
-  for (const line of (creditsMd + extra).split('\n')) {
+  for (const line of md.split('\n')) {
     const l = line.trim();
     if (/^\|/.test(l)) {
       if (/^\|[\s|:-]+\|$/.test(l)) continue;
       if (!list) { html.push('<ul>'); list = true; tableHead = true; }
       if (tableHead) { tableHead = false; continue; }
-      html.push(`<li>${l.split('|').slice(1, -1).map(c => link(esc(c.trim()))).join(' · ')}</li>`);
+      html.push(`<li>${l.split('|').slice(1, -1).map(c => c.trim()).filter(Boolean).map(c => link(esc(c))).join(' · ')}</li>`);
       continue;
     }
     close();
@@ -668,9 +672,9 @@ async function main() {
   // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
   const sourceLine = it => {
-    if (isLux(it.id)) return '来源：照片生成';
+    if (isLux(it.id)) return `来源：照片 → Lux3D 生成${LUX[it.id] ? ' · ' + LUX[it.id] : ''}`;
     if (/^CC/.test(it.source?.license ?? '')) return `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`;
-    return '来源：只有 3D 模型';
+    return '来源：现成的 3D 模型';
   };
   let libSlot = 0, libReq = 0;
   function cardHtml(id, k) {
@@ -689,7 +693,7 @@ async function main() {
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
-        <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${badge}</span>
+        <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
         <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;

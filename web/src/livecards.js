@@ -15,6 +15,9 @@ const TURN = 6; // seconds per turn, as the strips had
 // Every turn starts at the item's front (rig.yaw, models.js cardPose), which is also the held angle (reduced motion,
 // 看它怎么来的) and the angle of the card's pre-made still (data/stills, task #39), so the model fades in over its own
 // picture. For a photo-made item the front is the side its styled picture shows.
+// An item with card.swing (radians) swings that far either side of its front instead of turning all the way round, starting
+// and held at +swing: 评委版's flip-flop stands on its sole's edge, so a full turn would show the bare sole half the time.
+const angle = (rig, turns) => rig.swing ? rig.swing * Math.cos(turns * Math.PI * 2) : turns * Math.PI * 2;
 const FADE = 0.4; // seconds the model takes to fade in over its still (style.css); it holds the still's angle meanwhile
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -109,7 +112,7 @@ export class LiveTurns {
       // The canvas has no alpha: clear to the colour the card shows behind the model.
       r.setClearColor(v.bg ??= backdrop(v.canvas), 1);
       v.t0 ??= t;
-      v.rig.spin.rotation.y = v.rig.yaw + (v.still || reduced.matches ? 0 : (Math.max(0, t - v.t0 - FADE) / TURN) * Math.PI * 2);
+      v.rig.spin.rotation.y = v.rig.yaw + angle(v.rig, v.still || reduced.matches ? 0 : Math.max(0, t - v.t0 - FADE) / TURN);
       r.render(v.rig.scene, v.rig.camera);
       v.ctx.drawImage(gl, 0, gl.height - size, size, size, 0, 0, size, size);
       // The card fades the model in over its outline only once there is a picture to show (task #37).

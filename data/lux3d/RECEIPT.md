@@ -9,7 +9,7 @@
 | 开始时间（UTC） | 2026-10-26T13:55Z 前后 | 2026-10-26T14:22:18Z |
 | 用时 | 约 258 秒 | 329 秒 |
 | 设置 | 标准版 · 网格模型 · 300K 面 · 开 PBR | 同左 |
-| 源图 | `imgs/pan-2.jpg`（Openverse，`Frying pan` by kevin dooley，CC-BY） | `imgs/lamp-5.jpg`（Openverse，`Art Deco Mica Table Lamp` by Artdecodude，CC-BY） |
+| 源图 | `imgs/pan-2.jpg`（Openverse，`Out of the Frying Pan` by docoverachiever，CC BY 2.0，https://www.flickr.com/photos/90692748@N04/47347731882 ；11-05 Iris 按 Wren 的 imgs/meta.json 和 Flickr 原图更正，原先误写成 pan-0 的 kevin dooley「Frying pan」） | `imgs/lamp-5.jpg`（Openverse，`Art Deco Mica Table Lamp` by Artdecodude，CC-BY） |
 | 原始导出 | `models/pan/lux3d_g1_26997.glb`，20,108,228 字节<br>sha256 `0bb96cdac5351e4c7b0825f9e72e30ac94b43dbbd0201641f5ac9075cb7adf6c` | `models/lamp/lux3d_g1_27029.glb`，17,186,888 字节<br>sha256 `da321870bfa4f00fad1aa6d43ab017da811646d00605f35459ac9087f5b651e9` |
 | 原始顶点 / 三角面 | 224,493 / 约 29.5 万 | 211,683 / 约 29.1 万 |
 
