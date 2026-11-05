@@ -157,7 +157,7 @@ test('private preview exchanges its link, gates photos and static files, and kee
   for (const code of ['b'.repeat(64), 'a'.repeat(63), '%E4%B8%AD'.repeat(64)]) assert.equal((await send('/open/' + code)).status, 403);
   assert.equal((await send('/open/' + accessCode + '?extra=1')).status, 403);
   const link = await send('/open/' + accessCode);
-  assert.equal(link.status, 303); assert.equal(link.headers.location, '/?shoot=real');
+  assert.equal(link.status, 303); assert.equal(link.headers.location, '/?shoot=real&capture=1');
   assert.equal(link.headers['cache-control'], 'no-store'); assert.equal(link.headers['referrer-policy'], 'no-referrer');
   assert.match(link.headers['set-cookie'][0], /^__Host-wanwu_preview=.*; Path=\/; HttpOnly; Secure; SameSite=Lax/);
   const access = link.headers['set-cookie'][0].split(';')[0];
