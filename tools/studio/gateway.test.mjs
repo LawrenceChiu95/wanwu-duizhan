@@ -23,14 +23,15 @@ test('API uses a fixed loopback destination and preserves status, private cookie
   let seen;
   const apiPort = await listen(t, http.createServer(async (req, res) => {
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
-    seen = {host: req.headers.host, origin: req.headers.origin, cookie: req.headers.cookie, bytes: Buffer.concat(chunks)};
+    seen = {path: req.url, host: req.headers.host, origin: req.headers.origin, cookie: req.headers.cookie, bytes: Buffer.concat(chunks)};
     res.writeHead(202, {'set-cookie': ['a=one; HttpOnly; Secure', 'b=two; HttpOnly; Secure'], 'cache-control': 'public', connection: 'close'}); res.end('accepted');
   }));
   const g = createGateway({publicOrigin: 'https://game.example', apiPort}); t.after(() => g.disconnect());
   const port = await listen(t, g.server), bytes = Buffer.alloc(270000, 42);
   const r = await request(port, '/api/shoot/jobs', {method: 'POST', bytes, headers: {origin: 'https://game.example', cookie: 'owner=fake-fixture', 'x-forwarded-host': 'elsewhere.example'}});
   assert.equal(r.status, 202); assert.equal(r.bytes.toString(), 'accepted'); assert.equal(r.headers['set-cookie'].length, 2); assert.equal(r.headers['cache-control'], 'no-store');
-  assert.deepEqual(seen, {host: 'game.example', origin: 'https://game.example', cookie: 'owner=fake-fixture', bytes});
+  assert.deepEqual(seen, {path: '/api/shoot/jobs', host: 'game.example', origin: 'https://game.example', cookie: 'owner=fake-fixture', bytes});
+  await request(port, '/unused/../api/shoot/jobs?fixture=1'); assert.equal(seen.path, '/api/shoot/jobs?fixture=1');
   for (const route of ['/api/elsewhere', 'http://other.example/api/shoot/jobs', '//other.example/api/shoot/jobs']) assert.ok([400, 404].includes((await request(port, route)).status));
 });
 

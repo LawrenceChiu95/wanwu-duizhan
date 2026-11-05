@@ -29,7 +29,7 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
       res.setHeader('x-content-type-options', 'nosniff');
       if (route === '/_health' && req.method === 'GET') return end(res, 200, {service: 'wanwu-studio', role: 'transport-only'});
       if (route.startsWith('/api/shoot/')) {
-        const upstream = http.request({host: '127.0.0.1', port: apiPort, method: req.method, path: req.url, headers: {...headers(req.headers), host: origin.host}, agent: false}, response => {
+        const upstream = http.request({host: '127.0.0.1', port: apiPort, method: req.method, path: url.pathname + url.search, headers: {...headers(req.headers), host: origin.host}, agent: false}, response => {
           res.writeHead(response.statusCode, {...headers(response.headers), 'cache-control': 'no-store'});
           pipeline(response, res).catch(() => res.destroy());
         });

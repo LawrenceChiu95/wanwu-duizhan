@@ -5,7 +5,7 @@ import {createGateway} from './gateway.mjs';
 
 if (!/^[a-f0-9]{64}$/.test(process.env.WANWU_TUNNEL_TOKEN ?? '')) throw Error('Missing 256-bit tunnel secret');
 const folder = path.dirname(fileURLToPath(import.meta.url));
-const frps = spawn('/usr/local/bin/frps', ['-c', path.join(folder, 'frps.toml')], {stdio: ['ignore', 'ignore', 'ignore']});
+const frps = spawn('/usr/local/bin/frps', ['-c', path.join(folder, 'frps.toml')], {stdio: ['ignore', 'inherit', 'inherit']});
 const gateway = createGateway({publicOrigin: process.env.WANWU_PUBLIC_ORIGIN, webRoot: process.env.WANWU_WEB_ROOT || null});
 let stopping = false;
 function stop() {
