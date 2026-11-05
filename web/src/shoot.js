@@ -352,7 +352,7 @@ export function mountShoot(ctx) {
       const has = act => btns.some(b => b.includes(`data-act="${act}"`));
       const say = (code === 'quota' ? QUOTA_SAY[quotaErr] : code === 'storage' ? SAY.budget : SAY[code] ?? (kind === 'fail' ? '这一件没做成，再试一次' : SAY.server))
         .replace(/再试一次.*$/, m => ['retry', 'again', 'resubmit'].some(has) ? m : has('fresh') ? '重新拍一件' : '回角色库重新拍一件');
-      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : code === 'session' ? '记录找不到了' : code === 'budget' || code === 'storage' ? '暂时不能拍' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : '没生成出来'}</span>`)}
+      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : code === 'session' ? '记录找不到了' : code === 'budget' || code === 'storage' ? '暂时不能拍' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : job?.recognition ? '没生成出来' : '没做成'}</span>`)}
         <div class="smsg"><b>${esc(say)}</b>${count ? `<small class="scount">${count}</small>` : ''}${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
         <p class="serr" data-live="send"></p>${foot(...btns)}`;
     } else if (kind === 'held') {
