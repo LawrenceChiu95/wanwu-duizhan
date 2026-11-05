@@ -334,7 +334,8 @@ export function mountShoot(ctx) {
       // (charged: paid generation began), or a photo 认物 could not make out: only the photo's own fault is the player's
       // (Elara 7235d89f); a request turned down made no job.
       const count = kind === 'lost' || (kind === 'fail' && (job.error.charged === true || code === 'photo-unclear')) ? (retry === 'same' ? '这次算了一次，再试不另算' : '这次算了一次')
-        : (kind === 'fail' && job.error.charged === false) || (kind === 'err' && lastSend && code !== 'pass') ? '这次没算次数' : '';
+        // 认物 breaking is always our fault, whatever the job says about retrying (Elara 139c00fb).
+        : (kind === 'fail' && (job.error.charged === false || code.startsWith('recognition-'))) || (kind === 'err' && lastSend && code !== 'pass') ? '这次没算次数' : '';
       const btns = code === 'pass' ? [go('pass', '确定')]
         : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', '不算次数')]
         : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
