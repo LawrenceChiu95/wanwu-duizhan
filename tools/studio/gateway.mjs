@@ -51,6 +51,10 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
     try {
       if (!req.url.startsWith('/') || req.url.startsWith('//')) return end(res, 400, {error: 'bad-request'});
       const url = new URL(req.url, publicOrigin), route = url.pathname;
+      if (route === '/~!frp') {
+        res.setHeader('x-wanwu-frp', 'http-handler');
+        console.info('studio frp reached HTTP handler', {websocket: req.headers.upgrade === 'websocket'});
+      }
       res.setHeader('referrer-policy', 'no-referrer');
       res.setHeader('x-content-type-options', 'nosniff');
       if (route === '/_health' && req.method === 'GET') return end(res, 200, {service: 'wanwu-studio', role: 'transport-only'});
@@ -88,12 +92,14 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
   server.headersTimeout = 10000; server.requestTimeout = 35000;
   server.on('upgrade', (req, socket, head) => {
     socket.on('error', () => socket.destroy());
-    if (req.url !== '/~!frp' || req.method !== 'GET') { socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return; }
+    // Only booleans: never log raw URLs, headers, credentials or photo bytes.
+    console.info('studio upgrade received', {exactFrpPath: req.url === '/~!frp', hasQuery: req.url.includes('?')});
+    if (req.url !== '/~!frp' || req.method !== 'GET') { socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\nX-Wanwu-Frp: rejected-upgrade-path\r\n\r\n'); return; }
     const upstream = http.request({host: '127.0.0.1', port: frpPort, path: '/~!frp', method: 'GET', headers: {...req.headers, host: '127.0.0.1:' + frpPort}, agent: false});
     upstream.setTimeout(10000, () => upstream.destroy());
     socket.on('close', () => upstream.destroy());
     upstream.on('error', () => socket.destroy());
-    upstream.on('response', response => { response.resume(); socket.destroy(); });
+    upstream.on('response', response => { console.warn('frps refused upgrade', {status: response.statusCode}); response.resume(); socket.destroy(); });
     upstream.on('upgrade', (response, other, extra) => {
       upstream.setTimeout(0);
       sockets.add(socket); sockets.add(other);
