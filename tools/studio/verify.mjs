@@ -105,7 +105,16 @@ try {
   await until(() => send('/api/shoot/health'), x => x.status === 200, 60000);
   assert.equal((await send('/api/shoot/quota')).status, 401);
   const browsers = await Promise.all([send('/api/shoot/session', {method: 'POST'}), send('/api/shoot/session', {method: 'POST'})]);
-  const sessions = browsers.map(r => { assert.equal(r.status, 200); assert.equal(r.headers['set-cookie'], undefined); const {token} = JSON.parse(r.bytes); assert.match(token, /^[a-f0-9-]{36}\.[a-f0-9]{64}$/); return token; });
+  // The platform adds its own edge cookie. We must reject paying-owner cookies,
+  // not require the external gateway to emit no cookies of its own. Never retain
+  // cookie values or session tokens in the evidence.
+  result.sessionResponses = browsers.map(r => ({status: r.status, contentType: r.headers['content-type'], cookieNames: (r.headers['set-cookie'] ?? []).map(value => value.split('=', 1)[0]).map(name => /^[A-Za-z0-9_-]{1,64}$/.test(name) ? name : 'redacted')}));
+  for (const r of result.sessionResponses) {
+    assert.equal(r.status, 200);
+    assert.equal(r.cookieNames.some(name => /^wanwu_shoot_(real|fake)$/.test(name)), false);
+    if (!v['cloud-origin']) assert.deepEqual(r.cookieNames, []);
+  }
+  const sessions = browsers.map(r => { const {token} = JSON.parse(r.bytes); assert.match(token, /^[a-f0-9-]{36}\.[a-f0-9]{64}$/); return token; });
   assert.notEqual(sessions[0], sessions[1]);
   const photo = await fs.readFile(v.photo), model = await fs.readFile(v.model);
   const form = new FormData(); form.set('clientKey', 'transport-same-key'); form.set('photo', new Blob([photo], {type: 'image/jpeg'}), 'photo.jpg');
