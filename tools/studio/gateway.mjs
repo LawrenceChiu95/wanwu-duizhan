@@ -53,7 +53,7 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
       const url = new URL(req.url, publicOrigin), route = url.pathname;
       if (route === '/~!frp') {
         res.setHeader('x-wanwu-frp', 'http-handler');
-        console.info('studio frp reached HTTP handler', {websocket: req.headers.upgrade === 'websocket'});
+        console.info('studio frp reached HTTP handler', {websocket: /^websocket$/i.test(String(req.headers.upgrade ?? ''))});
       }
       res.setHeader('referrer-policy', 'no-referrer');
       res.setHeader('x-content-type-options', 'nosniff');
