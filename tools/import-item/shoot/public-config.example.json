@@ -1,0 +1,8 @@
+{
+  "port": 4330,
+  "directory": "/Users/lawrence/Library/Application Support/wanwu-backend/fake",
+  "publicOrigin": "https://lawrence-mac.tail1c8f33.ts.net",
+  "frontendOrigin": "https://replace-with-judge-site.netlify.app",
+  "budget": {"stage": "validation-20261105", "limit": 39},
+  "limits": {"browser": {"generation": 2, "recognition": 5}, "global": {"generation": 20, "recognition": 400}}
+}

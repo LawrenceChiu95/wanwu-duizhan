@@ -1082,6 +1082,12 @@ async function main() {
     el.shootBtn.hidden = false;
     el.shootBtn.onclick = () => shoot.open('library');
     window.__top.shoot = shoot;
+    // ?capture=1 opens 拍一件 as soon as it is there: 凡朔's private link goes straight to the camera (Sol 2779c0dc).
+    // A one-off like shootReset, dropped from the address so a reload lands on the build screen.
+    if (q.get('capture') === '1') {
+      try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('capture=')).join('&')}`); } catch { /* sandboxed viewer */ }
+      shoot.open('link');
+    }
   }).catch(showError);
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {

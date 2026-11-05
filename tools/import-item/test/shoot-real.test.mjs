@@ -11,7 +11,7 @@ import sharp from 'sharp';
 import {setTimeout as pause} from 'node:timers/promises';
 import {keychainEnvironment, startReal} from '../shoot/start-real.mjs';
 import {realGenerator, parseRecognition, recognitionPrompt, recognitionSchema} from '../shoot/real.mjs';
-import {startShootServer} from '../shoot/server.mjs';
+import {startShootServer, browserFetch as fetch} from './http-client.mjs';
 import {openJobs, REPO} from '../shoot/jobs.mjs';
 import {readJson} from '../state.mjs';
 import {rateItem, photoMassLimit} from '../../../sim/item-rating.js';
@@ -149,6 +149,27 @@ test('recognition-only entry point accepts any object without Aholo configuratio
  const recognition=await recognizePhoto({photo:await sharp(image).jpeg().toBuffer(),key:env.GEMINI_API_KEY,fetch:g.fetch});
  assert.equal(recognition.name,'马克杯'); assert.equal(recognition.category,'马克杯'); assert.equal(recognition.materialName,'陶瓷'); assert.equal(recognition.inSix,undefined);
  assert.equal(g.visionCalls(),1); assert.equal(g.seen.length,1); assert.deepEqual(g.creates,[]);
+});
+
+test('manual recognition recovery keeps the real job and creates each paid stage only once', async t => {
+ const directory=await dir(), options={visionStatus:503}, g=gateway(options);
+ const jobs=await openJobs({directory,mode:'real',env,budget:{stage:'recognition-recovery',limit:39},realOptions:{fetch:g.fetch,pause:async()=>{}}});
+ t.after(()=>jobs.close());
+ const j=await jobs.create({photo:image,clientKey:'manual-real-recovery'},'same-owner');
+ const failed=await finish(jobs,j.id);
+ assert.equal(failed.error.code,'recognition-service');assert.equal(failed.error.retry,'same');assert.equal(failed.error.charged,false);
+ assert.equal(g.visionCalls(),3);assert.deepEqual(g.creates,[]);
+ assert.equal((await jobs.quota('same-owner')).recognition.remaining,5);
+ const savedPhoto=await fs.readFile(path.join(directory,j.id,'photo.jpg'));
+ options.visionStatus=null;
+ const accepted=await jobs.retry(j.id,'same-owner');assert.equal(accepted.id,j.id);
+ const done=await finish(jobs,j.id);assert.equal(done.status,'succeeded');
+ assert.equal(g.visionCalls(),4);assert.deepEqual(g.creates,['image','mesh']);
+ const q=await jobs.quota('same-owner');assert.equal(q.recognition.remaining,4);assert.equal(q.global.recognition.remaining,398);assert.equal(q.budget.remaining,26);
+ await assert.rejects(jobs.retry(j.id,'same-owner'),{code:'not-allowed'});
+ const state=await readJson(path.join(directory,'state.json'));assert.equal(Object.keys(state.jobs).length,1);
+ assert.deepEqual(await fs.readFile(path.join(directory,j.id,'photo.jpg')),savedPhoto);
+ assert.deepEqual(g.creates,['image','mesh']);
 });
 
 test('real startup names missing env keys before touching disk and refuses provider changes', async t => {
@@ -346,7 +367,7 @@ test('hard exit during source copy resumes processing from the intact paid model
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => { calls++; throw Error('must not call network'); }}});
  try {
   assert.equal((await finish(jobs, job.id)).status, 'succeeded'); assert.equal(calls, 0);
-  assert.equal((await jobs.create({photo: image, clientKey: 'copy-exit-real-001'})).id, job.id);
+  assert.equal((await jobs.create({photo: image, clientKey: 'copy-exit-real-001'}, record.owner)).id, job.id);
   assert.deepEqual(await fs.readFile(path.join(directory, job.id, 'source.glb')), model);
   assert.equal((await jobs.items()).length, 1);
  } finally { await jobs.close(); }
@@ -391,7 +412,7 @@ for (const stage of ['vision', 'image', 'mesh']) for (const window of ['before',
  let calls = 0; const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: () => {calls++;throw Error('no resubmit');}}});
  try {
   const failed = await jobs.get(job.id); assert.equal(failed.error.code, stage === 'vision' ? 'recognition-interrupted' : 'unknown-submit'); assert.equal(failed.error.retry, 'none');
-  assert.equal((await jobs.create({photo: image, clientKey: 'real-hard-exit-001'})).id, job.id); assert.equal(calls, 0); assert.equal((await jobs.quota()).activeJobId, null);
+  assert.equal((await jobs.create({photo: image, clientKey: 'real-hard-exit-001'}, disk.jobs[job.id].owner)).id, job.id); assert.equal(calls, 0); assert.equal((await jobs.quota()).activeJobId, null);
  } finally { await jobs.close(); }
 });
 
@@ -402,10 +423,10 @@ for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visi
   console.error = (...args) => logs.push(args.join(' '));
   jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
   const j = await jobs.create({photo: image, clientKey: 'vision-classified-001'}), failed = await finish(jobs, j.id);
-  assert.equal(failed.error.code, code); assert.equal(failed.error.retry, 'none'); assert.equal(failed.error.charged, false);
+  assert.equal(failed.error.code, code); assert.equal(failed.error.retry, ['recognition-network', 'recognition-service'].includes(code) ? 'same' : 'none'); assert.equal(failed.error.charged, false);
   await jobs.close(); jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
   assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), options.visionStatus === 503 || options.visionNetwork ? 3 : 1); assert.deepEqual(g.creates, []);
-  assert.ok(logs.length === 1 && logs[0].includes(code));
+  assert.equal(logs.length, options.visionStatus === 503 || options.visionNetwork ? 3 : 1); assert.ok(logs.every(x => x.includes(code)));
   for (const secret of [...Object.values(env), 'private-body', 'private malformed', 'https://']) assert.ok(!logs.join().includes(secret));
  } finally { console.error = log; await jobs?.close(); }
 });

@@ -570,13 +570,15 @@ export function mountShoot(ctx) {
   // ---------- open / close ----------
   function open(from) {
     el.backText.textContent = from === 'library' ? '角色库' : '返回';
+    // From the 拍一件 button or a ?capture=1 link (not the tag, which is about the job it shows): asking for a new photo.
+    const fresh = from === 'library' || from === 'link';
     // One job at a time: while one runs, 拍一件 shows it (Elara f63778f3).
-    busyNote = from === 'library' && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
+    busyNote = fresh && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
     // A finished job seen already gives way to a new photo. One not seen yet is shown first, however 拍一件 was opened
     // (Elara 5027aa74): a failure while the player was off playing a game would otherwise go without a word.
-    if (from === 'library' && stored && job && final(job) && !stored.hold && stored.seen) { stored = null; job = null; keep(); }
+    if (fresh && stored && job && final(job) && !stored.hold && stored.seen) { stored = null; job = null; keep(); }
     // Back from the 角色库 a while later: a server error may be sent again three more times.
-    if (from === 'library' && startError) { if (startError === 'quota' || startError === 'budget') pending = null; startError = null; sendFails = 0; }
+    if (fresh && startError) { if (startError === 'quota' || startError === 'budget') pending = null; startError = null; sendFails = 0; }
     shown = '';
     el.view.hidden = false;
     paintQuota();

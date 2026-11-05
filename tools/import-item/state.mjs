@@ -6,9 +6,9 @@ export const timestamps = () => Object.fromEntries(['upload_started', 'upload_fi
 export async function readJson(file, missing = null) {
   try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch (e) { if (e.code === 'ENOENT') return missing; throw e; }
 }
-export async function saveJson(file, value) {
+export async function saveJson(file, value, {mode} = {}) {
   const temporary = `${file}.${randomUUID()}.tmp`;
-  await fs.writeFile(temporary, JSON.stringify(value, null, 2) + '\n', {flag: 'wx'});
+  await fs.writeFile(temporary, JSON.stringify(value, null, 2) + '\n', {flag: 'wx', ...(mode === undefined ? {} : {mode})});
   await fs.rename(temporary, file);
 }
 export async function withLock(directory, work) {

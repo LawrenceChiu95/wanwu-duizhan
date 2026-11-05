@@ -1,0 +1,20 @@
+serverAddr = "{{ .Envs.WANWU_PUBLIC_HOST }}"
+serverPort = 443
+loginFailExit = false
+auth.method = "token"
+auth.token = "{{ .Envs.WANWU_TUNNEL_TOKEN }}"
+auth.additionalScopes = ["HeartBeats", "NewWorkConns"]
+transport.protocol = "wss"
+# v0.72.0 otherwise skips verification if no explicit CA is configured.
+transport.tls.useSystemCa = true
+transport.tls.serverName = "{{ .Envs.WANWU_PUBLIC_HOST }}"
+transport.dialServerTimeout = 10
+log.to = "console"
+log.level = "warn"
+log.disablePrintColor = true
+[[proxies]]
+name = "wanwu-shoot-api"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = {{ .Envs.WANWU_BACKEND_PORT }}
+remotePort = 7001
