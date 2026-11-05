@@ -14,13 +14,14 @@ export const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 export const MAX_PHOTO = 32 * 1024 * 1024;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const copy = value => structuredClone(value);
-const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate', download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'photo-upload': 'same', 'photo-read': 'none', 'photo-unclear': 'none', 'unknown-submit': 'none', 'recognition-auth': 'none', 'recognition-limit': 'none', 'recognition-network': 'none', 'recognition-service': 'none', 'recognition-invalid': 'none', 'recognition-interrupted': 'none', 'process-corrupt': 'none', 'process-too-large': 'none'};
+const retryFor = {busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate', download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'photo-upload': 'same', 'photo-read': 'none', 'photo-unclear': 'none', 'unknown-submit': 'none', 'recognition-auth': 'none', 'recognition-limit': 'none', 'recognition-network': 'same', 'recognition-service': 'same', 'recognition-invalid': 'none', 'recognition-interrupted': 'none', 'process-corrupt': 'none', 'process-too-large': 'none'};
 export function apiError(code, message, status = 400, extra = {}) {
   return Object.assign(Error(message), {status, code, ...extra});
 }
 const keyValid = key => typeof key === 'string' && /^[A-Za-z0-9_-]{8,128}$/.test(key);
 const LOCAL = 'local'; // Trusted in-process tools only; never accepted from HTTP.
 const DEFAULT_LIMITS = {browser: {generation: 2, recognition: 5}, global: {generation: 160, recognition: 400}};
+const recognitionRetry = r => !r.job.recognition && !r.providerId && !r.pending && !r.providerState?.pending && !Object.keys(r.providerState?.tasks ?? {}).length && ['recognition-network', 'recognition-service'].includes(r.job.error?.code);
 const activeStatus = r => ['recognizing', 'generating'].includes(r.job.status);
 const dayAt = time => new Date(time + 8 * 3600000).toISOString().slice(0, 10);
 const resetAt = time => new Date(Date.parse(dayAt(time) + 'T00:00:00+08:00') + 86400000).toISOString();
@@ -62,9 +63,13 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     // Unowned historical records stay local-only. A new visitor never inherits them.
     for (const r of Object.values(store.jobs)) {
       r.owner ??= LOCAL;
+      // Preserve the old global receipt; the browser refund is independent.
+      r.recognitionAttempts ??= r.allowance?.recognition ? [{day: r.allowance.recognition.day}] : [];
+      if (!r.job.recognition && r.job.status === 'failed' && r.job.error?.code !== 'photo-unclear' && r.recognitionAttempts.length) r.recognitionAttempts.at(-1).refunded = true;
+      if (recognitionRetry(r)) r.job.error.retry = 'same';
       await fs.chmod(path.join(directory, r.job.id), 0o700);
     }
-    if (budget && Object.values(store.jobs).some(r => !r.budget && (activeStatus(r) || r.job.error?.retry === 'same'))) throw Error('Public budget requires a separate directory from unmetered unfinished jobs');
+    if (budget && Object.values(store.jobs).some(r => !r.budget && (activeStatus(r) || r.job.error?.retry === 'same' && !recognitionRetry(r)))) throw Error('Public budget requires a separate directory from unmetered unfinished jobs');
     store.sequence ??= 0;
     for (const r of Object.values(store.jobs)) r.queueOrder ??= ++store.sequence;
     const kind = generator?.real ? 'real' : 'fake';
@@ -95,18 +100,28 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const publicJob = record => copy({retakeUntil: null, ...record.job, queuePosition: activeStatus(record) && !record.job.steps[0].startedAt ? Math.max(0, pending().indexOf(record)) : null});
   const get = (id, owner) => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id) || (owner !== undefined && r.owner !== owner)) throw apiError('not-found', 'No such job', 404); return r; };
   const scopedKey = (owner, key) => owner === LOCAL ? key : `${owner}:${key}`;
-  const usage = (kind, day, owner) => Object.values(store.jobs).filter(r => (owner === undefined || r.owner === owner) && r.allowance?.[kind]?.day === day).length;
+  const receiptCount = (r, kind, day, browser) => kind === 'recognition'
+    ? (r.recognitionAttempts ?? []).filter(a => a.day === day && (!browser || !a.refunded)).length
+    : Number(r.allowance?.[kind]?.day === day);
+  const usage = (kind, day, owner, browser = false) => Object.values(store.jobs).reduce((n, r) => n + ((owner === undefined || r.owner === owner) ? receiptCount(r, kind, day, browser) : 0), 0);
   function checkQuota(kind, owner, skip) {
     const day = dayAt(clock());
     for (const scope of ['browser', 'global']) {
-      const n = usage(kind, day, scope === 'browser' ? owner : undefined) - (skip?.allowance?.[kind]?.day === day ? 1 : 0);
+      const who = scope === 'browser' ? owner : undefined;
+      // Only the current reservation is skipped, never earlier retries.
+      const receipt = skip?.recognitionAttempts?.at(-1);
+      const reserved = kind === 'recognition'
+        ? Number(skip?.allowance?.recognition?.day === day && receipt?.day === day && (who === undefined || !receipt.refunded))
+        : Number(skip?.allowance?.[kind]?.day === day);
+      const n = usage(kind, day, who, scope === 'browser') - reserved;
       if (n >= limits[scope][kind]) throw apiError('quota', kind === 'generation' ? '今天的生成名额用完了，明天再来' : '今天的认物名额用完了，明天再来', 429, {kind, scope, resetsAt: resetAt(clock())});
     }
   }
-  // Reservations are committed with acceptance, before any provider call. Canceled
-  // pre-generation work returns its generation slot; recognition attempts stay used.
+  // Internal HTTP retries reuse one receipt. A manual retry adds one global
+  // safety receipt, while service faults refund only the browser's receipt.
   function reserve(record, kind) {
     checkQuota(kind, record.owner, record);
+    if (kind === 'recognition' && record.allowance?.recognition?.day !== dayAt(clock())) (record.recognitionAttempts ??= []).push({day: dayAt(clock())});
     (record.allowance ??= {})[kind] = {day: dayAt(clock())};
   }
   // Reserve the whole known 12+1 credit route before accepting work. Retain
@@ -132,6 +147,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const charged = id => provider.real ? provider.charged(get(id).providerState) : provider.charged(id);
   const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
   async function fail(record, code, details = {}) {
+    if (!record.job.recognition && code !== 'photo-unclear' && record.recognitionAttempts?.length) record.recognitionAttempts.at(-1).refunded = true;
     if (!record.job.steps[0].startedAt || code === 'busy') delete record.allowance?.generation;
     if (!record.job.steps[0].startedAt || (code === 'busy' && !charged(record.job.id))) delete record.budget;
     record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id), ...details}; await save();
@@ -280,15 +296,20 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     directory,
     cookieName: provider.real ? 'wanwu_shoot_real' : 'wanwu_shoot_fake',
     session,
-    health: () => serial(() => ({status: 'ok', provider: provider.real ? 'real' : 'fake'})),
+    health: async () => {
+      await serial(() => {});
+      const recognitionProxy = await provider.health?.();
+      if (recognitionProxy?.required && !recognitionProxy.reachable) throw apiError('recognition-proxy', 'Recognition proxy is unavailable', 503);
+      return {status: 'ok', provider: provider.real ? 'real' : 'fake', ...(recognitionProxy ? {recognitionProxy} : {})};
+    },
     waitingForPaidId: () => Boolean(provider.real && provider.waitingForPaidId?.()),
     create,
     get: (id, owner) => serial(() => publicJob(get(id, owner))),
     items: owner => serial(() => copy(store.items.filter(i => owner === undefined || Object.values(store.jobs).some(r => r.owner === owner && r.job.itemId === i.id)))),
     quota: owner => serial(() => {
-      const day = dayAt(clock()), count = (kind, who) => usage(kind, day, who);
+      const day = dayAt(clock()), count = (kind, who, browser = false) => usage(kind, day, who, browser);
       return {...(budget ? {budget: publicBudget()} : {}), provider: provider.real ? 'real' : 'fake', limit: limits.browser.generation, remaining: Math.max(0, limits.browser.generation - count('generation', owner)), resetsAt: resetAt(clock()),
-        recognition: {limit: limits.browser.recognition, remaining: Math.max(0, limits.browser.recognition - count('recognition', owner))},
+        recognition: {limit: limits.browser.recognition, remaining: Math.max(0, limits.browser.recognition - count('recognition', owner, true))},
         global: {limit: limits.global.generation, remaining: Math.max(0, limits.global.generation - count('generation')), recognition: {limit: limits.global.recognition, remaining: Math.max(0, limits.global.recognition - count('recognition'))}},
         used: Object.values(store.jobs).filter(r => (owner === undefined || r.owner === owner) && charged(r.job.id)).length, activeJobId: active(owner)?.job.id ?? null};
     }),
@@ -302,11 +323,18 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       await save(); retakeWaits.get(id)?.abort(); return publicJob(r);
     }),
     retry: (id, owner) => serial(async () => {
+      if (closed) throw apiError('server', 'Service closing', 503);
       const r = get(id, owner), current = active(r.owner);
-      if (r.job.error?.retry !== 'same' || !r.providerId || r.pending) throw apiError('not-allowed', 'This job cannot be retried', 409);
+      const recognition = recognitionRetry(r);
+      if (r.job.status !== 'failed' || r.job.error?.retry !== 'same' || (!r.providerId && !recognition) || r.pending) throw apiError('not-allowed', 'This job cannot be retried', 409);
       if (current && current !== r) throw apiError('active-job', 'A job is still active', 409, {activeJobId: current.job.id});
-      if (provider.real) r.freeRetry = true;
-      r.queueOrder = ++store.sequence; r.job.error = null; r.job.status = 'generating'; await save(); start(r); return publicJob(r);
+      if (recognition) {
+        checkBudget(); checkQuota('generation', r.owner); checkQuota('recognition', r.owner);
+        delete r.allowance?.recognition;
+        reserve(r, 'generation'); reserve(r, 'recognition');
+        if (budget) r.budget = {stage: budget.stage, credits: 13};
+      } else if (provider.real) r.freeRetry = true;
+      r.queueOrder = ++store.sequence; r.job.error = null; r.job.status = recognition ? 'recognizing' : 'generating'; await save(); start(r); return publicJob(r);
     }),
     file: (id, name, owner) => serial(() => {
       if (!['model.glb', 'photo.jpg', 'styled.jpg'].includes(name)) throw apiError('not-found', 'No such file', 404);

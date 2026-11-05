@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {recognitionProxyHealth} from './proxy-health.mjs';
 import {photoToGlb} from '../aholo.mjs';
 import {prepareMesh, readGlb, sha256} from '../mesh.mjs';
 import {photoMassLimit} from '../../../sim/item-rating.js';
@@ -18,13 +19,14 @@ async function readPhoto(folder) {
 }
 // Env-only secrets never enter the task record or an exception message. Injected
 // fetch/pause exercise the same protocol with offline fixtures in contract tests.
-export function realGenerator({env = process.env, fetch: request = globalThis.fetch, pause, timeoutMs = 10000} = {}) {
+export function realGenerator({env = process.env, fetch: request = globalThis.fetch, pause, timeoutMs = 15000} = {}) {
   const missing = ['GEMINI_API_KEY', 'AHOLO_API_KEY'].filter(k => !env[k]?.trim());
   if (missing.length) throw Error(`Real shoot provider requires environment: ${missing.join(', ')}`);
   const geminiKey = env.GEMINI_API_KEY.trim(), aholoKey = env.AHOLO_API_KEY.trim();
   let submitting = false;
   return {
     real: true,
+    health: () => recognitionProxyHealth(env),
     waitingForPaidId: () => submitting,
     async recognize(_template, context) {
       const {state, save, folder} = context;
