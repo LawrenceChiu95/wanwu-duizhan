@@ -1073,6 +1073,10 @@ async function main() {
         const s = shoot?.state;
         el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
         el.shootBtn.classList.toggle('new', Boolean(s?.made && !s.stored?.seen));
+        // One that failed while the player was elsewhere says so here too (Elara 021f6bf5); 拍一件 then shows it first.
+        const failed = Boolean(s?.stored && !s.stored.seen && s.job?.status === 'failed' && s.job.error?.code !== 'unknown-submit');
+        el.shootBtn.classList.toggle('bad', failed);
+        el.shootBtn.lastChild.textContent = failed ? '上一件没做成' : '拍一件';
       }
     });
     el.shootBtn.hidden = false;
