@@ -280,7 +280,7 @@ export function mountShoot(ctx) {
       // Inside another page's frame the backend's cookie isn't sent, so 拍照 is in a window of this page's own; the
       // characters already there play here as they are (Elara edd90212).
       html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍照要在新窗口里</b><small>嵌在别的页面里拍不了，现成的角色照样能打</small></span></div>${SAMPLE}
-        ${foot(ghost('play', '先去打一局'), `<a class="go" href="${esc(location.href)}" target="_blank" rel="noopener"><span>在新窗口打开</span>${ICON.arrow}</a>`)}`;
+        ${foot(ghost('play', '先去打一局'), `<a class="go snew" href="${esc(location.href)}" target="_blank" rel="noopener"><span>在新窗口打开</span>${ICON.arrow}</a>`)}`;
     } else if (kind === 'qrecog' || kind === 'qgen') {
       html = `${frame('scan', `<span class="stag">排队中</span>${job.recognition ? `<span class="scat">${esc(countAs(job.recognition))}</span>` : ''}`)}
         <div class="squeue"><b data-live="ahead"></b><small>轮到了自动开始${kind === 'qrecog' ? '认物' : '生成'}，可以先去打一局，好了顶部会提醒你</small></div>
