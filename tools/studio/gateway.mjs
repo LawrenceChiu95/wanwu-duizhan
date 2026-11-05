@@ -93,7 +93,9 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
   server.on('upgrade', (req, socket, head) => {
     socket.on('error', () => socket.destroy());
     // Only booleans: never log raw URLs, headers, credentials or photo bytes.
-    console.info('studio upgrade received', {exactFrpPath: req.url === '/~!frp', hasQuery: req.url.includes('?')});
+    const incoming = new URL(req.url, publicOrigin);
+    const knownPaths = ['/', '/~!frp', '/%7E%21frp', '/~%21frp', '/ws', '/wanwu-control-upgrade'];
+    console.info('studio upgrade received', {exactFrpPath: req.url === '/~!frp', hasQuery: req.url.includes('?'), pathKind: knownPaths.includes(incoming.pathname) ? incoming.pathname : 'other', absolute: !req.url.startsWith('/'), get: req.method === 'GET'});
     if (req.url !== '/~!frp' || req.method !== 'GET') { socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\nX-Wanwu-Frp: rejected-upgrade-path\r\n\r\n'); return; }
     const upstream = http.request({host: '127.0.0.1', port: frpPort, path: '/~!frp', method: 'GET', headers: {...req.headers, host: '127.0.0.1:' + frpPort}, agent: false});
     upstream.setTimeout(10000, () => upstream.destroy());
