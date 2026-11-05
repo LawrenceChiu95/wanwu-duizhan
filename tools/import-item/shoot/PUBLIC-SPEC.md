@@ -22,3 +22,9 @@
 公开API/静态页面地址、原始假/真验证、每笔账、可恢复配置、只露443→4330证据、GitHub PR和只读审查。共享HANDOFF「Mac评委拍照后台」唯一状态入口；证据在开发归档/评委拍照Mac。不把配置已写、进程拉起或本地绿称为公网/手机/整机重启通过。
 
 依据：[Netlify反代文档](https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/)说明200重写从CDN转发，单请求26秒；任务异步创建/轮询，不等待生成结束。上传与cookie仍须用真实静态域名验收。
+
+## 插入优先项：本人手机尾网真拍（328dfdf6、b3ea9345）
+
+先于公网做。Naomi056f9203确认原有 http://100.75.234.81:4330 尾网映射，无公网，无HTTPS；只有Lawrence本人三台尾网设备。privateOrigin只允许精确的100.64/10 HTTP origin，保留同源静态游戏（main现有五屏）且不设Secure cookie；不把这套HTTP配置用于公网Funnel。独立owner状态、stage owner-trial-20261105、总260分，含自测最多20件；private limits生成20/认物100，不套评委每日2件。当前公网39配置另存且未启用。main游戏前端不改。
+
+手机需先连Tailscale，会顶掉其他VPN；传照片的几百毫秒尾网中转由Naomi说明，实际自测记录只代表自测环境。390宽从上传到打完一局后直接回原#万物对战:cb4d7e27，带可点链接、真实计时和照片不清的结果，不等Lead再批准。整机不重启；公网继续后置。

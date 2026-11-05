@@ -150,3 +150,28 @@ Gemini认物的网络错误或HTTP 5xx最多尝试三次（首次后等0.5秒，
 这轮不含外网启动配置、HTTPS Secure cookie、跨域、机器、账号或付费。页面排队展示/额度提示等Iris另接；当前后台通过不等于页面/手机验收。正式站点未来从main发布，当前PR等方案甲获批后才能合。
 
 真实与假后台分别用 wanwu_shoot_real / wanwu_shoot_fake cookie，切换后台不覆盖另一份身份。CLI在确认是真后台后才保存cookie；误连假后台不会丢掉原任务的主人。升级前旧单用户任务仍只能从可信本机维护入口读；不要拿旧key当新浏览器任务重发，以免另起付费任务。
+
+## Mac 公网评委后台（task30）
+
+`PUBLIC-SPEC.md`为本轮约定；系统入口归Naomi。Funnel固定HTTPS地址只转127.0.0.1:4330，后台不监听网卡；公网模式不提供游戏静态页和仓库文件。静态游戏单独托管，用同源`/api/shoot/*`反代，所有照片/模型URL也走这条路，不用第三方cookie。Netlify反代26秒超时，因此只接受任务并轮询，不同步等待生成。
+
+配置参考`public-config.example.json`，复制到仓库外的私有目录，替换静态站HTTPS origin。假/真provider分别使用不同的`directory`。配置只有路径、域名、限额，无密钥。费用配置`budget:{stage,limit}`：同stage从持久任务记录扣除每件13分预占；换stage是一次新的费用授权，不能为解除停拍随意换名字。生成开始后包括未知提交都保留13分上限，实际只花12分的失败也保守保留13，不把它当供应商实扣账本。认物失败、生成前重拍释放预占；免费续查不再预占。配置减额不清历史，重启不刷新预算。
+
+- 公网默认浏览器生成2/认物5，全站生成20/认物400，台北午夜恢复；原本机模式160仅为旧契约，公开配置必须采用20。
+- quota新增`budget:{limit,remaining,available}`；available按是否够一整件13分算。预算耗尽是503 `budget`，不会承诺明天恢复；每日用完仍429 `quota`和kind/scope。
+- HTTP健康检查`GET /api/shoot/health`返回最小`{status:"ok",provider:"fake"|"real"}`，不签cookie、不暴露任务、余额或密钥。状态存盘已失败则503。它只证明服务与状态路径可用，不代表供应商可达。
+- 私有状态根及任务目录0700；签名密钥所在state.json原子写入0600，临时文件亦0600。公网只提供已完成、且属于本cookie的三种资产。不给`Access-Control-Allow-Origin:*`，不信转发头冒充Host；Host/Origin只允许配置域名和本机。
+
+### 安装和恢复
+
+先在隔离目录、假provider验证，再交Iris只读审查。`node shoot/install-mac.mjs --config '/绝对路径/config.json'`只输出plist供核对；加`--install`才安装自己的`com.lawrence.wanwu-backend`。默认假provider；`--provider real`改走原有`start-real.mjs`，启动时从钥匙串读取两把密钥、配置现有Clash代理。使用Node24及以上（现有实机Node版本另记交付证据），不把秘密写进plist。不要把LaunchAgent指向会删除的临时目录；运行副本是明确保留的服务副本。
+
+RunAtLoad/KeepAlive负责当前用户登录后的启动与服务崩溃重拉，10秒节流，nice20，退出给在途付费ID最多150秒收口。日志在`~/Library/Logs/wanwu-backend`，不在仓库或公网。替换服务配置前，先只停本服务并等退出：`launchctl bootout gui/$(id -u)/com.lawrence.wanwu-backend`；确认4330无监听后再安装新配置。不停Tailscale、Clash、Raft或整台电脑。
+
+**FileVault仍开着**：整机重启必须Lawrence本人登录一次后才能起用户服务，此限制Elara已接受。插电不睡、系统更新是否自动重启、Funnel启用与外部健康推送由Naomi负责，游戏脚本不改pmset/Clash/Tailscale。外部探活每5分钟、连续两次失败后提醒的方案由Naomi配置；Mac本机提醒不能当整机停机告警。
+
+本地验证不能替代外网。Funnel可能要本人允许HTTPS，静态域名反代要实测Cookie、POST上传、轮询和模型下载；大陆流量实测由Wren做。回退时只停本游戏LaunchAgent并让Naomi关闭这一条Funnel，静态网页继续玩默认角色。不得重置预算或清数据来“恢复服务”。
+
+### 本人手机的临时尾网版
+
+task30优先项使用`privateOrigin:"http://100.75.234.81:4330"`，不是publicOrigin；两者互斥。仅接受Tailscale 100.64/10精确HTTP来源，同源提供main现有静态游戏，cookie不设Secure（仍HttpOnly/Strict）。入口不经过Funnel，只有本人尾网设备；不要把此配置挂到公网。状态owner、stage owner-trial-20261105、预算260分含自测20件，生成每日20、认物100，与评委公网阶段分开。后台中预算变为不足13则503停拍，不重置账来续拍。手机先开Tailscale，普通file/capture上传可调相机，不调用必须HTTPS的getUserMedia。

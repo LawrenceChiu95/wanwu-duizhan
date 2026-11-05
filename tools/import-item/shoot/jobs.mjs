@@ -42,12 +42,14 @@ async function own(directory) {
   return async () => { await fs.rmdir(owner); await fs.rmdir(lock); };
 }
 
-export async function openJobs({directory, repo = REPO, generator, fakeOptions, mode = 'fake', env = process.env, realOptions, clock = Date.now, limits = DEFAULT_LIMITS} = {}) {
+export async function openJobs({directory, repo = REPO, generator, fakeOptions, mode = 'fake', env = process.env, realOptions, clock = Date.now, limits = DEFAULT_LIMITS, budget = null} = {}) {
   for (const scope of ['browser', 'global']) for (const kind of ['generation', 'recognition']) if (!Number.isSafeInteger(limits[scope]?.[kind]) || limits[scope][kind] < 1) throw Error('Invalid daily shoot limits');
+  if (budget && (!/^[A-Za-z0-9_-]{1,64}$/.test(budget.stage) || !Number.isSafeInteger(budget.limit) || budget.limit < 0)) throw Error('Invalid public budget');
   if (!['real', 'fake'].includes(mode)) throw Error('Choose provider real or fake');
   if (!generator && mode === 'real') generator = realGenerator({env, ...realOptions});
   directory ??= path.join(repo, mode === 'real' ? '.aholo/shoot-real' : '.aholo/shoot');
-  await fs.mkdir(directory, {recursive: true});
+  await fs.mkdir(directory, {recursive: true, mode: 0o700});
+  await fs.chmod(directory, 0o700);
   const release = await own(directory);
   let store, provider, catalog, mountRules;
   try {
@@ -58,7 +60,11 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     store.sessionSecret ??= randomBytes(32).toString('hex');
     if (!/^[a-f0-9]{64}$/.test(store.sessionSecret)) throw Error('Invalid shoot session secret');
     // Unowned historical records stay local-only. A new visitor never inherits them.
-    for (const r of Object.values(store.jobs)) r.owner ??= LOCAL;
+    for (const r of Object.values(store.jobs)) {
+      r.owner ??= LOCAL;
+      await fs.chmod(path.join(directory, r.job.id), 0o700);
+    }
+    if (budget && Object.values(store.jobs).some(r => !r.budget && (activeStatus(r) || r.job.error?.retry === 'same'))) throw Error('Public budget requires a separate directory from unmetered unfinished jobs');
     store.sequence ??= 0;
     for (const r of Object.values(store.jobs)) r.queueOrder ??= ++store.sequence;
     const kind = generator?.real ? 'real' : 'fake';
@@ -77,7 +83,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const retakeWaits = new Map();
   const now = () => new Date(clock()).toISOString();
   const save = async () => {
-    try { await saveJson(path.join(directory, 'state.json'), store); }
+    try { await saveJson(path.join(directory, 'state.json'), store, {mode: 0o600}); }
     catch (error) {
       if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); }
       throw apiError('server', 'Persistence failed; restart after fixing storage', 503);
@@ -103,6 +109,18 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     checkQuota(kind, record.owner, record);
     (record.allowance ??= {})[kind] = {day: dayAt(clock())};
   }
+  // Reserve the whole known 12+1 credit route before accepting work. Retain
+  // reservations after the first paid boundary, even if the reply was lost.
+  // This is a conservative spend ceiling, not a supplier balance or invoice.
+  function publicBudget() {
+    if (!budget) return null;
+    const reserved = Object.values(store.jobs).reduce((n, r) => n + (r.budget?.stage === budget.stage ? r.budget.credits : 0), 0);
+    const remaining = Math.max(0, budget.limit - reserved);
+    return {limit: budget.limit, remaining, available: remaining >= 13};
+  }
+  function checkBudget() {
+    if (budget && !publicBudget().available) throw apiError('budget', '暂时不能拍，请先用现成角色打一局', 503);
+  }
   const sign = id => createHmac('sha256', store.sessionSecret).update(id).digest('hex');
   function session(token) {
     if (typeof token === 'string' && /^[a-f0-9-]{36}\.[a-f0-9]{64}$/.test(token)) {
@@ -115,6 +133,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
   async function fail(record, code, details = {}) {
     if (!record.job.steps[0].startedAt || code === 'busy') delete record.allowance?.generation;
+    if (!record.job.steps[0].startedAt || (code === 'busy' && !charged(record.job.id))) delete record.budget;
     record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id), ...details}; await save();
   }
   // No automatic paid retry, including an interrupted call before providerId was saved.
@@ -235,6 +254,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       if (regenerateOf && (confirm !== true || parent.job.error?.retry !== 'regenerate')) throw apiError('not-allowed', 'Explicit confirmation and a regeneratable failure required', 409);
       if (fromJob && parent.job.error?.code !== 'busy') throw apiError('not-allowed', 'fromJob is only for confirmed busy rejection', 409);
       if ((!photo && !parent) || (photo && parent)) throw apiError('photo-invalid', 'One photo or one source job required');
+      checkBudget();
       if (photo) {
       try {
         const metadata = await sharp(photo, {limitInputPixels: 64000000}).metadata();
@@ -245,11 +265,11 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       }
       checkQuota('generation', owner);
       if (!parent?.job.recognition) checkQuota('recognition', owner);
-      const id = `j_${randomUUID()}`, folder = path.join(directory, id); await fs.mkdir(folder);
+      const id = `j_${randomUUID()}`, folder = path.join(directory, id); await fs.mkdir(folder, {mode: 0o700});
       if (photo) await keepPicture(photo, path.join(folder, 'photo.jpg'));
       else await fs.copyFile(path.join(directory, parent.job.id, 'photo.jpg'), path.join(folder, 'photo.jpg'));
       const j = {id, clientKey, createdAt: now(), status: parent?.job.recognition ? 'generating' : 'recognizing', recognition: parent?.job.recognition ? copy(parent.job.recognition) : null, retakeUntil: null, steps: ['styled', 'model', 'download', 'process'].map(key => ({key, startedAt: null, endedAt: null})), estimateSeconds: provider.real ? 90 : 1, error: null, itemId: null, fromJob: fromJob ?? null, regenerateOf: regenerateOf ?? null};
-      const record = {owner, queueOrder: ++store.sequence, job: j, pending: false, providerId: null};
+      const record = {...(budget ? {budget: {stage: budget.stage, credits: 13}} : {}), owner, queueOrder: ++store.sequence, job: j, pending: false, providerId: null};
       reserve(record, 'generation');
       if (!j.recognition) reserve(record, 'recognition');
       if (parent) parent.usedBy = id;
@@ -260,13 +280,14 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     directory,
     cookieName: provider.real ? 'wanwu_shoot_real' : 'wanwu_shoot_fake',
     session,
+    health: () => serial(() => ({status: 'ok', provider: provider.real ? 'real' : 'fake'})),
     waitingForPaidId: () => Boolean(provider.real && provider.waitingForPaidId?.()),
     create,
     get: (id, owner) => serial(() => publicJob(get(id, owner))),
     items: owner => serial(() => copy(store.items.filter(i => owner === undefined || Object.values(store.jobs).some(r => r.owner === owner && r.job.itemId === i.id)))),
     quota: owner => serial(() => {
       const day = dayAt(clock()), count = (kind, who) => usage(kind, day, who);
-      return {provider: provider.real ? 'real' : 'fake', limit: limits.browser.generation, remaining: Math.max(0, limits.browser.generation - count('generation', owner)), resetsAt: resetAt(clock()),
+      return {...(budget ? {budget: publicBudget()} : {}), provider: provider.real ? 'real' : 'fake', limit: limits.browser.generation, remaining: Math.max(0, limits.browser.generation - count('generation', owner)), resetsAt: resetAt(clock()),
         recognition: {limit: limits.browser.recognition, remaining: Math.max(0, limits.browser.recognition - count('recognition', owner))},
         global: {limit: limits.global.generation, remaining: Math.max(0, limits.global.generation - count('generation')), recognition: {limit: limits.global.recognition, remaining: Math.max(0, limits.global.recognition - count('recognition'))}},
         used: Object.values(store.jobs).filter(r => (owner === undefined || r.owner === owner) && charged(r.job.id)).length, activeJobId: active(owner)?.job.id ?? null};
@@ -276,7 +297,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       const r = get(id, owner), j = r.job;
       if (j.status === 'failed' && j.error?.code === 'retake') return publicJob(r);
       if (j.status !== 'generating' || !j.retakeUntil || clock() >= Date.parse(j.retakeUntil) || j.steps.some(s => s.startedAt) || r.pending || r.providerId) throw apiError('not-allowed', 'Generation has started or no retake window is open', 409);
-      delete r.allowance?.generation;
+      delete r.allowance?.generation; delete r.budget;
       j.status = 'failed'; j.error = {code: 'retake', message: 'retake', retry: 'none', charged: false};
       await save(); retakeWaits.get(id)?.abort(); return publicJob(r);
     }),

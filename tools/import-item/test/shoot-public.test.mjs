@@ -1,0 +1,141 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import http from 'node:http';
+import path from 'node:path';
+import {setTimeout as pause} from 'node:timers/promises';
+import sharp from 'sharp';
+import {startShootServer} from '../shoot/server.mjs';
+import {openJobs} from '../shoot/jobs.mjs';
+import {fakeGenerator} from '../shoot/fake.mjs';
+
+const photo = await sharp({create: {width: 8, height: 8, channels: 3, background: 'orange'}}).png().toBuffer();
+const dir = () => fs.mkdtemp(path.join(os.tmpdir(), 'shoot-public-'));
+const budget = {stage: 'validation-39', limit: 39};
+async function until(fn, accept) {
+  const end = Date.now() + 25000;
+  do { const value = await fn(); if (accept(value)) return value; await pause(10); } while (Date.now() < end);
+  throw Error('Timed out');
+}
+
+test('public HTTP exposes only API, validates host/origin, sets a secure private cookie, and health fails with storage', async t => {
+  const directory = await dir();
+  const app = await startShootServer({port: 0, directory, budget, publicOrigin: 'https://game-api.example', frontendOrigin: 'https://game.example'});
+  t.after(() => app.close());
+  const get = (route, headers) => new Promise((resolve, reject) => {
+    http.get(app.url + route, {headers}, res => {
+      const chunks = []; res.on('data', b => chunks.push(b));
+      res.on('end', () => resolve(new Response(Buffer.concat(chunks), {status: res.statusCode, headers: res.headers})));
+    }).on('error', reject);
+  });
+  const health = await get('/api/shoot/health'); assert.equal(health.status, 200); assert.equal(health.headers.get('set-cookie'), null);
+  assert.equal((await (await get('/api/shoot/quota')).json()).global.limit, 20);
+  const q = await get('/api/shoot/quota', {host: 'game-api.example', origin: 'https://game.example'});
+  assert.equal(q.status, 200); assert.match(q.headers.get('set-cookie'), /Path=\/api\/shoot; HttpOnly; SameSite=Strict;.*; Secure$/);
+  assert.equal(q.headers.get('cache-control'), 'no-store'); assert.deepEqual((await q.json()).budget, {limit: 39, remaining: 39, available: true});
+  for (const route of ['/', '/data/catalog.json', '/state.json', '/api/elsewhere']) assert.equal((await get(route)).status, 404);
+  assert.equal((await get('/api/shoot/quota?x=1')).status, 400);
+  assert.equal((await get('/api/shoot/quota', {host: 'other.example'})).status, 403);
+  assert.equal((await get('/api/shoot/quota', {origin: 'https://other.example'})).status, 403);
+  assert.equal((await get('/api/shoot/quota', {'x-forwarded-host': 'other.example'})).status, 200);
+  await fs.rename(path.join(directory, 'state.json'), path.join(directory, 'saved-state.json'));
+  await fs.mkdir(path.join(directory, 'state.json'));
+  await assert.rejects(app.jobs.create({clientKey: 'failed-disk-key', photo}), e => e.status === 503);
+  assert.equal((await get('/api/shoot/health')).status, 503);
+});
+
+test('39-credit reservation is atomic across browsers and survives restart without a paid call', async () => {
+  const directory = await dir(), generator = await fakeGenerator(directory, {delayMs: 1});
+  let release; const gate = new Promise(r => release = r), recognize = generator.recognize;
+  generator.recognize = async (...args) => { await gate; return recognize(...args); };
+  let jobs = await openJobs({directory, generator, budget});
+  const replies = await Promise.allSettled(Array.from({length: 4}, (_, n) => jobs.create({clientKey: 'public-limit-' + n, photo}, 'browser-' + n)));
+  assert.equal(replies.filter(r => r.status === 'fulfilled').length, 3);
+  assert.ok(replies.some(r => r.status === 'rejected' && r.reason.code === 'budget' && r.reason.status === 503));
+  assert.deepEqual((await jobs.quota()).budget, {limit: 39, remaining: 0, available: false});
+  assert.equal(generator.used(), 0);
+  release(); await jobs.close();
+  jobs = await openJobs({directory, budget, fakeOptions: {delayMs: 1}});
+  try {
+    assert.equal((await jobs.quota()).budget.remaining, 0);
+    await assert.rejects(jobs.create({clientKey: 'restart-new-key', photo}, 'new-browser'), e => e.code === 'budget');
+    const old = replies.find(r => r.status === 'fulfilled').value;
+    assert.equal((await jobs.create({clientKey: old.clientKey, photo}, 'browser-0')).id, old.id);
+  } finally { await jobs.close(); }
+});
+
+test('prepaid retake returns budget; recognition attempts still count and files are private', async () => {
+  const directory = await dir(), jobs = await openJobs({directory, budget, fakeOptions: {delayMs: 1}});
+  try {
+    const j = await jobs.create({clientKey: 'budget-retake-key', photo}, 'a');
+    await until(() => jobs.get(j.id, 'a'), j => j.retakeUntil && !j.steps[0].startedAt);
+    assert.equal((await jobs.quota('a')).budget.remaining, 26);
+    await jobs.retake(j.id, 'a');
+    const q = await jobs.quota('a'); assert.equal(q.budget.remaining, 39); assert.equal(q.remaining, 2); assert.equal(q.recognition.remaining, 4);
+    assert.equal((await fs.stat(directory)).mode & 0o777, 0o700);
+    assert.equal((await fs.stat(path.join(directory, 'state.json'))).mode & 0o777, 0o600);
+    assert.equal((await fs.stat(path.join(directory, j.id))).mode & 0o777, 0o700);
+  } finally { await jobs.close(); }
+});
+
+test('recognition failure releases generation budget without calling a paid provider', async () => {
+  const jobs = await openJobs({directory: await dir(), budget, fakeOptions: {fault: 'photo-unclear', delayMs: 1}});
+  try {
+    const j = await jobs.create({clientKey: 'budget-bad-photo', photo});
+    await until(() => jobs.get(j.id), j => j.status === 'failed');
+    assert.equal((await jobs.quota()).budget.remaining, 39);
+    assert.equal((await jobs.quota()).used, 0);
+  } finally { await jobs.close(); }
+});
+
+test('unknown submission retains full budget after restart; a new explicit stage has its own limit', async () => {
+  const directory = await dir(); let jobs = await openJobs({directory, budget: {stage: 'first', limit: 13}, fakeOptions: {fault: 'unknown-submit', delayMs: 1}});
+  const j = await jobs.create({clientKey: 'budget-lost-reply', photo});
+  const failed = await until(() => jobs.get(j.id), j => j.status === 'failed');
+  assert.equal(failed.error.code, 'unknown-submit'); assert.equal((await jobs.quota()).budget.remaining, 0); await jobs.close();
+  jobs = await openJobs({directory, budget: {stage: 'first', limit: 13}});
+  assert.equal((await jobs.quota()).budget.available, false); await jobs.close();
+  jobs = await openJobs({directory, budget: {stage: 'second', limit: 13}});
+  assert.equal((await jobs.quota()).budget.remaining, 13); await jobs.close();
+  jobs = await openJobs({directory, budget: {stage: 'first', limit: 13}});
+  assert.equal((await jobs.quota()).budget.remaining, 0); await jobs.close();
+});
+
+test('free download retry reuses its original budget reservation even when the ceiling is full', async () => {
+  const jobs = await openJobs({directory: await dir(), budget: {stage: 'test', limit: 13}, fakeOptions: {fault: 'download', delayMs: 1}});
+  try {
+    const j = await jobs.create({clientKey: 'budget-free-retry', photo});
+    const failed = await until(() => jobs.get(j.id), j => j.status === 'failed');
+    assert.equal(failed.error.code, 'download'); assert.equal((await jobs.quota()).budget.remaining, 0);
+    await jobs.retry(j.id);
+    await until(() => jobs.get(j.id), j => j.status === 'succeeded');
+    assert.equal((await jobs.quota()).budget.remaining, 0); assert.equal((await jobs.quota()).used, 1);
+  } finally { await jobs.close(); }
+});
+
+test('public mode rejects incomplete HTTPS/budget configuration', async () => {
+  for (const options of [{publicOrigin: 'http://unsafe.example', budget}, {publicOrigin: 'https://api.example'}, {publicOrigin: 'https://api.example/path', budget}, {publicOrigin: 'https://api.example', frontendOrigin: 'http://ui.example', budget}]) {
+    await assert.rejects(startShootServer({port: 0, directory: await dir(), ...options}));
+  }
+});
+
+test('private Tailscale mode serves existing game with HTTP cookie and a separate 20-piece allowance', async t => {
+  const directory = await dir(), webRoot = await dir();
+  await fs.writeFile(path.join(webRoot, 'index.html'), '<h1>existing game</h1>');
+  const app = await startShootServer({port: 0, directory, webRoot, privateOrigin: 'http://100.75.234.81:4330', budget: {stage: 'owner', limit: 260}});
+  t.after(() => app.close());
+  assert.match(await (await fetch(app.url + '/')).text(), /existing game/);
+  const response = await fetch(app.url + '/api/shoot/quota', {headers: {origin: 'http://100.75.234.81:4330'}});
+  assert.equal(response.status, 200); assert.match(response.headers.get('set-cookie'), /HttpOnly; SameSite=Strict/); assert.ok(!response.headers.get('set-cookie').includes('Secure'));
+  const q = await response.json(); assert.equal(q.limit, 20); assert.equal(q.global.limit, 20); assert.equal(q.budget.remaining, 260);
+  for (const privateOrigin of ['http://8.8.8.8:4330', 'http://100.75.abc.81:4330', 'https://100.75.234.81:4330']) await assert.rejects(startShootServer({port: 0, directory: await dir(), privateOrigin, budget}));
+});
+
+test('budgeted service refuses unmetered unfinished legacy state instead of auto-paying after restart', async () => {
+  const directory = await dir(); let jobs = await openJobs({directory, fakeOptions: {delayMs: 1}});
+  const j = await jobs.create({clientKey: 'unmetered-legacy', photo});
+  await until(() => jobs.get(j.id), j => j.retakeUntil && !j.steps[0].startedAt);
+  await jobs.close();
+  await assert.rejects(openJobs({directory, budget}), /separate directory/);
+});

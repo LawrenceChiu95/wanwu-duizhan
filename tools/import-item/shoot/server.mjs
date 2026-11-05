@@ -28,20 +28,35 @@ async function jsonBody(req, allowed) {
   catch (error) { if (error.status) throw error; throw apiError('bad-request', 'Invalid JSON'); }
   return fields(parsed, allowed);
 }
-export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, ...options} = {}) {
-  if (frontendOrigin !== null) { const u = new URL(frontendOrigin); if (u.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname) || u.origin !== frontendOrigin) throw Error('frontendOrigin must be an exact local HTTP origin'); }
-  const jobs = await openJobs({directory, repo, ...options});
+export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, ...options} = {}) {
+  if (privateOrigin !== null) {
+    const u = new URL(privateOrigin), parts = u.hostname.split('.').map(Number);
+    if (publicOrigin || u.protocol !== 'http:' || u.origin !== privateOrigin || parts.length !== 4 || !parts.every(n => Number.isInteger(n) && n >= 0 && n <= 255) || parts[0] !== 100 || parts[1] < 64 || parts[1] > 127 || !options.budget) throw Error('Private mode requires exact Tailscale HTTP origin and budget');
+  }
+  if (publicOrigin !== null) {
+    const u = new URL(publicOrigin);
+    if (u.protocol !== 'https:' || u.origin !== publicOrigin || !options.budget) throw Error('Public mode requires exact HTTPS origin and budget');
+  }
+  if (frontendOrigin !== null) {
+    const u = new URL(frontendOrigin);
+    if (u.origin !== frontendOrigin || (publicOrigin ? u.protocol !== 'https:' : u.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname))) throw Error('Invalid frontend origin');
+  }
+  const jobs = await openJobs({directory, repo, ...options, ...((publicOrigin || privateOrigin) && !options.limits ? {limits: {browser: {generation: privateOrigin ? 20 : 2, recognition: privateOrigin ? 100 : 5}, global: {generation: 20, recognition: privateOrigin ? 100 : 400}}} : {})});
   const server = http.createServer(async (req, res) => {
     const json = (code, value) => { res.writeHead(code, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff'}); res.end(JSON.stringify(value)); };
     try {
       const origin = `http://127.0.0.1:${server.address().port}`;
-      if (req.headers.host !== new URL(origin).host || (req.headers.origin && req.headers.origin !== origin && req.headers.origin !== frontendOrigin)) throw apiError('forbidden', 'Local same-origin requests only', 403);
+      const hosts = [new URL(origin).host, ...(publicOrigin ? [new URL(publicOrigin).host] : []), ...(privateOrigin ? [new URL(privateOrigin).host, `localhost:${server.address().port}`] : [])];
+      const origins = [origin, frontendOrigin, publicOrigin, privateOrigin, ...(privateOrigin ? [`http://localhost:${server.address().port}`] : [])].filter(Boolean);
+      if (!hosts.includes(req.headers.host) || (req.headers.origin && !origins.includes(req.headers.origin))) throw apiError('forbidden', 'Unrecognized host or origin', 403);
       const url = new URL(req.url, origin), route = url.pathname;
       if (route.startsWith('/api/') && url.search) throw apiError('bad-request', 'Unexpected query parameters');
+      if (publicOrigin && !route.startsWith('/api/shoot/')) throw apiError('not-found', 'API only', 404);
+      if (req.method === 'GET' && route === '/api/shoot/health') return json(200, await jobs.health());
       const cookies = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(jobs.cookieName + '='));
       const identity = jobs.session(cookies.length === 1 ? cookies[0].slice(jobs.cookieName.length + 1) : null);
       const owner = identity.owner;
-      res.setHeader('set-cookie', `${jobs.cookieName}=${identity.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000`);
+      res.setHeader('set-cookie', `${jobs.cookieName}=${identity.token}; Path=${publicOrigin ? '/api/shoot' : '/'}; HttpOnly; SameSite=Strict; Max-Age=31536000${publicOrigin ? '; Secure' : ''}`);
       if (req.method === 'GET' && route === '/api/shoot/quota') return json(200, await jobs.quota(owner));
       if (req.method === 'GET' && route === '/api/shoot/items') return json(200, {items: await jobs.items(owner)});
       if (req.method === 'POST' && route === '/api/shoot/jobs') {
@@ -97,8 +112,15 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
   return {jobs, server, url: `http://127.0.0.1:${server.address().port}`, async close() { await new Promise(resolve => { server.close(resolve); server.closeIdleConnections(); }); await jobs.close(); }};
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const {values} = parseArgs({options: {'frontend-origin': {type: 'string'}, provider: {type: 'string', default: 'fake'}}});
-  const instance = await startShootServer({frontendOrigin: values['frontend-origin'] ?? null, mode: values.provider});
+  const {values} = parseArgs({options: {config: {type: 'string'}, 'frontend-origin': {type: 'string'}, provider: {type: 'string', default: 'fake'}}});
+  let config = {};
+  if (values.config) {
+    if (!path.isAbsolute(values.config)) throw Error('Config path must be absolute');
+    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'budget', 'limits']);
+    if (config.port !== 4330 || !path.isAbsolute(config.directory ?? '') || !(config.publicOrigin || config.privateOrigin) || !config.budget) throw Error('Public config requires port 4330, absolute private directory, HTTPS origin and budget');
+    process.umask(0o077);
+  }
+  const instance = await startShootServer({...config, frontendOrigin: values['frontend-origin'] ?? config.frontendOrigin ?? null, mode: values.provider});
   console.log(`Local ${values.provider} shoot backend: ${instance.url}`);
   let closing = false;
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => {
