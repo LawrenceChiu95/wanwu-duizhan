@@ -159,7 +159,7 @@ Gemini认物的网络错误或HTTP 5xx最多尝试三次（首次后等0.5秒，
 
 - 公网默认浏览器生成2/认物5，全站生成20/认物400，台北午夜恢复；原本机模式160仅为旧契约，公开配置必须采用20。
 - quota新增`budget:{limit,remaining,available}`；available按是否够一整件13分算。预算耗尽是503 `budget`，不会承诺明天恢复；每日用完仍429 `quota`和kind/scope。
-- HTTP健康检查`GET /api/shoot/health`返回最小`{status:"ok",provider:"fake"|"real"}`，不签cookie、不暴露任务、余额或密钥。状态存盘已失败则503。它只证明服务与状态路径可用，不代表供应商可达。
+- HTTP健康检查`GET /api/shoot/health`返回`{status:"ok",provider:"fake"|"real"}`；真后台另带`recognitionProxy:{required,reachable,check}`，只测已配置代理的TCP端口，不代表Google上游可达。代理断开仅令`reachable:false`，HTTP仍200，供监测报警，不能据此重启空间；状态存盘已失败才503。不签cookie，不暴露任务、余额、代理地址或密钥。魔搭的`/_health`仍独立返回运输层存活，Dockerfile和启动脚本没有认物依赖退出或重启逻辑。
 - 私有状态根及任务目录0700；签名密钥所在state.json原子写入0600，临时文件亦0600。公网只提供已完成、且属于本cookie的三种资产。不给`Access-Control-Allow-Origin:*`，不信转发头冒充Host；Host/Origin只允许配置域名和本机。
 
 ### 安装和恢复

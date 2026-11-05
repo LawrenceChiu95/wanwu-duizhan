@@ -299,7 +299,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     health: async () => {
       await serial(() => {});
       const recognitionProxy = await provider.health?.();
-      if (recognitionProxy?.required && !recognitionProxy.reachable) throw apiError('recognition-proxy', 'Recognition proxy is unavailable', 503);
+      // Dependency degradation must not fail a platform liveness probe.
       return {status: 'ok', provider: provider.real ? 'real' : 'fake', ...(recognitionProxy ? {recognitionProxy} : {})};
     },
     waitingForPaidId: () => Boolean(provider.real && provider.waitingForPaidId?.()),

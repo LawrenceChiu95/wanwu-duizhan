@@ -100,7 +100,7 @@ test('proxy health distinguishes a closed local proxy from TCP reachability and 
  assert.deepEqual(await recognitionProxyHealth(env),{required:true,reachable:true,check:'tcp-only'});
  await new Promise(r=>server.close(r));assert.equal((await recognitionProxyHealth(env)).reachable,false);
  assert.equal((await recognitionProxyHealth({...env,NODE_USE_ENV_PROXY:''})).check,'proxy-not-enabled');assert.equal((await recognitionProxyHealth({})).check,'direct-unverified');
- const directory=await dir(),generator=await fakeGenerator(directory);generator.health=()=>recognitionProxyHealth(env);const jobs=await openJobs({directory,generator});try{await assert.rejects(jobs.health(),{code:'recognition-proxy',status:503});}finally{await jobs.close();}
+ const directory=await dir(),generator=await fakeGenerator(directory);generator.health=()=>recognitionProxyHealth(env);const jobs=await openJobs({directory,generator});try{const health=await jobs.health();assert.equal(health.status,'ok');assert.equal(health.recognitionProxy.reachable,false);assert.equal(health.recognitionProxy.required,true);}finally{await jobs.close();}
 });
 
 test('an unreadable saved photo is a service failure before any vision request',async()=>{
