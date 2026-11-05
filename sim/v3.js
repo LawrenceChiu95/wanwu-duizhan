@@ -192,6 +192,15 @@ function driveSpin(f,r){
 }
 const name=p=>p.mount==='core'?'核心':p.item.name.replace(/（.*?）/g,'');
 const ACTIONS=['dash','block'];
+function aiProfile(p){
+ if(p===null)return null;
+ if(!p||p.version!==1||!['mang','wen','chang'].includes(p.id))throw Error('Unknown manual.aiProfiles version or id');
+ const limits={think:[1/120,2],reactionDelay:[0,2],reactionJitter:[0,2],blockLead:[0,1]};
+ for(const [key,[min,max]]of Object.entries(limits))if(!Number.isFinite(p[key])||p[key]<min||p[key]>max)throw Error(`Invalid ai profile ${key}`);
+ if(p.id==='wen'&&(!Number.isFinite(p.idleDashAfter)||p.idleDashAfter<1||p.idleDashAfter>60))throw Error('Invalid ai profile idleDashAfter');
+ if(!Array.isArray(p.dashRange)||p.dashRange.length!==2||!p.dashRange.every(x=>Number.isFinite(x)&&x>=0&&x<=10)||p.dashRange[0]>=p.dashRange[1])throw Error('Invalid ai profile dashRange');
+ return {version:1,id:p.id,think:p.think,reactionDelay:p.reactionDelay,reactionJitter:p.reactionJitter,dashRange:[...p.dashRange],blockLead:p.blockLead,...(p.id==='wen'&&{idleDashAfter:p.idleDashAfter})};
+}
 /**
  * One match, one fixed physics step at a time; simulateV3 runs it to the end. New, explicit schema; the V1 entry
  * and its world/rules stay untouched.
@@ -204,6 +213,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(!['A','B'].includes(mode))throw Error('mode must be A or B');if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('seed must be a uint32');if(!Array.isArray(definitions)||definitions.length!==2)throw Error('Exactly two fighters required');
  if(manual&&(!Array.isArray(manual.sides)||manual.sides.length!==2||!manual.sides.every(x=>x==='input'||x==='ai')))throw Error("manual.sides must be two of 'input' | 'ai'");
  if(manual?.aiSeeds!==undefined&&(!Array.isArray(manual.aiSeeds)||manual.aiSeeds.length!==2||!manual.aiSeeds.every(s=>Number.isInteger(s)&&s>=0&&s<=0xffffffff)))throw Error('manual.aiSeeds must be two uint32 values');
+ if(manual?.aiProfiles!==undefined&&(!Array.isArray(manual.aiProfiles)||manual.aiProfiles.length!==2))throw Error('manual.aiProfiles must contain two profiles or null');
+ const aiProfiles=manual?.aiProfiles===undefined?[null,null]:Array.from(manual.aiProfiles,aiProfile);
+ if(aiProfiles.some((p,i)=>p&&manual.sides[i]!=='ai'))throw Error('An ai profile requires an ai side');
  for(const x of manual?.inputs??[])if(!Number.isInteger(x.step)||x.step<1||![0,1].includes(x.side)||manual.sides[x.side]!=='input'||!ACTIONS.includes(x.action))throw Error(`Bad manual input ${JSON.stringify(x)}`);
  const c=await loadCatalogRules(),r=await loadV3Rules();definitions.forEach(d=>validate(d,c,r));await ready();
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
@@ -228,6 +240,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const queued=[[],[]],inputs=[],scripted=new Map();
  if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null,pendingAi:null};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
  const charging=f=>f.ctl.chargeUntil>=step,dashing=f=>f.ctl.dashUntil>=step,shielded=f=>f.ctl.shieldUntil>=step;
+ const wenCanDash=i=>{const k=fs[i].ctl;return t<=k.counterUntil||step-(k.dashPressStep??0)>=steps(aiProfiles[i].idleDashAfter);};
  const flat=(a,b)=>{const d=[b[0]-a[0],0,b[2]-a[2]],n=hyp(d[0],d[2]);return n>1e-6?[d[0]/n,0,d[2]/n]:[0,0,0];};
  function tryPress(i,action,source,decisionStep){
   const f=fs[i],k=f.ctl;
@@ -239,16 +252,24 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  /** Estimate contact from visible poses and velocities only; never advance a private future world. */
  function think(i){
   const me=fs[i],foe=fs[1-i],a=arr(me.body.translation()),b=arr(foe.body.translation()),n=flat(a,b),dist=hyp(b[0]-a[0],b[2]-a[2]),gap=dist-sweepRadius(me,r)-sweepRadius(foe,r),va=arr(me.body.linvel()),vb=arr(foe.body.linvel());
+  const profile=aiProfiles[i],tuning=profile??M.ai;
+  if(profile?.id==='mang')return step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=tuning.dashRange[0]&&dist<=tuning.dashRange[1]?'dash':null;
   const closing=dot(sub(va,vb),n),eta=closing>0?Math.max(0,gap)/closing:Infinity;
-  if(step>=me.ctl.blockReady&&closing>0&&eta<=M.ai.blockLead&&t-lastSeen>r.episodeSeparation)return 'block';
+  if(step>=me.ctl.blockReady&&closing>0&&eta<=tuning.blockLead&&t-lastSeen>r.episodeSeparation)return 'block';
+  if(profile?.id==='wen'&&!wenCanDash(i))return null;
   const future=sub(add(b,scale(vb,M.chargeTime)),add(a,scale(va,M.chargeTime))),futureN=flat([0,0,0],future);
-  if(step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=M.ai.dashRange[0]&&dist<=M.ai.dashRange[1]&&gap>0&&eta>M.chargeTime*.7&&dot(n,futureN)>=M.dashAlignment&&t-lastRecoil>=r.recoilPause)return 'dash';
+  if(step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=tuning.dashRange[0]&&dist<=tuning.dashRange[1]&&gap>0&&eta>M.chargeTime*.7&&dot(n,futureN)>=M.dashAlignment&&t-lastRecoil>=r.recoilPause)return 'dash';
   return null;
  }
  function aiActions(i){
-  const k=fs[i].ctl;
-  if(k.pendingAi===null&&(step-1)%steps(M.ai.think)===0){const action=think(i);if(action)k.pendingAi={action,decisionStep:step,at:step+Math.floor(aiRoll[i]()*(steps(M.ai.reactionJitter)+1))};}
-  if(k.pendingAi&&k.pendingAi.at<=step){const action=k.pendingAi;k.pendingAi=null;return [action];}
+  const k=fs[i].ctl,profile=aiProfiles[i],tuning=profile??M.ai;
+  if(profile?.id==='wen'){
+   k.counterUntil??=-Infinity;
+   for(let n=k.observedEvents??0;n<events.length;n++){const e=events[n];if(e.type==='dash'&&e.phase==='end'&&e.side===1-i)k.counterUntil=Math.max(k.counterUntil,e.t+2.4);if(e.type==='blockResult'&&e.side===i&&e.outcome==='perfect')k.counterUntil=Math.max(k.counterUntil,e.t+.8);}
+   k.observedEvents=events.length;
+  }
+  if(k.pendingAi===null&&(step-1)%steps(tuning.think)===0){const action=think(i);if(action)k.pendingAi={action,decisionStep:step,at:step+steps(profile?.reactionDelay??0)+Math.floor(aiRoll[i]()*(steps(tuning.reactionJitter)+1))};}
+  if(k.pendingAi&&k.pendingAi.at<=step){const action=k.pendingAi;k.pendingAi=null;if(profile?.id!=='wen'||action.action!=='dash'||wenCanDash(i))return [action];}
   return [];
  }
  function manualStep(){
@@ -359,7 +380,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const brokenBefore=cause&&loser!==null?events.filter(e=>e.type==='break'&&e.target===loser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
  const why=timeout?.why??(cause&&loser!==null?{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,role:cause.role,coreRatios:fs.map(f=>Math.max(0,f.core.hp)/f.core.maxHp),partsLeft:fs.map(f=>f.parts.filter(p=>p.alive).length),loserBroken:brokenBefore,loserPartsLeft:definitions[loser].parts.length-brokenBefore.length,...(M&&{dash:Boolean(cause.dash)})}:null);
  events.push({t,type:'result',winner,reason,why});
- result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
+ result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs,...(aiProfiles.some(Boolean)&&{aiProfiles:structuredClone(aiProfiles)})}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
   }finally{world.free();}
  }
  return {

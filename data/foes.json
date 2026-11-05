@@ -1,11 +1,99 @@
 {
-  "note": "三个对手（task #86）：先后顺序就是数组顺序，赢了上一个才解锁下一个。id 固定，网页进度按 id 存在手机上。build 现在是 Iris 的占位，Sol 的方案定了换真装法，并加上每个对手的打法参数。",
+  "note": "三个对手 task #86：固定顺序、装法与版本化 AI 参数；强弱待同头模拟与实战验收。",
   "foes": [
-    {"id": "mang", "name": "莽牛", "mark": "莽", "play": "能冲就冲，几乎不挡",
-     "build": {"parts": [{"item": "pan-lux3d", "orient": "out"}, {"item": "lamp-lux3d", "orient": "hug"}], "spread": "e180"}},
-    {"id": "wen", "name": "老龟", "mark": "稳", "play": "挡得又多又准，等你冲完才冲",
-     "build": {"parts": [{"item": "pillow", "orient": "hug"}, {"item": "pan-lux3d", "orient": "hug"}], "spread": "e180"}},
-    {"id": "chang", "name": "长臂猿", "mark": "长", "play": "带长家伙，冲得准，也会挡",
-     "build": {"parts": [{"item": "broom", "orient": "out"}, {"item": "wasteland-broom", "orient": "out"}], "spread": "e90"}}
+    {
+      "id": "mang",
+      "name": "莽牛",
+      "mark": "莽",
+      "play": "能冲就冲，从来不挡",
+      "build": {
+        "parts": [
+          {
+            "item": "pan-lux3d",
+            "orient": "out"
+          },
+          {
+            "item": "slipper",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "ai": {
+        "version": 1,
+        "id": "mang",
+        "think": 0.2,
+        "reactionDelay": 0.08,
+        "reactionJitter": 0.12,
+        "dashRange": [
+          0.5,
+          3
+        ],
+        "blockLead": 0
+      }
+    },
+    {
+      "id": "wen",
+      "name": "老龟",
+      "mark": "稳",
+      "play": "挡得又多又准，等你冲完才冲",
+      "build": {
+        "parts": [
+          {
+            "item": "pillow",
+            "orient": "hug"
+          },
+          {
+            "item": "pan-lux3d",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "ai": {
+        "version": 1,
+        "id": "wen",
+        "think": 0.1,
+        "reactionDelay": 0.06,
+        "reactionJitter": 0.06,
+        "dashRange": [
+          0.5,
+          2.6
+        ],
+        "blockLead": 0.22,
+        "idleDashAfter": 8
+      }
+    },
+    {
+      "id": "chang",
+      "name": "长臂猿",
+      "mark": "长",
+      "play": "带长家伙，冲得准，也会挡",
+      "build": {
+        "parts": [
+          {
+            "item": "wasteland-broom",
+            "orient": "out"
+          },
+          {
+            "item": "pillow",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "ai": {
+        "version": 1,
+        "id": "chang",
+        "think": 0.05,
+        "reactionDelay": 0.02,
+        "reactionJitter": 0.02,
+        "dashRange": [
+          0.5,
+          3
+        ],
+        "blockLead": 0.15
+      }
+    }
   ]
 }
