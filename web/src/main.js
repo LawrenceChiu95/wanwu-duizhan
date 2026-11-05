@@ -262,8 +262,10 @@ async function main() {
     el.foe.classList.add('ladder');
     $('foeMark').className = `ft f${ladder.at + 1}`; $('foeMark').textContent = f.mark; $('foeMark').hidden = false;
     $('foeLabel').textContent = f.name;
-    $('foeBtn').setAttribute('aria-label', `三个对手，现在是第 ${ladder.at + 1} 个`);
-    $('foeBtn').innerHTML = `<i class="pips">${LADDER.map((g, i) => `<i class="${ladder.won.has(g.id) ? 'won' : ''}${i === ladder.at ? ' now' : ''}"></i>`).join('')}</i><b>${ladder.at + 1}/${LADDER.length}</b>${SVG.down}`;
+    // The number is how many are won (as the ladder's 已赢 N/3); the ring marks the one being fought.
+    const won = LADDER.filter(g => ladder.won.has(g.id)).length;
+    $('foeBtn').setAttribute('aria-label', `三个对手，已赢 ${won} 个，现在打第 ${ladder.at + 1} 个`);
+    $('foeBtn').innerHTML = `<i class="pips">${LADDER.map((g, i) => `<i class="${ladder.won.has(g.id) ? 'won' : ''}${i === ladder.at ? ' now' : ''}"></i>`).join('')}</i><b>${won}/${LADDER.length}</b>${SVG.down}`;
   }
   renderFoe();
   let foeReq = 0;
