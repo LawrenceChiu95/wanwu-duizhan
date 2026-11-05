@@ -1180,12 +1180,12 @@ async function main() {
   // which works inside the studio page's frame where an address parameter may not reach us; ?diag=1 opens it too.
   const diag = (() => {
     const box = $('diag'), taps = [], count = {};
-    let on = q.get('diag') === '1', n = 0, wall = 0, playWall = 0, game = 0, lastT = null, worst = 0, fps = 0, ratio = null, slowest = 0, cancels = 0, hits = [];
+    let on = q.get('diag') === '1', n = 0, wall = 0, playWall = 0, game = 0, lastT = null, fightWall = 0, fightGame = 0, worst = 0, fps = 0, ratio = null, slowest = 0, cancels = 0, hits = [];
     try { on ||= localStorage.getItem('wd.diag') === '1'; } catch { /* sandboxed viewer */ }
     const draw = () => {
       if (!on) return;
       const now = performance.now();
-      box.textContent = [`帧 ${fps}/秒 · 游戏 ${ratio === null ? '—' : `${ratio.toFixed(2)}×`}`, `最慢一帧 ${slowest}ms · 取消 ${cancels}`,
+      box.textContent = [`帧 ${fps}/秒 · 游戏 ${ratio === null ? '—' : `${ratio.toFixed(2)}×`} · 本局 ${fightWall ? `${(fightGame / fightWall).toFixed(2)}×` : '—'}`, `最慢一帧 ${slowest}ms · 取消 ${cancels}`,
         ...taps.map(t => `${t.action === 'dash' ? '冲' : '挡'} ${t.what} · ${((now - t.at) / 1000).toFixed(1)}秒前`)].join('\n');
     };
     const toggle = () => {
@@ -1202,7 +1202,9 @@ async function main() {
       // t: the match clock during a fight (null otherwise), so the ratio is what the fight really ran at, hit stops and all.
       frame(w, t) {
         n++; wall += w; worst = Math.max(worst, w);
-        if (t !== null && lastT !== null && t >= lastT) { game += t - lastT; playWall += w; }
+        // A new fight starts its clock again from 0.
+        if (t !== null && (lastT === null || t < lastT)) fightWall = fightGame = 0;
+        if (t !== null && lastT !== null && t >= lastT) { game += t - lastT; playWall += w; fightGame += t - lastT; fightWall += w; }
         lastT = t;
         if (wall < 0.5) return;
         fps = Math.round(n / wall); ratio = playWall ? game / playWall : null; slowest = Math.round(worst * 1000);
