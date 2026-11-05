@@ -9,7 +9,7 @@ import {openJobs, apiError, MAX_PHOTO, REPO} from './jobs.mjs';
 
 const TYPES = {'.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.woff': 'font/woff', '.woff2': 'font/woff2'};
 const compress = promisify(gzip);
-async function staticFile(req, res, webRoot, route, probe = false) {
+async function staticFile(req, res, webRoot, route) {
   let name;
   try { name = decodeURIComponent(route); } catch { throw apiError('bad-request', 'Invalid URL encoding'); }
   const root = await fs.realpath(webRoot), candidate = path.resolve(root, '.' + (name === '/' ? '/index.html' : name));
@@ -18,7 +18,7 @@ async function staticFile(req, res, webRoot, route, probe = false) {
   if (!file.startsWith(root + path.sep) || !Object.hasOwn(TYPES, ext)) throw apiError('not-found', 'No such file', 404);
   let bytes = await fs.readFile(file);
   const hashed = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/.test(name);
-  const headers = {'content-type': TYPES[ext], 'cache-control': hashed ? `${probe ? 'public' : 'private'}, max-age=31536000, immutable` : 'no-store', 'x-content-type-options': 'nosniff'};
+  const headers = {'content-type': TYPES[ext], 'cache-control': hashed ? 'private, max-age=31536000, immutable' : 'no-store', 'x-content-type-options': 'nosniff'};
   if (['.js', '.css', '.json', '.wasm'].includes(ext)) {
     headers.vary = 'Accept-Encoding';
     const accepted = String(req.headers['accept-encoding'] ?? '').split(',').map(v => v.trim().split(/\s*;\s*/)).find(([name]) => name.toLowerCase() === 'gzip');
@@ -87,9 +87,6 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       }
       if (route.startsWith('/api/') && url.search) throw apiError('bad-request', 'Unexpected query parameters');
       if (req.method === 'GET' && route === '/api/shoot/health') return json(200, await jobs.health());
-      // A public, read-only copy of the shipped physics library lets mainland
-      // probes measure real download size without submitting the private link.
-      if (previewAccessCode && ['GET', 'HEAD'].includes(req.method) && !url.search && /^\/assets\/rapier-[A-Za-z0-9_-]{8,}\.js$/.test(route)) return await staticFile(req, res, webRoot, route, true);
       if (previewAccessCode) {
         const access = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(previewCookie + '='));
         if (access.length !== 1 || !sameCode(access[0].slice(previewCookie.length + 1))) throw apiError('forbidden', 'Open your private preview link first', 403);
