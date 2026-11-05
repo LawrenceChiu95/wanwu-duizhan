@@ -27,7 +27,7 @@ const el = {
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
-  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), mute: $('muteBtn'), camSeg: $('camSeg')
+  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
@@ -1064,10 +1064,15 @@ async function main() {
   document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; mine.spread = b.dataset.spread; rebuildMine(); }; });
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action) {
-    if (!live || live.done || phase !== 'play') return;
+    if (!live || live.done || phase !== 'play') { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
     const c = live.match.control(0), left = action === 'dash' ? c.dashIn : c.blockIn;
-    // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes instead.
-    if (left > rules.dt + 1e-9) { replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); test.denied++; sfx.deny(); return; }
+    // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes and
+    // 还没好 rises over it, so a tap that cannot count never looks like a dead button.
+    if (left > rules.dt + 1e-9) {
+      replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); replay_(action === 'dash' ? el.dashNope : el.blockNope, 'show');
+      test.denied++; sfx.deny(); diag.tap(action, `冷却 ${left.toFixed(1)}s`); return;
+    }
+    diag.tap(action, '收下');
     live.match.press(0, action);
     if (action === 'dash') coachDashed();
     sfx.click();
@@ -1079,8 +1084,12 @@ async function main() {
     // Real press state on touchdown: the button goes down and lights up until the finger lifts.
     btn.addEventListener('pointerdown', ev => { ev.preventDefault(); btn.classList.add('down'); press(action); });
     for (const type of ['pointerup', 'pointercancel', 'pointerleave']) btn.addEventListener(type, () => btn.classList.remove('down'));
+    btn.addEventListener('pointercancel', () => diag.cancel());
     btn.addEventListener('animationend', ev => { if (ev.animationName === 'padDeny') btn.classList.remove('deny'); else if (ev.animationName === 'padPop') btn.classList.remove('pop'); });
   }
+  // A thumb held down or rocked on a button opens no menu and selects nothing (远夏's Android, task 5ee99454).
+  el.pad.addEventListener('contextmenu', ev => ev.preventDefault());
+  for (const n of [el.dashNope, el.blockNope]) n.addEventListener('animationend', () => n.classList.remove('show'));
   const keyBtn = ev => ev.code === 'KeyJ' || ev.code === 'Space' ? el.dashBtn : ev.code === 'KeyK' || ev.code === 'ShiftLeft' || ev.code === 'ShiftRight' ? el.blockBtn : null;
   addEventListener('keydown', ev => { if (ev.repeat) return; const b = keyBtn(ev); if (!b) return; if (b === el.dashBtn) ev.preventDefault(); b.classList.add('down'); press(b === el.dashBtn ? 'dash' : 'block'); });
   addEventListener('keyup', ev => keyBtn(ev)?.classList.remove('down'));
@@ -1165,6 +1174,44 @@ async function main() {
   }
   new ResizeObserver(layout_).observe(el.app);
 
+  // ---------- diagnostics ----------
+  // For a phone we cannot hold: frames per second, how fast game time runs against the wall clock (cooldowns count in game
+  // time, so a slow phone makes them long), and what became of the last taps. Five quick taps on the clock open or close it,
+  // which works inside the studio page's frame where an address parameter may not reach us; ?diag=1 opens it too.
+  const diag = (() => {
+    const box = $('diag'), taps = [], count = {};
+    let on = q.get('diag') === '1', n = 0, wall = 0, game = 0, worst = 0, fps = 0, ratio = 0, slowest = 0, cancels = 0, hits = [];
+    try { on ||= localStorage.getItem('wd.diag') === '1'; } catch { /* sandboxed viewer */ }
+    const draw = () => {
+      if (!on) return;
+      const now = performance.now();
+      box.textContent = [`帧 ${fps}/秒 · 游戏 ${ratio.toFixed(2)}×`, `最慢一帧 ${slowest}ms · 取消 ${cancels}`,
+        ...taps.map(t => `${t.action === 'dash' ? '冲' : '挡'} ${t.what} · ${((now - t.at) / 1000).toFixed(1)}秒前`)].join('\n');
+    };
+    const toggle = () => {
+      on = !on; box.hidden = !on;
+      try { localStorage.setItem('wd.diag', on ? '1' : '0'); } catch { /* sandboxed viewer */ }
+      draw();
+    };
+    box.hidden = !on;
+    el.clock.addEventListener('pointerdown', ev => {
+      hits = [...hits.filter(t => ev.timeStamp - t < 1500), ev.timeStamp];
+      if (hits.length >= 5) { hits = []; toggle(); }
+    });
+    return {
+      frame(w, g) {
+        n++; wall += w; game += g; worst = Math.max(worst, w);
+        if (wall < 0.5) return;
+        fps = Math.round(n / wall); ratio = game / wall; slowest = Math.round(worst * 1000);
+        n = wall = game = worst = 0;
+        draw();
+      },
+      count: () => ({...count, cancels}),
+      tap(action, what) { const k = `${action} ${what.split(' ')[0]}`; count[k] = (count[k] ?? 0) + 1; taps.unshift({action, what, at: performance.now()}); taps.length = Math.min(taps.length, 6); draw(); },
+      cancel() { cancels++; draw(); }
+    };
+  })();
+
   // ---------- test hooks (Playwright screenshots; no effect on normal play) ----------
   const test = {
     frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, denied: 0, nth: 1, seen: 0, speed: 1, safe: null,
@@ -1177,6 +1224,7 @@ async function main() {
   };
   window.__top = {
     press,
+    taps: diag.count,
     turns,
     setControl(c) { control = c; },
     // Fixture for the 看它怎么来的 check until the generation script writes real records.
@@ -1216,8 +1264,10 @@ async function main() {
   let last = performance.now(), lastTagKey = '';
   function frame(now) {
     requestAnimationFrame(frame);
-    let dt = Math.min(0.1, (now - last) / 1000);
+    const wall = (now - last) / 1000;
+    let dt = Math.min(0.1, wall);
     last = now;
+    diag.frame(wall, dt);
     if (test.pending >= 0) {
       test.pending -= dt;
       if (test.pending < 0) { test.frozen = true; test.freezeOn = null; }
