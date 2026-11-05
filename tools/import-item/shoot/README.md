@@ -1,3 +1,5 @@
+> 多人、每日名额与排队的当前契约见本页末节及 SPEC「多人后台」。
+
 # 本机「拍一件」后台
 
 从仓库根运行，Node22：
@@ -6,7 +8,7 @@
 node tools/import-item/shoot/server.mjs
 ```
 
-地址 `http://127.0.0.1:4408`。同源服务已构建的 `web/dist` 和 `/api/shoot/`；没有构建好的游戏时API仍可用。它不启动构建，不监听局域网，没有口令或每日上限。本轮不供手机/Tailscale或外网使用；这些在下一轮接通。现有页面由Iris接本API，独立后端测试不能冒称完整五屏已联调。
+地址 `http://127.0.0.1:4408`。同源服务已构建的 `web/dist` 和 `/api/shoot/`；没有构建好的游戏时API仍可用。它不启动构建，不监听局域网，使用浏览器 cookie 隔离身份和每日名额，不设口令。本轮不供手机/Tailscale或外网使用；这些在下一轮接通。现有页面由Iris接本API，独立后端测试不能冒称完整五屏已联调。
 
 默认状态目录 `.aholo/shoot/`（已被Git忽略），有原子状态、假收费账本、每任务照片和模型。关页面不影响任务；重启会续已知任务。服务占用该目录，另一个服务不能同时写。只有旧PID明确不存在（ESRCH）时才自动回收空锁。PID被别的进程复用、无权限探测或锁记录不完整时，启动会拒绝，不承诺自动恢复。手动处理前先核对进程命令和数据目录，确认原服务已经退出；不要因为PID存在就停别人的进程。确认无本服务后，只用rmdir移除这份状态目录下对应的空 `.owner/<PID>` 和 `.owner`（不完整锁按实际空目录处理），不删除任务、账本或照片。
 
@@ -14,7 +16,7 @@ node tools/import-item/shoot/server.mjs
 
 ## 前端约定
 
-- 沿[Iris接口第2稿及后续裁决](https://raft-artifacts.com/p/lawrence-workspace/wanwu-mvp-spec)。`/quota` 的limit/remaining/resetsAt均null，used是假收费次数；不显示每天30次或剩几次。
+- 沿[Iris接口第2稿及后续裁决](https://raft-artifacts.com/p/lawrence-workspace/wanwu-mvp-spec)。`/quota` 当前额度字段见本页「多人、每日名额与排队」；used 是可能收费的任务数，不是今日额度。
 - 上传：POST `/api/shoot/jobs`，multipart photo和clientKey。JPEG/PNG≤32MiB、≤64MP。同key同输入返回原job；不同输入409 key-conflict。
 - GET `/api/shoot/jobs/:id`查状态；GET `/api/shoot/items`取入库件。
 - 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null；旧记录可能没有 fromJob，前端按 null 处理，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
@@ -30,7 +32,7 @@ node tools/import-item/shoot/server.mjs
 
 ## 请求错误补充（接口第2稿的后续约定）
 
-任务内的 download/process 等失败继续沿原表。请求级错误也返回 `{error:{code,message,retry,charged}}`；message 只进日志，界面按 code 显示下面的句子。本机本轮不用口令或每日上限，因此不产生 pass/quota。
+任务内的 download/process 等失败继续沿原表。请求级错误也返回 `{error:{code,message,retry,charged}}`；message 只进日志，界面按 code 显示下面的句子。本机不用口令；每日额度耗尽返回429 quota，字段见末节。
 
 | code | HTTP / 条件 | retry | 界面说 |
 |---|---|---|---|
@@ -134,3 +136,42 @@ quota 新增 provider 字段（real/fake），供单件验收先确认后台模�
 Gemini认物的网络错误或HTTP 5xx最多尝试三次（首次后等0.5秒，再失败等1秒）；每次保留原超时。认证、限流、照片不清或无效回包不重试。失败归类和安全日志不变。重试只在recognizePhoto内部，不能提交Aholo任务；Aholo创建、未知提交和已有ID续查的规则不变。
 
 改图提示词在shoot/prompt.mjs：物件身份和禁止新增底座、展台、比例尺等约束固定，photoStyle单独定义风格。风格替换不删除主体约束；已有花盆保留，不能在盆下增加承托板。
+
+## 多人、每日名额与排队
+
+后台仍仅监听本机，同源cookie隔离浏览器的任务、照片和角色；清cookie不会得到以前的件。无owner历史数据保存在本机维护域，不会送给新浏览器。不要把state.json、会话cookie或签名密钥发到浏览器、日志和仓库。CLI check-real自动保留私有cookie到忽略目录.aholo/shoot-client-cookie.json（0600），重新观察必须保留它及原key。
+
+每天台北午夜恢复：本浏览器生成2、认物5；全站生成160、认物400。接收照片时先预留两类名额，无生成额度不先花认物调用。认物失败/重拍释放生成预留，认物尝试仍计次数；明确busy释放生成预留，父任务再提交复用认物。免费续同任务不加次数；重新生成是新名额。used继续表示可能收费的任务数，不是今日额度使用数或金额。
+
+`/api/shoot/quota` 的limit/remaining为本浏览器生成额度，recognition={limit,remaining}，global={limit,remaining,recognition:{limit,remaining}}，resetsAt为台北下个零点ISO。429 error={code:'quota',kind:'generation'|'recognition',scope:'browser'|'global',resetsAt,...}。生成满message为「今天的生成名额用完了，明天再来」；认物满为「今天的认物名额用完了，明天再来」。预留与任务持久保存，重启不刷新名额。
+
+一台浏览器同时一件，多人按接受顺序串行做，关页面不中断，后台重启仍按原顺序续。job.queuePosition：第一步开始前0代表轮到，正整数为前面件数，第一步开始后/结束为null；recognizing也可能在排队。现有四步时间戳只在真开始时写。跨日排队尚未开始的阶段先核新的当天名额；不能绕过当天上限。已发生生成的免费续接仍属原任务。
+
+这轮不含外网启动配置、HTTPS Secure cookie、跨域、机器、账号或付费。页面排队展示/额度提示等Iris另接；当前后台通过不等于页面/手机验收。正式站点未来从main发布，当前PR等方案甲获批后才能合。
+
+真实与假后台分别用 wanwu_shoot_real / wanwu_shoot_fake cookie，切换后台不覆盖另一份身份。CLI在确认是真后台后才保存cookie；误连假后台不会丢掉原任务的主人。升级前旧单用户任务仍只能从可信本机维护入口读；不要拿旧key当新浏览器任务重发，以免另起付费任务。
+
+## Mac 公网评委后台（task30）
+
+`PUBLIC-SPEC.md`为本轮约定；系统入口归Naomi。Funnel固定HTTPS地址只转127.0.0.1:4330，后台不监听网卡；公网模式不提供游戏静态页和仓库文件。静态游戏单独托管，用同源`/api/shoot/*`反代，所有照片/模型URL也走这条路，不用第三方cookie。Netlify反代26秒超时，因此只接受任务并轮询，不同步等待生成。
+
+配置参考`public-config.example.json`，复制到仓库外的私有目录，替换静态站HTTPS origin。假/真provider分别使用不同的`directory`。配置只有路径、域名、限额，无密钥。费用配置`budget:{stage,limit}`：同stage从持久任务记录扣除每件13分预占；换stage是一次新的费用授权，不能为解除停拍随意换名字。生成开始后包括未知提交都保留13分上限，实际只花12分的失败也保守保留13，不把它当供应商实扣账本。认物失败、生成前重拍释放预占；免费续查不再预占。配置减额不清历史，重启不刷新预算。
+
+- 公网默认浏览器生成2/认物5，全站生成20/认物400，台北午夜恢复；原本机模式160仅为旧契约，公开配置必须采用20。
+- quota新增`budget:{limit,remaining,available}`；available按是否够一整件13分算。预算耗尽是503 `budget`，不会承诺明天恢复；每日用完仍429 `quota`和kind/scope。
+- HTTP健康检查`GET /api/shoot/health`返回`{status:"ok",provider:"fake"|"real"}`；真后台另带`recognitionProxy:{required,reachable,check}`，只测已配置代理的TCP端口，不代表Google上游可达。代理断开仅令`reachable:false`，HTTP仍200，供监测报警，不能据此重启空间；状态存盘已失败才503。不签cookie，不暴露任务、余额、代理地址或密钥。魔搭的`/_health`仍独立返回运输层存活，Dockerfile和启动脚本没有认物依赖退出或重启逻辑。
+- 私有状态根及任务目录0700；签名密钥所在state.json原子写入0600，临时文件亦0600。公网只提供已完成、且属于本cookie的三种资产。不给`Access-Control-Allow-Origin:*`，不信转发头冒充Host；Host/Origin只允许配置域名和本机。
+
+### 安装和恢复
+
+先在隔离目录、假provider验证，再交Iris只读审查。`node shoot/install-mac.mjs --config '/绝对路径/config.json'`只输出plist供核对；加`--install`才安装自己的`com.lawrence.wanwu-backend`。默认假provider；`--provider real`改走原有`start-real.mjs`，启动时从钥匙串读取两把密钥、配置现有Clash代理。使用Node24及以上（现有实机Node版本另记交付证据），不把秘密写进plist。不要把LaunchAgent指向会删除的临时目录；运行副本是明确保留的服务副本。
+
+RunAtLoad/KeepAlive负责当前用户登录后的启动与服务崩溃重拉，10秒节流，nice20，退出给在途付费ID最多150秒收口。日志在`~/Library/Logs/wanwu-backend`，不在仓库或公网。替换服务配置前，先只停本服务并等退出：`launchctl bootout gui/$(id -u)/com.lawrence.wanwu-backend`；确认4330无监听后再安装新配置。不停Tailscale、Clash、Raft或整台电脑。
+
+**FileVault仍开着**：整机重启必须Lawrence本人登录一次后才能起用户服务，此限制Elara已接受。插电不睡、系统更新是否自动重启、Funnel启用与外部健康推送由Naomi负责，游戏脚本不改pmset/Clash/Tailscale。外部探活每5分钟、连续两次失败后提醒的方案由Naomi配置；Mac本机提醒不能当整机停机告警。
+
+本地验证不能替代外网。Funnel可能要本人允许HTTPS，静态域名反代要实测Cookie、POST上传、轮询和模型下载；大陆流量实测由Wren做。回退时只停本游戏LaunchAgent并让Naomi关闭这一条Funnel，静态网页继续玩默认角色。不得重置预算或清数据来“恢复服务”。
+
+### 本人手机的临时尾网版
+
+task30优先项使用`privateOrigin:"http://100.75.234.81:4330"`，不是publicOrigin；两者互斥。仅接受Tailscale 100.64/10精确HTTP来源，同源提供main现有静态游戏，cookie不设Secure（仍HttpOnly/Strict）。入口不经过Funnel，只有本人尾网设备；不要把此配置挂到公网。状态owner、stage owner-trial-20261105、预算260分含自测20件，生成每日20、认物100，与评委公网阶段分开。后台中预算变为不足13则503停拍，不重置账来续拍。手机先开Tailscale，普通file/capture上传可调相机，不调用必须HTTPS的getUserMedia。

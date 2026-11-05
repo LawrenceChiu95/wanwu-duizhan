@@ -1,13 +1,15 @@
-# 拍一件：本机假生成后台
+# 拍一件：后台契约与实现记录
 
-授权：task #50，Elara dc8538a9、bf5a8b54；接口沿 Iris 第2稿及母 thread #万物对战:2bbbd2ea。Sol负责本目录和模拟器物品登记；Iris负责web接线。无真生成、密钥、口令、每日上限、外网发布。先运行在127.0.0.1；手机接入与口令另轮。
+当前多人、限额和排队以文末「多人后台」为准；此前单用户/null额度为历史契约。
+
+最初单用户阶段授权：task #50，Elara dc8538a9、bf5a8b54；接口沿 Iris 第2稿及母 thread #万物对战:2bbbd2ea。Sol负责本目录和模拟器物品登记；Iris负责web接线。无真生成、密钥、口令、每日上限、外网发布。先运行在127.0.0.1；手机接入与口令另轮。
 
 - Node22原生HTTP、现有Sharp；不加依赖。API前缀/api/shoot，上传JPEG/PNG≤32MiB、解码≤64MP。默认仅同源；开发代理可显式允许一个精确的本地HTTP Origin，禁CORS，Host固定本机监听地址；不暴露仓库、任务状态文件或任意路径。
 - jobs、clientKey摘要映射、items同一state.json原子替换；照片和模型先写，最后一次提交同时写item和job.itemId。默认状态在仓库忽略的.aholo/shoot，服务独占目录；同进程写操作串行。
 - 幂等key先核摘要再核active：重发返回原job；不同照片/动作/fromJob报key-conflict；忙和再生成各用新的key。一次只排一件；结果不明保留原记录但不占active，新key可拍别件（69a1c60d）。
 - 提交假生成前先存pending；返回后存providerId。启动时pending不再提交，变unknown-submit；已知providerId只续四步。retry只续下载或处理，绝不进入submit。重新生成只接受confirm=true、新clientKey与允许重新生成的失败。
 - 假生成一次提交代表整个假生成流程，used记录假收费次数；不声称等同未来Aholo的两个真实付费阶段。固定认物和模型都来自内置锅，风格图是清理后的原图副本；source明确local-fake，不能冒充真认物/改图。
-- 四步用实际startedAt/endedAt，origin仍photo/styled/model三段实际秒数。quota limit/remaining/resetsAt为null，保留used和activeJobId（71be6494）。
+- 四步用实际startedAt/endedAt，origin仍photo/styled/model三段实际秒数。单用户阶段quota三字段为null（71be6494）；现已由文末每日额度契约替代，保留used和activeJobId。
 - 模拟器registerItems(items)先整批校验、再原子登记。内置id拒绝；运行时同id同完整数据可重入、不同数据拒绝。必需字段、枚举、有限几何和rating必须有效；调用rateItem重算并逐项核rating，战斗仍用同一分数，不改算法。loadCatalog/loadRules包含已登记件，返回副本。页面打开先登记/items由Iris接。
 
 验收：真实HTTP十发同key只假收费一次；子进程SIGKILL重启续接且结果/文件持久；pending和unknown反复retry/重启不多交；免费处理/下载恢复、再生成幂等、busy明确未收费；成功原子可读并有rating/origin。相同完整物品写入隔离catalog和运行时登记，用同装法/种子逐字节比较回放。独立Claude只读完整diff和现有证据，交Elara逐条裁决后才合mvp/base。
@@ -89,3 +91,17 @@
 - 取消与首步开始共用现有串行队列，开始边界先落盘再调用fake.submit或real.step；超时或已开始回409 not-allowed。providerId本机标记不能作收费证据。
 - 关闭取消等待，重启沿原截止只等剩余时间，不再认物、不刷新5秒。存盘失败继续503封住进程，不能先提交或假报取消成功。
 - 验收：HTTP取消/重复/换key、超时自动继续、两种竞争顺序、等待时关闭重启和原截止、旧记录与续查；真provider用离线HTTP回包核认物一次及取消后Aholo请求为零。完整受影响工具测试、构建、Iris前后台合体和Claude独立只读审查后交Elara。
+
+## 多人后台
+
+- 范围：从mvp/base1499410单开sol/shoot-multiuser；本机代码、假供应商、定向/完整验证、独立Claude只读审查、PR。等远夏选甲再合；不建机器/账号、不读真密钥、不付费、不部署、不改main/web/物理。正式网址未来只从main发。
+- 身份：后台签发随机ID＋HMAC的HttpOnly、SameSite=Strict cookie，密钥和记录只留私有state。每一条HTTP任务/动作/父关系/物品/文件路径都按cookie主人核对，别人的与不存在的均404。key按主人隔离；不能由请求字段指定owner。当前监听仍127.0.0.1，未启外网/CORS；HTTPS部署再补Secure cookie和实际同源验证。
+- 历史数据：无owner旧任务归可信本机local域，新的浏览器不继承；不删除或迁移照片。旧数据若要对玩家公开需另行明确迁移。进程内API仍是可信维护入口，可读取全量；它不映射成HTTP管理接口。
+- 配额：每浏览器每日生成2/认物5，全站160/400。日界固定Asia/Taipei。接收任务原子预留两种额度，先于任何供应商请求；认物复用的子任务只预留生成。无生成余量直接拒，不先认物。重发同key不另占；免费续原任务不另占；重新生成新任务占新名额。
+- 计数是名额，不是账单：认物尝试（含失败）占认物名额；认物失败、五秒内重拍、供应商明确busy且未建单释放生成名额。已开始/未知创建保守保留生成名额；收到同一任务的免费续查不增名额。额度预留与任务同盘，首次存盘失败前不得调供应商。跨日未开始的阶段在实际开始前重新核当日额度，不把昨天排队当成今天的额外额度。
+- 队列：每浏览器仅一条活动任务；其他浏览器可以排队，认物和生成共用原单进程串行runner。按持久queueOrder先来先做；重启恢复同顺序，不重交已知ID/未知pending。每日全站名额限制接受数量，不另设队满配置；过额度HTTP429 quota。unknown-submit保持不占活动位。
+- job状态仍recognizing/generating/succeeded/failed；第一步开始前queuePosition=0或前面件数，第一步已开始/终态为null。五秒重拍仍按原截止，不扩大取消范围。/quota顶层limit/remaining为本浏览器生成，新增recognition与global，resetsAt为台北下个午夜ISO。quota错误的kind/scope也在error内；生成耗尽message固定「今天的生成名额用完了，明天再来」。页面排队与四种额度文案由Iris另接，不把后台JSON验证说成画面已完成。
+- CLI check-real私有cookie存仓库忽略的.aholo/shoot-client-cookie.json，权限0600，后续同key观察沿同身份；不打印cookie。浏览器清除cookie会成为新身份，个人限额为软限制；全站上限不受清cookie影响。
+- 验证：两个真实HTTP cookie会话的全路径越权与同key隔离、并发接受边界/先拒后调用、认物5次/生成2次、取消退款/免费重试不加次、台北零点/重启不重置、FIFO恢复和旧无owner不泄漏。完整工具回归仍含原硬退出pending/known-ID边界；全部假供应商，无真实收费/真手机/外网部署验收。
+
+真实与假后台分别用 wanwu_shoot_real / wanwu_shoot_fake cookie，切换后台不覆盖另一份身份。CLI在确认是真后台后才保存cookie；误连假后台不会丢掉原任务的主人。升级前旧单用户任务仍只能从可信本机维护入口读；不要拿旧key当新浏览器任务重发，以免另起付费任务。

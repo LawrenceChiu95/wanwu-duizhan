@@ -8,7 +8,7 @@ import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {setTimeout as pause} from 'node:timers/promises';
 import sharp from 'sharp';
-import {startShootServer} from '../shoot/server.mjs';
+import {startShootServer, browserFetch as fetch, rememberBrowser} from './http-client.mjs';
 import {fakeGenerator} from '../shoot/fake.mjs';
 import {readJson} from '../state.mjs';
 import {validateRuntimeItem} from '../../../sim/runtime-items.js';
@@ -122,7 +122,7 @@ test('HTTP ten concurrent copies: one charge, atomic inventory, real origin time
   const copies = await Promise.all(Array.from({length: 10}, () => create(app.url, 'repeat-key-0001')));
   assert.ok(copies.every(x => x.status === 202)); const id = copies[0].job.id; assert.ok(copies.every(x => x.job.id === id));
   let r = await finished(app.url, id); assert.equal(r.job.status, 'succeeded');
-  const q = await request(app.url, 'quota'); assert.deepEqual({...q, status: undefined}, {status: undefined, provider: 'fake', limit: null, remaining: null, resetsAt: null, used: 1, activeJobId: null});
+  const q = await request(app.url, 'quota'); assert.equal(q.provider, 'fake'); assert.equal(q.limit, 2); assert.equal(q.remaining, 1); assert.equal(q.used, 1); assert.equal(q.activeJobId, null);
   const {items} = await request(app.url, 'items'); assert.equal(items.length, 1); const item = items[0]; assert.equal(item.id, r.job.itemId);
   validateRuntimeItem(item, catalog); assert.equal(item.source.generator, 'local-fake'); assert.equal(item.outEnd, -1);
   assert.deepEqual(item.origin.steps.map(s => s.key), ['photo', 'styled', 'model']); assert.ok(item.origin.steps.every(s => s.seconds >= 0));
@@ -235,7 +235,8 @@ async function child(dir, window = null) {
  let checkpoint = null; proc.on('message', message => { checkpoint = message; });
  let text = '', stderr = ''; proc.stdout.on('data', b => { text += b; }); proc.stderr.on('data', b => { stderr += b; });
  const info = await until(async () => { if (proc.exitCode !== null) throw Error(stderr); return text; }, s => s.includes('\n')).catch(async error => { proc.kill('SIGKILL'); throw error; });
- return {proc, url: JSON.parse(info.split('\n')[0]).url, stderr: () => stderr, checkpoint: () => checkpoint};
+ const url = JSON.parse(info.split('\n')[0]).url; rememberBrowser(url, dir);
+ return {proc, url, stderr: () => stderr, checkpoint: () => checkpoint};
 }
 
 async function restartDiagnostics(dir, current) {
@@ -298,22 +299,23 @@ test('explicit local dev proxy Origin works; arbitrary origins still fail', asyn
 
 
 test('prototype-shaped keys persist their own records and replay after restart without a second charge', async () => {
- const dir = await directory(); let app = await startShootServer({port: 0, directory: dir, fakeOptions: {delayMs: 1}});
+ const dir = await directory(), limits = {browser: {generation: 5, recognition: 5}, global: {generation: 160, recognition: 400}}; let app = await startShootServer({port: 0, directory: dir, limits, fakeOptions: {delayMs: 1}});
  try {
   for (const key of ['__proto__', 'constructor', 'toString']) {
    const results = await Promise.all([create(app.url, key), create(app.url, key)]);
    assert.ok(results.every(r => r.status === 202 && r.job.id === results[0].job.id));
    assert.equal((await finished(app.url, results[0].job.id)).job.status, 'succeeded');
    const state = await readJson(path.join(dir, 'state.json'));
-   assert.ok(Object.hasOwn(state.keys, key));
-   assert.equal(state.keys[key].id, results[0].job.id);
-   assert.match(state.keys[key].fingerprint, /^[a-f0-9]{64}$/);
-   assert.equal(state.jobs[state.keys[key].id].job.clientKey, key);
+   const scoped = `${state.jobs[results[0].job.id].owner}:${key}`;
+   assert.ok(Object.hasOwn(state.keys, scoped));
+   assert.equal(state.keys[scoped].id, results[0].job.id);
+   assert.match(state.keys[scoped].fingerprint, /^[a-f0-9]{64}$/);
+   assert.equal(state.jobs[state.keys[scoped].id].job.clientKey, key);
   }
   assert.equal((await request(app.url, 'quota')).used, 3);
   const state = await readJson(path.join(dir, 'state.json'));
-  await app.close(); app = await startShootServer({port: 0, directory: dir});
-  for (const key of ['__proto__', 'constructor', 'toString']) assert.equal((await create(app.url, key)).job.id, state.keys[key].id);
+  await app.close(); app = await startShootServer({port: 0, directory: dir, limits});
+  for (const key of ['__proto__', 'constructor', 'toString']) assert.equal((await create(app.url, key)).job.id, Object.values(state.keys).find(k => state.jobs[k.id].job.clientKey === key).id);
   assert.equal((await request(app.url, 'quota')).used, 3);
  } finally { await app.close(); }
 });
@@ -342,7 +344,8 @@ test('request errors use documented codes and only server failure offers same-re
  const {job} = await create(app.url, 'error-codes-001'); await finished(app.url, job.id);
  cases.push([await request(app.url, `jobs/${job.id}/retry`, undefined, 'POST'), 409, 'not-allowed']);
  for (const [result, status, code] of cases) { assert.equal(result.status, status); assert.equal(result.error.code, code); assert.equal(result.error.retry, 'none'); assert.equal(result.error.charged, false); }
- const broken = await instance(t, {generator: {used() { throw Error('private error detail'); }}});
+ const broken = await instance(t);
+ broken.jobs.quota = () => { throw Error('private error detail'); };
  const result = await request(broken.url, 'quota');
  assert.equal(result.status, 500); assert.deepEqual(result.error, {code: 'server', message: 'Local backend failure', retry: 'same', charged: false});
 });
