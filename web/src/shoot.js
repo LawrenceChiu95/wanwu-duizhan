@@ -44,32 +44,42 @@ const SAY = {
   'no-backend': '这个地址上没有拍一件的后台，请从游戏入口打开',
   refused: '游戏装不进这件，换一张再拍',
   // 评委版: what the shared budget has left can't pay for one more (Elara edd90212); it isn't anyone's daily allowance.
-  budget: '暂时不能拍，先用现成角色打一局'
+  budget: '暂时不能拍，先用现成角色打一局',
+  // 评委版: the backend doesn't know this page's token any more (Sol e0a86865); a new one is only on the player's say.
+  session: '之前的拍照记录找不到了，可以重新开始'
 };
 // 评委自己拍 (Elara 6dee70f7): which daily allowance ran out, and whose. The first is Elara's; a quota error that doesn't
 // say (?shootFail=quota) reads as it.
 const QUOTA_SAY = {'generation-browser': SAY.quota, 'generation-global': '今天大家的生成名额都用完了，明天再来',
-  'recognition-browser': '今天的认物名额用完了，明天再来', 'recognition-global': '今天大家的认物名额都用完了，明天再来', budget: SAY.budget};
+  'recognition-browser': '今天的认物名额用完了，明天再来', 'recognition-global': '今天大家的认物名额都用完了，明天再来', budget: SAY.budget, session: SAY.session};
 const quotaKey = (kind, scope) => QUOTA_SAY[`${kind}-${scope}`] ? `${kind}-${scope}` : 'generation-browser';
 const QUOTA_WAIT = 3000; // ms the 评委版 waits for /quota before taking 拍一件 as off for now
 
 /**
- * Today's allowances as /quota gives them; {out} when asking was itself turned down for quota (429). The 评委版 (strict)
- * takes everything else (no answer in 3 s, a gateway's 502/503/504, the budget, no backend here) as {down}: 暂时不能拍,
- * and the characters already there are the way on (Sol 5a01f773, Elara edd90212). Elsewhere that stays unknown (null).
+ * Today's allowances as /quota gives them; {out} when asking was itself turned down for quota (429), {lost} when the
+ * backend no longer knows this page's token (401 session). The 评委版 (strict) takes everything else (no answer in
+ * time, a gateway's 502/503/504, the budget, no backend here, a browser that won't keep the token) as {down}:
+ * 暂时不能拍, and the characters already there are the way on (Sol 5a01f773, Elara edd90212). Elsewhere that stays
+ * unknown (null).
  */
-export async function readQuota(api, strict = false) {
-  let timer = 0;
-  const late = strict && new Promise((_, no) => { timer = setTimeout(() => no(new ShootError('offline')), QUOTA_WAIT); });
+export async function readQuota(api, strict = false, wait = QUOTA_WAIT) {
+  let timer = 0, slow = false;
+  const late = strict && new Promise((_, no) => { timer = setTimeout(() => { slow = true; no(new ShootError('offline')); }, wait); });
   try {
     return await (strict ? Promise.race([api.quota(), late]) : api.quota());
   } catch (e) {
-    return e.code === 'quota' ? {out: quotaKey(e.kind, e.scope)} : strict ? {down: true} : null;
+    // late: no answer yet, which says nothing about whether a photo could be taken (the page may go on asking).
+    return e.code === 'quota' ? {out: quotaKey(e.kind, e.scope)} : e.code === 'session' ? {lost: true} : strict ? {down: true, late: slow} : null;
   } finally { clearTimeout(timer); }
 }
+/** What /quota said lets a new photo be taken now (the 评委版 skips the items as it opens otherwise, Elara c1bc2dac). */
+export const shootOpen = quota => Boolean(quota) && !quota.down && !quota.lost && !quota.out && quota.budget?.available !== false
+  && ![quota.remaining, quota.global?.remaining, quota.recognition?.remaining, quota.global?.recognition?.remaining].includes(0);
 const QUEUE_LONG = 3 * 60; // seconds waiting in line before it says there are a lot of people
 // The page and its backend don't match: asking again won't help, so polling stops until 拍一件 is opened again (task #62).
-const MISMATCH = ['forbidden', 'bad-request', 'no-backend'];
+// 评委版: session (the backend doesn't know this page's token) and storage (the browser won't keep one) are the same:
+// nothing is sent until the player starts again (Sol e0a86865).
+const MISMATCH = ['forbidden', 'bad-request', 'no-backend', 'session', 'storage'];
 const DOWN_AFTER = 3; // the same server error this many times running: stop offering 再试
 const ICON = {
   camera: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>',
@@ -115,7 +125,7 @@ async function uploadable(file) {
  * card flip; flip(el, id) turns a face-down card over; turns, loadModels; equipLabel(id) → {text, disabled}; equip(id);
  * libraryOpen(), openLibrary(); openHow(id); goPlay(); tagRoom() → whether the top tag may show now; onChange().
  * 评委版 only: strict (see readQuota); quota, what the page asked as it opened; sample() shows the flip-flop's real
- * generation (beside 拍照, Elara edd90212); embedded with api null when the page is inside another page's frame.
+ * generation (beside 拍照, Elara edd90212).
  */
 export function mountShoot(ctx) {
   const $ = id => document.getElementById(id);
@@ -179,7 +189,7 @@ export function mountShoot(ctx) {
   // ---------- polling: every pollMs while a job runs, paused while the page is in the background ----------
   async function poll() {
     clearTimeout(timer);
-    if (!stored?.id || document.hidden || ctx.embedded) return;
+    if (!stored?.id || document.hidden) return;
     const id = stored.id;
     try {
       const j = await api.job(id);
@@ -213,9 +223,10 @@ export function mountShoot(ctx) {
   async function loadItems() {
     try { await ctx.addItems(await api.items()); itemFails = fetching() ? itemFails + 1 : 0; } catch (e) { if (MISMATCH.includes(e.code)) startError = e.code; else itemFails++; }
   }
-  async function loadQuota() { if (ctx.embedded) return; quota = await readQuota(api, ctx.strict); paintQuota(); }
+  async function loadQuota() { if (quota?.lost) return; quota = await readQuota(api, ctx.strict); paintQuota(); }
   // An allowance used up today, as a QUOTA_SAY key: a new photo needs a generation and a 认物 left.
   function quotaOut() {
+    if (quota?.lost) return 'session';
     if (quota?.down || quota?.budget?.available === false) return 'budget';
     if (quota?.out) return quota.out;
     if (quota?.remaining === 0) return 'generation-browser';
@@ -227,7 +238,7 @@ export function mountShoot(ctx) {
 
   // ---------- screens ----------
   // Which screen the state calls for; each key is drawn once, then only its live parts are updated.
-  function screen() { return ctx.embedded ? 'embed' : startError ? 'err:' + startError : under(); }
+  function screen() { return startError ? 'err:' + startError : under(); }
   // The screen the job itself calls for, under any error.
   function under() {
     if (!stored) return pending ? 'confirm' : quotaOut() ? 'out:' + quotaOut() : 'pick';
@@ -239,7 +250,7 @@ export function mountShoot(ctx) {
     if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + job.error.code;
     return fetching() ? 'fetch' : refused() ? 'lost:refused' : 'done:' + job.itemId;
   }
-  const STEP_OF = {pick: 0, out: 0, embed: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
+  const STEP_OF = {pick: 0, out: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
   function paintSteps(key) {
     // An error lights the step the job stopped at (task #70), the first one if there is no job.
     const kind = key.split(':')[0], at = STEP_OF[kind === 'err' ? under().split(':')[0] : kind];
@@ -250,7 +261,8 @@ export function mountShoot(ctx) {
   // Shown only once the backend enforces a limit (Elara 71be6494): the fewest of what a new photo needs; nothing while
   // 暂时不能拍, when no count is the one that matters.
   function paintQuota() {
-    const left = quotaOut() === 'budget' ? [] : [quota?.remaining, quota?.global?.remaining, quota?.recognition?.remaining, quota?.global?.recognition?.remaining].filter(n => n != null);
+    // Nothing to count while no photo can be taken at all: 暂时不能拍, or the backend no longer knows this page.
+    const left = ['budget', 'session'].includes(quotaOut()) || ['session', 'storage'].includes(startError) ? [] : [quota?.remaining, quota?.global?.remaining, quota?.recognition?.remaining, quota?.global?.recognition?.remaining].filter(n => n != null);
     el.quota.textContent = left.length ? `今天还能拍 ${Math.min(...left)} 件` : '';
   }
   const photo = () => stored?.photo ?? pending?.thumb ?? '';
@@ -275,12 +287,7 @@ export function mountShoot(ctx) {
       const [line, after] = QUOTA_SAY[code].split('，');
       html = `<div class="sframe pick out"><span class="sview">${ICON.camera}<b>${line}</b><small>${after}</small></span></div>
         <div class="ssix"><span>角色库里现成的角色随时能打</span></div>${SAMPLE}
-        ${foot(`<button type="button" class="sghost" disabled>${ICON.camera}<span>拍照</span></button>`, go('play', '先去打一局'))}`;
-    } else if (kind === 'embed') {
-      // Inside another page's frame the backend's cookie isn't sent, so 拍照 is in a window of this page's own; the
-      // characters already there play here as they are (Elara edd90212).
-      html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍照要在新窗口里</b><small>嵌在别的页面里拍不了，现成的角色照样能打</small></span></div>${SAMPLE}
-        ${foot(ghost('play', '先去打一局'), `<a class="go snew" href="${esc(location.href)}" target="_blank" rel="noopener"><span>在新窗口打开</span>${ICON.arrow}</a>`)}`;
+        ${foot(code === 'session' ? ghost('renew', '重新开始拍', ICON.retry) : `<button type="button" class="sghost" disabled>${ICON.camera}<span>拍照</span></button>`, go('play', '先去打一局'))}`;
     } else if (kind === 'qrecog' || kind === 'qgen') {
       html = `${frame('scan', `<span class="stag">排队中</span>${job.recognition ? `<span class="scat">${esc(countAs(job.recognition))}</span>` : ''}`)}
         <div class="squeue"><b data-live="ahead"></b><small>轮到了自动开始${kind === 'qrecog' ? '认物' : '生成'}，可以先去打一局，好了顶部会提醒你</small></div>
@@ -317,10 +324,11 @@ export function mountShoot(ctx) {
         : ['photo-invalid', 'photo-unclear', 'key-conflict', 'refused'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
         : code === 'server' && lastSend ? [ghost('lib', '回角色库'), go('again', '再试')]
         : code === 'not-allowed' && stored ? [ghost('lib', '回角色库'), go('refresh', '刷新')]
-        : code === 'quota' || code === 'server-down' || code === 'budget' ? [ghost('lib', '回角色库'), go('play', '先去打一局')]
+        : code === 'session' ? [ghost('renew', '重新开始拍', ICON.retry), go('play', '先去打一局')]
+        : code === 'quota' || code === 'server-down' || code === 'budget' || code === 'storage' ? [ghost('lib', '回角色库'), go('play', '先去打一局')]
         : [ghost('lib', '回角色库')];
-      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : code === 'budget' ? '暂时不能拍' : '没生成出来'}</span>`)}
-        <div class="smsg"><b>${esc(code === 'quota' ? QUOTA_SAY[quotaErr] : SAY[code] ?? SAY.server)}</b>${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
+      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : code === 'session' ? '记录找不到了' : code === 'budget' || code === 'storage' ? '暂时不能拍' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : '没生成出来'}</span>`)}
+        <div class="smsg"><b>${esc(code === 'quota' ? QUOTA_SAY[quotaErr] : code === 'storage' ? SAY.budget : SAY[code] ?? SAY.server)}</b>${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
         <p class="serr" data-live="send"></p>${foot(...btns)}`;
     } else if (kind === 'held') {
       // unknown-submit (Elara 8d32a2a6, 69a1c60d): one sentence and only 回角色库, no retake or retry: the paid
@@ -390,7 +398,7 @@ export function mountShoot(ctx) {
     ctx.onChange?.();
     if (el.view.hidden) return;
     const key = screen();
-    if (key !== shown) { shown = key; draw(key); paintSteps(key); }
+    if (key !== shown) { shown = key; draw(key); paintSteps(key); paintQuota(); }
     // A failure the player has now seen no longer calls them back from the top tag.
     if (/^(fail|held|lost)/.test(key) && stored && !stored.seen) { stored.seen = true; keep(); }
     update();
@@ -405,7 +413,7 @@ export function mountShoot(ctx) {
     el.tag.className = state;
     const what = catOf(job.recognition);
     const html = state === 'done' ? `<b>${what}生成好了，去装上</b>${ICON.arrow}`
-      : state === 'bad' ? `<b>${stopped() ? '拍一件连错了后台，去看看' : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
+      : state === 'bad' ? `<b>${stopped() ? (startError === 'session' ? '拍照记录找不到了，去看看' : '拍一件连错了后台，去看看') : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
       : ahead() ? `<i class="ring" style="--fill:0.02"></i><b>${job.recognition ? what : '新的一件'}排队中</b><small>前面还有 ${ahead()} 人</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
@@ -525,6 +533,8 @@ export function mountShoot(ctx) {
     lib: () => { const done = job?.status === 'succeeded'; close(); if (done || ctx.libraryOpen()) ctx.openLibrary(); },
     how: () => ctx.openHow(job.itemId),
     sample: () => ctx.sample(),
+    // 评委版, after 401 session: a new token only because the player asked for it; the old job is let go (Sol e0a86865).
+    renew: () => { api.renew?.(); quota = null; fresh(); },
     equip: () => { const id = job.itemId; close(); ctx.equip(id); }
   };
   el.body.onclick = e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) acts[b.dataset.act]?.(); };
@@ -540,6 +550,7 @@ export function mountShoot(ctx) {
     if (from === 'library' && startError) { if (startError === 'quota' || startError === 'budget') pending = null; startError = null; sendFails = 0; }
     shown = '';
     el.view.hidden = false;
+    paintQuota();
     loadQuota();
     sync();
     clearInterval(ticker);

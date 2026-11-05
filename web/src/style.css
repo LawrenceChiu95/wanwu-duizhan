@@ -597,9 +597,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .squeue em { font-style: normal; font-family: var(--display); font-weight: 400; font-size: 40px; line-height: 1; margin: 0 4px; color: var(--c0l); }
 .squeue small { font-size: 13px; line-height: 1.5; color: var(--mute); }
 .slink { display: inline; padding: 0; font: inherit; font-weight: 700; color: var(--c0l); text-decoration: underline; text-underline-offset: 3px; }
-a.go { text-decoration: none; }
-/* 在新窗口打开 is a word longer than the other main buttons: a size down keeps it off the slanted edge (Elara edc2c568). */
-.sfoot .go.snew { font-size: 21px; letter-spacing: 0.04em; }
 /* 评委版: the flip-flop's real generation, beside 拍照. */
 .ssample { flex: none; margin: 12px 14px 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .ssample svg { width: 14px; height: 14px; fill: var(--c0l); stroke: none; }

@@ -12,7 +12,7 @@ import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
 import {shootApi} from './shoot-api.js';
-import {catLabel, mountShoot, readQuota} from './shoot.js';
+import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
 
 const $ = id => document.getElementById(id);
 const el = {
@@ -162,17 +162,18 @@ async function main() {
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
   // 评委版 (judge.js, task #4): 拍一件 talks to this origin's backend (Elara edd90212), with one real generation beside it.
   const judge = __JUDGE__ ? await import('./judge.js') : null;
-  // Inside another page's frame (the studio page) the backend's cookie isn't sent: the 评委版 asks nothing, and 拍一件
-  // offers a window of its own.
-  const embedded = (() => { try { return window.top !== window.self; } catch { return true; } })();
   // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with. The 评委版
-  // asks /quota first; 暂时不能拍 (no answer in 3 s and the rest, readQuota) skips the items too.
+  // gives all of it, /quota then the items, 3 s together before 开始玩 (Sol e0a86865), and skips the items when /quota
+  // says no photo can be taken now (Elara c1bc2dac); what isn't back by then is asked again once the page is up.
+  const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
   const shoot0 = shootApi(q, __JUDGE__).then(async api => {
     if (!api) return null;
-    if (__JUDGE__ && embedded && api.kind === 'real') return {api: null, embedded: true, items: []};
-    const quota = __JUDGE__ ? await readQuota(api, true) : undefined;
-    return {api, quota, items: quota?.down ? [] : await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])};
+    if (!__JUDGE__) return {api, items: await within(api.items(), 5000) ?? [], again: true};
+    const by = performance.now() + 3000;
+    const quota = await readQuota(api, true, 3000);
+    const sent = shootOpen(quota) ? await within(api.items(), by - performance.now()) : [];
+    return {api, quota, items: sent ?? [], again: sent === null || Boolean(quota.late)};
   });
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
@@ -1047,11 +1048,14 @@ async function main() {
     }
     if (!s) return;
     const {api} = s;
-    if (api && !s.quota?.down) try { await addItems(await api.items()); } catch { /* the backend is down: the 角色库 has what the page shipped with */ }
+    // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
+    // doesn't wait for these.
+    const more = s.again && api.items().then(addItems).catch(() => {});
+    if (!judge) await more;
     takeLate();
     shoot = mountShoot({
       api, addItems, turns, loadModels, equip, equipLabel, openHow,
-      strict: Boolean(judge), quota: s.quota, embedded: Boolean(s.embedded), sample: judge && (() => openHow(judge.showcase.id)),
+      strict: Boolean(judge), quota: s.quota, sample: judge && (() => openHow(judge.showcase.id)),
       item: id => byId.get(id), refused: id => simRefused.has(id), name: id => NAMES[id], grade: rate, spec,
       seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
