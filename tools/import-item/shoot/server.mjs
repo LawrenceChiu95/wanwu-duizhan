@@ -166,7 +166,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (values.config) {
     if (!path.isAbsolute(values.config)) throw Error('Config path must be absolute');
     config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'previewAccessCode', 'headerIdentity', 'budget', 'limits']);
-    if (config.port !== 4330 || !path.isAbsolute(config.directory ?? '') || !(config.publicOrigin || config.privateOrigin) || !config.budget) throw Error('Public config requires port 4330, absolute private directory, HTTPS origin and budget');
+    if (config.port !== (config.headerIdentity === true ? 4331 : 4330) || !path.isAbsolute(config.directory ?? '') || !(config.publicOrigin || config.privateOrigin) || !config.budget) throw Error('Public config requires port 4330 (cookie) or 4331 (header session), absolute private directory, origin and budget');
     process.umask(0o077);
   }
   const instance = await startShootServer({...config, frontendOrigin: values['frontend-origin'] ?? config.frontendOrigin ?? null, mode: values.provider});

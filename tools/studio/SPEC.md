@@ -28,7 +28,7 @@
 - 静态链接先交，Mac连接继续查。匿名浏览器UA的health已200；工具默认UA403不是隐私设置，管理页与OpenAPI均已核公开，尚不能据此断言平台不支持WebSocket。
 
 ## 嵌套页身份（Elara 67271212、24b57d1e，替代新窗口方案）
-- Wren ffd7dff5 实测导航均回 Studio 外框。专用魔搭后台 `headerIdentity: true`；既有 Fanshuo 4330 不启用，仍用 cookie。
+- Wren ffd7dff5 实测导航均回 Studio 外框。专用魔搭后台 `headerIdentity: true`，配置端口固定4331、独立任务目录；既有 Fanshuo 4330 不启用，仍用 cookie。
 - 页面先 POST `/api/shoot/session`（空正文、无旧令牌）取 `{token}`，存入 localStorage 并回读成功才允许拍照。此后所有 API/私件请求携带 `X-Shoot-Session`。沿用 Mac 既有签名身份与持久 sessionSecret，不发供应商密钥。
 - 会话模式下缺失/错误令牌返回401/session，不降级到 cookie、不重发身份、不自动重放提交。页面保留原 token/job/clientKey，先去打现成角色；存储失效不能以新身份悄悄重试付费。
 - 照片、改图及 GLB 带头 fetch 转 Blob URL，令牌不进 URL、日志或截图。Mac owner 校验、幂等及额度沿用；云网关透明传递请求头。

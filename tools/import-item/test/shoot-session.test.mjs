@@ -5,6 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import {setTimeout as pause} from 'node:timers/promises';
 import sharp from 'sharp';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {fileURLToPath} from 'node:url';
 import {startShootServer} from '../shoot/server.mjs';
 
 const origin = 'https://game.example';
@@ -82,4 +85,25 @@ test('cookie-free identities isolate private assets and same-key recovery surviv
 test('header identity cannot be enabled on the private preview or a nonpublic backend', async () => {
   await assert.rejects(startShootServer({headerIdentity: true}), /dedicated public API/);
   await assert.rejects(startShootServer({...options, previewAccessCode: 'a'.repeat(64)}), /dedicated public API/);
+});
+
+
+test('dedicated config uses 4331 and refuses to take the existing cookie backend port', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'shoot-session-cli-'));
+  const config = path.join(directory, 'config.json'), script = fileURLToPath(new URL('../shoot/server.mjs', import.meta.url));
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/proxy|api_key|gemini|aholo|google/i.test(key)));
+  const run = () => spawn(process.execPath, [script, '--config', config], {env, stdio: ['ignore', 'pipe', 'pipe']});
+  // Only the CLI config contract: omit the function API's fakeOptions.
+  const base = {port: 4331, directory, publicOrigin: origin, headerIdentity: true, budget: options.budget};
+  await fs.writeFile(config, JSON.stringify({...base, port: 4330}));
+  const invalid = run(); invalid.stdout.resume(); invalid.stderr.resume(); assert.notEqual((await once(invalid, 'exit'))[0], 0);
+  await fs.writeFile(config, JSON.stringify(base));
+  const child = run(); let output = ''; child.stdout.on('data', data => { output += data; }); child.stderr.resume();
+  const exited = once(child, 'exit');
+  t.after(async () => { if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM'); await exited; });
+  const end = Date.now() + 5000;
+  while (!output.includes('127.0.0.1:4331') && child.exitCode === null && Date.now() < end) await pause(10);
+  assert.ok(output.includes('127.0.0.1:4331'), 'dedicated fake backend did not start');
+  const r = await fetch('http://127.0.0.1:4331/api/shoot/session', {method: 'POST', headers: {origin}});
+  assert.equal(r.status, 200); assert.equal(r.headers.get('set-cookie'), null); await r.arrayBuffer();
 });

@@ -52,7 +52,7 @@ let app, gateway;
 try {
   const generator = await fakeGenerator(directory, {delayMs: 5});
   const publicOrigin = v['cloud-origin'] || 'https://localhost';
-  app = await startShootServer({port: 0, directory, repo: fixture, publicOrigin, generator, budget: {stage: 'isolated-fake-only', limit: 39}});
+  app = await startShootServer({port: 0, directory, repo: fixture, publicOrigin, headerIdentity: true, generator, budget: {stage: 'isolated-fake-only', limit: 39}});
   let drop = true, lostResponses = 0; const uploads = [];
   const fault = http.createServer((req, res) => {
     if (req.method === 'POST' && req.url === '/api/shoot/jobs') {
@@ -97,40 +97,41 @@ try {
   const conf = path.join(v.out, 'frpc.toml'); await fs.writeFile(conf, config, {mode: 0o600});
   Object.assign(env, {WANWU_PUBLIC_HOST: url.hostname, WANWU_BACKEND_PORT: String(backendPort)});
   run(path.join(v['frp-dir'], 'frpc'), ['-c', conf], env);
-  const send = (route, {method = 'GET', cookie = '', bytes, type} = {}) => new Promise((resolve, reject) => {
-    const req = https.request(target + route, {method, ca, headers: {origin: publicOrigin, ...(cookie ? {cookie} : {}), ...(type ? {'content-type': type, 'content-length': bytes.length} : {})}}, res => {
+  const send = (route, {method = 'GET', session = '', bytes, type} = {}) => new Promise((resolve, reject) => {
+    const req = https.request(target + route, {method, ca, headers: {origin: publicOrigin, 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1', ...(session ? {'x-shoot-session': session} : {}), ...(type ? {'content-type': type, 'content-length': bytes.length} : {})}}, res => {
       const chunks = []; res.on('data', b => chunks.push(b)); res.on('end', () => resolve({status: res.statusCode, headers: res.headers, bytes: Buffer.concat(chunks)})); res.on('error', reject);
     }); req.setTimeout(30000, () => req.destroy(Error('HTTP timeout'))); req.on('error', reject); req.end(bytes);
   });
   await until(() => send('/api/shoot/health'), x => x.status === 200, 60000);
-  const browsers = await Promise.all([send('/api/shoot/quota'), send('/api/shoot/quota')]);
-  const cookies = browsers.map(r => { assert.equal(r.status, 200); assert.match(r.headers['set-cookie'][0], /HttpOnly; SameSite=Strict;.*Secure/); return r.headers['set-cookie'][0].split(';')[0]; });
-  assert.notEqual(cookies[0], cookies[1]);
+  assert.equal((await send('/api/shoot/quota')).status, 401);
+  const browsers = await Promise.all([send('/api/shoot/session', {method: 'POST'}), send('/api/shoot/session', {method: 'POST'})]);
+  const sessions = browsers.map(r => { assert.equal(r.status, 200); assert.equal(r.headers['set-cookie'], undefined); const {token} = JSON.parse(r.bytes); assert.match(token, /^[a-f0-9-]{36}\.[a-f0-9]{64}$/); return token; });
+  assert.notEqual(sessions[0], sessions[1]);
   const photo = await fs.readFile(v.photo), model = await fs.readFile(v.model);
   const form = new FormData(); form.set('clientKey', 'transport-same-key'); form.set('photo', new Blob([photo], {type: 'image/jpeg'}), 'photo.jpg');
   const request = new Request('http://local.invalid', {method: 'POST', body: form});
   const bytes = Buffer.from(await request.arrayBuffer()), type = request.headers.get('content-type');
-  const first = await send('/api/shoot/jobs', {method: 'POST', cookie: cookies[0], bytes, type});
+  const first = await send('/api/shoot/jobs', {method: 'POST', session: sessions[0], bytes, type});
   assert.equal(first.status, 503); assert.equal(lostResponses, 1);
-  const retry = await send('/api/shoot/jobs', {method: 'POST', cookie: cookies[0], bytes, type}); assert.equal(retry.status, 202);
+  const retry = await send('/api/shoot/jobs', {method: 'POST', session: sessions[0], bytes, type}); assert.equal(retry.status, 202);
   const a = JSON.parse(retry.bytes).job;
-  const other = await send('/api/shoot/jobs', {method: 'POST', cookie: cookies[1], bytes, type}); assert.equal(other.status, 202);
+  const other = await send('/api/shoot/jobs', {method: 'POST', session: sessions[1], bytes, type}); assert.equal(other.status, 202);
   const b = JSON.parse(other.bytes).job; assert.notEqual(a.id, b.id);
   const complete = [];
   for (const [i, j] of [a, b].entries()) {
-    const r = await until(() => send('/api/shoot/jobs/' + j.id, {cookie: cookies[i]}), x => x.status === 200 && JSON.parse(x.bytes).job.status === 'succeeded');
+    const r = await until(() => send('/api/shoot/jobs/' + j.id, {session: sessions[i]}), x => x.status === 200 && JSON.parse(x.bytes).job.status === 'succeeded');
     const done = JSON.parse(r.bytes).job; complete.push(done);
     for (const file of ['photo.jpg', 'model.glb']) {
       const route = '/api/shoot/files/' + done.itemId + '/' + file;
-      const downloaded = await send(route, {cookie: cookies[i]}); assert.equal(downloaded.status, 200); assert.equal(downloaded.headers['cache-control'], 'no-store');
+      const downloaded = await send(route, {session: sessions[i]}); assert.equal(downloaded.status, 200); assert.equal(downloaded.headers['cache-control'], 'no-store');
       const stored = await fs.readFile(path.join(directory, j.id, file)); assert.equal(hash(downloaded.bytes), hash(stored));
       if (file === 'model.glb') assert.equal(hash(downloaded.bytes), hash(model));
-      assert.equal((await send(route, {cookie: cookies[1 - i]})).status, 404);
+      assert.equal((await send(route, {session: sessions[1 - i]})).status, 404);
       result.checks[file] = {uploadBytes: file === 'photo.jpg' ? photo.length : null, storedBytes: stored.length, receivedBytes: downloaded.bytes.length, sha256: hash(stored)};
     }
-    assert.equal((await send('/api/shoot/jobs/' + j.id, {cookie: cookies[1 - i]})).status, 404);
+    assert.equal((await send('/api/shoot/jobs/' + j.id, {session: sessions[1 - i]})).status, 404);
   }
-  const quotas = await Promise.all(cookies.map(async cookie => JSON.parse((await send('/api/shoot/quota', {cookie})).bytes)));
+  const quotas = await Promise.all(sessions.map(async session => JSON.parse((await send('/api/shoot/quota', {session})).bytes)));
   for (const q of quotas) { assert.equal(q.remaining, 1); assert.equal(q.recognition.remaining, 4); assert.equal(q.budget.remaining, 13); }
   assert.equal(generator.used(), 2);
   assert.equal(uploads.length, 3);
@@ -146,9 +147,9 @@ try {
     await until(() => send('/api/shoot/health').catch(() => ({status: 0})), x => x.status !== 200, 120000);
     const outage = new Date().toISOString();
     await until(() => send('/api/shoot/health'), x => x.status === 200, 180000);
-    const recovered = await send('/api/shoot/jobs', {method: 'POST', cookie: cookies[0], bytes, type});
+    const recovered = await send('/api/shoot/jobs', {method: 'POST', session: sessions[0], bytes, type});
     assert.equal(recovered.status, 202); assert.equal(JSON.parse(recovered.bytes).job.id, a.id); assert.equal(generator.used(), 2);
-    const q = JSON.parse((await send('/api/shoot/quota', {cookie: cookies[0]})).bytes);
+    const q = JSON.parse((await send('/api/shoot/quota', {session: sessions[0]})).bytes);
     assert.equal(q.remaining, 1); assert.equal(q.recognition.remaining, 4); assert.equal(q.budget.remaining, 13);
     result.checks.cloudRestart = {sameFrpcPid: checkpoint.frpcPid, outage, recoveredAt: new Date().toISOString(), sameTask: true, fakeSubmissions: generator.used(), generationRemaining: q.remaining, recognitionRemaining: q.recognition.remaining};
   }
