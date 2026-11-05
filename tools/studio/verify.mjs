@@ -17,7 +17,8 @@ import {startShootServer} from '../import-item/shoot/server.mjs';
 import {fakeGenerator} from '../import-item/shoot/fake.mjs';
 import {createGateway} from './gateway.mjs';
 
-const {values: v} = parseArgs({options: Object.fromEntries(['out', 'frp-dir', 'photo', 'model', 'cloud-origin'].map(k => [k, {type: 'string'}]))});
+const {values: v} = parseArgs({options: {...Object.fromEntries(['out', 'frp-dir', 'photo', 'model', 'cloud-origin'].map(k => [k, {type: 'string'}])), 'restart-check': {type: 'boolean'}}});
+if (v['restart-check'] && !v['cloud-origin']) throw Error('Restart check requires cloud origin');
 for (const k of ['out', 'frp-dir', 'photo', 'model']) if (!path.isAbsolute(v[k] ?? '')) throw Error('Absolute ' + k + ' required');
 await fs.mkdir(v.out, {recursive: true, mode: 0o700});
 const repo = fileURLToPath(new URL('../../', import.meta.url)), servers = [], children = [], socketSet = new Set();
@@ -137,6 +138,20 @@ try {
   result.checks.uploadBody = {bytes: bytes.length, sha256: hash(bytes), receivedCopies: uploads.length};
   result.checks.identityAndRetry = {owners: 2, tasks: complete.length, lostResponses, fakeSubmissions: generator.used(), generationRemainingEach: quotas.map(q => q.remaining), recognitionRemainingEach: quotas.map(q => q.recognition.remaining), budgetRemaining: quotas[0].budget.remaining, crossReadStatus: 404};
   if (gateway) { gateway.disconnect(); await until(() => send('/api/shoot/health'), x => x.status === 200); result.checks.reconnect = 'passed'; }
+  if (v['restart-check']) {
+    const checkpoint = {phase: 'awaiting-platform-restart', frpcPid: children.at(-1).pid, at: new Date().toISOString()};
+    await fs.writeFile(path.join(v.out, 'checkpoint.json'), JSON.stringify(checkpoint)); console.log(JSON.stringify(checkpoint));
+    // The operator restarts only the disposable cloud container after this
+    // checkpoint. Keep the same frpc and Mac jobs process throughout.
+    await until(() => send('/api/shoot/health').catch(() => ({status: 0})), x => x.status !== 200, 120000);
+    const outage = new Date().toISOString();
+    await until(() => send('/api/shoot/health'), x => x.status === 200, 180000);
+    const recovered = await send('/api/shoot/jobs', {method: 'POST', cookie: cookies[0], bytes, type});
+    assert.equal(recovered.status, 202); assert.equal(JSON.parse(recovered.bytes).job.id, a.id); assert.equal(generator.used(), 2);
+    const q = JSON.parse((await send('/api/shoot/quota', {cookie: cookies[0]})).bytes);
+    assert.equal(q.remaining, 1); assert.equal(q.recognition.remaining, 4); assert.equal(q.budget.remaining, 13);
+    result.checks.cloudRestart = {sameFrpcPid: checkpoint.frpcPid, outage, recoveredAt: new Date().toISOString(), sameTask: true, fakeSubmissions: generator.used(), generationRemaining: q.remaining, recognitionRemaining: q.recognition.remaining};
+  }
   result.passed = true;
 } catch (e) { result.passed = false; result.error = {name: e.name, code: e.code ?? null, operator: e.operator ?? null, frames: e.stack?.split('\n').filter(s => s.trimStart().startsWith('at ')).slice(0, 3)}; process.exitCode = 1; }
 finally {
