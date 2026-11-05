@@ -5,7 +5,8 @@
  * ShootError whose code is one of the draft's failure codes, plus 'offline' when the backend can't be reached.
  *
  * ?shoot=fake swaps in the local stand-in (shoot-fake.js) that walks the same states; ?shoot=real talks to the backend.
- * Without either the 拍一件 button stays hidden until the real backend is up (MVP 规格 §6: keys around 11-13).
+ * Without either the 拍一件 button stays hidden until the real backend is up (MVP 规格 §6: keys around 11-13). The 评委版
+ * talks to its own origin's backend unless the address says ?shoot=fake or ?shoot=off (Elara edd90212).
  */
 export class ShootError extends Error {
   constructor(code, extra = {}) { super(code); this.code = code; Object.assign(this, extra); }
@@ -68,8 +69,8 @@ function realApi(base = '/api/shoot') {
 }
 
 /** The backend for this page, or null when 拍一件 is not on yet. */
-export async function shootApi(q) {
+export async function shootApi(q, judge = false) {
   if (q.get('shoot') === 'fake') return (await import('./shoot-fake.js')).fakeApi(q);
-  if (q.get('shoot') === 'real') return realApi();
+  if (q.get('shoot') === 'real' || (judge && q.get('shoot') !== 'off')) return realApi();
   return null;
 }
