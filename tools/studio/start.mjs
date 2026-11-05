@@ -16,6 +16,7 @@ for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, stop);
 frps.on('error', () => { console.error('frps failed to start'); stop(); process.exitCode = 1; });
 frps.on('exit', () => { if (!stopping) { console.error('frps stopped'); stop(); process.exitCode = 1; } });
 try {
+  await gateway.ready;
   await new Promise((resolve, reject) => { gateway.server.once('error', reject); gateway.server.listen(7860, '0.0.0.0', resolve); });
   console.log('wanwu studio ready on 7860');
 } catch { stop(); process.exitCode = 1; }

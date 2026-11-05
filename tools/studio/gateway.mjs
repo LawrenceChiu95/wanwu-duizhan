@@ -3,9 +3,35 @@ import https from 'node:https';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pipeline} from 'node:stream/promises';
-import {gzipSync} from 'node:zlib';
+import {gzip} from 'node:zlib';
+import {promisify} from 'node:util';
+import {createHash} from 'node:crypto';
 
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.glb': 'model/gltf-binary', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff': 'font/woff', '.woff2': 'font/woff2'};
+const compress = promisify(gzip);
+const tag = bytes => '"' + createHash('sha256').update(bytes).digest('hex') + '"';
+async function loadStatic(root) {
+  root = await fs.realpath(root);
+  const files = new Map();
+  async function walk(folder) {
+    for (const entry of await fs.readdir(folder, {withFileTypes: true})) {
+      const file = path.join(folder, entry.name);
+      if (entry.isDirectory()) await walk(file);
+      // Only regular files from the immutable build; never follow a symlink.
+      else if (entry.isFile() && TYPES[path.extname(file)]) {
+        const ext = path.extname(file), bytes = await fs.readFile(file);
+        const compressed = ['.html', '.js', '.css', '.json', '.wasm', '.svg'].includes(ext) ? await compress(bytes) : null;
+        files.set('/' + path.relative(root, file).split(path.sep).join('/'), {
+          type: TYPES[ext], cache: ext === '.html' ? 'no-store' : 'no-cache',
+          plain: {bytes, etag: tag(bytes)}, gzip: compressed && {bytes: compressed, etag: tag(compressed)}
+        });
+      }
+    }
+  }
+  await walk(root);
+  return files;
+}
+
 function end(res, status, value) {
   res.writeHead(status, {'content-type': 'application/json', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer'});
   res.end(JSON.stringify(value));
@@ -20,7 +46,7 @@ function headers(input) {
 export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frpPort = 7000, tls = null}) {
   const origin = new URL(publicOrigin);
   if (origin.protocol !== 'https:' || origin.origin !== publicOrigin) throw Error('Exact HTTPS public origin required');
-  const sockets = new Set();
+  const sockets = new Set(), ready = webRoot ? loadStatic(webRoot) : Promise.resolve(null);
   const handler = async (req, res) => {
     try {
       if (!req.url.startsWith('/') || req.url.startsWith('//')) return end(res, 400, {error: 'bad-request'});
@@ -44,21 +70,17 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
         return;
       }
       if (!webRoot || !['GET', 'HEAD'].includes(req.method) || route.startsWith('/api/') || route === '/~!frp') return end(res, 404, {error: 'not-found'});
-      const root = await fs.realpath(webRoot), name = decodeURIComponent(route === '/' ? '/index.html' : route);
-      const candidate = path.resolve(root, '.' + name);
-      if (!candidate.startsWith(root + path.sep)) return end(res, 404, {error: 'not-found'});
-      const file = await fs.realpath(candidate), type = TYPES[path.extname(file)];
-      if (!file.startsWith(root + path.sep) || !type) return end(res, 404, {error: 'not-found'});
-      let bytes = await fs.readFile(file);
-      // Images/models are transformed during build. Revalidate all files so a
-      // rebuilt model with the same source hash cannot retain old compressed bytes.
-      const output = {'content-type': type, 'cache-control': path.extname(file) === '.html' ? 'no-store' : 'no-cache', 'content-length': bytes.length};
-      if (['.html', '.js', '.css', '.json', '.wasm', '.svg'].includes(path.extname(file))) {
-        output.vary = 'Accept-Encoding';
-        if (String(req.headers['accept-encoding'] ?? '').split(',').some(s => /^gzip(?:\s*;\s*q=(?!0(?:\.0*)?$)[\d.]+)?$/i.test(s.trim()))) {
-          bytes = gzipSync(bytes); output['content-encoding'] = 'gzip'; output['content-length'] = bytes.length;
-        }
+      const file = (await ready).get(decodeURIComponent(route === '/' ? '/index.html' : route));
+      if (!file) return end(res, 404, {error: 'not-found'});
+      const useGzip = file.gzip && String(req.headers['accept-encoding'] ?? '').split(',').some(s => /^gzip(?:\s*;\s*q=(?!0(?:\.0*)?$)[\d.]+)?$/i.test(s.trim()));
+      const {bytes, etag} = useGzip ? file.gzip : file.plain;
+      const output = {'content-type': file.type, 'cache-control': file.cache, etag};
+      if (file.gzip) output.vary = 'Accept-Encoding';
+      if (useGzip) output['content-encoding'] = 'gzip';
+      if (String(req.headers['if-none-match'] ?? '').split(',').some(s => s.trim() === '*' || s.trim().replace(/^W\//, '') === etag)) {
+        res.writeHead(304, output); res.end(); return;
       }
+      output['content-length'] = bytes.length;
       res.writeHead(200, output); res.end(req.method === 'HEAD' ? undefined : bytes);
     } catch { if (res.headersSent) res.destroy(); else end(res, 404, {error: 'not-found'}); }
   };
@@ -84,5 +106,5 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
     });
     upstream.end();
   });
-  return {server, disconnect() { for (const socket of sockets) socket.destroy(); }};
+  return {server, ready, disconnect() { for (const socket of sockets) socket.destroy(); }};
 }

@@ -43,7 +43,7 @@ test('lost upstream response becomes 503 and a write is never automatically repl
   assert.equal(r.status, 503); assert.equal(calls, 1); assert.equal(r.headers['cache-control'], 'no-store');
 });
 
-test('static root stays inside the build and changed model bytes are revalidated', async t => {
+test('immutable build preloads bytes, isolates paths and revalidates actual output after restart', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-studio-static-')), outside = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-studio-outside-'));
   await fs.mkdir(path.join(root, 'assets')); await fs.writeFile(path.join(root, 'index.html'), 'page '.repeat(100));
   await fs.writeFile(path.join(outside, 'private.json'), 'private'); await fs.symlink(path.join(outside, 'private.json'), path.join(root, 'escape.json'));
@@ -51,10 +51,24 @@ test('static root stays inside the build and changed model bytes are revalidated
   const g = createGateway({publicOrigin: 'https://game.example', webRoot: root}); t.after(() => g.disconnect()); const port = await listen(t, g.server);
   assert.equal((await request(port, '/escape.json')).status, 404); assert.equal((await request(port, '/%xx')).status, 404);
   const first = await request(port, '/assets/model-SameHash123.glb'); assert.equal(first.bytes.toString(), 'old'); assert.equal(first.headers['cache-control'], 'no-cache');
-  await fs.writeFile(model, 'new'); assert.equal((await request(port, '/assets/model-SameHash123.glb')).bytes.toString(), 'new');
+  assert.match(first.headers.etag, /^"[a-f0-9]{64}"$/);
+  const cached = await request(port, '/assets/model-SameHash123.glb', {headers: {'if-none-match': 'W/' + first.headers.etag}});
+  assert.equal(cached.status, 304); assert.equal(cached.bytes.length, 0);
+  await fs.writeFile(model, 'new');
+  // A running container serves its preloaded immutable build. The next build
+  // can retain Vite's source hash name, but gets a fresh output-byte ETag.
+  assert.equal((await request(port, '/assets/model-SameHash123.glb')).bytes.toString(), 'old');
+  const next = createGateway({publicOrigin: 'https://game.example', webRoot: root}); t.after(() => next.disconnect());
+  await next.ready; const nextPort = await listen(t, next.server);
+  const changed = await request(nextPort, '/assets/model-SameHash123.glb', {headers: {'if-none-match': first.headers.etag}});
+  assert.equal(changed.status, 200); assert.equal(changed.bytes.toString(), 'new'); assert.notEqual(changed.headers.etag, first.headers.etag);
   const page = await request(port, '/', {headers: {'accept-encoding': 'gzip'}}); assert.equal(page.headers['cache-control'], 'no-store'); assert.equal(gunzipSync(page.bytes).toString(), 'page '.repeat(100));
+  const unchanged = await request(port, '/', {headers: {'accept-encoding': 'gzip', 'if-none-match': '"other", ' + page.headers.etag}});
+  assert.equal(unchanged.status, 304); assert.equal(unchanged.bytes.length, 0);
   const uncompressed = await request(port, '/', {headers: {'accept-encoding': 'gzip;q=0'}}); assert.equal(uncompressed.headers['content-encoding'], undefined);
-  assert.equal((await request(port, '/', {method: 'HEAD'})).bytes.length, 0);
+  assert.notEqual(uncompressed.headers.etag, page.headers.etag);
+  const head = await request(port, '/', {method: 'HEAD', headers: {'accept-encoding': 'gzip'}});
+  assert.equal(head.bytes.length, 0); assert.equal(Number(head.headers['content-length']), page.bytes.length); assert.equal(head.headers.etag, page.headers.etag);
 });
 
 test('unknown WebSocket path cannot reach frps', async t => {
