@@ -32,3 +32,7 @@
 ## 11-05 最新改向（Elara 902f20d2）
 
 远夏不需要手机尾网入口；先录390宽的一件真实流程，等待可加速但标真实时长。自测只允许一件13分，计入原260分。随后凡朔公开试玩独立目录/阶段最多10件130分（也计入260，合计143以内），带随机256位暗码，打开时换成HttpOnly Secure访问cookie并跳到无暗码的游戏地址；不同浏览器继续各自持有owner cookie，不用共享访问暗码当owner。没暗码不能调用拍照或读照片/任务。预览暂时同源提供main网页，撤掉previewAccessCode后恢复评委API-only模式。评委公网验证39分仍单列，不挪用。Funnel/HTTPS只由Naomi开启，国内访问由Wren验，未测通不交公开链接。
+
+## 公网下载修正（Elara c11b5e74）
+
+海外代理两次整页60秒超时，4.3MB Rapier下载未完成。现在先补静态压缩/缓存：HTML不缓存，带hash的assets浏览器长缓存；JS/CSS/JSON/wasm按Accept-Encoding发gzip，q=0保留原字节，响应带Vary。API、照片和生成模型继续no-store。静态响应不创建或覆盖owner cookie，避免未携带API路径cookie的慢资源响应换掉活跃会话。仅预览模式下的`/assets/rapier-<hash>.js`允许无暗码GET/HEAD，供Wren测大文件；它是公开物理库，不含密钥/照片/任务，其他页面/静态文件/接口仍校暗码。测试须核解压字节一致、缓存头、HEAD、无暗码及路径/Host/Origin边界。Iris复审后重启自己的空闲服务，测公网拍照首屏、双浏览器与费用未变；Wren改前改后测大陆，不将暗码送测速站。

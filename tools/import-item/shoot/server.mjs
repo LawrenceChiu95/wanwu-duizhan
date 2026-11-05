@@ -1,5 +1,6 @@
 import http from 'node:http';
-import {parseArgs} from 'node:util';
+import {parseArgs, promisify} from 'node:util';
+import {gzip} from 'node:zlib';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -7,6 +8,27 @@ import {timingSafeEqual} from 'node:crypto';
 import {openJobs, apiError, MAX_PHOTO, REPO} from './jobs.mjs';
 
 const TYPES = {'.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.woff': 'font/woff', '.woff2': 'font/woff2'};
+const compress = promisify(gzip);
+async function staticFile(req, res, webRoot, route, probe = false) {
+  let name;
+  try { name = decodeURIComponent(route); } catch { throw apiError('bad-request', 'Invalid URL encoding'); }
+  const root = await fs.realpath(webRoot), candidate = path.resolve(root, '.' + (name === '/' ? '/index.html' : name));
+  if (!candidate.startsWith(root + path.sep)) throw apiError('not-found', 'No such file', 404);
+  const file = await fs.realpath(candidate), ext = path.extname(file);
+  if (!file.startsWith(root + path.sep) || !Object.hasOwn(TYPES, ext)) throw apiError('not-found', 'No such file', 404);
+  let bytes = await fs.readFile(file);
+  const hashed = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/.test(name);
+  const headers = {'content-type': TYPES[ext], 'cache-control': hashed ? `${probe ? 'public' : 'private'}, max-age=31536000, immutable` : 'no-store', 'x-content-type-options': 'nosniff'};
+  if (['.js', '.css', '.json', '.wasm'].includes(ext)) {
+    headers.vary = 'Accept-Encoding';
+    const accepted = String(req.headers['accept-encoding'] ?? '').split(',').map(v => v.trim().split(/\s*;\s*/)).find(([name]) => name.toLowerCase() === 'gzip');
+    if (accepted && Number(accepted.slice(1).find(v => v.startsWith('q='))?.slice(2) ?? '1') > 0) {
+      bytes = await compress(bytes); headers['content-encoding'] = 'gzip';
+    }
+  }
+  headers['content-length'] = bytes.length;
+  res.writeHead(200, headers); res.end(req.method === 'HEAD' ? undefined : bytes);
+}
 async function body(req, limit, code = 'bad-request') {
   const chunks = []; let size = 0;
   // Leave the request alive on rejection so the client receives the JSON error.
@@ -65,10 +87,19 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       }
       if (route.startsWith('/api/') && url.search) throw apiError('bad-request', 'Unexpected query parameters');
       if (req.method === 'GET' && route === '/api/shoot/health') return json(200, await jobs.health());
+      // A public, read-only copy of the shipped physics library lets mainland
+      // probes measure real download size without submitting the private link.
+      if (previewAccessCode && ['GET', 'HEAD'].includes(req.method) && !url.search && /^\/assets\/rapier-[A-Za-z0-9_-]{8,}\.js$/.test(route)) return await staticFile(req, res, webRoot, route, true);
       if (previewAccessCode) {
         const access = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(previewCookie + '='));
         if (access.length !== 1 || !sameCode(access[0].slice(previewCookie.length + 1))) throw apiError('forbidden', 'Open your private preview link first', 403);
       } else if (publicOrigin && !route.startsWith('/api/shoot/')) throw apiError('not-found', 'API only', 404);
+      // Static requests don't carry the API-path owner cookie. Never mint a new
+      // one here: a slow asset could otherwise overwrite an active API session.
+      if (!route.startsWith('/api/')) {
+        if (!['GET', 'HEAD'].includes(req.method)) throw apiError('not-found', 'Unknown route', 404);
+        return await staticFile(req, res, webRoot, route);
+      }
       const cookies = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(jobs.cookieName + '='));
       const identity = jobs.session(cookies.length === 1 ? cookies[0].slice(jobs.cookieName.length + 1) : null);
       const owner = identity.owner;
@@ -104,17 +135,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
         const file = await jobs.file(fileRoute[1], fileRoute[2], owner);
         res.writeHead(200, {'content-type': TYPES[path.extname(file)], 'cache-control': 'no-store', 'x-content-type-options': 'nosniff'}); return res.end(await fs.readFile(file));
       }
-      if (route.startsWith('/api/')) throw apiError('not-found', 'Unknown API route', 404);
-      if (req.method !== 'GET') throw apiError('not-found', 'Unknown route', 404);
-      // Serve a prebuilt game on the same origin; never expose source/state paths.
-      let name;
-      try { name = decodeURIComponent(route); } catch { throw apiError('bad-request', 'Invalid URL encoding'); }
-      const root = await fs.realpath(webRoot), candidate = path.resolve(root, '.' + (name === '/' ? '/index.html' : name));
-      if (!candidate.startsWith(root + path.sep)) throw apiError('not-found', 'No such file', 404);
-      const file = await fs.realpath(candidate);
-      if (!file.startsWith(root + path.sep) || !Object.hasOwn(TYPES, path.extname(file))) throw apiError('not-found', 'No such file', 404);
-      const bytes = await fs.readFile(file);
-      res.writeHead(200, {'content-type': TYPES[path.extname(file)], 'cache-control': 'no-store', 'x-content-type-options': 'nosniff'}); res.end(bytes);
+      throw apiError('not-found', 'Unknown API route', 404);
     } catch (error) {
       if (res.headersSent) { res.destroy(); return; }
       const status = error.status ?? (error.code === 'ENOENT' ? 404 : 500);

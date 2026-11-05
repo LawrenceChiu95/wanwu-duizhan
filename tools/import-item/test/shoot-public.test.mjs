@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import http from 'node:http';
 import path from 'node:path';
+import {gunzipSync} from 'node:zlib';
 import {setTimeout as pause} from 'node:timers/promises';
 import sharp from 'sharp';
 import {startShootServer} from '../shoot/server.mjs';
@@ -144,15 +145,34 @@ test('private preview exchanges its link, gates photos and static files, and kee
   const directory = await dir(), webRoot = await dir(), accessCode = 'a'.repeat(64);
   await fs.writeFile(path.join(webRoot, 'index.html'), '<h1>preview game</h1>');
   await fs.writeFile(path.join(webRoot, 'font.woff'), 'font');
+  await fs.mkdir(path.join(webRoot, 'assets'));
+  const library = 'const library = "public physics";\n'.repeat(500);
+  await fs.writeFile(path.join(webRoot, 'assets/rapier-Test1234.js'), library);
+  for (const ext of ['js', 'css', 'json', 'wasm']) await fs.writeFile(path.join(webRoot, `assets/game-Test1234.${ext}`), 'retained bytes '.repeat(500));
+  const outside = await dir();
+  await fs.writeFile(path.join(outside, 'private.js'), 'outside build');
+  await fs.symlink(path.join(outside, 'private.js'), path.join(webRoot, 'assets/rapier-Escape123.js'));
   const app = await startShootServer({port: 0, directory, webRoot, publicOrigin: 'https://preview.example', previewAccessCode: accessCode, budget: {stage: 'fanshuo', limit: 130}, fakeOptions: {delayMs: 1}});
   t.after(() => app.close());
   const send = async (route, {method = 'GET', cookie = '', bytes, headers = {}} = {}) => new Promise((resolve, reject) => {
     const req = http.request(app.url + route, {method, headers: {host: 'preview.example', origin: 'https://preview.example', ...(cookie ? {cookie} : {}), ...headers}}, res => {
       const chunks = []; res.on('data', b => chunks.push(b));
-      res.on('end', () => resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString()}));
+      res.on('end', () => resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString(), bytes: Buffer.concat(chunks)}));
     }); req.on('error', reject); req.end(bytes);
   });
-  for (const route of ['/', '/font.woff', '/api/shoot/quota', '/api/shoot/items', '/api/shoot/jobs']) assert.equal((await send(route)).status, 403);
+  for (const route of ['/', '/font.woff', '/assets/game-Test1234.js', '/assets/rapier-Test1234.js?extra=1', '/api/shoot/quota', '/api/shoot/items', '/api/shoot/jobs']) assert.equal((await send(route)).status, 403);
+  const probe = await send('/assets/rapier-Test1234.js', {headers: {'accept-encoding': 'gzip'}});
+  assert.equal(probe.status, 200); assert.equal(probe.headers['content-encoding'], 'gzip'); assert.equal(probe.headers.vary, 'Accept-Encoding');
+  assert.equal(probe.headers['cache-control'], 'public, max-age=31536000, immutable'); assert.equal(probe.headers['set-cookie'], undefined);
+  assert.equal(gunzipSync(probe.bytes).toString(), library); assert.ok(probe.bytes.length < Buffer.byteLength(library));
+  const head = await send('/assets/rapier-Test1234.js', {method: 'HEAD', headers: {'accept-encoding': 'gzip'}});
+  assert.equal(head.status, 200); assert.equal(head.body, ''); assert.equal(Number(head.headers['content-length']), probe.bytes.length);
+  assert.equal((await send('/assets/rapier-Test1234.js', {method: 'POST'})).status, 403);
+  assert.equal((await send('/assets/rapier-Escape123.js')).status, 404);
+  assert.equal((await send('/assets/rapier-Test1234.js', {headers: {host: 'other.example'}})).status, 403);
+  assert.equal((await send('/assets/rapier-Test1234.js', {headers: {origin: 'https://other.example'}})).status, 403);
+  const uncompressed = await send('/assets/rapier-Test1234.js', {headers: {'accept-encoding': 'gzip;q=0'}});
+  assert.equal(uncompressed.body, library); assert.equal(uncompressed.headers['content-encoding'], undefined);
   assert.equal((await send('/api/shoot/health')).status, 200);
   for (const code of ['b'.repeat(64), 'a'.repeat(63), '%E4%B8%AD'.repeat(64)]) assert.equal((await send('/open/' + code)).status, 403);
   assert.equal((await send('/open/' + accessCode + '?extra=1')).status, 403);
@@ -161,7 +181,15 @@ test('private preview exchanges its link, gates photos and static files, and kee
   assert.equal(link.headers['cache-control'], 'no-store'); assert.equal(link.headers['referrer-policy'], 'no-referrer');
   assert.match(link.headers['set-cookie'][0], /^__Host-wanwu_preview=.*; Path=\/; HttpOnly; Secure; SameSite=Lax/);
   const access = link.headers['set-cookie'][0].split(';')[0];
-  assert.match((await send('/', {cookie: access})).body, /preview game/);
+  const page = await send('/', {cookie: access});
+  assert.match(page.body, /preview game/); assert.equal(page.headers['cache-control'], 'no-store'); assert.equal(page.headers['set-cookie'], undefined);
+  for (const ext of ['js', 'css', 'json', 'wasm']) {
+    const asset = await send(`/assets/game-Test1234.${ext}`, {cookie: access, headers: {'accept-encoding': 'br, gzip;q=0.8'}});
+    assert.equal(asset.status, 200); assert.equal(asset.headers['content-encoding'], 'gzip');
+    assert.equal(asset.headers['cache-control'], 'private, max-age=31536000, immutable');
+    assert.equal(asset.headers['set-cookie'], undefined);
+    assert.equal(gunzipSync(asset.bytes).toString(), 'retained bytes '.repeat(500));
+  }
   const font = await send('/font.woff', {cookie: access}); assert.equal(font.status, 200); assert.equal(font.headers['content-type'], 'font/woff');
   assert.equal((await send('/api/shoot/quota', {cookie: access + '; ' + access})).status, 403);
   const browsers = await Promise.all([send('/api/shoot/quota', {cookie: access}), send('/api/shoot/quota', {cookie: access})]);
