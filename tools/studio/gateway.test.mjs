@@ -46,10 +46,12 @@ test('lost upstream response becomes 503 and a write is never automatically repl
 test('immutable build preloads bytes, isolates paths and revalidates actual output after restart', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-studio-static-')), outside = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-studio-outside-'));
   await fs.mkdir(path.join(root, 'assets')); await fs.writeFile(path.join(root, 'index.html'), 'page '.repeat(100));
+  await fs.writeFile(path.join(root, 'assets/app-Hash12345.js'), 'immutable JS');
   await fs.writeFile(path.join(outside, 'private.json'), 'private'); await fs.symlink(path.join(outside, 'private.json'), path.join(root, 'escape.json'));
   const model = path.join(root, 'assets/model-SameHash123.glb'); await fs.writeFile(model, 'old');
   const g = createGateway({publicOrigin: 'https://game.example', webRoot: root}); t.after(() => g.disconnect()); const port = await listen(t, g.server);
   assert.equal((await request(port, '/escape.json')).status, 404); assert.equal((await request(port, '/%xx')).status, 404);
+  assert.equal((await request(port, '/assets/app-Hash12345.js')).headers['cache-control'], 'public, max-age=31536000, immutable');
   const first = await request(port, '/assets/model-SameHash123.glb'); assert.equal(first.bytes.toString(), 'old'); assert.equal(first.headers['cache-control'], 'no-cache');
   assert.match(first.headers.etag, /^"[a-f0-9]{64}"$/);
   const cached = await request(port, '/assets/model-SameHash123.glb', {headers: {'if-none-match': 'W/' + first.headers.etag}});

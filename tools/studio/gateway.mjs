@@ -22,7 +22,7 @@ async function loadStatic(root) {
         const ext = path.extname(file), bytes = await fs.readFile(file);
         const compressed = ['.html', '.js', '.css', '.json', '.wasm', '.svg'].includes(ext) ? await compress(bytes) : null;
         files.set('/' + path.relative(root, file).split(path.sep).join('/'), {
-          type: TYPES[ext], cache: ext === '.html' ? 'no-store' : 'no-cache',
+          type: TYPES[ext], cache: ext === '.html' ? 'no-store' : /-[A-Za-z0-9_-]{8,}\.(js|css|wasm)$/.test(entry.name) ? 'public, max-age=31536000, immutable' : 'no-cache',
           plain: {bytes, etag: tag(bytes)}, gzip: compressed && {bytes: compressed, etag: tag(compressed)}
         });
       }
