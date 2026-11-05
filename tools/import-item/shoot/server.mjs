@@ -3,9 +3,10 @@ import {parseArgs} from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {timingSafeEqual} from 'node:crypto';
 import {openJobs, apiError, MAX_PHOTO, REPO} from './jobs.mjs';
 
-const TYPES = {'.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.woff2': 'font/woff2'};
+const TYPES = {'.glb': 'model/gltf-binary', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.woff': 'font/woff', '.woff2': 'font/woff2'};
 async function body(req, limit, code = 'bad-request') {
   const chunks = []; let size = 0;
   // Leave the request alive on rejection so the client receives the JSON error.
@@ -28,7 +29,7 @@ async function jsonBody(req, allowed) {
   catch (error) { if (error.status) throw error; throw apiError('bad-request', 'Invalid JSON'); }
   return fields(parsed, allowed);
 }
-export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, ...options} = {}) {
+export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, previewAccessCode = null, ...options} = {}) {
   if (privateOrigin !== null) {
     const u = new URL(privateOrigin), parts = u.hostname.split('.').map(Number);
     if (publicOrigin || u.protocol !== 'http:' || u.origin !== privateOrigin || parts.length !== 4 || !parts.every(n => Number.isInteger(n) && n >= 0 && n <= 255) || parts[0] !== 100 || parts[1] < 64 || parts[1] > 127 || !options.budget) throw Error('Private mode requires exact Tailscale HTTP origin and budget');
@@ -37,9 +38,15 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
     const u = new URL(publicOrigin);
     if (u.protocol !== 'https:' || u.origin !== publicOrigin || !options.budget) throw Error('Public mode requires exact HTTPS origin and budget');
   }
+  // A temporary, explicitly authorized preview serves the existing game on the
+  // same HTTPS origin. The opaque link exchanges for a separate access cookie;
+  // it never replaces each browser's independent job ownership cookie.
+  if (previewAccessCode !== null && (!publicOrigin || frontendOrigin || !/^[a-f0-9]{64}$/.test(previewAccessCode) || options.budget.limit > 130)) throw Error('Preview requires HTTPS, a 256-bit access code and budget <=130');
+  const previewCookie = '__Host-wanwu_preview';
+  const sameCode = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) && timingSafeEqual(Buffer.from(value), Buffer.from(previewAccessCode ?? ''));
   if (frontendOrigin !== null) {
     const u = new URL(frontendOrigin);
-    if (u.origin !== frontendOrigin || (publicOrigin ? u.protocol !== 'https:' : u.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname))) throw Error('Invalid frontend origin');
+    if (u.origin !== frontendOrigin || (publicOrigin ? u.protocol !== 'https:' : u.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname))) throw Error('Frontend origin must be exact HTTPS in public mode, otherwise local HTTP');
   }
   const jobs = await openJobs({directory, repo, ...options, ...((publicOrigin || privateOrigin) && !options.limits ? {limits: {browser: {generation: privateOrigin ? 20 : 2, recognition: privateOrigin ? 100 : 5}, global: {generation: 20, recognition: privateOrigin ? 100 : 400}}} : {})});
   const server = http.createServer(async (req, res) => {
@@ -50,9 +57,18 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       const origins = [origin, frontendOrigin, publicOrigin, privateOrigin, ...(privateOrigin ? [`http://localhost:${server.address().port}`] : [])].filter(Boolean);
       if (!hosts.includes(req.headers.host) || (req.headers.origin && !origins.includes(req.headers.origin))) throw apiError('forbidden', 'Unrecognized host or origin', 403);
       const url = new URL(req.url, origin), route = url.pathname;
+      res.setHeader('referrer-policy', 'no-referrer');
+      if (previewAccessCode && req.method === 'GET' && route.startsWith('/open/')) {
+        if (url.search || !sameCode(route.slice('/open/'.length))) throw apiError('forbidden', 'Invalid preview link', 403);
+        res.writeHead(303, {'location': '/?shoot=real', 'cache-control': 'no-store', 'set-cookie': `${previewCookie}=${previewAccessCode}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`});
+        return res.end();
+      }
       if (route.startsWith('/api/') && url.search) throw apiError('bad-request', 'Unexpected query parameters');
-      if (publicOrigin && !route.startsWith('/api/shoot/')) throw apiError('not-found', 'API only', 404);
       if (req.method === 'GET' && route === '/api/shoot/health') return json(200, await jobs.health());
+      if (previewAccessCode) {
+        const access = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(previewCookie + '='));
+        if (access.length !== 1 || !sameCode(access[0].slice(previewCookie.length + 1))) throw apiError('forbidden', 'Open your private preview link first', 403);
+      } else if (publicOrigin && !route.startsWith('/api/shoot/')) throw apiError('not-found', 'API only', 404);
       const cookies = (req.headers.cookie ?? '').split(';').map(v => v.trim()).filter(v => v.startsWith(jobs.cookieName + '='));
       const identity = jobs.session(cookies.length === 1 ? cookies[0].slice(jobs.cookieName.length + 1) : null);
       const owner = identity.owner;
@@ -98,7 +114,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       const file = await fs.realpath(candidate);
       if (!file.startsWith(root + path.sep) || !Object.hasOwn(TYPES, path.extname(file))) throw apiError('not-found', 'No such file', 404);
       const bytes = await fs.readFile(file);
-      res.writeHead(200, {'content-type': TYPES[path.extname(file)], 'x-content-type-options': 'nosniff'}); res.end(bytes);
+      res.writeHead(200, {'content-type': TYPES[path.extname(file)], 'cache-control': 'no-store', 'x-content-type-options': 'nosniff'}); res.end(bytes);
     } catch (error) {
       if (res.headersSent) { res.destroy(); return; }
       const status = error.status ?? (error.code === 'ENOENT' ? 404 : 500);
@@ -116,7 +132,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let config = {};
   if (values.config) {
     if (!path.isAbsolute(values.config)) throw Error('Config path must be absolute');
-    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'budget', 'limits']);
+    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'previewAccessCode', 'budget', 'limits']);
     if (config.port !== 4330 || !path.isAbsolute(config.directory ?? '') || !(config.publicOrigin || config.privateOrigin) || !config.budget) throw Error('Public config requires port 4330, absolute private directory, HTTPS origin and budget');
     process.umask(0o077);
   }

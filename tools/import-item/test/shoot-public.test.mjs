@@ -139,3 +139,46 @@ test('budgeted service refuses unmetered unfinished legacy state instead of auto
   await jobs.close();
   await assert.rejects(openJobs({directory, budget}), /separate directory/);
 });
+
+test('private preview exchanges its link, gates photos and static files, and keeps two browsers separate', async t => {
+  const directory = await dir(), webRoot = await dir(), accessCode = 'a'.repeat(64);
+  await fs.writeFile(path.join(webRoot, 'index.html'), '<h1>preview game</h1>');
+  await fs.writeFile(path.join(webRoot, 'font.woff'), 'font');
+  const app = await startShootServer({port: 0, directory, webRoot, publicOrigin: 'https://preview.example', previewAccessCode: accessCode, budget: {stage: 'fanshuo', limit: 130}, fakeOptions: {delayMs: 1}});
+  t.after(() => app.close());
+  const send = async (route, {method = 'GET', cookie = '', bytes, headers = {}} = {}) => new Promise((resolve, reject) => {
+    const req = http.request(app.url + route, {method, headers: {host: 'preview.example', origin: 'https://preview.example', ...(cookie ? {cookie} : {}), ...headers}}, res => {
+      const chunks = []; res.on('data', b => chunks.push(b));
+      res.on('end', () => resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString()}));
+    }); req.on('error', reject); req.end(bytes);
+  });
+  for (const route of ['/', '/font.woff', '/api/shoot/quota', '/api/shoot/items', '/api/shoot/jobs']) assert.equal((await send(route)).status, 403);
+  assert.equal((await send('/api/shoot/health')).status, 200);
+  for (const code of ['b'.repeat(64), 'a'.repeat(63), '%E4%B8%AD'.repeat(64)]) assert.equal((await send('/open/' + code)).status, 403);
+  assert.equal((await send('/open/' + accessCode + '?extra=1')).status, 403);
+  const link = await send('/open/' + accessCode);
+  assert.equal(link.status, 303); assert.equal(link.headers.location, '/?shoot=real');
+  assert.equal(link.headers['cache-control'], 'no-store'); assert.equal(link.headers['referrer-policy'], 'no-referrer');
+  assert.match(link.headers['set-cookie'][0], /^__Host-wanwu_preview=.*; Path=\/; HttpOnly; Secure; SameSite=Strict/);
+  const access = link.headers['set-cookie'][0].split(';')[0];
+  assert.match((await send('/', {cookie: access})).body, /preview game/);
+  const font = await send('/font.woff', {cookie: access}); assert.equal(font.status, 200); assert.equal(font.headers['content-type'], 'font/woff');
+  assert.equal((await send('/api/shoot/quota', {cookie: access + '; ' + access})).status, 403);
+  const browsers = await Promise.all([send('/api/shoot/quota', {cookie: access}), send('/api/shoot/quota', {cookie: access})]);
+  const cookies = browsers.map(r => access + '; ' + r.headers['set-cookie'][0].split(';')[0]);
+  assert.notEqual(cookies[0], cookies[1]);
+  const form = new FormData(); form.set('clientKey', 'same-client-key'); form.set('photo', new Blob([photo], {type: 'image/png'}), 'photo.png');
+  const request = new Request(app.url, {method: 'POST', body: form});
+  const bytes = Buffer.from(await request.arrayBuffer()), headers = {'content-type': request.headers.get('content-type')};
+  const replies = await Promise.all(cookies.map(cookie => send('/api/shoot/jobs', {method: 'POST', cookie, bytes, headers})));
+  assert.ok(replies.every(r => r.status === 202));
+  const ids = replies.map(r => JSON.parse(r.body).job.id); assert.notEqual(ids[0], ids[1]);
+  assert.equal((await send('/api/shoot/jobs/' + ids[0], {cookie: cookies[1]})).status, 404);
+  assert.equal(JSON.parse((await send('/api/shoot/quota', {cookie: cookies[0]})).body).budget.remaining, 104);
+});
+
+test('temporary preview refuses weak codes, cross-site frontend, or a budget above 130', async () => {
+  for (const extra of [{previewAccessCode: 'weak'}, {previewAccessCode: 'a'.repeat(64), frontendOrigin: 'https://other.example'}, {previewAccessCode: 'a'.repeat(64), budget: {stage: 'fanshuo', limit: 143}}]) {
+    await assert.rejects(startShootServer({port: 0, directory: await dir(), publicOrigin: 'https://preview.example', budget: {stage: 'fanshuo', limit: 130}, ...extra}));
+  }
+});
