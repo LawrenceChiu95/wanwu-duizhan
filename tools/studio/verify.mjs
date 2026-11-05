@@ -159,7 +159,8 @@ try {
     await until(() => send('/api/shoot/health').catch(() => ({status: 0})), x => !healthy(x), 120000);
     const outage = new Date().toISOString();
     result.restartObserved = {outage};
-    await until(() => send('/api/shoot/health'), healthy, 180000);
+    // Observed free Docker stop/deploy took over three minutes to be Running.
+    await until(() => send('/api/shoot/health'), healthy, 360000);
     const recovered = await send('/api/shoot/jobs', {method: 'POST', session: sessions[0], bytes, type});
     result.restartObserved.response = {status: recovered.status, contentType: recovered.headers['content-type']};
     assert.equal(recovered.status, 202); assert.equal(JSON.parse(recovered.bytes).job.id, a.id); assert.equal(generator.used(), 2);
