@@ -665,6 +665,7 @@ async function main() {
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false};
+      diag.fight();
     } else {
       // Yield to the page every few hundred physics steps so the preview keeps spinning.
       r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, onProgress: () => new Promise(res => setTimeout(res, 0))});
@@ -1194,13 +1195,13 @@ async function main() {
   // which works inside the studio page's frame where an address parameter may not reach us; ?diag=1 opens it too.
   const diag = (() => {
     const box = $('diag'), taps = [], count = {};
-    let on = q.get('diag') === '1', n = 0, wall = 0, playWall = 0, game = 0, lastT = null, fightWall = 0, fightGame = 0, fightStop = 0, worst = 0, fps = 0, ratio = null, slowest = 0, cancels = 0, hits = [];
+    let on = q.get('diag') === '1', n = 0, wall = 0, playWall = 0, game = 0, fightWall = 0, fightGame = 0, fightStop = 0, fightCap = 0, worst = 0, fps = 0, ratio = null, slowest = 0, cancels = 0, hits = [];
     try { on ||= localStorage.getItem('wd.diag') === '1'; } catch { /* sandboxed viewer */ }
     const draw = () => {
       if (!on) return;
       const now = performance.now();
       box.textContent = [`帧 ${fps}/秒 · 游戏 ${ratio === null ? '—' : `${ratio.toFixed(2)}×`}`,
-        `本局 ${fightWall ? `${(fightGame / fightWall).toFixed(2)}×` : '—'} · 其中停顿慢放 ${fightStop.toFixed(1)}秒`, `最慢一帧 ${slowest}ms · 取消 ${cancels}`,
+        `本局 ${fightWall ? `${(fightGame / fightWall).toFixed(2)}×` : '—'} · 停顿慢放 ${fightStop.toFixed(1)}秒 · 卡帧 ${fightCap.toFixed(1)}秒`, `最慢一帧 ${slowest}ms · 取消 ${cancels}`,
         ...taps.map(t => `${t.action === 'dash' ? '冲' : '挡'} ${t.what} · ${((now - t.at) / 1000).toFixed(1)}秒前`)].join('\n');
     };
     const toggle = () => {
@@ -1214,14 +1215,12 @@ async function main() {
       if (hits.length >= 5) { hits = []; toggle(); }
     });
     return {
-      // t: the match clock during a fight (null otherwise), so the ratio is what the fight really ran at. Hit stops and slow
-      // motion lower it by design; stop says this frame was one of those, and the fight's total of them shows beside it.
-      frame(w, t, stop) {
+      fight() { fightWall = fightGame = fightStop = fightCap = 0; },
+      // One fight frame: w real seconds, of which step went to the playback (frames over 100 ms are cut, the rest is
+      // 卡帧) and moved came out as match time; step - moved is hit stops and slow motion, there by design.
+      play(w, step, moved) { game += moved; playWall += w; fightGame += moved; fightWall += w; fightStop += step - moved; fightCap += w - step; },
+      frame(w) {
         n++; wall += w; worst = Math.max(worst, w);
-        // A new fight starts its clock again from 0.
-        if (t !== null && (lastT === null || t < lastT)) fightWall = fightGame = fightStop = 0;
-        if (t !== null && lastT !== null && t >= lastT) { game += t - lastT; playWall += w; fightGame += t - lastT; fightWall += w; if (stop) fightStop += w; }
-        lastT = t;
         if (wall < 0.5) return;
         fps = Math.round(n / wall); ratio = playWall ? game / playWall : null; slowest = Math.round(worst * 1000);
         n = wall = playWall = game = worst = 0;
@@ -1288,7 +1287,7 @@ async function main() {
     const wall = (now - last) / 1000;
     let dt = Math.min(0.1, wall);
     last = now;
-    diag.frame(wall, phase === 'play' && pb ? pb.t : null, pb && (pb.hold > 0 || pb.slowNow || pb.slowFactor(pb.t) < 1));
+    diag.frame(wall);
     if (test.pending >= 0) {
       test.pending -= dt;
       if (test.pending < 0) { test.frozen = true; test.freezeOn = null; }
@@ -1311,6 +1310,7 @@ async function main() {
         pb.sync(live.done);
       }
       simDt = pb.advance(dt, 1, onEvent);
+      if (phase === 'play') diag.play(wall * test.speed, dt, simDt);
       stage.pose(pb.state);
       stage.setLookahead(lookahead());
       stage.setPushV4(pb.pushAmount(pb.t));
