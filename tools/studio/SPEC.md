@@ -3,7 +3,7 @@
 授权：Elara dm:@Elara:28ad1af8 04fd7140；远夏 671c03a4、40e3cd9b。Sol 后端与传输，Iris 独立只读审查；现有 Fanshuo 4330/Funnel 不动。
 
 ## 路线与边界
-- 单 Docker 仅开放 7860：同源网页和 /api/shoot，Mac 使用官方 frp v0.72.0 的 WSS 主动连接。云端 frps 内部端口和转发端口只绑定 loopback，allowPorts 只准固定一个转发端口；外层网关只升级固定 /~!frp 路径或平台实测编码后的 /~%21frp；统一转成字面路径给frps，不接受参数/后缀或任意目的地。
+- 单 Docker 仅开放 7860：同源网页和 /api/shoot，Mac 使用基于官方 frp v0.72.0 来源固定的客户端，以 WSS 主动连接（下文为唯一补丁）。云端 frps 内部端口和转发端口只绑定 loopback，allowPorts 只准固定一个转发端口；外层网关只升级固定 /~!frp 路径或平台实测编码后的 /~%21frp；统一转成字面路径给frps，不接受参数/后缀或任意目的地。
 - frp 共享密钥只放 ModelScope Secret 和本机钥匙串，不进 Git、命令参数或日志。供应商密钥、身份、原照、角色、额度和幂等任务全部保留 Mac；本轮只有隔离假供应商。
 - HTTP 透明转发，不自动重放写请求、不缓存私件、不改 cookie/Origin。禁止任意外部代理；仅 /api/shoot 路由到固定 loopback 转发端口。实际 ModelScope 的 Host/Origin 在隔离后台显式列白名单。
 - 网关超时和断线返回失败，Mac 已接受任务照常继续；客户端拿同一身份及 clientKey 重试，去重与扣额只由已有 jobs 层负责。
@@ -33,3 +33,9 @@
 - 会话模式下缺失/错误令牌返回401/session，不降级到 cookie、不重发身份、不自动重放提交。页面保留原 token/job/clientKey，先去打现成角色；存储失效不能以新身份悄悄重试付费。
 - 照片、改图及 GLB 带头 fetch 转 Blob URL，令牌不进 URL、日志或截图。Mac owner 校验、幂等及额度沿用；云网关透明传递请求头。
 - 先用假供应商验证令牌隔离、掉线丢回包同任务、重启后同身份重取及私件串读拒绝，再交 Iris 独立审查。上线仍需创空间内 iPhone Safari 真点拍照/相册、生成中刷新续接验证；UA模拟不代替实体手机。
+
+## Mac 客户端的最小平台补丁
+- 云端同路径同 Origin 对照：空 User-Agent 返回403，`Go-http-client/1.1` 返回101。官方客户端调用 x/net/websocket 的手写握手，默认不带 User-Agent，实际报 bad status；与 TLS 和 frp 认证无关。
+- `nice -n 20 node tools/studio/build-frpc.mjs --out <不存在的绝对目录>` 固定下载官方0.72.0对应提交 bafec21abce5f91ae4a05b4bd19c55543c263128，校验源包SHA256后只加一行握手 User-Agent，用本机Go构建。可用 `--archive <绝对路径>` 复用已下载源包，仍做同一SHA校验。产物和来源清单放输出目录，不进仓库。
+- TLS证书校验、Origin、共享认证、二进制帧和服务端二进制均保持原样。此脚本只构建，不启动服务或读取密钥；不允许覆盖已有输出目录。构建工具需要Go1.26，正式运行无需Go。
+- 实体iPhone由Elara安排进远夏下一批验收（5ace97fd）；Mac和4331通后，Wren先用WebKit在创空间核相册、生成中刷新及401两屏，不能把它记成实体手机验收。
