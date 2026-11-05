@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
+import ladderJson from '../../data/foes.json';
 import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
@@ -50,6 +51,16 @@ const FOES = [
   {level: '弱', rank: 'lo', build: {parts: [{item: 'scissors', orient: 'out'}, {item: 'slipper', orient: 'hug'}], spread: 'e180'}}
 ];
 const SPREAD = {e180: '对面', e90: '挨着'};
+// 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
+const LADDER = ladderJson.foes;
+const LADDER_KEY = 'wanwu-ladder';
+const SVG = {
+  lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>',
+  open: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.6-1.8" /></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>',
+  down: '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg>',
+  arrow: '<svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>'
+};
 const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
@@ -198,7 +209,20 @@ async function main() {
   const BUILD_KEY = 'wanwu-build';
   const keptArg = (() => { try { return localStorage.getItem(BUILD_KEY); } catch { return null; } })();
   const mine = structuredClone((q.has('mine') ? fromUrl() : keptArg && readBuild('mine', keptArg)) ?? DEFAULT);
-  let FOE = structuredClone(fromUrl('foe') ?? DEFAULT_FOE);
+  // ?foe= (measurements) fights that build with the old 换个对手 list and keeps no progress; otherwise the ladder.
+  const ladderOn = !q.has('foe');
+  const ladder = (() => {
+    let kept = null;
+    try { kept = JSON.parse(localStorage.getItem(LADDER_KEY)); } catch { /* no storage, or not ours */ }
+    const won = new Set((Array.isArray(kept?.won) ? kept.won : []).filter(id => LADDER.some(f => f.id === id)));
+    const open = i => i === 0 || won.has(LADDER[i - 1].id);
+    const keptAt = LADDER.findIndex(f => f.id === kept?.at);
+    // The one picked last time; else the first not yet won (the last, once all are).
+    const at = keptAt >= 0 && open(keptAt) ? keptAt : Math.max(0, LADDER.findIndex((f, i) => open(i) && !won.has(f.id)));
+    return {won, open, at: at < 0 ? LADDER.length - 1 : at};
+  })();
+  const keepLadder = () => { try { localStorage.setItem(LADDER_KEY, JSON.stringify({won: [...ladder.won], at: LADDER[ladder.at].id})); } catch { /* no storage here */ } };
+  let FOE = structuredClone(ladderOn ? LADDER[ladder.at].build : fromUrl('foe') ?? DEFAULT_FOE);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
   // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).
@@ -218,6 +242,9 @@ async function main() {
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
+  // The ladder opponent of the match on screen (null with ?foe=), and what its result did to the ladder (worked out once:
+  // the result shows again after 重看).
+  let fought = null, outcome = null;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
   let lastParryT = -Infinity, lateNums = [];
@@ -227,16 +254,59 @@ async function main() {
   // Opponent tag on the build screen, and 换个对手: a sheet of the computer's builds; the pick stays for the next rounds.
   const sameBuild = (x, y) => x.spread === y.spread && x.parts.every((p, i) => p.item === y.parts[i].item && p.orient === y.parts[i].orient);
   const partsHtml = b => b.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
-  function renderFoe() { el.foeParts.innerHTML = partsHtml(FOE); }
+  const markHtml = (i, cls = '') => `<span class="ft f${i + 1}${cls}">${LADDER[i].mark}</span>`;
+  function renderFoe() {
+    el.foeParts.innerHTML = partsHtml(FOE);
+    if (!ladderOn) return;
+    const f = LADDER[ladder.at];
+    el.foe.classList.add('ladder');
+    $('foeMark').className = `ft f${ladder.at + 1}`; $('foeMark').textContent = f.mark; $('foeMark').hidden = false;
+    $('foeLabel').textContent = f.name;
+    $('foeBtn').setAttribute('aria-label', `三个对手，现在是第 ${ladder.at + 1} 个`);
+    $('foeBtn').innerHTML = `<i class="pips">${LADDER.map((g, i) => `<i class="${ladder.won.has(g.id) ? 'won' : ''}${i === ladder.at ? ' now' : ''}"></i>`).join('')}</i><b>${ladder.at + 1}/${LADDER.length}</b>${SVG.down}`;
+  }
   renderFoe();
   let foeReq = 0;
   // Only on the build screen: once 开打 is pressed this round's opponent is fixed, so 原样再来 fights the same one (Sol B1).
   function openFoes() {
     if (phase !== 'build') return;
+    if (ladderOn) { openLadder(); return; }
     el.foeList.innerHTML = FOES.map((f, i) => `<button type="button" class="frow" role="radio" data-foe="${i}" aria-checked="${sameBuild(f.build, FOE)}">
       <span class="lvl${f.rank ? ' ' + f.rank : ''}">${f.level}</span><span class="fparts">${partsHtml(f.build)}</span><small>${SPREAD[f.build.spread]}</small></button>`).join('');
     for (const row of el.foeList.querySelectorAll('[data-foe]')) row.onclick = () => setFoe(FOES[Number(row.dataset.foe)].build);
     el.foeSheet.hidden = false;
+  }
+  // The ladder: one row per opponent, joined by a line; a locked one shows neither its build nor lets itself be picked.
+  function openLadder() {
+    const won = LADDER.filter(f => ladder.won.has(f.id)).length, clear = won === LADDER.length;
+    $('foeHead').classList.toggle('clear', clear);
+    $('foeTitle').textContent = clear ? '三个都赢了' : '三个对手';
+    $('foeProg').textContent = `已赢 ${won} / ${LADDER.length}`;
+    $('foeSub').textContent = clear ? '随便挑一个，换个装法再打一轮' : '一个比一个难，赢了上一个才解锁下一个';
+    el.foeList.innerHTML = LADDER.map((f, i) => {
+      const head = `<span class="nm">${esc(f.name)}<small>第 ${i + 1} 个</small></span>`;
+      if (!ladder.open(i)) return `<div class="rung locked" role="radio" aria-checked="false" aria-disabled="true" data-rung="${i}">
+        <span class="ft off">${SVG.lock}</span>${head}<span class="play">${esc(f.play)}</span><span class="need">${SVG.lock}赢了${esc(LADDER[i - 1].name)}解锁</span></div>`;
+      const won = ladder.won.has(f.id);
+      return `<button type="button" class="rung${won ? ' won' : ''}" role="radio" aria-checked="${i === ladder.at}" data-rung="${i}">${markHtml(i)}${head}
+        ${won ? `<span class="st won">${SVG.check}已赢</span>` : i === ladder.at ? '<span class="st now">正在打</span>' : ''}
+        <span class="play">${esc(f.play)}</span><span class="rparts">${partsHtml(f.build)}</span></button>`;
+    }).join('');
+    for (const row of el.foeList.querySelectorAll('[data-rung]')) row.onclick = () => {
+      const i = Number(row.dataset.rung);
+      if (ladder.open(i)) { pickFoe(i); return; }
+      row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+      sfx.deny();
+    };
+    el.foeSheet.hidden = false;
+  }
+  function pickFoe(i) {
+    el.foeSheet.hidden = true;
+    if (phase !== 'build') return;
+    ladder.at = i;
+    keepLadder();
+    renderFoe();
+    setFoe(LADDER[i].build);
   }
   async function setFoe(b) {
     el.foeSheet.hidden = true;
@@ -317,6 +387,7 @@ async function main() {
 
   // ---------- HUD ----------
   function buildHud(defs) {
+    $('foeWho').textContent = fought === null ? '对手' : LADDER[fought].name;
     defs.forEach((def, i) => {
       const box = el.hud.querySelector(`.s${i} .parts`);
       // Imported items often have three- or four-character names: those tags get the compact style (style.css .pc.long).
@@ -562,6 +633,8 @@ async function main() {
     if (phase !== 'build' || !el.error.hidden) return;
     const id = ++runId;
     if (!fixedSeed) seed = randomSeed();
+    fought = ladderOn ? ladder.at : null;
+    outcome = null;
     phase = 'computing';
     el.go.disabled = true;
     el.foeSheet.hidden = true;
@@ -637,16 +710,49 @@ async function main() {
     el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
-    el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">对手</span>${builds[1]}`;
+    el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner);
+    outcome ??= ladderOutcome(m.winner);
+    showOutcome(outcome);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false);
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
     stage.setFocusOn(m.winner, el.result.offsetTop);
+  }
+  // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个), the first over the last
+  // one is the 三个都赢了 ending (随便挑 opens the ladder). Losing, a draw, or ?foe= leave the result as it was.
+  function ladderOutcome(winner) {
+    if (fought === null || winner !== 0) return {act: 'again'};
+    const id = LADDER[fought].id, first = !ladder.won.has(id);
+    ladder.won.add(id);
+    keepLadder();
+    renderFoe();
+    const last = fought === LADDER.length - 1;
+    if (last) return {act: first ? 'pick' : 'again', clear: first};
+    return {act: 'next', unlocked: first ? fought + 1 : null};
+  }
+  function showOutcome(o) {
+    el.result.classList.toggle('clear', Boolean(o.clear));
+    el.resultBuild.hidden = el.statsList.hidden = Boolean(o.clear);
+    $('clearTrio').hidden = !o.clear;
+    if (o.clear) {
+      el.winnerLine.textContent = '三个都赢了';
+      $('clearTrio').innerHTML = LADDER.map((f, i) => `<span><span class="tw">${markHtml(i)}<i>${SVG.check}</i></span>${esc(f.name)}</span>`).join('');
+      el.tipLine.textContent = '现在三个随便挑，换个装法再打一轮';
+    }
+    const card = $('unlockCard');
+    card.hidden = o.unlocked == null;
+    if (o.unlocked != null) {
+      const f = LADDER[o.unlocked];
+      card.innerHTML = `${markHtml(o.unlocked)}<span class="txt"><span class="k">${SVG.open}解锁下一个</span><b>${esc(f.name)}</b><span class="play">${esc(f.play)}</span></span>`;
+      el.tipLine.textContent = '';
+    }
+    $('againBtn').innerHTML = `<span>${o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
+    $('againBtn').dataset.act = o.act;
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -1008,7 +1114,12 @@ async function main() {
   }
   el.go.onclick = () => start();
   $('replayBtn').onclick = () => replaySlow();
-  $('againBtn').onclick = () => showBuild();
+  $('againBtn').onclick = () => {
+    const act = $('againBtn').dataset.act;
+    showBuild();
+    if (act === 'next') pickFoe(Math.min(fought + 1, LADDER.length - 1));
+    else if (act === 'pick') openLadder();
+  };
   // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
   $('sameBtn').onclick = () => { showBuild(); start(); };
   $('creditsBtn').onclick = () => { el.credits.hidden = false; };
