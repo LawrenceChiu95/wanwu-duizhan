@@ -60,7 +60,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       res.setHeader('referrer-policy', 'no-referrer');
       if (previewAccessCode && req.method === 'GET' && route.startsWith('/open/')) {
         if (url.search || !sameCode(route.slice('/open/'.length))) throw apiError('forbidden', 'Invalid preview link', 403);
-        res.writeHead(303, {'location': '/?shoot=real', 'cache-control': 'no-store', 'set-cookie': `${previewCookie}=${previewAccessCode}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`});
+        res.writeHead(303, {'location': '/?shoot=real', 'cache-control': 'no-store', 'set-cookie': `${previewCookie}=${previewAccessCode}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`});
         return res.end();
       }
       if (route.startsWith('/api/') && url.search) throw apiError('bad-request', 'Unexpected query parameters');

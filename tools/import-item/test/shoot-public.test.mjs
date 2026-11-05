@@ -159,7 +159,7 @@ test('private preview exchanges its link, gates photos and static files, and kee
   const link = await send('/open/' + accessCode);
   assert.equal(link.status, 303); assert.equal(link.headers.location, '/?shoot=real');
   assert.equal(link.headers['cache-control'], 'no-store'); assert.equal(link.headers['referrer-policy'], 'no-referrer');
-  assert.match(link.headers['set-cookie'][0], /^__Host-wanwu_preview=.*; Path=\/; HttpOnly; Secure; SameSite=Strict/);
+  assert.match(link.headers['set-cookie'][0], /^__Host-wanwu_preview=.*; Path=\/; HttpOnly; Secure; SameSite=Lax/);
   const access = link.headers['set-cookie'][0].split(';')[0];
   assert.match((await send('/', {cookie: access})).body, /preview game/);
   const font = await send('/font.woff', {cookie: access}); assert.equal(font.status, 200); assert.equal(font.headers['content-type'], 'font/woff');
