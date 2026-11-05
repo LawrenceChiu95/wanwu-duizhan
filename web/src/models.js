@@ -18,6 +18,8 @@ export const stillUrl = id => stillUrls[`../../data/stills/${id}.webp`] ?? null;
 const urlFor = glb => isUrl(glb) ? glb : Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 
 const loader = new GLTFLoader();
+// 评委版's models are packed with meshopt (tools/import-item/pack-web-models.mjs); the normal build doesn't load this.
+const decoder = __JUDGE__ ? import('three/addons/libs/meshopt_decoder.module.js').then(m => { loader.setMeshoptDecoder(m.MeshoptDecoder); }) : null;
 const cache = new Map();
 const loading = new Map();
 const poses = new Map();
@@ -54,6 +56,7 @@ async function loadOne(item) {
   {
     const url = urlFor(item.glb);
     if (!url) throw Error(`缺模型文件：${item.name ?? item.id}（${item.glb}）`);
+    await decoder;
     const gltf = await loader.loadAsync(url);
     gltf.scene.traverse(o => {
       if (!o.isMesh) return;

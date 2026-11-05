@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4330 --strictPort",
     "build": "vite build",
+    "dev:judge": "vite --mode judge --host 127.0.0.1 --port 4330 --strictPort",
+    "build:judge": "vite build --mode judge --outDir dist-judge && node ../tools/import-item/pack-web-models.mjs dist-judge",
     "preview": "vite preview --host 127.0.0.1 --port 4330 --strictPort",
     "shots": "node scripts/shots.mjs"
   },

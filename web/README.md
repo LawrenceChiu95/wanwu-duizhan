@@ -1,1 +1,3 @@
 测试双方装法用 `?mine=pan-lux3d,out,pillow,hug,e180&foe=broom,out,pillow,hug,e180&seed=7`（锅+枕头对扫把+枕头）；`mine`、`foe`都按`物品ID,out或hug,另一物品ID,out或hug,e180或e90`填写，两件选清单中不同道具，`out`伸出/`hug`贴着、`e180`对面/`e90`挨着；省略参数保持各自原默认装法。空值、错值或重复参数均明确报错，开打不可用；修正链接后刷新再试。
+
+评委版（task #4）：`npm run build:judge` 出到 `dist-judge/`，是一包纯静态文件，放到任何静态托管上就能玩，不连后台。它和正式版是同一份代码，只多开了 `--mode judge`（代码里是 `__JUDGE__`）：开场卡（`judge-intro.html`）、角色库只有九件默认角色、拍一件换成重放一次真实生成（`src/judge.js`，素材在 `../data/showcase/flipflop/`）。构建后 `../tools/import-item/pack-web-models.mjs` 会把 GLB 压成 meshopt 加 WebP 贴图，这一步要 Node 22；物理引擎拆成单独的 .wasm 文件。本机试玩用 `npm run dev:judge`。换了人字拖的模型以后，要用 `node scripts/make-showcase-still.mjs` 重新出开场卡上的 3D 图。

@@ -51,11 +51,12 @@ export class LiveTurns {
   /**
    * The item at its front as a `size`-pixel WebP with a clear background, for data/stills (scripts/make-stills.mjs).
    * The stage canvas has no alpha, so the model is drawn over black and over white and the alpha is the difference.
+   * `turn` (radians) turns it on from its front (评委版's opening card shows its item three-quarter, so it reads as 3D).
    */
-  shot(itemId, size) {
+  shot(itemId, size, turn = 0) {
     const rig = turnRig(itemId, this.environment);
     if (!rig) throw Error(`Model not loaded: ${itemId}`);
-    rig.spin.rotation.y = rig.yaw;
+    rig.spin.rotation.y = rig.yaw + turn;
     const r = this.renderer, gl = r.domElement, pr = r.getPixelRatio();
     if (size > Math.min(gl.width, gl.height)) throw Error(`Stage canvas smaller than ${size}px`);
     const saved = {viewport: r.getViewport(new THREE.Vector4()), scissor: r.getScissor(new THREE.Vector4()), scissorTest: r.getScissorTest(), color: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha()};
