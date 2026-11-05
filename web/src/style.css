@@ -198,6 +198,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .item { position: relative; height: 50px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 26px 0 9px; background: rgba(255, 255, 255, 0.06); min-width: 0; text-align: left; clip-path: polygon(0 0, 100% 0, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
 .item .nm { display: flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; }
 .item b { font-family: var(--display); font-weight: 400; font-size: 23px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-bottom: 2px; }
+.item .facts { display: flex; align-items: center; gap: 6px; }
 .item .spec { font-size: 10.5px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .item svg { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: var(--mute); }
 .lux { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.02em; color: #0a0f1c; background: #b8f06a; padding: 1px 3px; white-space: nowrap; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); padding: 1px 5px; }
@@ -374,6 +375,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .card .media:has(> .photo) > :is(.turn, .ghost) { inset: auto 0 0 auto; width: 92%; height: 92%; }
 .card .badge { position: absolute; right: 0; top: 0; font-size: 11px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); }
 .card .badge.own { background: var(--c0); color: #1a0900; font-weight: 700; }
+.card .lux { position: absolute; left: 0; top: 0; font-size: 11px; line-height: 18px; padding: 0 7px; }
+.card .media:has(> .photo) > .lux { top: calc(26% + 6px); }
 .card .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .card .nm b { font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .card .cat { flex: none; font-size: 11px; line-height: 17px; padding: 0 5px; border-radius: 4px; color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
@@ -647,3 +650,49 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .num.verdict.glance { color: #ffd2b0; background: rgba(40, 18, 6, 0.78); }
 .num.verdict.dud { color: #b9c1ca; background: rgba(7, 9, 18, 0.78); }
 .num.verdict.held { color: #d9f6ff; background: rgba(7, 9, 18, 0.82); }
+.hnote { flex: none; margin: 6px 14px 0; font-size: 11px; line-height: 1.5; color: var(--mute); }
+
+/* ---------- 评委版 opening card (judge-intro.html, task #4) ---------- */
+/* Over everything but the error line; the game loads behind it. One real generation, photo → styled → 3D. */
+#intro { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; overflow-y: auto;
+  padding: calc(env(safe-area-inset-top) + 22px) 16px calc(env(safe-area-inset-bottom) + 16px);
+  background: radial-gradient(120% 60% at 50% 0%, rgba(61, 180, 255, 0.16), transparent 60%), radial-gradient(90% 50% at 50% 100%, rgba(255, 138, 61, 0.14), transparent 65%), var(--bg);
+  transition: opacity 0.22s ease-out; }
+#intro.out { opacity: 0; pointer-events: none; }
+.ihead { flex: none; margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.imark { font-family: var(--display); font-size: 46px; line-height: 1; letter-spacing: 0.04em; transform: skewX(-6deg); }
+.imark .w1 { color: var(--c0); text-shadow: 0 0 28px rgba(255, 138, 61, 0.4); }
+.imark .w2 { color: var(--c1); text-shadow: 0 0 28px rgba(61, 180, 255, 0.4); }
+.ihead p { margin: 0; font-size: 16px; font-weight: 650; }
+/* The photo across the top; the styled picture and the 3D side by side under it, the order read by the arrows. The block
+   sits midway between the top and 开始玩 (the two auto margins share what a tall phone has spare); its width is capped
+   by the screen's height (about 1.1 px of height per px of width, plus 370 px of words and button), so on a computer's
+   wider frame 开始玩 stays on screen. */
+.iflow { flex: none; list-style: none; margin: 20px auto 0; padding: 0; display: grid; width: 100%; max-width: calc((100vh - 370px) / 1.1); max-width: calc((100dvh - 370px) / 1.1); grid-template-columns: 1fr 1fr; gap: 26px 26px; }
+.iflow li { position: relative; display: flex; flex-direction: column; gap: 7px; }
+.iflow .photo { grid-column: 1 / -1; }
+.iflow img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--line), 0 10px 26px rgba(0, 0, 0, 0.35); }
+.iflow .photo img { aspect-ratio: 16 / 9.6; }
+.iflow .model img { object-fit: contain; background: radial-gradient(circle at 50% 58%, rgba(255, 138, 61, 0.2), rgba(255, 255, 255, 0.04) 70%); }
+.iflow span { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 650; }
+.iflow span i { width: 20px; height: 20px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-style: normal; font-size: 12px; font-weight: 700; color: #1a0900; background: var(--c0); }
+/* Arrows: down out of the photo into the styled picture, then right into the 3D. */
+.iflow li.photo::after, .iflow li.styled::after { content: ""; position: absolute; width: 14px; height: 14px; border: solid var(--c0); border-width: 0 3px 3px 0; opacity: 0.9; }
+.iflow li.photo::after { left: 25%; bottom: -21px; transform: translateX(-50%) rotate(45deg); }
+.iflow li.styled::after { right: -21px; top: 45%; transform: translateY(-50%) rotate(-45deg); }
+.ireal { flex: none; margin: 14px 0 0; text-align: center; font-size: 13px; color: var(--mute); }
+.ifoot { flex: none; width: 100%; max-width: 440px; margin: auto auto 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 8px; padding-top: 16px; text-align: center; }
+.ifoot .go { flex: none; width: 100%; }
+.ifoot small { font-size: 12px; color: var(--mute); }
+.ifoot .icredit { font-size: 10px; opacity: 0.75; }
+/* Short phones (iPhone SE, 667 tall): a flatter photo and tighter gaps, so 开始玩 is on screen without scrolling. */
+@media (max-height: 740px) {
+  #intro { padding-top: calc(env(safe-area-inset-top) + 14px); }
+  .imark { font-size: 38px; }
+  .ihead { gap: 6px; }
+  .iflow { margin-top: 12px; row-gap: 20px; }
+  .iflow .photo img { aspect-ratio: 16 / 6.6; }
+  .iflow li.photo::after { bottom: -17px; }
+  .ireal { margin-top: 10px; }
+  .ifoot { padding-top: 10px; gap: 6px; }
+}

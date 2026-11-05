@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
 import {LiveTurns} from './livecards.js';
@@ -22,7 +22,7 @@ const el = {
   foeSheet: $('foeSheet'), foeList: $('foeList'),
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'), libGrades: $('libGrades'),
   resultBuild: $('resultBuild'), how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
-  howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'),
+  howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'), howNote: $('howNote'),
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
@@ -74,7 +74,10 @@ for (const type of ['pointerdown', 'touchend', 'keydown', 'click']) addEventList
 // Short buzzes on the big moments where the phone supports it (iOS ignores this).
 const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } catch { /* not allowed */ } };
 
-const isLux = id => id.endsWith('-lux3d');
+// The default items Lux3D made from a photo, and who made them when it wasn't us (Elara 907b6fa5): each gets the Lux3D tag
+// on the build screen and in 角色库, and its source line says so. 废土刀 is 凡朔's run (PR #6, same source sha256).
+const LUX = {'pan-lux3d': '', 'lamp-lux3d': '', 'wasteland-knife': '凡朔', 'wasteland-pot': '', 'wasteland-broom': ''};
+const isLux = id => Object.hasOwn(LUX, id);
 // Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 // The result reason as HTML: 谁撞碎了谁 on the first row, 剩血 on its own row after reasonLine's \n; item names and 核心 are
@@ -90,19 +93,20 @@ const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.part
 const HINT = {out: '攻：撞人更疼，自己易碎', hug: '守：替核心挡，少掉血'};
 const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
 
-function renderCredits(items) {
+// 评委版 shows its own list instead (judge.js): only what is in that build, in Chinese, one line per thing.
+function renderCredits(items, md = creditsMd) {
   const link = s => s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
   const html = [];
   let list = false, tableHead = false;
   const close = () => { if (list) html.push('</ul>'); list = false; };
-  for (const line of creditsMd.split('\n')) {
+  for (const line of md.split('\n')) {
     const l = line.trim();
     if (/^\|/.test(l)) {
       if (/^\|[\s|:-]+\|$/.test(l)) continue;
       if (!list) { html.push('<ul>'); list = true; tableHead = true; }
       if (tableHead) { tableHead = false; continue; }
-      html.push(`<li>${l.split('|').slice(1, -1).map(c => link(esc(c.trim()))).join(' · ')}</li>`);
+      html.push(`<li>${l.split('|').slice(1, -1).map(c => c.trim()).filter(Boolean).map(c => link(esc(c))).join(' · ')}</li>`);
       continue;
     }
     close();
@@ -145,14 +149,18 @@ async function main() {
   const q = new URLSearchParams(location.search);
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
+  // 评委版 (judge.js, task #4): no backend at all; 拍一件 replays one real generation instead.
+  const judge = __JUDGE__ ? await import('./judge.js') : null;
   // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with.
-  const shoot0 = shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
+  const shoot0 = __JUDGE__ ? Promise.resolve(null) : shootApi(q).then(async api => api && {api, items: await Promise.race([api.items(), new Promise((_, no) => setTimeout(no, 5000))]).catch(() => [])});
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
   if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
   setNames(items);
+  // The replayed item can be looked at, not equipped: it is in byId and NAMES but never in the 角色库 (OFFER).
+  if (judge) { byId.set(judge.showcase.id, judge.showcase); setNames([judge.showcase]); }
   const OFFER = offerOf(items);
   const rate = id => ratingOf(byId.get(id));
   // A grade letter, coloured by grade (empty for an item without one).
@@ -163,7 +171,7 @@ async function main() {
   const stage = new Stage(el.canvas, {items, coreRadius: rules.core.radius, layout});
   const turns = new LiveTurns(stage.renderer, stage.scene.environment);
   const overlay = new Overlay(stage, el);
-  renderCredits(items);
+  renderCredits(items, judge?.creditsMd);
 
   const mode = q.get('mode') === 'B' ? 'B' : 'A';
   // An address can name a photo item the backend hasn't handed over yet (/items slow or down as the page opens, task #62):
@@ -204,6 +212,9 @@ async function main() {
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
   el.busy.hidden = true;
+  // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
+  // the opening card and builds, instead of holding up the first screen or the first 开打.
+  if (judge) { judge.readyIntro(); warmEngine().catch(showError); }
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
@@ -661,9 +672,9 @@ async function main() {
   // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
   const sourceLine = it => {
-    if (isLux(it.id)) return '来源：照片生成';
+    if (isLux(it.id)) return `来源：照片 → Lux3D 生成${LUX[it.id] ? ' · ' + LUX[it.id] : ''}`;
     if (/^CC/.test(it.source?.license ?? '')) return `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`;
-    return '来源：只有 3D 模型';
+    return '来源：现成的 3D 模型';
   };
   let libSlot = 0, libReq = 0;
   function cardHtml(id, k) {
@@ -682,7 +693,7 @@ async function main() {
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
-        <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${badge}</span>
+        <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
         <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
@@ -827,9 +838,12 @@ async function main() {
       return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
     }).join('');
     el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${dur(secs.reduce((a, b) => a + b, 0))}` : '';
-    const other = mine.parts[1 - libSlot].item === id;
+    // 评委版's replayed item: whose photo it is, and back to the 角色库 instead of 装上它 (it isn't one of the nine).
+    const shown = judge?.showcase.id === id, other = !shown && mine.parts[1 - libSlot].item === id;
+    el.howNote.hidden = !shown;
+    if (shown) el.howNote.textContent = judge.photoCredit;
     el.howEquip.disabled = other;
-    el.howEquip.querySelector('span').textContent = other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
+    el.howEquip.querySelector('span').textContent = shown ? '回角色库' : other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
     turns.prune();
     turns.show(el.howTurn, id);
     el.how.hidden = false;
@@ -867,6 +881,7 @@ async function main() {
   $('howBack').onclick = closeHow;
   $('howReplay').onclick = playHow;
   el.howEquip.onclick = () => {
+    if (judge?.showcase.id === howItem) { closeHow(); return; }
     if (mine.parts[1 - libSlot].item === howItem) return;
     const id = howItem;
     closeHow();
@@ -928,6 +943,12 @@ async function main() {
     el.shootBtn.onclick = () => shoot.open('library');
     window.__top.shoot = shoot;
   }).catch(showError);
+  // 评委版: the 角色库's 拍一件 shows how one real item was made (no camera, nothing generated).
+  if (judge) {
+    el.shootBtn.lastChild.textContent = '拍一件示例';
+    el.shootBtn.hidden = false;
+    el.shootBtn.onclick = () => openHow(judge.showcase.id);
+  }
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
     b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
@@ -1048,7 +1069,7 @@ async function main() {
     // Fixture for the 看它怎么来的 check until the generation script writes real records.
     setOrigin(id, origin) { byId.get(id).origin = origin; },
     // A card still for data/stills (scripts/make-stills.mjs): the item at the turntable's starting angle, as a WebP data URL.
-    async still(id, size) { await loadModels([byId.get(id)]); return turns.shot(id, size); },
+    async still(id, size, turn) { await loadModels([byId.get(id)]); return turns.shot(id, size, turn); },
     // Fixture for the 结算 layout check: any reasonLine text (e.g. from a stored replay) through the card's own rendering.
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
