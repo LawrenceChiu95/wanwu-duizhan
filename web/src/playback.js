@@ -91,29 +91,36 @@ export class Playback {
 
   /** Advances by real seconds at the given base speed; fires crossed events in order. Returns replay seconds advanced. */
   advance(realDt, speed, onEvent) {
-    if (this.hold > 0) {
-      this.hold -= realDt;
-      return 0;
-    }
     const start = this.t;
-    let next = Math.min(this.end, this.t + realDt * speed * this.slowFactor(this.t) * this.dilateFactor());
-    if (this.dilate > 0) this.dilate = Math.max(0, this.dilate - realDt);
     const events = this.events;
-    let stop = 0;
-    while (this.cursor < events.length && events[this.cursor].t <= next) {
-      const e = events[this.cursor++];
-      onEvent(e);
-      const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
-      stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
-      if (e.type === 'parry') this.dilate = DILATE_TIME;
-      // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
-      if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {
-        next = e.t;
-        this.hold = stop;
-        break;
+    let remaining = realDt;
+    while (remaining > 0) {
+      // A freeze may end halfway through this frame; keep the rest for motion.
+      const held = Math.min(this.hold, remaining);
+      this.hold -= held;
+      remaining -= held;
+      if (remaining <= 0) break;
+      const rate = speed * this.slowFactor(this.t) * this.dilateFactor();
+      let next = Math.min(this.end, this.t + remaining * rate), stop = 0, parried = false;
+      while (this.cursor < events.length && events[this.cursor].t <= next) {
+        const e = events[this.cursor++];
+        onEvent(e);
+        const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
+        stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+        if (e.type === 'parry') parried = true;
+        // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
+        if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {
+          next = e.t;
+          break;
+        }
       }
+      const moved = stop > 0 ? Math.max(0, (next - this.t) / rate) : remaining;
+      this.dilate = parried ? DILATE_TIME : Math.max(0, this.dilate - moved);
+      this.t = next;
+      // An impact may also happen halfway through a frame: spend its remainder on the freeze.
+      remaining = stop > 0 ? Math.max(0, remaining - moved) : 0;
+      this.hold = stop;
     }
-    this.t = next;
     this.sample(this.t);
     return this.t - start;
   }
