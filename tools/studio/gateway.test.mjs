@@ -77,3 +77,27 @@ test('unknown WebSocket path cannot reach frps', async t => {
   const g = createGateway({publicOrigin: 'https://game.example'}); t.after(() => g.disconnect()); const port = await listen(t, g.server);
   const r = await request(port, '/other', {headers: {connection: 'Upgrade', upgrade: 'websocket'}}); assert.equal(r.status, 404);
 });
+
+
+test('only literal and observed platform-encoded frp upgrades reach the fixed authenticated listener', async t => {
+  const paths = [], sockets = new Set();
+  const upstream = http.createServer();
+  upstream.on('upgrade', (req, socket) => {
+    paths.push(req.url); sockets.add(socket); socket.on('error', () => socket.destroy());
+    socket.once('close', () => sockets.delete(socket));
+    socket.write('HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n');
+  });
+  t.after(() => { for (const socket of sockets) socket.destroy(); });
+  const frpPort = await listen(t, upstream), g = createGateway({publicOrigin: 'https://game.example', frpPort});
+  t.after(() => g.disconnect()); const port = await listen(t, g.server);
+  const upgrade = route => new Promise((resolve, reject) => {
+    const req = http.request({host: '127.0.0.1', port, path: route, headers: {connection: 'Upgrade', upgrade: 'websocket'}});
+    req.on('upgrade', (res, socket) => { socket.destroy(); resolve(res.statusCode); });
+    req.on('response', res => { res.resume(); res.once('end', () => resolve(res.statusCode)); });
+    req.on('error', reject); req.end();
+  });
+  for (const route of ['/~!frp', '/~%21frp']) assert.equal(await upgrade(route), 101);
+  assert.deepEqual(paths, ['/~!frp', '/~!frp']);
+  for (const route of ['/~%21frp?x=1', '/~!frp/', '/%7E%21frp', '//~!frp', 'http://elsewhere.example/~!frp', '/other']) assert.equal(await upgrade(route), 404);
+  assert.equal(paths.length, 2);
+});

@@ -3,7 +3,7 @@
 授权：Elara dm:@Elara:28ad1af8 04fd7140；远夏 671c03a4、40e3cd9b。Sol 后端与传输，Iris 独立只读审查；现有 Fanshuo 4330/Funnel 不动。
 
 ## 路线与边界
-- 单 Docker 仅开放 7860：同源网页和 /api/shoot，Mac 使用官方 frp v0.72.0 的 WSS 主动连接。云端 frps 内部端口和转发端口只绑定 loopback，allowPorts 只准固定一个转发端口；外层网关只升级固定 /~!frp 路径。
+- 单 Docker 仅开放 7860：同源网页和 /api/shoot，Mac 使用官方 frp v0.72.0 的 WSS 主动连接。云端 frps 内部端口和转发端口只绑定 loopback，allowPorts 只准固定一个转发端口；外层网关只升级固定 /~!frp 路径或平台实测编码后的 /~%21frp；统一转成字面路径给frps，不接受参数/后缀或任意目的地。
 - frp 共享密钥只放 ModelScope Secret 和本机钥匙串，不进 Git、命令参数或日志。供应商密钥、身份、原照、角色、额度和幂等任务全部保留 Mac；本轮只有隔离假供应商。
 - HTTP 透明转发，不自动重放写请求、不缓存私件、不改 cookie/Origin。禁止任意外部代理；仅 /api/shoot 路由到固定 loopback 转发端口。实际 ModelScope 的 Host/Origin 在隔离后台显式列白名单。
 - 网关超时和断线返回失败，Mac 已接受任务照常继续；客户端拿同一身份及 clientKey 重试，去重与扣额只由已有 jobs 层负责。
