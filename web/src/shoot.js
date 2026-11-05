@@ -366,7 +366,9 @@ export function mountShoot(ctx) {
       const id = code, r = ctx.grade(id), it = ctx.item(id), eq = ctx.equipLabel(id);
       const line = [it.materialName ?? MATERIAL[it.material], ctx.spec(id), WEAR[it.condition]].filter(Boolean).join(' · ');
       const end = Math.max(...job.steps.map(s => ms(s.endedAt) ?? 0)), took = end ? (end - ms(job.createdAt)) / 1000 : null;
-      html = `<h2 class="shead">做好了</h2><div class="spair"><figure><span class="pane"><img src="${esc(photo())}" alt=""></span><figcaption>你拍的</figcaption></figure>
+      // A page reopened in another browser has no photo of its own; the item carries the one the backend kept (Elara cf1366e6).
+      const shot = photo() || it.origin?.photo || '';
+      html = `<h2 class="shead">做好了</h2><div class="spair"><figure><span class="pane">${shot ? `<img src="${esc(shot)}" alt="">` : ''}</span><figcaption>你拍的</figcaption></figure>
           <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D</figcaption></figure></div>
         <div class="sstage"><div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
           ${r ? `<i class="big g${r.grade}">${r.grade}</i>` : ''}

@@ -165,14 +165,15 @@ async function main() {
   // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with. The 评委版
   // gives all of it, /quota then the items, 3 s together before 开始玩 (Sol e0a86865), and skips the items when /quota
-  // says no photo can be taken now (Elara c1bc2dac); what isn't back by then is asked again once the page is up.
+  // says no photo can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again once the page
+  // is up: the player's own items stay in the 角色库 after the day's photos run out (Elara cf1366e6).
   const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
   const shoot0 = shootApi(q, __JUDGE__).then(async api => {
     if (!api) return null;
     if (!__JUDGE__) return {api, items: await within(api.items(), 5000) ?? [], again: true};
     const by = performance.now() + 3000;
     const quota = await readQuota(api, true, 3000);
-    const sent = shootOpen(quota) ? await within(api.items(), by - performance.now()) : [];
+    const sent = shootOpen(quota) ? await within(api.items(), by - performance.now()) : null;
     return {api, quota, items: sent ?? [], again: sent === null || Boolean(quota.late)};
   });
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
