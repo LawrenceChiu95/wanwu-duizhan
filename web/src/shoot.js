@@ -26,11 +26,11 @@ const SAY = {
   'photo-unclear': '没看清拍的是什么，靠近一点、亮一点再拍',
   pass: '口令不对',
   quota: '今天的生成名额用完了，明天再来',
-  busy: '生成的人太多，这次没算次数，稍等再提交',
+  busy: '生成的人太多，稍等再提交',
   'step-failed': '这次没生成出来，可以重新生成（会多算一次）',
   expired: '结果过期了，可以重新生成（会多算一次）',
-  download: '模型没取回来，再试一次（不算次数）',
-  process: '处理没成功，再试一次（不算次数）',
+  download: '模型没取回来，再试一次',
+  process: '处理没成功，再试一次',
   'process-unfixable': '这个模型处理不了，可以重新生成（会多算一次）',
   'key-conflict': '出了点问题，重新拍一次',
   server: '出了点问题，再试一次',
@@ -46,8 +46,18 @@ const SAY = {
   // 评委版: what the shared budget has left can't pay for one more (Elara edd90212); it isn't anyone's daily allowance.
   budget: '暂时不能拍，先用现成角色打一局',
   // 评委版: the backend doesn't know this page's token any more (Sol e0a86865); a new one is only on the player's say.
-  session: '之前的拍照记录找不到了，可以重新开始'
+  session: '之前的拍照记录找不到了，可以重新开始',
+  // 真模式任务错误 (tools/import-item/shoot README): the reason and the way on in plain words (Elara 021f6bf5). 认物
+  // breaking on the service's side is never put on the photo (Elara 1572a214).
+  'photo-read': '照片没存好，重新拍一件',
+  'photo-upload': '照片没传上去，再试一次',
+  'recognition-limit': '认物的人太多，过一会儿再拍',
+  'recognition-auth': '认物暂时用不了，先用现成角色打一局',
+  'process-corrupt': '这件的模型坏了，换一件再拍',
+  'process-too-large': '这件的模型太大，换一件再拍'
 };
+const SERVICE = ['recognition-service', 'recognition-network', 'recognition-invalid', 'recognition-interrupted'];
+for (const code of SERVICE) SAY[code] = '认物这一步出了故障，不是照片的问题，再试一次';
 // 评委自己拍 (Elara 6dee70f7): which daily allowance ran out, and whose. The first is Elara's; a quota error that doesn't
 // say (?shootFail=quota) reads as it.
 const QUOTA_SAY = {'generation-browser': SAY.quota, 'generation-global': '今天大家的生成名额都用完了，明天再来',
@@ -252,8 +262,11 @@ export function mountShoot(ctx) {
   }
   const STEP_OF = {pick: 0, out: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
   function paintSteps(key) {
-    // An error lights the step the job stopped at (task #70), the first one if there is no job.
-    const kind = key.split(':')[0], at = STEP_OF[kind === 'err' ? under().split(':')[0] : kind];
+    // An error lights the step the job stopped at (task #70), the first one if there is no job; a job that failed before
+    // anything was recognised, or a request turned down by 认物, stopped at 认物 (Elara fa35bf76).
+    const [kind, code] = key.split(':');
+    const at = (kind === 'fail' && !job.recognition) || (kind === 'err' && code.startsWith('recognition-')) ? STEP_OF.recog
+      : STEP_OF[kind === 'err' ? under().split(':')[0] : kind];
     el.steps.querySelectorAll('li').forEach((li, i) => {
       li.className = i < at ? 'done' : i === at ? (kind === 'fail' || kind === 'err' || kind === 'lost' ? 'now bad' : kind === 'held' ? 'now hold' : 'now') : '';
     });
@@ -317,18 +330,31 @@ export function mountShoot(ctx) {
         ${foot(go('play', '先去打一局'))}`;
     } else if (kind === 'fail' || kind === 'err' || kind === 'lost') {
       const retry = kind === 'fail' ? job.error.retry : 'none';
+      // Whether this one took one of today's photos (Elara 5027aa74: every failure screen says so). A job's own word
+      // (charged: paid generation began), or a photo 认物 could not make out: only the photo's own fault is the player's
+      // (Elara 7235d89f); a request turned down made no job.
+      const count = kind === 'lost' || (kind === 'fail' && (job.error.charged === true || code === 'photo-unclear')) ? (retry === 'same' ? '这次算了一次，再试不另算' : '这次算了一次')
+        // 认物 breaking is always our fault, whatever the job says about retrying (Elara 139c00fb).
+        : (kind === 'fail' && (job.error.charged === false || code.startsWith('recognition-'))) || (kind === 'err' && lastSend && code !== 'pass') ? '这次没算次数' : '';
       const btns = code === 'pass' ? [go('pass', '确定')]
         : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', '不算次数')]
         : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
         : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会多算一次')]
-        : ['photo-invalid', 'photo-unclear', 'key-conflict', 'refused'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
+        : ['photo-invalid', 'photo-unclear', 'key-conflict', 'refused', 'process-corrupt', 'process-too-large'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
         : code === 'server' && lastSend ? [ghost('lib', '回角色库'), go('again', '再试')]
+        : code === 'recognition-limit' || code === 'recognition-auth' ? [ghost('lib', '回角色库'), go('play', '先去打一局')]
+        // A job that stopped with no retry: its way on is a new photo.
+        : kind === 'fail' || SERVICE.includes(code) || code === 'photo-read' ? [ghost('lib', '回角色库'), go('fresh', '重新拍')]
         : code === 'not-allowed' && stored ? [ghost('lib', '回角色库'), go('refresh', '刷新')]
         : code === 'session' ? [ghost('renew', '重新开始拍', ICON.retry), go('play', '先去打一局')]
         : code === 'quota' || code === 'server-down' || code === 'budget' || code === 'storage' ? [ghost('lib', '回角色库'), go('play', '先去打一局')]
         : [ghost('lib', '回角色库')];
-      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : code === 'session' ? '记录找不到了' : code === 'budget' || code === 'storage' ? '暂时不能拍' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : '没生成出来'}</span>`)}
-        <div class="smsg"><b>${esc(code === 'quota' ? QUOTA_SAY[quotaErr] : code === 'storage' ? SAY.budget : SAY[code] ?? SAY.server)}</b>${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
+      // No 再试 button, no 「再试一次」 (Elara 8c97da17): the way on is then a new photo, here or from the 角色库.
+      const has = act => btns.some(b => b.includes(`data-act="${act}"`));
+      const say = (code === 'quota' ? QUOTA_SAY[quotaErr] : code === 'storage' ? SAY.budget : SAY[code] ?? (kind === 'fail' ? '这一件没做成，再试一次' : SAY.server))
+        .replace(/再试一次.*$/, m => ['retry', 'again', 'resubmit'].some(has) ? m : has('fresh') ? '重新拍一件' : '回角色库重新拍一件');
+      html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : code === 'session' ? '记录找不到了' : code === 'budget' || code === 'storage' ? '暂时不能拍' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : job?.recognition ? '没生成出来' : '没做成'}</span>`)}
+        <div class="smsg"><b>${esc(say)}</b>${count ? `<small class="scount">${count}</small>` : ''}${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
         <p class="serr" data-live="send"></p>${foot(...btns)}`;
     } else if (kind === 'held') {
       // unknown-submit (Elara 8d32a2a6, 69a1c60d): one sentence and only 回角色库, no retake or retry: the paid
@@ -544,8 +570,9 @@ export function mountShoot(ctx) {
     el.backText.textContent = from === 'library' ? '角色库' : '返回';
     // One job at a time: while one runs, 拍一件 shows it (Elara f63778f3).
     busyNote = from === 'library' && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
-    // A finished job seen already, or one that can't go on, gives way to a new photo.
-    if (from === 'library' && stored && job && final(job) && !stored.hold && (stored.seen || job.error?.retry === 'none' || refused())) { stored = null; job = null; keep(); }
+    // A finished job seen already gives way to a new photo. One not seen yet is shown first, however 拍一件 was opened
+    // (Elara 5027aa74): a failure while the player was off playing a game would otherwise go without a word.
+    if (from === 'library' && stored && job && final(job) && !stored.hold && stored.seen) { stored = null; job = null; keep(); }
     // Back from the 角色库 a while later: a server error may be sent again three more times.
     if (from === 'library' && startError) { if (startError === 'quota' || startError === 'budget') pending = null; startError = null; sendFails = 0; }
     shown = '';

@@ -62,10 +62,15 @@ const BASIS = {pot: '圆口、有柄', lamp: '灯罩、底座', scissors: '细�
 const FAIL_AT = {
   'photo-invalid': 'create', pass: 'create', quota: 'create', 'key-conflict': 'create',
   'photo-unclear': [0, 1], busy: [1, 0], 'step-failed': [2, 0.5], 'unknown-submit': [2, 0.1], expired: [3, 0],
-  download: [3, 0.6], process: [4, 0.5], 'process-unfixable': [4, 0.7], server: [2, 0.4]
+  download: [3, 0.6], process: [4, 0.5], 'process-unfixable': [4, 0.7], server: [2, 0.4],
+  'photo-read': [0, 0.2], 'photo-upload': [1, 0.1], 'process-corrupt': [4, 0.5], 'process-too-large': [4, 0.5],
+  ...Object.fromEntries(['service', 'network', 'interrupted', 'invalid', 'auth', 'limit'].map(k => [`recognition-${k}`, [0, 1]]))
 };
 const RETRY = {'photo-invalid': 'none', 'photo-unclear': 'none', pass: 'none', quota: 'none', busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate',
-  download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same'};
+  download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same',
+  // 真模式任务错误; 认物 failing on the service's side can be tried again on the same photo (Elara 1572a214, Sol 3afa412e).
+  'photo-read': 'none', 'photo-upload': 'same', 'recognition-service': 'same', 'recognition-network': 'same', 'recognition-interrupted': 'none',
+  'recognition-invalid': 'none', 'recognition-auth': 'none', 'recognition-limit': 'none', 'process-corrupt': 'none', 'process-too-large': 'none'};
 const KEY_FORM = /^[A-Za-z0-9_-]{8,128}$/;
 const VERSION = 3; // 3: the first two photos are fixed (第 22 版), so a browser that tried 第 21 版 starts again
 // No daily limit unless asked for (?shootGen and the rest): /quota then reports limit and remaining as null.
