@@ -102,7 +102,10 @@ try {
       const chunks = []; res.on('data', b => chunks.push(b)); res.on('end', () => resolve({status: res.statusCode, headers: res.headers, bytes: Buffer.concat(chunks)})); res.on('error', reject);
     }); req.setTimeout(30000, () => req.destroy(Error('HTTP timeout'))); req.on('error', reject); req.end(bytes);
   });
-  await until(() => send('/api/shoot/health'), x => x.status === 200, 60000);
+  // Studio's restarting page can itself be HTTP 200. Only the actual fake
+  // backend's JSON health response proves that this tunnel is ready.
+  const healthy = r => r.status === 200 && String(r.headers?.['content-type']).startsWith('application/json') && JSON.parse(r.bytes).status === 'ok' && JSON.parse(r.bytes).provider === 'fake';
+  await until(() => send('/api/shoot/health'), healthy, 60000);
   assert.equal((await send('/api/shoot/quota')).status, 401);
   const browsers = await Promise.all([send('/api/shoot/session', {method: 'POST'}), send('/api/shoot/session', {method: 'POST'})]);
   // The platform adds its own edge cookie. We must reject paying-owner cookies,
@@ -147,16 +150,18 @@ try {
   for (const upload of uploads) { assert.equal(upload.bytes, bytes.length); assert.equal(upload.sha256, hash(bytes)); }
   result.checks.uploadBody = {bytes: bytes.length, sha256: hash(bytes), receivedCopies: uploads.length};
   result.checks.identityAndRetry = {owners: 2, tasks: complete.length, lostResponses, fakeSubmissions: generator.used(), generationRemainingEach: quotas.map(q => q.remaining), recognitionRemainingEach: quotas.map(q => q.recognition.remaining), budgetRemaining: quotas[0].budget.remaining, crossReadStatus: 404};
-  if (gateway) { gateway.disconnect(); await until(() => send('/api/shoot/health'), x => x.status === 200); result.checks.reconnect = 'passed'; }
+  if (gateway) { gateway.disconnect(); await until(() => send('/api/shoot/health'), healthy); result.checks.reconnect = 'passed'; }
   if (v['restart-check']) {
     const checkpoint = {phase: 'awaiting-platform-restart', frpcPid: children.at(-1).pid, at: new Date().toISOString()};
     await fs.writeFile(path.join(v.out, 'checkpoint.json'), JSON.stringify(checkpoint)); console.log(JSON.stringify(checkpoint));
     // The operator restarts only the disposable cloud container after this
     // checkpoint. Keep the same frpc and Mac jobs process throughout.
-    await until(() => send('/api/shoot/health').catch(() => ({status: 0})), x => x.status !== 200, 120000);
+    await until(() => send('/api/shoot/health').catch(() => ({status: 0})), x => !healthy(x), 120000);
     const outage = new Date().toISOString();
-    await until(() => send('/api/shoot/health'), x => x.status === 200, 180000);
+    result.restartObserved = {outage};
+    await until(() => send('/api/shoot/health'), healthy, 180000);
     const recovered = await send('/api/shoot/jobs', {method: 'POST', session: sessions[0], bytes, type});
+    result.restartObserved.response = {status: recovered.status, contentType: recovered.headers['content-type']};
     assert.equal(recovered.status, 202); assert.equal(JSON.parse(recovered.bytes).job.id, a.id); assert.equal(generator.used(), 2);
     const q = JSON.parse((await send('/api/shoot/quota', {session: sessions[0]})).bytes);
     assert.equal(q.remaining, 1); assert.equal(q.recognition.remaining, 4); assert.equal(q.budget.remaining, 13);
