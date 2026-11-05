@@ -28,7 +28,7 @@
     </div>
     <div class="mid"><span class="clock" id="clock">0</span><button type="button" class="mute" id="muteBtn" aria-label="关掉声音"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path class="w1" d="M15.5 9a4 4 0 0 1 0 6" /><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11" /><path class="x" d="M16 9.5l5 5M21 9.5l-5 5" /></svg></button><span class="slowtag" id="slowtag">慢放</span></div>
     <div class="side s1">
-      <div class="who"><b>对手</b></div>
+      <div class="who"><b id="foeWho">对手</b></div>
       <div class="core"><div class="bar"><i class="chip"></i><i class="fill"></i></div><i class="ball"></i></div>
       <div class="parts"></div>
     </div>
@@ -41,7 +41,7 @@
   </header>
 
   <header id="foe">
-    <span class="vs">VS</span><span class="label">对手</span><span id="foeParts"></span>
+    <span class="vs">VS</span><span class="ft" id="foeMark" hidden></span><span class="label" id="foeLabel">对手</span><span id="foeParts"></span>
     <button type="button" class="swap" id="foeBtn" aria-label="换个对手"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5" /><path d="M20 16H6l3.5 3.5" /></svg><span>换个对手</span></button>
   </header>
 
@@ -88,10 +88,12 @@
     <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
     <div class="rbuild" id="resultBuild"></div>
+    <div class="trio" id="clearTrio" hidden></div>
     <p class="why" id="whyLine"></p>
     <!-- 结算 (MVP 规格 §4-7): up to three numbers from this match, then one tip from the rules below. -->
     <ul class="stats" id="statsList"></ul>
     <p class="tip" id="tipLine"></p>
+    <div class="unlock" id="unlockCard" hidden></div>
     <div class="actions">
       <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
       <button type="button" id="sameBtn" class="ghost">原样再来</button>
@@ -157,11 +159,11 @@
     <div class="hfoot"><button type="button" class="go" id="howEquip"><span>装上它</span></button></div>
   </section>
 
-  <!-- 换个对手 (MVP 规格 §4-2): the computer's builds, strong to weak. -->
+  <!-- 三个对手 (task #86): the ladder; with ?foe= the old 换个对手 list of the computer's builds, strong to weak (MVP 规格 §4-2). -->
   <div id="foeSheet" hidden>
     <div class="panel">
-      <div class="head"><b>换个对手</b><button type="button" class="close" id="foeClose" aria-label="关闭">×</button></div>
-      <p class="fsub">强弱按电脑拿这套装法、对一批固定对手的胜率排</p>
+      <div class="head" id="foeHead"><b id="foeTitle">换个对手</b><span class="prog" id="foeProg"></span><button type="button" class="close" id="foeClose" aria-label="关闭">×</button></div>
+      <p class="fsub" id="foeSub">强弱按电脑拿这套装法、对一批固定对手的胜率排</p>
       <div id="foeList" role="radiogroup" aria-label="对手"></div>
     </div>
   </div>
