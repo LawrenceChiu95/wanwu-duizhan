@@ -86,9 +86,9 @@ export function pickStats(s, winner) {
   return out.slice(0, 3);
 }
 
-// Not won against a ladder opponent that is beaten by a build rather than by timing: the tip points at the build without
-// saying which (Elara e675765a: 长臂猿 is the stage that teaches changing builds).
-const FOE_TIP = {chang: '它够得远，光靠时机很难赢，换一套装法再来'};
+// Not won against a ladder opponent whose stage only asks for more tries: the tip encourages without pointing a way, since
+// no build is shown to beat it (Elara 803193e6; Sol 2b411bc5: 长臂猿 is only harder than 老龟).
+const FOE_TIP = {chang: '长臂猿是最后也是最难的一关，多打几局试试'};
 
 /** One tip, by fixed rules, for the next match. `foe`: the ladder opponent's id, when it was one. */
 export function tipLine(s, winner, foe = null) {

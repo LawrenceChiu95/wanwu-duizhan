@@ -162,11 +162,11 @@ test('the two real six-point boundary items retain opposite orientation preferen
   assert.equal(tipLine(stats(lamp.id), 1), '台灯先碎了，试试在对手冲来时按挡');
 });
 
-test('not won against 长臂猿 points at the build, without naming one (Elara e675765a)', () => {
+test('not won against 长臂猿 only encourages, pointing no way (Elara 803193e6)', () => {
   const s = stats('pillow');
   for (let i = 0; i < 4; i++) s.missed++, s.presses++;
-  assert.equal(tipLine(s, 1, 'chang'), '它够得远，光靠时机很难赢，换一套装法再来');
-  assert.equal(tipLine(s, null, 'chang'), '它够得远，光靠时机很难赢，换一套装法再来');
+  assert.equal(tipLine(s, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  assert.equal(tipLine(s, null, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
   assert.equal(tipLine(s, 1, 'wen'), tipLine(s, 1));
   assert.equal(tipLine(s, 0, 'chang'), tipLine(s, 0));
   s.presses = 0;
