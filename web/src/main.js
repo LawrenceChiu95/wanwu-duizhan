@@ -518,7 +518,7 @@ async function main() {
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
       stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
-      // Position combat: the striking piece turns its side's colour, the struck one flashes full white (a clash: both turn).
+      // Position combat: the striking piece gets a glowing edge in its colour, the struck one flashes full white (a clash: both edged).
       const position = positionCombat(e);
       if (position) stage.strike(e.attacker, e.part, point);
       stage.flashPart(e.target, e.targetPart, core || position ? 1 : 0.75);
