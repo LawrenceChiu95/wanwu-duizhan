@@ -1,0 +1,138 @@
+[
+  {
+    "id": "knife-cutting-board",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"菜刀\",\n  \"materialName\": \"金属和塑料\",\n  \"material\": \"metal\",\n  \"hardness\": 1.2,\n  \"lengthCm\": 30,\n  \"massKg\": 0.3,\n  \"condition\": \"intact\",\n  \"outwardEnd\": \"narrow\",\n  \"basis\": \"一把放在白色砧板上的厨师刀，有黑色手柄和金属刀身，参照旁边的洋葱切片判断尺寸。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "菜刀",
+      "materialName": "金属和塑料",
+      "material": "metal",
+      "hardness": 1.2,
+      "lengthCm": 30,
+      "massKg": 0.3,
+      "condition": "intact",
+      "outwardEnd": "narrow",
+      "basis": "一把放在白色砧板上的厨师刀，有黑色手柄和金属刀身，参照旁边的洋葱切片判断尺寸。"
+    }
+  },
+  {
+    "id": "pot-on-stove",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"铸铁锅\",\n  \"materialName\": \"搪瓷涂层金属\",\n  \"material\": \"metal\",\n  \"hardness\": 1.0,\n  \"lengthCm\": 32,\n  \"massKg\": 4.5,\n  \"condition\": \"intact\",\n  \"outwardEnd\": \"unknown\",\n  \"basis\": \"画面中央的蓝绿色带盖圆形锅具，置于燃气灶上。根据灶台尺寸和旁边的调料碗判断，这是常见的家用炖锅或铸铁锅尺寸，表面光滑有光泽，材质看起来是厚重的金属。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "铸铁锅",
+      "materialName": "搪瓷涂层金属",
+      "material": "metal",
+      "hardness": 1,
+      "lengthCm": 32,
+      "massKg": 4.5,
+      "condition": "intact",
+      "outwardEnd": "unknown",
+      "basis": "画面中央的蓝绿色带盖圆形锅具，置于燃气灶上。根据灶台尺寸和旁边的调料碗判断，这是常见的家用炖锅或铸铁锅尺寸，表面光滑有光泽，材质看起来是厚重的金属。"
+    }
+  },
+  {
+    "id": "broom-by-wall",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"竹扫帚\",\n  \"materialName\": \"竹子\",\n  \"material\": \"wood\",\n  \"hardness\": 0.8,\n  \"lengthCm\": 150,\n  \"massKg\": 1.2,\n  \"condition\": \"worn\",\n  \"outwardEnd\": \"wide\",\n  \"basis\": \"主体为长柄竹扫帚，靠在红墙边。根据常见扫帚尺寸估计长度约1.5米，材质可见为竹竿和植物纤维，有使用痕迹。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "竹扫帚",
+      "materialName": "竹子",
+      "material": "wood",
+      "hardness": 0.8,
+      "lengthCm": 150,
+      "massKg": 1.2,
+      "condition": "worn",
+      "outwardEnd": "wide",
+      "basis": "主体为长柄竹扫帚，靠在红墙边。根据常见扫帚尺寸估计长度约1.5米，材质可见为竹竿和植物纤维，有使用痕迹。"
+    }
+  },
+  {
+    "id": "flip-flops",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"人字拖\",\n  \"materialName\": \"橡胶和金属\",\n  \"material\": \"rubber\",\n  \"hardness\": 0.5,\n  \"lengthCm\": 26,\n  \"massKg\": 0.3,\n  \"condition\": \"intact\",\n  \"outwardEnd\": \"wide\",\n  \"basis\": \"画面主体是一双清晰的人字拖，参照木地板纹理判断其常规尺寸，鞋底为橡胶材质，鞋带带有金属光泽，看起来完好。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "人字拖",
+      "materialName": "橡胶和金属",
+      "material": "rubber",
+      "hardness": 0.5,
+      "lengthCm": 26,
+      "massKg": 0.3,
+      "condition": "intact",
+      "outwardEnd": "wide",
+      "basis": "画面主体是一双清晰的人字拖，参照木地板纹理判断其常规尺寸，鞋底为橡胶材质，鞋带带有金属光泽，看起来完好。"
+    }
+  },
+  {
+    "id": "thermos-on-table",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"保温杯\",\n  \"materialName\": \"金属\",\n  \"material\": \"metal\",\n  \"hardness\": 1.2,\n  \"lengthCm\": 25,\n  \"massKg\": 0.3,\n  \"condition\": \"intact\",\n  \"outwardEnd\": \"wide\",\n  \"basis\": \"画面右侧的紫红色膳魔师（THERMOS）保温杯，参照旁边的咖啡杯和手机判断其大小，材质为金属，外观完好。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "保温杯",
+      "materialName": "金属",
+      "material": "metal",
+      "hardness": 1.2,
+      "lengthCm": 25,
+      "massKg": 0.3,
+      "condition": "intact",
+      "outwardEnd": "wide",
+      "basis": "画面右侧的紫红色膳魔师（THERMOS）保温杯，参照旁边的咖啡杯和手机判断其大小，材质为金属，外观完好。"
+    }
+  },
+  {
+    "id": "pillow-on-bed",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"枕头\",\n  \"materialName\": \"棉布\",\n  \"material\": \"cloth\",\n  \"hardness\": 0.2,\n  \"lengthCm\": 65,\n  \"massKg\": 1.2,\n  \"condition\": \"worn\",\n  \"outwardEnd\": \"wide\",\n  \"basis\": \"画面主体是一个放在床上的白色长方形枕头，参照背景木质床头板及常见床品尺寸，判断其长约65厘米，材质为柔软的布料填充物。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "枕头",
+      "materialName": "棉布",
+      "material": "cloth",
+      "hardness": 0.2,
+      "lengthCm": 65,
+      "massKg": 1.2,
+      "condition": "worn",
+      "outwardEnd": "wide",
+      "basis": "画面主体是一个放在床上的白色长方形枕头，参照背景木质床头板及常见床品尺寸，判断其长约65厘米，材质为柔软的布料填充物。"
+    }
+  },
+  {
+    "id": "books-on-desk",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"笔记本电脑\",\n  \"materialName\": \"塑料和金属\",\n  \"material\": \"plastic\",\n  \"hardness\": 0.9,\n  \"lengthCm\": 32,\n  \"massKg\": 2.0,\n  \"condition\": \"intact\",\n  \"outwardEnd\": \"wide\",\n  \"basis\": \"这是一台位于画面左上角的白色笔记本电脑，参照旁边的书籍和桌面尺寸进行估算，其外壳看起来是完好的。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "笔记本电脑",
+      "materialName": "塑料和金属",
+      "material": "plastic",
+      "hardness": 0.9,
+      "lengthCm": 32,
+      "massKg": 2,
+      "condition": "intact",
+      "outwardEnd": "wide",
+      "basis": "这是一台位于画面左上角的白色笔记本电脑，参照旁边的书籍和桌面尺寸进行估算，其外壳看起来是完好的。"
+    }
+  },
+  {
+    "id": "bulb-and-keys-dim",
+    "text": "```json\n{\n  \"clear\": true,\n  \"recognizable\": true,\n  \"name\": \"灯泡\",\n  \"materialName\": \"玻璃\",\n  \"material\": \"metal\",\n  \"hardness\": 1.0,\n  \"lengthCm\": 12,\n  \"massKg\": 0.05,\n  \"condition\": \"intact\",\n  \"outwardEnd\": \"wide\",\n  \"basis\": \"照片主体是一个亮着的透明玻璃灯泡，带有金属螺口底座，旁边放着一串钥匙作为尺寸参照。\"\n}\n```",
+    "expected": {
+      "clear": true,
+      "recognizable": true,
+      "name": "灯泡",
+      "materialName": "玻璃",
+      "material": "metal",
+      "hardness": 1,
+      "lengthCm": 12,
+      "massKg": 0.05,
+      "condition": "intact",
+      "outwardEnd": "wide",
+      "basis": "照片主体是一个亮着的透明玻璃灯泡，带有金属螺口底座，旁边放着一串钥匙作为尺寸参照。"
+    }
+  }
+]
