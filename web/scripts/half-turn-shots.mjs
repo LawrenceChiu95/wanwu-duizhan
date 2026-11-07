@@ -52,7 +52,7 @@ for (const seed of seedsArg.split(',').map(Number)) {
     }
     await page.waitForFunction(() => window.__top.status().phase === 'result', null, {timeout: 180000});
     const json = await page.evaluate(() => window.__top.replayJson()), rep = JSON.parse(json);
-    const again = await simulateV3({fighters: rep.meta.initial.map(f => f.definition), mode: rep.meta.mode, seed: rep.meta.seed, manual: rep.meta.manual, feel: rep.meta.feel, feelRules: rep.meta.feelRules});
+    const again = await simulateV3({fighters: rep.meta.initial.map(f => f.definition), mode: rep.meta.mode, seed: rep.meta.seed, manual: rep.meta.manual, feel: rep.meta.feel, feelRules: rep.meta.feelRules, combat: rep.meta.combat, combatRules: rep.meta.combatRules});
     r.halfTurn = rep.meta.openingHalfTurn;
     r.startX = rep.meta.initial.map(f => +f.pos[0].toFixed(3));
     r.replayEqual = h(json) === h(JSON.stringify(again));
