@@ -290,6 +290,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .call em.guard { background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); letter-spacing: 0.08em; }
 .call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
 .call.parry b { font-size: 28px; }
+/* Position combat: 「拖鞋 打 扫帚」, the struck piece on a dark chip in its own side's colour; a clash is one dark plate. */
+.call.vs b { max-width: 5em; }
+.call .verb { font-size: 15px; opacity: 0.8; }
+.call u { text-decoration: none; font-size: 20px; max-width: 5em; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; background: #04060c; }
+.call u.t0 { color: #ff9a5a; }
+.call u.t1 { color: #6cc8ff; }
+.call.clash { background: #04060c; color: #ff9a5a; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.7); }
+.call.clash .verb { color: #1a1400; background: var(--hot); padding: 0 5px; opacity: 1; }
+.callpin.clash { background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35)); }
 
 /* ---------- Result card ---------- */
 #result { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 26px); padding: 16px 16px 14px; text-align: center; overflow: hidden;
@@ -728,6 +737,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .call em { font-size: 14px; }
   .call.parry b { font-size: 24px; }
   .call.block b { font-size: 15px; }
+  .call u { font-size: 17px; }
   .item b { font-size: 20px; }
   .item .spec { font-size: 9.5px; }
   .seg button { font-size: 14px; gap: 2px; }

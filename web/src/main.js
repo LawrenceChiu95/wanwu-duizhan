@@ -264,7 +264,7 @@ async function main() {
   let fought = null, outcome = null;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
-  let lastParryT = -Infinity, lateNums = [];
+  let lastParryT = -Infinity, lastClashT = -Infinity, lateNums = [];
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -495,6 +495,9 @@ async function main() {
   };
 
   // ---------- events → effects ----------
+  const pieceName = id => id === '__core' ? '核心' : NAMES[id];
+  // 谁打谁看位置 (combat=position): the replay says so; a live match's events carry positionClash.
+  const positionCombat = e => replay?.meta?.combat === 'position' || typeof e.positionClash === 'boolean';
   function onEvent(e) {
     const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
     if (e.type === 'hit' || e.type === 'weak') {
@@ -518,11 +521,22 @@ async function main() {
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
       stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
-      stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
+      // Position combat: the striking piece gets a glowing edge in its colour, the struck one flashes full white (a clash: both edged).
+      const position = positionCombat(e);
+      if (position) stage.strike(e.attacker, e.part, point);
+      stage.flashPart(e.target, e.targetPart, core || position ? 1 : 0.75);
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
         // 护住 (the hit landed on a hugging piece) rides in the same plate: two plates on one spot piled up (Elara 11-02 a788037f).
-        overlay.callout(point, e.attacker, e.item === '__core' ? '核心' : NAMES[e.item], {crit: e.type === 'weak', dash: e.dash && !e.parry, guard: !core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry});
+        const opts = {crit: e.type === 'weak', dash: e.dash && !e.parry, guard: !core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry};
+        // Position combat names both: 「拖鞋 打 扫帚」; a clash gives one 「对撞」 plate for the pair (side 0's piece first).
+        if (!position) overlay.callout(point, e.attacker, pieceName(e.item), opts);
+        else if (!e.clash) overlay.callout(point, e.attacker, pieceName(e.item), {...opts, hit: {side: e.target, name: pieceName(e.targetItem)}});
+        else if (e.t !== lastClashT) {
+          lastClashT = e.t;
+          const [mine, theirs] = e.attacker === 0 ? [e.item, e.targetItem] : [e.targetItem, e.item];
+          overlay.callout(point, 0, pieceName(mine), {crit: opts.crit, hit: {side: 1, name: pieceName(theirs), clash: true}});
+        }
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
       }
@@ -703,6 +717,7 @@ async function main() {
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
     lastParryT = -Infinity;
+    lastClashT = -Infinity;
     layout_();
     stage.pose(pb.state);
     stage.setLookahead(lookahead());

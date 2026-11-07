@@ -250,6 +250,40 @@ const particleShader = {
 };
 // Spin trail: a fan swept behind each part, in the body frame. out parts sweep a flat sector,
 // hugging parts a band of cylinder. Brightest at the part and at its outer edge.
+// Position combat's striking piece: a shell pushed out along the normals (a few px at any distance), back faces only, so
+// a soft team-colour edge shows round its outline while its own texture stays as it is.
+const strikeShellShader = {
+  vertexShader: `uniform float uWidth;
+    void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); mv.xyz += normalize(normalMatrix * normal) * uWidth * -mv.z; gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `uniform vec3 uColor; uniform float uOpacity;
+    void main(){ gl_FragColor = vec4(uColor * 1.5 * uOpacity, 1.0); }`
+};
+// Flat-shaded models (the pillow) carry no normals: the shell gets smooth ones, averaged over vertices at the same spot.
+const shellGeos = new WeakMap();
+function shellGeometry(g) {
+  if (g.attributes.normal) return g;
+  if (!shellGeos.has(g)) {
+    const s = g.clone(), pos = s.attributes.position, idx = s.index, n = pos.count, sum = new Map(), key = new Array(n);
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    for (let i = 0; i < n; i++) key[i] = `${pos.getX(i).toFixed(4)},${pos.getY(i).toFixed(4)},${pos.getZ(i).toFixed(4)}`;
+    const tris = idx ? idx.count / 3 : n / 3, at = k => idx ? idx.getX(k) : k;
+    for (let t = 0; t < tris; t++) {
+      const [i, j, k] = [at(3 * t), at(3 * t + 1), at(3 * t + 2)];
+      a.fromBufferAttribute(pos, i); b.fromBufferAttribute(pos, j); c.fromBufferAttribute(pos, k);
+      const face = c.sub(b).cross(a.sub(b));
+      for (const v of [i, j, k]) { const m = sum.get(key[v]) ?? sum.set(key[v], new THREE.Vector3()).get(key[v]); m.add(face); }
+    }
+    const normal = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const m = sum.get(key[i]); const l = m?.length() || 1; normal.set([m ? m.x / l : 0, m ? m.y / l : 1, m ? m.z / l : 0], i * 3); }
+    s.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+    shellGeos.set(g, s);
+  }
+  return shellGeos.get(g);
+}
+function strikeShell(team) {
+  return new THREE.ShaderMaterial({...strikeShellShader, uniforms: {uColor: {value: team.clone()}, uOpacity: {value: 0}, uWidth: {value: 0.012}},
+    side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, visible: false});
+}
 const fanShader = {
   vertexShader: `attribute vec2 aFan; uniform float uTheta; uniform float uSpan; uniform float uR0; uniform float uR1; uniform float uY0; uniform float uY1; uniform float uHug;
     varying vec2 vF;
@@ -676,7 +710,7 @@ export class Stage {
   buildFighter(def, i) {
     const team = TEAM[i];
     const root = new THREE.Group();
-    const coreUniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
+    const coreUniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
     const coreMat = new THREE.MeshStandardMaterial({map: this.coreTex[i].map, emissiveMap: this.coreTex[i].emissive, emissive: new THREE.Color(1, 1, 1), emissiveIntensity: 0.9, metalness: 0.75, roughness: 0.3});
     patchRim(coreMat, coreUniforms);
     const core = new THREE.Mesh(this.coreGeo, coreMat);
@@ -685,7 +719,7 @@ export class Stage {
     halo.renderOrder = 3;
     this.scene.add(halo);
     const parts = this.layout(def).map(p => {
-      const uniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
+      const uniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
       const obj = instantiate(p.item, uniforms);
       const holder = new THREE.Group();
       holder.position.fromArray(p.offset);
@@ -711,7 +745,7 @@ export class Stage {
           reach = Math.max(reach, Math.hypot(v.x, v.z)); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
         }
       });
-      return {holder, obj, fan, uniforms, flash: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
+      return {holder, obj, shell: null, fan, uniforms, flash: 0, strike: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
     });
     this.scene.add(root);
     const sweep = Math.max(this.coreRadius, ...parts.map(p => p.r1));
@@ -720,7 +754,7 @@ export class Stage {
     shield.visible = false;
     shield.renderOrder = 4;
     root.add(shield);
-    return {root, core, coreUniforms, halo, parts, sweep, shield, shieldColor: shield.material.uniforms.uColor.value.clone(), act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
+    return {root, core, coreShell: null, coreUniforms, halo, parts, sweep, shield, shieldColor: shield.material.uniforms.uColor.value.clone(), act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, strike: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
   }
 
   /** Applies one sampled replay state: body transform, angular speed about its up axis, alive flags, HP. */
@@ -750,6 +784,33 @@ export class Stage {
     if (!f) return;
     if (partId === 'core') f.flash = Math.max(f.flash, amount);
     else { const p = f.parts[Number(partId.split('-')[1])]; if (p) p.flash = Math.max(p.flash, amount); }
+  }
+  /**
+   * Position combat: the piece that struck gets a glowing edge in its side's colour, gone within about a second, over its
+   * own texture (the struck piece gets the white flash); a few colour lines rush from its side into the contact point, so
+   * 390 px wide still shows who hit whom.
+   */
+  strike(i, partId, point) {
+    const f = this.fighters[i];
+    if (!f) return;
+    const p = partId === 'core' ? f : f.parts[Number(partId.split('-')[1])];
+    if (!p) return;
+    p.strike = 1;
+    // Shells are built on a piece's first strike, so default-mode matches (which never strike) carry none.
+    if (p === f && !f.coreShell) f.core.add(new THREE.Mesh(this.coreGeo, f.coreShell = strikeShell(TEAM[i])));
+    else if (p !== f && !p.shell) {
+      const shell = p.obj.clone(true), mat = p.shell = strikeShell(TEAM[i]);
+      shell.traverse(o => { if (o.isMesh) { o.geometry = shellGeometry(o.geometry); o.material = mat; } });
+      p.holder.add(shell);
+    }
+    const d = tmp.subVectors(point, f.center).setY(0);
+    if (d.lengthSq() < 1e-8) return;
+    d.normalize();
+    const dir = d.clone(), side = new THREE.Vector3(-dir.z, 0, dir.x);
+    for (let k = 0; k < 4; k++) {
+      const at = point.clone().addScaledVector(side, (k - 1.5) * 0.045).addScaledVector(dir, -0.03 * Math.abs(k - 1.5));
+      this.streaks.add(at, dir, dir.clone().multiplyScalar(1.4), 0.5 + 0.12 * (k % 2), 0.04, 0.32, k === 1 || k === 2 ? TEAM[i] : WHITE, 0.95);
+    }
   }
   burst(point, colors, count, speed, size, life, drift) { this.particles.burst(point, colors, count, speed, size, life, drift); }
   ring(point, color, from, to, dur) { this.rings.spawn(point, color, from, to, dur); }
@@ -919,8 +980,8 @@ export class Stage {
     for (const g of this.ghosts) g.s.visible = false;
     this.clearDebris();
     for (const f of this.fighters) {
-      f.flash = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
-      for (const p of f.parts) { p.flash = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
+      f.flash = f.strike = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
+      for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
     }
     this.cam.shakeAge = SHAKE_TIME;
     this.cam.punch = null;
@@ -1185,7 +1246,10 @@ export class Stage {
       f.flash *= Math.exp(-realDt * 12);
       f.dim += (f.dimTarget - f.dim) * (1 - Math.exp(-realDt * 4));
       const danger = Math.max(0, (f.coreDamage ?? 0) - 0.5) * 2;
+      f.strike *= Math.exp(-realDt * 2.5);
       f.coreUniforms.uFlash.value = f.flash;
+      f.coreUniforms.uStrike.value = f.strike;
+      if (f.coreShell) { f.coreShell.uniforms.uOpacity.value = f.strike; f.coreShell.visible = f.strike > 0.04; }
       f.coreUniforms.uDim.value = f.dim;
       f.coreUniforms.uDanger.value = danger * (0.5 + 0.5 * Math.sin(this.time * 10));
       f.core.visible = f.dim < 0.98;
@@ -1196,7 +1260,10 @@ export class Stage {
       const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
       for (const p of f.parts) {
         p.flash *= Math.exp(-realDt * 12);
+        p.strike *= Math.exp(-realDt * 2.5);
         p.uniforms.uFlash.value = p.flash;
+        p.uniforms.uStrike.value = p.strike;
+        if (p.shell) { p.shell.uniforms.uOpacity.value = p.strike; p.shell.visible = p.strike > 0.04; }
         // Worn parts glow red, more and faster as they near breaking.
         p.uniforms.uDanger.value = p.damage > 0.4 ? (p.damage - 0.4) / 0.6 * (0.55 + 0.45 * Math.sin(this.time * (6 + 10 * p.damage))) : 0;
         p.fan.material.uniforms.uSpan.value = span;
@@ -1413,13 +1480,14 @@ export class Stage {
   }
 }
 
-const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\n';
+const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
 const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
   totalEmissiveRadiance += uRim * (rim * 1.1 + 0.015) * (1.0 - uDim * 0.8);
   totalEmissiveRadiance += vec3(1.0) * uFlash * 1.6;
+  totalEmissiveRadiance += uRim * uStrike * rim * 1.6;
   totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.35 + rim);
 }`;
 function patchRim(m, uniforms) {

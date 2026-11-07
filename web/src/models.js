@@ -72,13 +72,14 @@ async function loadOne(item) {
   }
 }
 
-const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\n';
+const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
 const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
   totalEmissiveRadiance += uRim * (rim * 1.1 + 0.015) * (1.0 - uDim * 0.7);
   totalEmissiveRadiance += vec3(1.0) * uFlash * 1.6;
+  totalEmissiveRadiance += uRim * uStrike * rim * 1.6;
   totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.25 + rim);
 }`;
 
