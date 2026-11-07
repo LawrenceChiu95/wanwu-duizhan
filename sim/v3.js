@@ -18,6 +18,12 @@ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
 const UP=[0,1,0];
 // The opening and active moves use the original forces. This profile only changes free motion after the first rebound.
 const BOUNCE={attraction:6,thrust:0,recoilSpeed:1.55};
+// Elara 64b06142 selected inward motion before contact. capHp is the original nine-item mean.
+export const POSITION_COMBAT_RULES=Object.freeze({
+ radiusTolerance:.03,recoilBase:.96,recoilLength:.02,outBonus:.08,
+ rangeAttack:.4,rangeHp:.8,capHp:60.800000000000004,
+ roleMode:'inward',inwardWindow:.15,inwardTolerance:.1
+});
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
  return structuredClone(await rulesPromise);
@@ -87,14 +93,15 @@ function buildArena(world,r){
  }
 }
 /** The same per-object scores the library displays drive combat; total rarity adds no hidden bonus. */
-export function itemCombat(item,r){
+export function itemCombat(item,r,positionRules){
  if(item.id==='__core')return {hp:r.core.hp,power:1,attack:r.core.attack,defense:r.core.defense};
  const scores=ratingScores(item);
  if(!scores)throw Error(`物品“${item.name??item.id}”（${item.id}）缺评分或评分无效：攻击、范围、耐久必须都是0–100的有限数字`);
- const {attack,durability}=scores,k=r.top.itemStats;
- return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability),power:k.powerBase+k.powerScale*attack,attack:k.attackBase+k.attackScale*attack,defense:k.defenseBase+k.defenseScale*durability};
+ const {attack,durability,range}=scores,k=r.top.itemStats,q=range/100-.5;
+ const power=positionRules?1+positionRules.rangeAttack*q:1,hp=positionRules?1-positionRules.rangeHp*q:1;
+ return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability)*hp,power:(k.powerBase+k.powerScale*attack)*power,attack:(k.attackBase+k.attackScale*attack)*power,defense:k.defenseBase+k.defenseScale*durability};
 }
-function buildFighter(world,def,index,c,r,openingHalfTurn){
+function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
  const spin=r.top.spinRate*r.top.spinDirections[index];
  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping));
  const item={id:'__core',name:'核心',tag:'core',material:r.core.material,stats:{attack:r.core.attack,defense:r.core.defense},bounds:{min:[-r.core.radius,-r.core.radius,-r.core.radius],max:[r.core.radius,r.core.radius,r.core.radius]}};
@@ -103,7 +110,8 @@ function buildFighter(world,def,index,c,r,openingHalfTurn){
  const parts=def.parts.map((p,i)=>{
   const item=c.items.find(x=>x.id===p.item),{offset,quat:q}=mountTransform(item,p.mount,p.orient,r),d=RAPIER.ColliderDesc.convexHull(new Float32Array(item.hull.flat()));if(!d)throw Error(`Invalid hull ${item.id}`);
   const collider=world.createCollider(d.setMass(item.mass).setTranslation(...offset).setRotation(quat(q)).setRestitution(c.materials[item.material].restitution).setFriction(.12),body);
-  return {id:`part-${i}`,item,mount:p.mount,orient:p.orient,offset,localQuat:q,collider,maxHp:itemCombat(item,r).hp,hp:itemCombat(item,r).hp,alive:true};
+  const hp=itemCombat(item,r,positionRules).hp;
+  return {id:`part-${i}`,item,mount:p.mount,orient:p.orient,offset,localQuat:q,collider,maxHp:hp,hp,alive:true};
  });
  body.recomputeMassPropertiesFromColliders();
  // Opposite sides face each other by a half turn, without reflecting handed geometry.
@@ -129,18 +137,34 @@ export function topStrikeRoles(options,relativeTolerance){
  const clash=Math.max(...roles.normalSpeeds)>=options.minimumSpeed&&high>0&&Math.abs(roles.scores[0]-roles.scores[1])<=high*relativeTolerance;
  return {...roles,clash,attacker:clash?null:roles.attacker};
 }
+/** The core position is visible to the player; offset attachments do not move this reference. */
+export function positionStrikeRoles(roles,positions,tolerance,tipBonus){
+ const radii=positions.map(p=>hyp(p[0],p[2])),clash=Math.abs(radii[0]-radii[1])<=tolerance,attacker=clash?null:radii[0]>radii[1]?0:1;
+ return {...roles,clash,attacker,tipMultiplier:clash?1:1+tipBonus*roles.tipRatios[attacker],positionRadii:radii};
+}
+/** Alternative position rules are measured separately from the radius-only candidate. */
+export function alternativePositionRoles(roles,{mode,radii,priorRadii,elapsed,reach},tolerance,tipBonus){
+ const values=mode==='inward'?radii.map((radius,i)=>Math.max(0,(priorRadii[i]-radius)/elapsed)):radii.map((radius,i)=>radius-reach[i]);
+ const clash=Math.abs(values[0]-values[1])<=tolerance,attacker=clash?null:values[0]>values[1]?0:1;
+ return {...roles,clash,attacker,tipMultiplier:clash?1:1+tipBonus*roles.tipRatios[attacker],positionRadii:radii,positionValues:values,positionMode:mode};
+}
+export function partRecoilFactor(part,rules){
+ if(part.mount==='core')return 1;
+ const longest=Math.max(...part.item.bounds.max.map((v,i)=>v-part.item.bounds.min[i]));
+ return rules.recoilBase+rules.recoilLength*longest/.8+(part.orient==='out'?rules.outBonus:0);
+}
 function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.angular,sub(point,f.before.center)));}
 function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
-export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r}){
- const attack=itemCombat(attacker,r),defend=itemCombat(target,r);
+export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules}){
+ const attack=itemCombat(attacker,r,positionRules),defend=itemCombat(target,r,positionRules);
  // Hardness rewards the striker; a soft target no longer raises the damage tier just for being soft.
  const hardness=Math.sqrt(itemHardness(attacker,materials)/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
  const score=(mode==='A'?impulse:Math.max(0,attack.attack*matchup-defend.defense))*hardness*tipMultiplier;
  const tier=r.tierThresholds[mode].filter(threshold=>score>=threshold).length;
  // Per-object power and mounting trade-off apply before the existing per-hit cap.
  const attackMultiplier=r.top?.orientPower?.[attackerOrient]??1,receiveMultiplier=(r.top?.orientReceive?.[targetOrient]??1)*(targetOrient==='hug'?(r.top.softHugReceive[target.material]??1):1);
- const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier,damageCap=maxHp*(weak?r.weakCritMaxFraction:r.maxHitFraction);
+ const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
  return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
@@ -211,8 +235,9 @@ function aiProfile(p){
  * recorded; charge, dash, shield and their recoil all run inside the step, so a replay of the same presses is
  * byte-identical. manual.blockTime, when set, is recorded with the accepted presses for replay.
  * Pass meta.feel and meta.feelRules when reproducing an opt-in bounce replay.
+ * Pass meta.combat and meta.combatRules as well for an opt-in position replay.
  */
-export async function createV3Match({fighters:definitions,mode='A',seed,manual=null,feel,feelRules}){
+export async function createV3Match({fighters:definitions,mode='A',seed,manual=null,feel,feelRules,combat,combatRules}){
  if(!['A','B'].includes(mode))throw Error('mode must be A or B');if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('seed must be a uint32');if(!Array.isArray(definitions)||definitions.length!==2)throw Error('Exactly two fighters required');
  if(manual&&(!Array.isArray(manual.sides)||manual.sides.length!==2||!manual.sides.every(x=>x==='input'||x==='ai')))throw Error("manual.sides must be two of 'input' | 'ai'");
  if(manual?.aiSeeds!==undefined&&(!Array.isArray(manual.aiSeeds)||manual.aiSeeds.length!==2||!manual.aiSeeds.every(s=>Number.isInteger(s)&&s>=0&&s<=0xffffffff)))throw Error('manual.aiSeeds must be two uint32 values');
@@ -224,7 +249,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
  // Automatic play has the same symmetric opening, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
- const bounce=feel==='bounce'?structuredClone(feelRules??BOUNCE):null;
+ const position=combat==='position'?structuredClone(combatRules):null;
+ if(combat==='position'&&(!position||!['radiusTolerance','recoilBase','recoilLength','outBonus','rangeAttack','rangeHp'].every(k=>Number.isFinite(position[k])&&position[k]>=0)||position.rangeAttack>=2||position.rangeHp>=2))throw Error('combatRules must specify finite non-negative position rules with range multipliers below 2');
+ if(position?.capHp!==undefined&&(!Number.isFinite(position.capHp)||position.capHp<=0))throw Error('capHp must be positive and finite');
+ if(position?.roleMode!==undefined&&!['radius','inward','reach'].includes(position.roleMode))throw Error('Unknown position role mode');
+ if(position?.roleMode==='inward'&&(!Number.isFinite(position.inwardWindow)||position.inwardWindow<=0||!Number.isFinite(position.inwardTolerance)||position.inwardTolerance<0))throw Error('Inward role rules require a positive window and non-negative tolerance');
+ const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
  const openingHalfTurn=random(seed^0xd1b54a35)()>=.5;
@@ -233,7 +263,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
  try{
- buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn));
+ buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position));
  extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
  initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)}));events=[{t:0,type:'start'}];frames=[];diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
@@ -331,20 +361,31 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const matchupMultipliers=[[left,right],[right,left]].map(([a,b])=>(c.matchups[a.item.tag]?.[b.item.tag]??1)>1?r.counterSpeedMultiplier:1);
    const pointVelocities=[contactVelocity(fs[0],point),contactVelocity(fs[1],rightPoint)],closingSpeed=dot(sub(pointVelocities[0],pointVelocities[1]),normal);
    let roles=topStrikeRoles({normal,velocities:pointVelocities,tipRatios:[tipRatio(left,point),tipRatio(right,rightPoint)],tipBonus:r.tipBonus,seed,masses:fs.map(f=>massWeight(f.mass,r.roleMassPower)),massPower:1,matchupMultipliers,minimumSpeed:r.minimumClosingSpeed},r.clashRelativeTolerance);
+   let positionContact=null;
+   if(position&&['inward','reach'].includes(position.roleMode)){
+    const beforeTime=t-r.dt,prior=frames.findLast(frame=>frame.t<=beforeTime-(position.inwardWindow??.15))??frames[0];
+    const radii=fs.map(f=>{const p=position.roleMode==='inward'?f.before.core:arr(f.body.translation());return hyp(p[0],p[2]);}),priorRadii=prior.fighters.map(f=>hyp(f.pos[0],f.pos[2]));
+    const reach=position.roleMode==='reach'?fs.map(f=>sweepRadius(f,r)-r.core.radius):null,elapsed=Math.max(r.dt,beforeTime-prior.t);
+    positionContact=alternativePositionRoles(roles,{mode:position.roleMode,radii,priorRadii,elapsed,reach},position.roleMode==='inward'?position.inwardTolerance:position.radiusTolerance,r.tipBonus);
+   }else if(position){
+    positionContact=positionStrikeRoles(roles,fs.map(f=>arr(f.body.translation())),position.radiusTolerance,r.tipBonus);
+   }
+   if(positionContact)roles=positionContact;
+   const positionInfo=positionContact?{positionRadii:positionContact.positionRadii,positionAttacker:positionContact.attacker,positionClash:positionContact.clash,...(positionContact.positionMode&&{positionMode:positionContact.positionMode,positionValues:positionContact.positionValues}),dashOverridesPosition:Boolean(M&&fullLunge.length===1&&positionContact.attacker!==fullLunge[0])}:null;
    // A lunge is the blow: the lunging side strikes (which pieces touch is still the physics' call).
    if(M&&fullLunge.length===1)roles={...roles,clash:false,attacker:fullLunge[0],tipMultiplier:1+r.tipBonus*roles.tipRatios[fullLunge[0]]};
-   if(newEpisode)events.push({t,type:'contact',point,rightPoint,normal,impulse,closingSpeed,parts:[left.id,right.id],items:[left.item.id,right.item.id],orients:[left.orient,right.orient],closingSpeeds:roles.normalSpeeds,attackScores:roles.scores,attacker:roles.attacker,clash:roles.clash,pairCount:pairs.length});
+   if(newEpisode)events.push({t,type:'contact',point,rightPoint,normal,impulse,closingSpeed,parts:[left.id,right.id],items:[left.item.id,right.item.id],orients:[left.orient,right.orient],closingSpeeds:roles.normalSpeeds,attackScores:roles.scores,attacker:roles.attacker,clash:roles.clash,...positionInfo,pairCount:pairs.length});
    const shieldDamageApplied=[false,false];
    if(newEpisode&&(roles.attacker!==null||roles.clash)&&impulse>=r.minimumImpulse&&(t-lastDamage>=r.damageCooldown||M&&fullLunge.length>0)){
     const pending=[];
     for(const [attacker,target,ap,tp,tpnt] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
      const role=roles.clash||attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
      const weakTouch=weakContact(tp,tpnt),roll=role==='attack'&&weakTouch?critRoll():null,weak=roll!==null&&weakCritical({contact:true,roll,chance:r.weakCritChance});
-     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r});
+     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position});
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
      const damage=Math.min(tp.hp,d.damage);
-     pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
+     pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
     for(const {tp,event}of pending){tp.hp=Math.max(0,tp.hp-event.damage);event.hpAfter=tp.hp;events.push(event);if(M&&event.role==='attack'&&event.shield&&event.damage>0)shieldDamageApplied[event.target]=true;}
     lastDamage=t;
@@ -355,8 +396,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     // Manual recoil scales: a shield barely moves; a lunge into a shield bounces hard; a landed lunge knocks the other back.
     const k=M?[0,1].map(i=>fullLunge.includes(i)?(shield[1-i]?M.bounceRecoil:1):shield[i]?M.blockRecoil:fullLunge.includes(1-i)?M.dashRecoil:1):null;
     const recoilSpeed=bounce&&!lunge.length&&!shield?.some(Boolean)?bounce.recoilSpeed:r.recoilSpeed;
-    const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(normal,M?(i===0?-1:1)*f.mass*recoilSpeed*k[i]:(i===0?-1:1)*f.mass*recoilSpeed)),true));
-    events.push({t,type:'recoil',normal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed,...(M&&{recoilScale:k})});lastRecoil=t;
+    const partRecoil=position?[left,right].map(p=>partRecoilFactor(p,position)):null;
+    const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(normal,M?(i===0?-1:1)*f.mass*recoilSpeed*k[i]*(partRecoil?.[i]??1):(i===0?-1:1)*f.mass*recoilSpeed*(partRecoil?.[i]??1))),true));
+    events.push({t,type:'recoil',normal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed,...(partRecoil&&{partRecoil}),...(M&&{recoilScale:k})});lastRecoil=t;
    }
    if(impulse>=r.minimumImpulse)lastSeen=t;
    // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
@@ -387,7 +429,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const brokenBefore=cause&&loser!==null?events.filter(e=>e.type==='break'&&e.target===loser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
  const why=timeout?.why??(cause&&loser!==null?{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,role:cause.role,coreRatios:fs.map(f=>Math.max(0,f.core.hp)/f.core.maxHp),partsLeft:fs.map(f=>f.parts.filter(p=>p.alive).length),loserBroken:brokenBefore,loserPartsLeft:definitions[loser].parts.length-brokenBefore.length,...(M&&{dash:Boolean(cause.dash)})}:null);
  events.push({t,type:'result',winner,reason,why});
- result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,...(bounce&&{feel,feelRules:structuredClone(bounce)}),duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs,...(aiProfiles.some(Boolean)&&{aiProfiles:structuredClone(aiProfiles)})}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
+ result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,...(bounce&&{feel:position?'bounce':feel,feelRules:structuredClone(bounce)}),...(position&&{combat,combatRules:structuredClone(position)}),duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs,...(aiProfiles.some(Boolean)&&{aiProfiles:structuredClone(aiProfiles)})}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
   }finally{world.free();}
  }
  return {
@@ -403,8 +445,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   free(){if(!done){done=true;world.free();}}
  };
 }
-export async function simulateV3({fighters,mode='A',seed,onProgress,manual=null,feel,feelRules}){
- const m=await createV3Match({fighters,mode,seed,manual,feel,feelRules});
+export async function simulateV3({fighters,mode='A',seed,onProgress,manual=null,feel,feelRules,combat,combatRules}){
+ const m=await createV3Match({fighters,mode,seed,manual,feel,feelRules,combat,combatRules});
  try{
   // Optional cooperative yield for a page; it never touches the world, so results are unchanged.
   while(!m.done){if(onProgress&&(m.step+1)%300===0)await onProgress((m.step+1)*m.rules.dt);m.advance();}

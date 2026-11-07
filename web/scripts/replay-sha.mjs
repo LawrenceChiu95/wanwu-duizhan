@@ -20,7 +20,7 @@ for (const seed of seeds.split(',').map(Number)) {
   await page.waitForFunction(() => window.__top.status().phase === 'play', null, {timeout: 120000});
   const json = await page.evaluate(() => window.__top.replayJson());
   const r = JSON.parse(json);
-  const again = await simulateV3({fighters: r.meta.initial.map(f => f.definition), mode: r.meta.mode, seed: r.meta.seed, feel: r.meta.feel, feelRules: r.meta.feelRules});
+  const again = await simulateV3({fighters: r.meta.initial.map(f => f.definition), mode: r.meta.mode, seed: r.meta.seed, feel: r.meta.feel, feelRules: r.meta.feelRules, combat: r.meta.combat, combatRules: r.meta.combatRules});
   rows.push({seed, mine, browser: h(json), node: h(JSON.stringify(again)), equal: h(json) === h(JSON.stringify(again)), duration: r.meta.duration, winner: r.meta.winner});
 }
 await browser.close();
