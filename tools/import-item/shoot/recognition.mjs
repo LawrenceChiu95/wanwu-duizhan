@@ -55,8 +55,14 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
   if (!key?.trim()) throw Error('Recognition requires GEMINI_API_KEY');
   const controller = new AbortController(), signal = controller.signal;
   const pipeline = sharp(photo, {limitInputPixels: 64000000}).rotate().resize({width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true}).jpeg({quality: 82});
-  let timer;
-  const deadline = new Promise((_, reject) => { timer = setTimeout(() => { controller.abort(); pipeline.destroy(); reject(failure('recognition-network')); }, Math.min(55000, totalTimeoutMs)); });
+  let timer, deadlineCode = 'recognition-network';
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      pipeline.destroy();
+      reject(failure(deadlineCode));
+    }, Math.min(55000, totalTimeoutMs));
+  });
   const run = async () => {
     let input;
     try { input = await pipeline.toBuffer(); }
@@ -91,6 +97,7 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
         if (attempt < attemptLimit - 1 && temporary) { await pause([2000, 5000][attempt], undefined, {signal}); continue; }
         if (backup && (temporary || status === 429)) {
           signal.throwIfAborted();
+          deadlineCode = code;
           const backupSignal = AbortSignal.any([signal, AbortSignal.timeout(Math.min(15000, timeoutMs))]), backupStarted = Date.now();
           let backupStatus = null;
           try {
@@ -106,7 +113,8 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
           } catch (backupError) {
             const backupCode = ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(backupError.code) ? backupError.code : backupError instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
             diagnose({provider: 'qwen', attempt: 1, status: backupStatus, elapsedMs: Date.now() - backupStarted, error: backupCode, timedOut: backupSignal.aborted, inputBytes: input.length});
-            throw failure(backupCode);
+            // Preserve the primary error's retry policy if the fallback cannot recognize the photo.
+            throw failure(backupCode === 'photo-unclear' ? backupCode : code);
           }
         }
         throw failure(code);
