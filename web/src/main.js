@@ -158,6 +158,7 @@ function photoItems(list) {
 async function main() {
   el.busy.hidden = false;
   const q = new URLSearchParams(location.search);
+  const feel = q.get('feel') === 'bounce' ? 'bounce' : undefined;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
   // 评委版 (judge.js, task #4): 拍一件 talks to this origin's backend (Elara edd90212), with one real generation beside it.
@@ -669,13 +670,13 @@ async function main() {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
       // The opponent's play is fixed with its build as 开打 is pressed; one without its own (a build in ?foe=) plays the old way.
       const ai = fought === null ? null : LADDER[fought].ai;
-      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
+      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false};
     } else {
       // Yield to the page every few hundred physics steps so the preview keeps spinning.
-      r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, onProgress: () => new Promise(res => setTimeout(res, 0))});
+      r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, onProgress: () => new Promise(res => setTimeout(res, 0))});
     }
     test.simMs = performance.now() - t0;
     if (id !== runId) return;
@@ -710,7 +711,7 @@ async function main() {
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
