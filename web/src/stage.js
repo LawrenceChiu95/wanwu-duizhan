@@ -715,8 +715,6 @@ export class Stage {
     patchRim(coreMat, coreUniforms);
     const core = new THREE.Mesh(this.coreGeo, coreMat);
     root.add(core);
-    const coreShell = new THREE.Mesh(this.coreGeo, strikeShell(team));
-    core.add(coreShell);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({map: this.haloTex, color: team, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending}));
     halo.renderOrder = 3;
     this.scene.add(halo);
@@ -727,9 +725,6 @@ export class Stage {
       holder.position.fromArray(p.offset);
       holder.quaternion.fromArray(p.quat);
       holder.add(obj);
-      const shellMat = strikeShell(team), shell = obj.clone(true);
-      shell.traverse(o => { if (o.isMesh) { o.geometry = shellGeometry(o.geometry); o.material = shellMat; } });
-      holder.add(shell);
       root.add(holder);
       const fan = new THREE.Mesh(fanGeometry, new THREE.ShaderMaterial({...fanShader, uniforms: {
         uTheta: {value: p.theta}, uSpan: {value: 0}, uR0: {value: p.r0}, uR1: {value: p.r1}, uY0: {value: p.y0}, uY1: {value: p.y1}, uHug: {value: p.orient === 'hug' ? 1 : 0},
@@ -750,7 +745,7 @@ export class Stage {
           reach = Math.max(reach, Math.hypot(v.x, v.z)); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
         }
       });
-      return {holder, obj, shell: shellMat, fan, uniforms, flash: 0, strike: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
+      return {holder, obj, shell: null, fan, uniforms, flash: 0, strike: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
     });
     this.scene.add(root);
     const sweep = Math.max(this.coreRadius, ...parts.map(p => p.r1));
@@ -759,7 +754,7 @@ export class Stage {
     shield.visible = false;
     shield.renderOrder = 4;
     root.add(shield);
-    return {root, core, coreShell: coreShell.material, coreUniforms, halo, parts, sweep, shield, shieldColor: shield.material.uniforms.uColor.value.clone(), act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, strike: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
+    return {root, core, coreShell: null, coreUniforms, halo, parts, sweep, shield, shieldColor: shield.material.uniforms.uColor.value.clone(), act: {charge: 0, dash: 0, shield: 0, parry: 0}, center: new THREE.Vector3(), spin: 0, flash: 0, strike: 0, dim: 0, dimTarget: 0, coreAlive: true, def};
   }
 
   /** Applies one sampled replay state: body transform, angular speed about its up axis, alive flags, HP. */
@@ -799,7 +794,15 @@ export class Stage {
     const f = this.fighters[i];
     if (!f) return;
     const p = partId === 'core' ? f : f.parts[Number(partId.split('-')[1])];
-    if (p) p.strike = 1;
+    if (!p) return;
+    p.strike = 1;
+    // Shells are built on a piece's first strike, so default-mode matches (which never strike) carry none.
+    if (p === f && !f.coreShell) f.core.add(new THREE.Mesh(this.coreGeo, f.coreShell = strikeShell(TEAM[i])));
+    else if (p !== f && !p.shell) {
+      const shell = p.obj.clone(true), mat = p.shell = strikeShell(TEAM[i]);
+      shell.traverse(o => { if (o.isMesh) { o.geometry = shellGeometry(o.geometry); o.material = mat; } });
+      p.holder.add(shell);
+    }
     const d = tmp.subVectors(point, f.center).setY(0);
     if (d.lengthSq() < 1e-8) return;
     d.normalize();
@@ -1246,8 +1249,7 @@ export class Stage {
       f.strike *= Math.exp(-realDt * 2.5);
       f.coreUniforms.uFlash.value = f.flash;
       f.coreUniforms.uStrike.value = f.strike;
-      f.coreShell.uniforms.uOpacity.value = f.strike;
-      f.coreShell.visible = f.strike > 0.04;
+      if (f.coreShell) { f.coreShell.uniforms.uOpacity.value = f.strike; f.coreShell.visible = f.strike > 0.04; }
       f.coreUniforms.uDim.value = f.dim;
       f.coreUniforms.uDanger.value = danger * (0.5 + 0.5 * Math.sin(this.time * 10));
       f.core.visible = f.dim < 0.98;
@@ -1261,8 +1263,7 @@ export class Stage {
         p.strike *= Math.exp(-realDt * 2.5);
         p.uniforms.uFlash.value = p.flash;
         p.uniforms.uStrike.value = p.strike;
-        p.shell.uniforms.uOpacity.value = p.strike;
-        p.shell.visible = p.strike > 0.04;
+        if (p.shell) { p.shell.uniforms.uOpacity.value = p.strike; p.shell.visible = p.strike > 0.04; }
         // Worn parts glow red, more and faster as they near breaking.
         p.uniforms.uDanger.value = p.damage > 0.4 ? (p.damage - 0.4) / 0.6 * (0.55 + 0.45 * Math.sin(this.time * (6 + 10 * p.damage))) : 0;
         p.fan.material.uniforms.uSpan.value = span;
