@@ -1,10 +1,10 @@
 // 第 13 版整场半圈：同一种子三个镜头的开场、自己空挡各截一张；整局打完核回放和刷新后转没转一致。
-// Usage: /opt/homebrew/bin/node web/scripts/half-turn-shots.mjs <baseUrl> <outDir> [width=390] [seeds=1,101]
+// Usage: /opt/homebrew/bin/node web/scripts/half-turn-shots.mjs <baseUrl> <outDir> [width=390] [seeds=1,101] [feel]
 import {chromium} from 'playwright';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {simulateV3} from '../../sim/v3.js';
-const [base = 'http://127.0.0.1:4391/', out = '/tmp/half-turn', w = '390', seedsArg = '1,101'] = process.argv.slice(2);
+const [base = 'http://127.0.0.1:4391/', out = '/tmp/half-turn', w = '390', seedsArg = '1,101', feel = ''] = process.argv.slice(2);
 const W = Number(w), desk = W >= 900, H = desk ? 900 : Math.round(W * 844 / 390);
 await mkdir(out, {recursive: true});
 const browser = await chromium.launch({channel: 'chromium'});
@@ -24,7 +24,11 @@ const report = {width: W, seeds: {}, logs};
 for (const seed of seedsArg.split(',').map(Number)) {
   const r = report.seeds[seed] = {};
   for (const cam of ['slow', 'v4', 'new']) {
-    await start(`${base}?play=manual&seed=${seed}${cam !== 'slow' ? `&cam=${cam}` : ''}`);
+    const url = new URL(base);
+    url.searchParams.set('play', 'manual'); url.searchParams.set('seed', seed);
+    if (cam !== 'slow') url.searchParams.set('cam', cam); else url.searchParams.delete('cam');
+    if (feel) url.searchParams.set('feel', feel);
+    await start(url.href);
     await page.waitForTimeout(500);
     await page.screenshot({path: `${out}/s${seed}-${cam}-open-${W}.png`});
     // Own prompt: an empty 挡 while the opponent is not lunging (the 冲 arrow: v13-shots.mjs WANT=aim-mine with this seed).
@@ -48,7 +52,7 @@ for (const seed of seedsArg.split(',').map(Number)) {
     }
     await page.waitForFunction(() => window.__top.status().phase === 'result', null, {timeout: 180000});
     const json = await page.evaluate(() => window.__top.replayJson()), rep = JSON.parse(json);
-    const again = await simulateV3({fighters: rep.meta.initial.map(f => f.definition), mode: rep.meta.mode, seed: rep.meta.seed, manual: {sides: ['input', 'ai'], inputs: rep.meta.manual.inputs, blockTime: rep.meta.manual.blockTime, aiSeeds: rep.meta.manual.aiSeeds}});
+    const again = await simulateV3({fighters: rep.meta.initial.map(f => f.definition), mode: rep.meta.mode, seed: rep.meta.seed, manual: rep.meta.manual, feel: rep.meta.feel, feelRules: rep.meta.feelRules});
     r.halfTurn = rep.meta.openingHalfTurn;
     r.startX = rep.meta.initial.map(f => +f.pos[0].toFixed(3));
     r.replayEqual = h(json) === h(JSON.stringify(again));

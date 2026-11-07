@@ -1,12 +1,12 @@
 // 手动模式看一遍：装配、开局（认得出自己）、打斗中按钮（一个冷却一个就绪）、冲撞命中、冲撞被挡住、结算；
 // 打完把这局在浏览器里实时按出来的回放，拿它记下的按键在 Node 里重算，比 sha256（逐字节一致才算过）。
 // 按键走真的触摸点按（Playwright tap，无头浏览器，不碰本机屏幕）。
-// Usage: /opt/homebrew/bin/node web/scripts/manual-shots.mjs <baseUrl> <outDir> [width=390] [seed=7]
+// Usage: /opt/homebrew/bin/node web/scripts/manual-shots.mjs <baseUrl> <outDir> [width=390] [seed=7] [feel]
 import {chromium} from 'playwright';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {simulateV3} from '../../sim/v3.js';
-const [base = 'http://127.0.0.1:4377/', out = '/tmp/manual-shots', w = '390', seedArg = '7'] = process.argv.slice(2);
+const [base = 'http://127.0.0.1:4377/', out = '/tmp/manual-shots', w = '390', seedArg = '7', feel = ''] = process.argv.slice(2);
 const W = Number(w), desk = W >= 900, H = desk ? 900 : Math.round(W * 844 / 390);
 await mkdir(out, {recursive: true});
 const browser = await chromium.launch({channel: 'chromium'});
@@ -18,7 +18,10 @@ const status = () => page.evaluate(() => window.__top.status());
 const shot = name => page.screenshot({path: `${out}/${name}-${W}.png`});
 const tap = sel => desk ? page.click(sel) : page.tap(sel);
 const report = {width: W, seed: Number(seedArg)};
-await page.goto(`${base}?play=manual&seed=${seedArg}`);
+const url = new URL(base);
+url.searchParams.set('play', 'manual'); url.searchParams.set('seed', seedArg);
+if (feel) url.searchParams.set('feel', feel);
+await page.goto(url.href);
 await page.waitForFunction(() => window.__top?.status().phase === 'build', null, {timeout: 120000});
 await page.waitForTimeout(800);
 await shot('m1-build');
@@ -61,7 +64,7 @@ s = await status();
 report.result = {winner: s.meta.winner, reason: s.meta.reason, duration: s.meta.duration, line: s.reason, presses: s.inputs.length, deniedTaps: s.denied};
 // Determinism: the replay the browser built live, against Node re-simulating only its recorded presses.
 const json = await page.evaluate(() => window.__top.replayJson()), browserReplay = JSON.parse(json);
-const again = await simulateV3({fighters: browserReplay.meta.initial.map(f => f.definition), mode: browserReplay.meta.mode, seed: browserReplay.meta.seed, manual: {sides: ['input', 'ai'], inputs: browserReplay.meta.manual.inputs, ...(browserReplay.meta.manual.blockTime != null ? {blockTime: browserReplay.meta.manual.blockTime} : {}), ...(browserReplay.meta.manual.aiSeeds ? {aiSeeds: browserReplay.meta.manual.aiSeeds} : {})}});
+const again = await simulateV3({fighters: browserReplay.meta.initial.map(f => f.definition), mode: browserReplay.meta.mode, seed: browserReplay.meta.seed, manual: browserReplay.meta.manual, feel: browserReplay.meta.feel, feelRules: browserReplay.meta.feelRules});
 const h = x => createHash('sha256').update(x).digest('hex');
 report.determinism = {browserLive: h(json), nodeFromPresses: h(JSON.stringify(again)), equal: h(json) === h(JSON.stringify(again)), presses: browserReplay.meta.manual.inputs.length};
 report.logs = logs.slice(0, 20);

@@ -177,6 +177,36 @@ test('manual mode: presses taken per fixed step and recorded; replaying the same
  const auto=await simulateV3({fighters,mode:'A',seed:5});
  assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
 });
+test('bounce is opt-in, keeps the opening impact, and replays presses made during recoil',async()=>{
+ const fighters=[{parts:[]},{parts:[]}];
+ const options={fighters,seed:3,manual:{sides:['input','input']}};
+ const base=await simulateV3(options);
+ const first=base.events.find(e=>e.type==='recoil');
+ const firstStep=Math.round(first.t/base.meta.rules.dt);
+ const inputs=[
+  {step:firstStep+2,side:0,action:'dash'},
+  {step:firstStep+2,side:0,action:'block'},
+  {step:firstStep+3,side:0,action:'dash'},
+  {step:firstStep+3,side:0,action:'block'},
+ ];
+ const bounce=await simulateV3({...options,feel:'bounce',manual:{...options.manual,inputs}});
+ const rebound=bounce.events.find(e=>e.type==='recoil');
+ assert.equal(base.meta.feel,undefined);
+ assert.equal(digest(base),digest(await simulateV3({...options,feel:'unknown'})));
+ assert.equal(bounce.meta.feel,'bounce');
+ assert.deepEqual(bounce.meta.feelRules,{attraction:6,thrust:0,recoilSpeed:1.55});
+ assert.deepEqual(bounce.meta.rules,base.meta.rules);
+ assert.deepEqual(bounce.events.slice(0,bounce.events.indexOf(rebound)),base.events.slice(0,base.events.indexOf(first)));
+ assert.ok(rebound.recoilSpeed>first.recoilSpeed);
+ assert.deepEqual(bounce.meta.manual.inputs,inputs.slice(0,2));
+ assert.ok(bounce.events.some(e=>e.type==='dash'&&e.phase==='go'&&e.side===0));
+ const replay=await simulateV3({...options,feel:bounce.meta.feel,feelRules:bounce.meta.feelRules,manual:bounce.meta.manual});
+ assert.equal(digest(replay),digest(bounce));
+ const changed=await simulateV3({...options,feel:'bounce',feelRules:{attraction:4,thrust:0,recoilSpeed:1.9}});
+ assert.equal(changed.events.find(e=>e.type==='recoil').recoilSpeed,1.9);
+ assert.equal(digest(changed),digest(await simulateV3({...options,feel:changed.meta.feel,feelRules:changed.meta.feelRules,manual:changed.meta.manual})));
+ await assert.rejects(simulateV3({...options,feel:'bounce',feelRules:{attraction:6,thrust:-1,recoilSpeed:1.55}}),/feelRules/);
+});
 test('manual mode: a lunge into a raised shield is bounced (parry); a landed lunge hits harder, ×1.25 after the single-hit cap',async()=>{
  // The old AI seed 3 no longer parries after the opening/window changed. Keep every damage/recoil
  // assertion, using explicit presses and zero spin so the timing fixture has a straight real impact.

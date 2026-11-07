@@ -16,6 +16,8 @@ export const warmEngine=()=>ready();
 const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const UP=[0,1,0];
+// The opening and active moves use the original forces. This profile only changes free motion after the first rebound.
+const BOUNCE={attraction:6,thrust:0,recoilSpeed:1.55};
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
  return structuredClone(await rulesPromise);
@@ -208,8 +210,9 @@ function aiProfile(p){
  * inputs [{step,side,action}]) or 'ai' (simple seeded rules). A press is taken at the start of the next step and
  * recorded; charge, dash, shield and their recoil all run inside the step, so a replay of the same presses is
  * byte-identical. manual.blockTime, when set, is recorded with the accepted presses for replay.
+ * Pass meta.feel and meta.feelRules when reproducing an opt-in bounce replay.
  */
-export async function createV3Match({fighters:definitions,mode='A',seed,manual=null}){
+export async function createV3Match({fighters:definitions,mode='A',seed,manual=null,feel,feelRules}){
  if(!['A','B'].includes(mode))throw Error('mode must be A or B');if(!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('seed must be a uint32');if(!Array.isArray(definitions)||definitions.length!==2)throw Error('Exactly two fighters required');
  if(manual&&(!Array.isArray(manual.sides)||manual.sides.length!==2||!manual.sides.every(x=>x==='input'||x==='ai')))throw Error("manual.sides must be two of 'input' | 'ai'");
  if(manual?.aiSeeds!==undefined&&(!Array.isArray(manual.aiSeeds)||manual.aiSeeds.length!==2||!manual.aiSeeds.every(s=>Number.isInteger(s)&&s>=0&&s<=0xffffffff)))throw Error('manual.aiSeeds must be two uint32 values');
@@ -221,6 +224,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
  // Automatic play has the same symmetric opening, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
+ const bounce=feel==='bounce'?structuredClone(feelRules??BOUNCE):null;
+ if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
  const openingHalfTurn=random(seed^0xd1b54a35)()>=.5;
  const aiSeeds=manual?.aiSeeds??[(seed^0x243f6a88)>>>0,(seed^0xb7e15162)>>>0],aiRoll=aiSeeds.map(random);
@@ -289,12 +294,13 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   if(done)return;
   step++;t=step*r.dt;
   if(M)manualStep();
+  const motion=bounce&&lastRecoil!==-Infinity?bounce:r;
   fs.forEach((f,i)=>{
    const p=arr(f.body.worldCom()),delta=sub(arr(fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],pursuit=t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
    // bleed off velocity across the line between them so the pair cannot orbit without touching.
    const across=sub(v,scale(n,dot(v,n)));
-   let acceleration=add(scale(p,-r.attraction),scale(n,r.thrust*pursuit));
+   let acceleration=add(scale(p,-motion.attraction),scale(n,motion.thrust*pursuit));
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
@@ -348,8 +354,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    if((t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
     // Manual recoil scales: a shield barely moves; a lunge into a shield bounces hard; a landed lunge knocks the other back.
     const k=M?[0,1].map(i=>fullLunge.includes(i)?(shield[1-i]?M.bounceRecoil:1):shield[i]?M.blockRecoil:fullLunge.includes(1-i)?M.dashRecoil:1):null;
-    const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(normal,M?(i===0?-1:1)*f.mass*r.recoilSpeed*k[i]:(i===0?-1:1)*f.mass*r.recoilSpeed)),true));
-    events.push({t,type:'recoil',normal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed:r.recoilSpeed,...(M&&{recoilScale:k})});lastRecoil=t;
+    const recoilSpeed=bounce&&!lunge.length&&!shield?.some(Boolean)?bounce.recoilSpeed:r.recoilSpeed;
+    const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(normal,M?(i===0?-1:1)*f.mass*recoilSpeed*k[i]:(i===0?-1:1)*f.mass*recoilSpeed)),true));
+    events.push({t,type:'recoil',normal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed,...(M&&{recoilScale:k})});lastRecoil=t;
    }
    if(impulse>=r.minimumImpulse)lastSeen=t;
    // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
@@ -380,7 +387,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const brokenBefore=cause&&loser!==null?events.filter(e=>e.type==='break'&&e.target===loser&&e.t<=cause.t).map(e=>({item:e.item,orient:e.orient,t:e.t})):[];
  const why=timeout?.why??(cause&&loser!==null?{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,role:cause.role,coreRatios:fs.map(f=>Math.max(0,f.core.hp)/f.core.maxHp),partsLeft:fs.map(f=>f.parts.filter(p=>p.alive).length),loserBroken:brokenBefore,loserPartsLeft:definitions[loser].parts.length-brokenBefore.length,...(M&&{dash:Boolean(cause.dash)})}:null);
  events.push({t,type:'result',winner,reason,why});
- result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs,...(aiProfiles.some(Boolean)&&{aiProfiles:structuredClone(aiProfiles)})}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
+ result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,...(bounce&&{feel,feelRules:structuredClone(bounce)}),duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs,...(aiProfiles.some(Boolean)&&{aiProfiles:structuredClone(aiProfiles)})}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
   }finally{world.free();}
  }
  return {
@@ -396,8 +403,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   free(){if(!done){done=true;world.free();}}
  };
 }
-export async function simulateV3({fighters,mode='A',seed,onProgress,manual=null}){
- const m=await createV3Match({fighters,mode,seed,manual});
+export async function simulateV3({fighters,mode='A',seed,onProgress,manual=null,feel,feelRules}){
+ const m=await createV3Match({fighters,mode,seed,manual,feel,feelRules});
  try{
   // Optional cooperative yield for a page; it never touches the world, so results are unchanged.
   while(!m.done){if(onProgress&&(m.step+1)%300===0)await onProgress((m.step+1)*m.rules.dt);m.advance();}
