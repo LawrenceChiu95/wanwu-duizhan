@@ -20,7 +20,7 @@ const UP=[0,1,0];
 const BOUNCE={attraction:6,thrust:0,recoilSpeed:1.55};
 // Elara 64b06142 selected inward motion before contact. capHp is the original nine-item mean.
 export const POSITION_COMBAT_RULES=Object.freeze({
- radiusTolerance:.03,recoilBase:.7,recoilLength:.02,outBonus:.08,
+ radiusTolerance:.03,recoilBase:.96,recoilLength:.02,outBonus:.08,
  rangeAttack:.4,rangeHp:.8,capHp:60.800000000000004,
  roleMode:'inward',inwardWindow:.15,inwardTolerance:.1
 });
