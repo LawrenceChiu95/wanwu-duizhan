@@ -6,6 +6,7 @@ import {prepareMesh, readGlb, sha256} from '../mesh.mjs';
 import {photoMassLimit} from '../../../sim/item-rating.js';
 
 import {recognizePhoto} from './recognition.mjs';
+import {qwenBackup} from './qwen.mjs';
 import {photoPrompt} from './prompt.mjs';
 export {parseRecognition, recognitionPrompt, recognitionSchema} from './recognition.mjs';
 const failure = code => Object.assign(Error(code), {code});
@@ -19,10 +20,11 @@ async function readPhoto(folder) {
 }
 // Env-only secrets never enter the task record or an exception message. Injected
 // fetch/pause exercise the same protocol with offline fixtures in contract tests.
-export function realGenerator({env = process.env, fetch: request = globalThis.fetch, pause, timeoutMs = 15000} = {}) {
+export function realGenerator({env = process.env, fetch: request = globalThis.fetch, pause, timeoutMs = 15000, backupFetch, totalTimeoutMs} = {}) {
   const missing = ['GEMINI_API_KEY', 'AHOLO_API_KEY'].filter(k => !env[k]?.trim());
   if (missing.length) throw Error(`Real shoot provider requires environment: ${missing.join(', ')}`);
   const geminiKey = env.GEMINI_API_KEY.trim(), aholoKey = env.AHOLO_API_KEY.trim();
+  const backup = qwenBackup(env);
   let submitting = false;
   return {
     real: true,
@@ -32,7 +34,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
       const {state, save, folder} = context;
       if (state.recognitionPending) throw failure('recognition-interrupted');
       state.recognitionPending = true; await save();
-      return recognizePhoto({photo: await readPhoto(folder), key: geminiKey, fetch: request, timeoutMs, pause});
+      return recognizePhoto({photo: await readPhoto(folder), key: geminiKey, fetch: request, timeoutMs, pause, backup, backupFetch, totalTimeoutMs});
     },
     charged: state => Boolean(state?.pending || Object.keys(state?.tasks ?? {}).length),
     async step(step, _id, context, catalog) {

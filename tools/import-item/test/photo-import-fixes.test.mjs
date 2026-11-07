@@ -1,24 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import sharp from 'sharp';
 import {Document, NodeIO} from '@gltf-transform/core';
 import {recognizePhoto} from '../shoot/recognition.mjs';
 import {photoPrompt} from '../shoot/prompt.mjs';
 import {prepareMesh} from '../mesh.mjs';
+// Recognition now preprocesses real pixels; the old literal 'fixture' never reached HTTP.
+const photo = await sharp({create:{width:32,height:24,channels:3,background:'#abcabc'}}).jpeg().toBuffer();
 const recognized = {clear:true, recognizable:true, name:'仙人掌', materialName:'植物', material:'wood', hardness:.5, lengthCm:35, massKg:1.2, condition:'intact', outwardEnd:'wide', basis:'植物在花盆中'};
 const response = () => Response.json({status:'completed',steps:[{type:'model_output',content:[{type:'text',text:JSON.stringify(recognized)}]}]});
 for (const transient of ['network', 503, 502]) test(`recognition retries ${transient} before success and calls Gemini only`, async () => {
   const waits=[],urls=[];
-  const result=await recognizePhoto({photo:Buffer.from('fixture'),key:'fixture-key',pause:async ms=>waits.push(ms),fetch:async url=>{
+  const result=await recognizePhoto({photo,key:'fixture-key',pause:async ms=>waits.push(ms),fetch:async url=>{
     urls.push(url);if(urls.length<3){if(transient==='network')throw new TypeError('private transport');return new Response('',{status:transient});}return response();
   }});
-  assert.equal(result.name,'仙人掌');assert.deepEqual(waits,[500,1000]);assert.equal(urls.length,3);
+  assert.equal(result.name,'仙人掌');assert.deepEqual(waits,[2000,5000]);assert.equal(urls.length,3);
   assert.ok(urls.every(url=>new URL(url).hostname==='generativelanguage.googleapis.com'));
 });
 for(const status of [401,403,429,400]) test(`recognition does not retry permanent HTTP ${status}`,async()=>{
-  let calls=0;await assert.rejects(recognizePhoto({photo:Buffer.from('fixture'),key:'fixture-key',pause:async()=>assert.fail('must not wait'),fetch:async()=>{calls++;return new Response('',{status});}}));assert.equal(calls,1);
+  let calls=0;await assert.rejects(recognizePhoto({photo,key:'fixture-key',pause:async()=>assert.fail('must not wait'),fetch:async()=>{calls++;return new Response('',{status});}}));assert.equal(calls,1);
 });
 test('recognition stops at three temporary failures with a safe classified error',async()=>{
-  let calls=0;await assert.rejects(recognizePhoto({photo:Buffer.from('fixture'),key:'fixture-key',pause:async()=>{},fetch:async()=>{calls++;throw Error('secret-url-and-key');}}),{code:'recognition-network',message:'recognition-network'});assert.equal(calls,3);
+  let calls=0;await assert.rejects(recognizePhoto({photo,key:'fixture-key',pause:async()=>{},fetch:async()=>{calls++;throw Error('secret-url-and-key');}}),{code:'recognition-network',message:'recognition-network'});assert.equal(calls,3);
 });
 test('replacing the style keeps the no-added-base identity constraints',()=>{
   const p=photoPrompt('仙人掌','新的温柔画风');assert.match(p,/不要添加底座、展台、比例尺/);assert.match(p,/保留原花盆/);assert.match(p,/新的温柔画风/);assert.doesNotMatch(p,/工业黄漆/);
