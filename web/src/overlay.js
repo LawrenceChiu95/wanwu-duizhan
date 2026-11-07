@@ -48,14 +48,24 @@ export class Overlay {
    * Who hit with what: a short plate in the striker's colour (「锅」, 「锅 暴击」), held up above the contact point on a
    * thin pin so it does not sit on the tops (about half a metre up, in screen px). Plates that would land on one another
    * stack upward, so a quick exchange stays readable; each is gone within CALL_TIME.
+   * Position combat passes `hit` ({side, name, clash}): the plate reads 「拖鞋 打 扫帚」, the struck piece in its own side's
+   * colour; a clash is one dark plate 「拖鞋 对撞 扫帚」 (side 0's piece first).
    */
-  callout(point, side, name, {crit = false, dash = false, cls = '', guard = false} = {}) {
+  callout(point, side, name, {crit = false, dash = false, cls = '', guard = false, hit = null} = {}) {
     const el = document.createElement('div');
-    el.className = `call t${side} ${cls}${dash ? ' dash' : ''}`;
+    el.className = `call t${side} ${cls}${dash ? ' dash' : ''}${hit ? ` vs${hit.clash ? ' clash' : ''}` : ''}`;
     if (dash) { const em = document.createElement('em'); em.textContent = '冲'; el.append(em); }
     const b = document.createElement('b');
     b.textContent = name;
     el.append(b);
+    if (hit) {
+      const verb = document.createElement('span'), u = document.createElement('u');
+      verb.className = 'verb';
+      verb.textContent = hit.clash ? '对撞' : '打';
+      u.className = `t${hit.side}`;
+      u.textContent = hit.name;
+      el.append(verb, u);
+    }
     if (crit) { const em = document.createElement('em'); em.textContent = '暴击'; el.append(em); }
     // 护住: the hit landed on the other side's hugging piece; said in the same plate so two plates never pile on one spot.
     if (guard) { const em = document.createElement('em'); em.className = 'guard'; em.textContent = '护住'; el.append(em); }
@@ -75,7 +85,7 @@ export class Overlay {
     }
     // The pin runs from the contact point up to the lowest plate only (a lifted plate would have it cross the others).
     let pin = null;
-    if (lift === 0) { pin = document.createElement('i'); pin.className = `callpin t${side}`; pin.style.height = `${base}px`; this.layer.append(pin); }
+    if (lift === 0) { pin = document.createElement('i'); pin.className = hit?.clash ? 'callpin clash' : `callpin t${side}`; pin.style.height = `${base}px`; this.layer.append(pin); }
     this.calls.push({el, pin, at, age: 0, w, h, base, lift});
   }
   /**

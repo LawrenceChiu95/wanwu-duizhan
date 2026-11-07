@@ -72,15 +72,21 @@ async function loadOne(item) {
   }
 }
 
-const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\n';
+const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
 const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
   totalEmissiveRadiance += uRim * (rim * 1.1 + 0.015) * (1.0 - uDim * 0.7);
   totalEmissiveRadiance += vec3(1.0) * uFlash * 1.6;
+  totalEmissiveRadiance += uRim * uStrike * rim * 2.2;
   totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.25 + rim);
 }`;
+
+// Position combat's striking piece: the lit colour (before tone mapping) recoloured toward the side's colour, so a
+// white piece turns orange / blue too (brightness capped: tone mapping bleaches a bright tint back to white).
+const STRIKE_TINT = `outgoingLight = mix(outgoingLight, uRim * (min(dot(outgoingLight, vec3(0.3, 0.59, 0.11)), 0.7) * 1.3 + 0.1), min(1.0, uStrike * 1.3));
+#include <opaque_fragment>`;
 
 /** A fresh copy of the item's model whose materials share the fighter's rim/flash uniforms. */
 export function instantiate(itemId, uniforms) {
@@ -96,7 +102,8 @@ export function instantiate(itemId, uniforms) {
         Object.assign(shader.uniforms, uniforms);
         shader.fragmentShader = RIM_HEAD + shader.fragmentShader
           .replace('#include <emissivemap_fragment>', RIM_BODY)
-          .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - uDim * 0.75;');
+          .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - uDim * 0.75;')
+          .replace('#include <opaque_fragment>', STRIKE_TINT);
       };
       return c;
     };
