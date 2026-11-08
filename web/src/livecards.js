@@ -103,7 +103,8 @@ export class LiveTurns {
       if (!v.rig || !v.seen || v.done || !root.contains(v.canvas)) continue;
       const size = Math.min(most, Math.round(v.canvas.clientWidth * Math.min(devicePixelRatio, 2)));
       if (!size) continue;
-      if (v.canvas.width !== size) v.canvas.width = v.canvas.height = size;
+      // Both sides: a fresh canvas is 300×150, so a 150 px card at 2× would keep its height (crops the model).
+      if (v.canvas.width !== size || v.canvas.height !== size) v.canvas.width = v.canvas.height = size;
       saved ??= {target: r.getRenderTarget(), viewport: r.getViewport(new THREE.Vector4()), scissor: r.getScissor(new THREE.Vector4()), scissorTest: r.getScissorTest(), color: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha()};
       r.setRenderTarget(null);
       r.setViewport(0, 0, size / pr, size / pr);

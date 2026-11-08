@@ -91,7 +91,7 @@ const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } 
 
 // The default items Lux3D made from a photo, and who made them when it wasn't us (Elara 907b6fa5): each gets the Lux3D tag
 // on the build screen and in 角色库, and its source line says so. 废土刀 is 凡朔's run (PR #6, same source sha256).
-const LUX = {'pan-lux3d': '', 'lamp-lux3d': '', 'wasteland-knife': '凡朔', 'wasteland-pot': '', 'wasteland-broom': ''};
+const LUX = {'pan-lux3d': '', 'lamp-lux3d': '', 'wasteland-knife': '', 'wasteland-pot': '', 'wasteland-broom': ''};
 const isLux = id => Object.hasOwn(LUX, id);
 // Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -166,6 +166,16 @@ async function main() {
   const combat = q.get('combat') === 'position' ? 'position' : undefined;
   const combatOptions = combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
+  // The rules switch on the build screen: the page starts again under the other rules (each keeps its own ladder).
+  document.querySelectorAll('#rulesSeg [data-combat]').forEach(b => {
+    b.setAttribute('aria-checked', String(b.dataset.combat === (combat ?? '')));
+    b.onclick = () => {
+      if (b.dataset.combat === (combat ?? '')) return;
+      const next = new URLSearchParams(location.search);
+      if (b.dataset.combat) next.set('combat', b.dataset.combat); else next.delete('combat');
+      location.search = next.toString();
+    };
+  });
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
   // 评委版 (judge.js, task #4): 拍一件 talks to this origin's backend (Elara edd90212), with one real generation beside it.
@@ -176,7 +186,9 @@ async function main() {
   // says no photo can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again once the page
   // is up: the player's own items stay in the 角色库 after the day's photos run out (Elara cf1366e6).
   const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
-  const shoot0 = shootApi(q, __JUDGE__).then(async api => {
+  // The trial page is static (a 魔搭 static space, Elara 7fbbf525): no shoot backend there, so 拍一件 is the judge build's
+  // replay of one real generation, and ?shoot=real / ?capture=1 reach nothing (Sol 3c893f58). ?shoot=fake still works locally.
+  const shoot0 = (q.get('shoot') === 'fake' ? shootApi(q) : Promise.resolve(null)).then(async api => {
     if (!api) return null;
     if (!__JUDGE__) return {api, items: await within(api.items(), 5000) ?? [], again: true};
     const by = performance.now() + 3000;
@@ -833,6 +845,7 @@ async function main() {
   const sourceLine = it => {
     if (isLux(it.id)) return `来源：照片 → Lux3D 生成${LUX[it.id] ? ' · ' + LUX[it.id] : ''}`;
     if (/^CC/.test(it.source?.license ?? '')) return `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`;
+    if (it.generated && it.tag === 'photo') return '来源：照片生成';
     return '来源：现成的 3D 模型';
   };
   let libSlot = 0, libReq = 0;

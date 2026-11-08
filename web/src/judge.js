@@ -39,7 +39,7 @@ export const creditsMd = `
 |---|---|---|---|
 | 锅（照片 → Lux3D 生成） | 原照 docoverachiever | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/90692748@N04/47347731882) |
 | 台灯（照片 → Lux3D 生成） | 原照 Artdecodude | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/62920259@N03/5771792573) |
-| 废土刀（照片 → Lux3D 生成） | 凡朔 | 本队自制 | |
+| 废土刀（照片 → Lux3D 生成） | 本队 | 本队自制 | |
 | 废土锅（照片 → Lux3D 生成） | 原照 docoverachiever | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/90692748@N04/47347731882) |
 | 废土扫把（照片 → Lux3D 生成，原照的柄出画，改图时补全） | 原照 1024greenstreet | ${CC['by-sa-2']} | [Flickr](https://www.flickr.com/photos/82432653@N00/858454965) |
 | 扫把 | Poly by Google | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/bzCi_ZLQPN4) |

@@ -225,3 +225,109 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #fx .ring .track { stroke:#30433f; }
 #fx .ring .track { stroke:rgba(65,80,76,.3); }
 #fx .ring circle:last-child { filter:drop-shadow(0 0 2px currentColor); }
+
+/* ---------- Trial page (11-08): our pieces the 11-07 package has no screen for, in its material ---------- */
+/* Screen faces (dark green glass with scanlines), cassette frames, square keys; amber for the player, teal for the
+   opponent. Content and behaviour stay as they are; only how they look changes (Elara 910599fc). */
+:root { --screen:repeating-linear-gradient(0deg,transparent 0 3px,#81c4a206 3px 4px),#0c2019; --screen-edge:#3b5343; }
+/* The opponent's mark: an ID plate instead of a slanted tile; harder ones get a brighter rim, the last a brass one. */
+.ft { clip-path:none;border-radius:1px;color:#e3ddc8;background:#0b1c15;box-shadow:inset 0 0 0 1px #4a6149;font-weight:900; }
+.ft.f1 { background:#0b1c15;box-shadow:inset 0 0 0 1px #6fa595; }
+.ft.f2 { background:#0d2a22;box-shadow:inset 0 0 0 1px var(--c1);color:#d9f2ea; }
+.ft.f3 { background:#10302a;color:#f0e6c6;box-shadow:inset 0 0 0 1px var(--c1),inset 0 0 0 3px #0b1c15,inset 0 0 0 4px #b89a4e; }
+.ft.f3::after { content:none; }
+.ft.off { background:#0d1712;box-shadow:inset 0 0 0 1px #2f3b2f; }
+.ft.off svg { color:#56645a; }
+#foe.ladder .label { font-size:15px;color:var(--ink);font-weight:800;letter-spacing:1px; }
+#foe .ft { width:22px;height:22px;font-size:13px; }
+#foe .swap { height:24px;border-radius:2px;padding:0 7px;background:#0a1b16;color:var(--c1l);box-shadow:inset 0 0 0 1px #485542;font-size:11px; }
+#foe.ladder .swap b { font:700 12px Consolas,monospace;color:var(--ink); }
+.pips { gap:3px; }
+.pips i { width:6px;height:6px;border-radius:0;box-shadow:inset 0 0 0 1px #4a6a5e; }
+.pips i.won { background:var(--c1); }
+.pips i.now { box-shadow:inset 0 0 0 1px var(--c1),0 0 5px #4fc8bd88; }
+/* 三个对手 sheet: one cassette screen per opponent, joined by a wire. */
+.head .prog { font:700 12px Consolas,monospace;color:var(--c1l); }
+.head.clear b { background:none;color:var(--c0l); }
+.fsub { color:#a3af98; }
+.rung { border-radius:1px;background:var(--screen);box-shadow:inset 0 0 0 1px var(--screen-edge),inset 0 2px 6px #0008; }
+.rung + .rung::before { width:1px;background:repeating-linear-gradient(to bottom,#48583d 0 3px,transparent 3px 5px); }
+.rung.won + .rung::before { background:var(--c1); }
+.rung .nm { font-weight:800;color:#e1ddc6; }
+.rung .play { color:#a9b6a7; }
+.rung .rparts { color:#c5d1bb; }
+.rung .rparts span { font-size:15px; }
+.rung .st { border-radius:1px;line-height:20px;font-size:11px; }
+.rung .st.won { color:#0c1d17;background:var(--c1); }
+.rung .st.now { color:var(--c1l);box-shadow:inset 0 0 0 1px var(--c1); }
+.rung[aria-checked="true"] { background:repeating-linear-gradient(0deg,transparent 0 3px,#81c4a209 3px 4px),#0f2b23;box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
+.rung.locked { background:#0b1712;box-shadow:inset 0 0 0 1px #24302a; }
+.rung.locked .nm { color:#5f6c63; }
+.rung.locked .play,.rung .need { color:#6f7d72; }
+.frow { border-radius:1px;background:var(--screen);box-shadow:inset 0 0 0 1px var(--screen-edge); }
+.frow[aria-checked="true"] { background:#0f2b23;box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
+.frow .lvl { border-radius:1px; }
+/* 结算: this match's numbers on small screens, the next opponent on a lit cassette. */
+.rbuild .rw { color:#a3af98; }
+.stats li { border-radius:1px;background:repeating-linear-gradient(0deg,transparent 0 11px,#74997a12 11px 12px),repeating-linear-gradient(90deg,transparent 0 11px,#74997a12 11px 12px),#0b2118;
+  box-shadow:inset 0 0 0 1px #405843,inset 0 2px 8px #000b; }
+.stats b { font-weight:800;color:#e1ddc6; }
+.stats span { color:#92b4a1; }
+.tip { color:var(--c0l); }
+.unlock { border-radius:1px;background:var(--screen);box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
+.unlock::after { background:linear-gradient(100deg,transparent,#9ee6d522,transparent); }
+.unlock .k { color:var(--c1); }
+.unlock b { font-weight:800;color:#e1ddc6; }
+.unlock .play { color:#a9b6a7; }
+.unlock .ft { width:44px;height:44px;font-size:26px; }
+/* Coach hints: the field labels' plate, a teal bar down the left, pointing at its button. */
+#coach { border-radius:2px;background:linear-gradient(170deg,#1d302d,#0c1918);box-shadow:inset 0 0 0 1px #637870,inset 3px 0 #83e1d7,0 4px 10px #000a;padding:6px 14px 7px 16px; }
+#coach::after { background:#0c1918;box-shadow:1px 1px 0 #637870; }
+#coach .tag { font:700 11px Consolas,monospace;color:#83e1d7; }
+#coach b { color:#ece9d7;font-weight:800; }
+/* 角色库, 拍一件 and 看它怎么来的: the opening page's terminal header over a screen of cassettes. */
+#library,#howView,#shootView { background:repeating-linear-gradient(0deg,#92c7ac05 0 1px,transparent 1px 4px),#101915; }
+.lhead { background:linear-gradient(110deg,#29342b,#14241e);box-shadow:inset 0 -1px #948b64,inset 0 -4px #0d1713;border-bottom:0; }
+.lhead > b { font-weight:900;letter-spacing:2px;color:var(--ink); }
+.lhead .back { color:#a8e9cb; }
+.lhead .shoot { border-radius:0;border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;box-shadow:none;background:none;color:#242c20;font-weight:800;height:38px;padding:0 6px; }
+.lhead .shoot.new { box-shadow:none;color:#242c20;filter:drop-shadow(0 0 4px #edbb59); }
+.lhead .shoot.bad { border-image:none;border:1px solid #a0484f;background:#3a1418;color:#ffd5da; }
+.lsub b { font-weight:800;color:#e1ddc6; }
+.lsub span,.lgrades { color:#a3af98; }
+.card,.card .cover { border-radius:0; }
+.card { border:11px solid transparent;border-image:var(--hardware) 70 stretch;background:repeating-linear-gradient(0deg,#92c7ac06 0 1px,transparent 1px 4px),#10221b;background-clip:padding-box;box-shadow:0 4px 10px #0009; }
+.card .media { background:repeating-linear-gradient(0deg,transparent 0 11px,#74997a12 11px 12px),repeating-linear-gradient(90deg,transparent 0 11px,#74997a12 11px 12px),#0b2118;box-shadow:inset 0 0 0 1px #405843,inset 0 2px 8px #000b; }
+.card .pick { padding:4px 4px 4px; }
+.card.own { box-shadow:inset 0 0 0 2px var(--c0),0 4px 10px #0009;background-color:#1a2416; }
+.card.gradeS { --restS:inset 0 0 0 1px #edbb5999,0 0 18px -6px #edbb59aa;box-shadow:var(--restS),0 4px 10px #0009; }
+.card.gradeS.own { --restS:inset 0 0 0 2px var(--c0),0 0 18px -6px #edbb59aa; }
+.card .badge { border-radius:1px;background:#203e2e;color:#c5d1bb;box-shadow:inset 0 0 0 1px #476649; }
+.card .badge.own { background:var(--c0);color:#1c1608;box-shadow:none; }
+.card .cat { border-radius:1px;color:#a9c7ae;box-shadow:inset 0 0 0 1px #476649; }
+.card .spec,.card .rates { color:#92b4a1; }
+.card .how,.card .src { margin:2px 4px 0;border-top-color:#405843; }
+.card .src { color:#92b4a1; }
+.card .photo { border-radius:1px;box-shadow:0 0 0 1px #797961; }
+.card .cover { background:repeating-linear-gradient(0deg,transparent 0 3px,#81c4a208 3px 4px),#0e231b; }
+.card .cover i { color:#edbb5988; }
+.card.turning.gradeS::after,.card.turning.gradeA::after { border-radius:0; }
+.hstage { border-radius:0;border:12px solid transparent;border-image:var(--hardware) 70 stretch;background:repeating-linear-gradient(0deg,#92c7ac06 0 1px,transparent 1px 4px),#10221b;background-clip:padding-box;box-shadow:0 4px 10px #0009; }
+.hstage .hreplay { border-radius:1px;box-shadow:inset 0 0 0 1px #476649;background:#0b1c15;color:#a8e9cb; }
+.hbar i { border-radius:0;height:5px;background:linear-gradient(90deg,var(--c0) calc(var(--fill, 0) * 100%),#1d2a22 0);box-shadow:inset 0 0 0 1px #2c3a2f; }
+.hsteps li { border-bottom-color:#2f3d33; }
+.hsteps .n { border-radius:1px;box-shadow:inset 0 0 0 1px #4a6149; }
+.hsteps li.done .n { background:#d8d0b6;color:#20291f; }
+.hsteps li.now .n { box-shadow:inset 0 0 0 2px var(--c0); }
+.hsteps img,.hsteps .mini3d { border-radius:1px;box-shadow:0 0 0 1px #405843; }
+.htotal b { color:#e1ddc6; }
+.hnote { color:#92b4a1; }
+.ssteps i { border-radius:1px; }
+/* The rules switch in the 组装台 bar: two small cream keys, the live one lit. */
+.bhead .rules { margin-left:auto;display:flex;gap:3px;flex:none; }
+.bhead .rules button { height:27px;padding:0 4px;border:6px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;border-radius:0;
+  color:#242c20;font-size:11px;font-weight:800;line-height:1;opacity:.5;white-space:nowrap; }
+.bhead .rules button[aria-checked="true"] { opacity:1;box-shadow:0 1px 0 #4bc8ad; }
+.bhead .rules + .terminal-led { margin-left:6px; }
+@media(max-width:360px) { .bhead span { display:none; } }
+.bhead:has(.rules) { align-items:center; }
