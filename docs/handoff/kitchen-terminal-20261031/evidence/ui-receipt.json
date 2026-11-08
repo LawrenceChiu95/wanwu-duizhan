@@ -1,0 +1,52 @@
+{
+  "errors": [],
+  "safe": {
+    "play": {
+      "px": -67.27687035626411,
+      "who": "0:0",
+      "t": 18.86,
+      "w": 390
+    },
+    "finale": {
+      "px": -92.15580301004236,
+      "who": "1:0",
+      "t": 24,
+      "w": 390
+    },
+    "replay": {
+      "px": -129.42358182611196,
+      "who": "1:0",
+      "t": 23.94,
+      "w": 390
+    },
+    "result": {
+      "px": -140.76066161188743,
+      "who": "1:0",
+      "t": 24,
+      "w": 390
+    }
+  },
+  "sources": [
+    {
+      "id": "knife-wired-v9",
+      "path": "data/models/generated/knife-wired-v9.glb"
+    },
+    {
+      "id": "pot-wired-v9",
+      "path": "data/models/generated/pot-wired-v9.glb"
+    }
+  ],
+  "modelSwitchVerified": true,
+  "formationSkinAndToggle": true,
+  "widths": [
+    320,
+    390,
+    1280
+  ],
+  "thumbnailsLoaded": true,
+  "pickerAndOrientation": true,
+  "manualButtonsAndMute": true,
+  "returnedToBuild": true,
+  "testSpeed": 6,
+  "realPhonePerformanceTested": false
+}

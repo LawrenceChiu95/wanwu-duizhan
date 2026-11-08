@@ -12,6 +12,7 @@
     "shots": "node scripts/shots.mjs"
   },
   "dependencies": {
+    "@sparkjsdev/spark": "2.4.0",
     "three": "0.186.1"
   },
   "devDependencies": {

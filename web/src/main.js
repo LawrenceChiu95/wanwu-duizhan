@@ -3,7 +3,7 @@ import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
-import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
+import {loadModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -249,9 +249,10 @@ async function main() {
   // (远夏 10-28 2735f129: keep all three).
   // 第 13 版 hand-feel trial only (no on-page option): ?block=0.2 / 0.25 / 0.3 s block window; default is the rules' own.
   const blockTime = ['0.2', '0.25', '0.3'].includes(q.get('block')) ? Number(q.get('block')) : undefined;
-  let camStyle = ['v4', 'new'].includes(q.get('cam')) ? q.get('cam') : 'slow';
+  let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
+  await stage.kitchen.ready;
   el.busy.hidden = true;
   // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
   // the opening card and builds, instead of holding up the first screen or the first 开打.
@@ -363,6 +364,12 @@ async function main() {
       slot.querySelector('.lux').hidden = !isLux(part.item);
       slot.querySelector('.spec').textContent = spec(part.item);
       slot.querySelector('.hint').textContent = HINT[part.orient];
+      const thumb = slot.querySelector('.module-thumb');
+      thumb.dataset.modelId = part.item;
+      thumb.dataset.modelPath = byId.get(part.item).glb;
+      const url = itemThumbnail(part.item, stage.renderer, stage.scene.environment);
+      thumb.hidden = !url;
+      if (url) { thumb.src = url; thumb.alt = NAMES[part.item]; }
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
@@ -376,6 +383,7 @@ async function main() {
     await loadModels(mine.parts.map(p => byId.get(p.item)));
     if (req !== buildReq || phase !== 'build') return;
     stage.replaceFighter(0, toDef(mine));
+    syncBuild();
     stage.pose(previewState());
   }
   function showBuild() {
@@ -499,22 +507,24 @@ async function main() {
   // 谁打谁看位置 (combat=position): the replay says so; a live match's events carry positionClash.
   const positionCombat = e => replay?.meta?.combat === 'position' || typeof e.positionClash === 'boolean';
   function onEvent(e) {
+    if (e.type === 'contact' || e.type === 'hit' || e.type === 'weak') stage.kitchen?.photo.noteCollision();
     const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
       const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
-        stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
+        stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 120, 4.8, 0.05, 0.85);
         stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
-        stage.ring(point, WHITE, 0.05, 1.0, 0.3);
-        overlay.screenFlash(0.32);
+        stage.ring(point, WHITE, 0.05, 1.35, 0.34);
+        overlay.screenFlash(0.38);
         sfx.dashHit();
         buzz(40);
       } else {
         // An ordinary knock: the same, scaled down.
-        stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
-        stage.impact(point, e.shield ? 0.1 : big ? 0.4 : 0.18, [WHITE, SPARK, TEAM[e.attacker]]);
+        stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 64 : 36, big ? 3.6 : 2.7, big ? 0.038 : 0.028, big ? 0.72 : 0.55);
+        stage.impact(point, e.shield ? 0.18 : big ? 0.65 : 0.32, [WHITE, SPARK, TEAM[e.attacker]]);
+        overlay.screenFlash(big ? 0.18 : 0.08);
         sfx.hit(Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit: e.type === 'weak'});
       }
       // Yesterday's camera shook on every blow (no-op with the new camera).
