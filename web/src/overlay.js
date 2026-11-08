@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 const ease = k => 1 - (1 - k) ** 3;
 const NS = 'http://www.w3.org/2000/svg';
-const HEX = ['#ff8a3d', '#3db4ff'];
+const HEX = ['#e7b354', '#83e1d7'];
 const CALL_TIME = 0.6;
 
 /** DOM effects over the canvas: a life ring around each core, banners, flash. Animated from update(realDt). */
@@ -71,7 +71,7 @@ export class Overlay {
     if (guard) { const em = document.createElement('em'); em.className = 'guard'; em.textContent = '护住'; el.append(em); }
     this.layer.append(el);
     const at = new THREE.Vector3().copy(point), w = el.offsetWidth, h = el.offsetHeight, p = this.stage.project(at, {x: 0, y: 0});
-    const base = Math.max(18, Math.round(this.stage.screenRadius(at, 0.55)));
+    const base = Math.max(30, Math.round(this.stage.screenRadius(at, 0.72)));
     // Lift above every live plate it would cover (screen px above its anchor), lowest free spot first.
     let lift = 0;
     for (let moved = Boolean(p); moved;) {
@@ -199,16 +199,22 @@ export class Overlay {
       const f = stage.fighters[i];
       if (!showRings || !f || f.dim > 0.9 || !stage.project(f.center, p)) { r.svg.style.opacity = 0; return; }
       r.shown += (r.hp - r.shown) * (1 - Math.exp(-dt * 10));
-      const rad = Math.max(10, stage.screenRadius(f.center, stage.coreRadius) + 5), w = rad > 22 ? 4 : 3, size = rad * 2 + w * 2;
+      const rad = Math.max(10, stage.screenRadius(f.center, stage.coreRadius) + 5), w = rad > 22 ? 2.6 : 2, size = rad * 2 + w * 2;
       const c = 2 * Math.PI * rad;
+      r.svg.style.color = HEX[i];
       r.svg.setAttribute('width', size);
       r.svg.setAttribute('height', size);
       for (const el of [r.track, r.arc]) { el.setAttribute('cx', size / 2); el.setAttribute('cy', size / 2); el.setAttribute('r', rad); el.setAttribute('stroke-width', w); }
-      r.arc.setAttribute('stroke-dasharray', `${(c * Math.max(0, r.shown)).toFixed(1)} ${c.toFixed(1)}`);
+      const span = c / 4;
+      const segments = Array.from({length:4}, (_,i) => {
+        const fill = Math.min(span * 0.94, Math.max(0, r.shown*c - i*span));
+        return `${fill} ${span-fill}`;
+      });
+      r.arc.setAttribute('stroke-dasharray',segments.join(' '));
       r.arc.setAttribute('transform', `rotate(-90 ${size / 2} ${size / 2})`);
       const low = r.hp < 0.35;
       r.arc.setAttribute('stroke', low ? (Math.sin(performance.now() / 90) > 0 ? '#ff4d5e' : HEX[i]) : HEX[i]);
-      r.svg.style.opacity = 0.95;
+      r.svg.style.opacity = 0.86;
       r.svg.style.transform = `translate(${p.x - size / 2}px, ${p.y - size / 2}px)`;
     });
   }

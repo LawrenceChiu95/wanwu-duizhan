@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const PHOTO = new URL('../../data/scenes/kitchen/reference.png', import.meta.url).href;
+const PHOTO = new URL('./assets/battle-depth.svg', import.meta.url).href;
 
 /** A world-space photographic plate sharing the fight camera (2.5D). */
 export class PhotoKitchen {
@@ -45,16 +45,9 @@ export class PhotoKitchen {
       const w = this.canvas.width, h = this.canvas.height;
       ctx.fillStyle = '#070a12';
       ctx.fillRect(0, 0, w, h);
-      // Match the marked crop, filling the screen without invented borders.
+      // Scale the gradient to fill the plate at each viewport size.
       const image = this.source.image;
-      // The new reference includes the stove, window and refrigerator together.
-      const cropX = 0, cropY = image.height * 0.26;
-      const cropW = image.width, cropH = image.height * 0.74;
-      const sceneHeight = h;
-      const fit = Math.max(w / cropW, sceneHeight / cropH);
-      ctx.drawImage(image, cropX, cropY, cropW, cropH,
-        (w - cropW * fit) / 2, (sceneHeight - cropH * fit) / 2,
-        cropW * fit, cropH * fit);
+      ctx.drawImage(image, 0, 0, w, h);
       this.texture.needsUpdate = true;
       this.referenceReady = false;
     }
@@ -67,6 +60,7 @@ export class PhotoKitchen {
     camera.up.set(0, 1, 0);
     // Zoom only: rotating a single plate can reveal its edge even at the zoom limit.
     camera.lookAt(0, 0, 0);
+    if (!this.enabled) camera.rotateZ(-Math.PI / 5.6);
     camera.updateMatrixWorld(true);
     // Calibrate the core's outer glow to the user's ~48px circles at 393px width.
     const depth = camera.position.length();
@@ -96,7 +90,19 @@ export class PhotoKitchen {
     }
     this.zoom ??= 1;
     this.zoomTarget = target;
-    const tangent = nominal * THREE.MathUtils.clamp(this.zoom, 1, 2);
+    let tangent = nominal * THREE.MathUtils.clamp(this.zoom, 1, 2);
+    if (!this.enabled && !building && a && b) {
+      tangent /= 2.15;
+      const halfHeight = Math.max(1, Math.min(y - view.top, view.h - this.stage.safeBottom() - y));
+      for (const fighter of [a,b]) {
+        const pos = this.fitPoint ??= new THREE.Vector3();
+        pos.copy(fighter.center).applyMatrix4(camera.matrixWorldInverse);
+        const radius = this.stage.frameRadius(fighter) * 1.28;
+        const depthToFront = Math.max(1, -pos.z - radius);
+        tangent = Math.max(tangent, (Math.abs(pos.x)+radius)/(depthToFront*camera.aspect*0.9),
+          (Math.abs(pos.y)+radius)*view.h/(2*halfHeight*depthToFront*0.9));
+      }
+    }
     const desired = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
     camera.fov = desired;
     this.stage.setOffset(view.w / 2 - x, view.h / 2 - y);

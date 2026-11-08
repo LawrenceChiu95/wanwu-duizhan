@@ -47,7 +47,6 @@ export const creditsMd = `
 | 拖鞋 | inciprocal | ${CC['by-4']} | [Sketchfab](https://sketchfab.com/3d-models/worn-flip-flop-000074a334c541878360457c672b6c2e) |
 | 拖鞋的碰撞外形 | J-Toastie | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/2wR1M99UwP) |
 | 枕头 | Poly by Google | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/f60emm1Xkas) |
-| 首页的奶锅（照片 → Aholo 生成） | 凡朔（照片自己拍的，改装设计也是他） | 本队自制 | |
 
 Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款使用。模型都统一了尺寸和朝向。
 

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {SparkRenderer, SplatMesh} from '@sparkjsdev/spark';
 import {PhotoKitchen} from './photo-kitchen.js';
 
 const SCENE_URL = new URL('../../data/scenes/kitchen/scene.spz', import.meta.url).href;
@@ -16,18 +15,21 @@ export class KitchenPreview {
     this.mode = new URLSearchParams(location.search).get('background') === '3d' ? '3d' : 'photo';
     this.photo = new PhotoKitchen(stage);
     this.group = new THREE.Group();
-    this.spark = new SparkRenderer({renderer: stage.renderer, depthTest: true, depthWrite: false});
+    // Spark (the 3D kitchen's renderer, about 2 MB) loads only when the 3D kitchen is asked for.
+    this.spark = null;
     this.mesh = null;
     /* The 3D scene loads only when requested; image mode needs no splat download. */
-    this.loadScene = () => {
-      if (this.mesh) return this.mesh.initialized;
+    this.loadScene = () => this.scene ??= import('@sparkjsdev/spark').then(({SparkRenderer, SplatMesh}) => {
+      this.spark = new SparkRenderer({renderer: stage.renderer, depthTest: true, depthWrite: false});
+      this.spark.visible = this.group.visible;
+      stage.scene.add(this.spark);
       this.mesh = new SplatMesh({url: SCENE_URL, lod: false});
       // Aholo reports Z-up; the game uses Y-up.
       this.mesh.rotation.x = -Math.PI / 2;
       this.group.add(this.mesh);
       return this.mesh.initialized;
-    };
-    stage.scene.add(this.spark, this.group);
+    });
+    stage.scene.add(this.group);
     this.controls = new OrbitControls(stage.camera, stage.renderer.domElement);
     this.controls.enabled = false;
     this.controls.enableDamping = true;
@@ -38,10 +40,12 @@ export class KitchenPreview {
     this.makePanel();
     document.getElementById('camSeg').hidden = true;
     this.applyCalibration();
-    this.setVisible(true);
+    const showKitchen = this.panel.querySelector('#showKitchen');
+    showKitchen.checked = new URLSearchParams(location.search).has('background');
+    this.setVisible(showKitchen.checked);
     this.ready = (this.mode === 'photo' ? this.photo.ready : this.loadScene()).then(() => {
       this.panel.dataset.ready = 'true';
-      this.status.textContent = this.mode === 'photo' ? '图1局部构图 · 背景随镜头运动' : '3D厨房已载入';
+      this.status.textContent = showKitchen.checked ? (this.mode === 'photo' ? '画面随镜头运动' : '3D厨房已载入') : '原版竞技场';
     });
     this.onStart = () => this.setInspection(false);
     document.getElementById('goBtn').addEventListener('click', this.onStart);
@@ -62,8 +66,9 @@ export class KitchenPreview {
   }
 
   setVisible(visible) {
+    this.status.textContent = visible ? (this.mode === 'photo' ? '画面随镜头运动' : '3D厨房') : '原版竞技场';
     this.group.visible = visible && this.mode === '3d';
-    this.spark.visible = visible && this.mode === '3d';
+    if (this.spark) this.spark.visible = visible && this.mode === '3d';
     this.photo.setEnabled(visible && this.mode === 'photo');
     for (const object of this.originalBackdrop) object.visible = !visible;
   }
@@ -128,6 +133,8 @@ export class KitchenPreview {
       <fieldset><legend>场景对齐</legend></fieldset>
       <button type="button" id="resetKitchen">重置场景对齐</button>
       <small>只调整环境画面，不改变对战规则。环顾时可拖动转向。</small>`;
+    // The trial page shows this calibration panel only with the kitchen asked for (?background), like the kitchen itself.
+    this.panel.hidden = !new URLSearchParams(location.search).has('background');
     document.body.append(this.panel);
     this.status = this.panel.querySelector('#kitchenStatus');
     this.inspectButton = this.panel.querySelector('#inspectKitchen');
@@ -177,10 +184,11 @@ export class KitchenPreview {
   dispose() {
     document.getElementById('goBtn')?.removeEventListener('click', this.onStart);
     this.controls.dispose();
-    this.stage.scene.remove(this.group, this.spark);
+    this.stage.scene.remove(this.group);
+    if (this.spark) this.stage.scene.remove(this.spark);
     this.mesh?.dispose();
     this.photo.dispose();
-    this.spark.dispose();
+    this.spark?.dispose();
     this.panel.remove();
   }
 }

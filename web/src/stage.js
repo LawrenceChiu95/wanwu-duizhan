@@ -89,11 +89,23 @@ function coreTextures(color) {
   const ge = e.getContext('2d');
   ge.fillStyle = '#000';
   ge.fillRect(0, 0, 256, 128);
-  for (const ctx of [g, ge]) {
-    ctx.fillStyle = `#${color.getHexString()}`;
-    ctx.fillRect(0, 56, 256, 16); // equator band
-    ctx.fillStyle = '#ffffff';
-    for (let k = 0; k < 4; k++) ctx.fillRect(k * 64 + 4, 0, 10, 128); // meridian stripes
+  // Salvaged armour panels sit above a recessed row of lit cooling slots.
+  g.fillStyle = '#292e30';
+  g.fillRect(0, 0, 256, 128);
+  for (let panel = 0; panel < 8; panel++) {
+    const x = panel * 32;
+    g.fillStyle = ['#57594f','#685b47','#464c4b'][panel % 3];
+    g.fillRect(x+1, 17, 29, 35);
+    g.fillRect(x+3, 79, 27, 32);
+    g.fillStyle = '#aaa08a';
+    g.fillRect(x+2, 18, 19, 2);
+    g.fillRect(x+5, 82, 3, 3);
+    g.fillStyle = '#332f28';
+    g.fillRect(x+21, 42, 7, 5);
+    for (const ctx of [g,ge]) {
+      ctx.fillStyle = `#${color.getHexString()}`;
+      ctx.fillRect(x+3, 61, 25, 8);
+    }
   }
   const map = new THREE.CanvasTexture(c), emissive = new THREE.CanvasTexture(e);
   map.colorSpace = emissive.colorSpace = THREE.SRGBColorSpace;
@@ -101,19 +113,73 @@ function coreTextures(color) {
 }
 
 const backdropShader = {
-  vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `varying vec3 vP;
+  vertexShader: `varying vec3 vP, worldPos, clipXYW;
     void main(){
-      float lat = asin(clamp(vP.y,-1.0,1.0)) / 3.14159265 * 12.0;
-      float lon = atan(vP.z, vP.x) / 3.14159265 * 12.0;
+      vP = normalize(position);
+      worldPos = (modelMatrix * vec4(position,1.0)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+      vec2 ndc = gl_Position.xy/gl_Position.w;
+      float aspect = projectionMatrix[1][1]/projectionMatrix[0][0];
+      vec2 physical = vec2(ndc.x*aspect, ndc.y);
+      vec2 tilted = mat2(0.848,-0.530,0.530,0.848)*physical;
+      clipXYW = vec3(tilted.x/aspect,tilted.y,1.0)*gl_Position.w;
+    }`,
+  fragmentShader: `varying vec3 vP, worldPos, clipXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom;
+    void main(){
+      // Stereographic projection curves the peripheral grid without distorting the fighters.
+      vec2 lens = clipXYW.xy / clipXYW.z * vec2(0.60,0.78) * fieldZoom;
+      lens += vec2(0.035,-0.07);
+      float radius2 = dot(lens,lens);
+      vec3 dome = vec3(2.0*lens,1.0-radius2)/(1.0+radius2);
+      float latitude = dot(dome,normalize(vec3(0.13,0.86,0.49)));
+      float lat = asin(clamp(latitude,-1.0,1.0)) / 3.14159265 * 12.0;
+      vec3 east = normalize(vec3(0.86,-0.13,0.0));
+      vec3 north = normalize(vec3(0.13,0.86,0.49));
+      float lon = atan(dot(dome,east),dot(dome,cross(east,north))) / 3.14159265 * 12.0;
       float lon2 = fract(lon / 24.0 + 0.5) * 24.0;
       vec2 g = abs(fract(vec2(lat, lon)) - 0.5);
       vec2 w = vec2(fwidth(lat), min(fwidth(lon), fwidth(lon2))) * 1.2;
-      float meridian = (1.0 - smoothstep(0.0, w.y, 0.5 - g.y)) * smoothstep(0.12, 0.45, sqrt(1.0 - vP.y * vP.y));
+      float meridian = (1.0 - smoothstep(0.0, w.y, 0.5 - g.y)) * smoothstep(0.12, 0.45, sqrt(max(0.0,1.0 - latitude * latitude)));
       float line = max(1.0 - smoothstep(0.0, w.x, 0.5 - g.x), meridian);
       float shade = 0.75 + 0.25 * vP.y;
       vec3 base = vec3(0.0035,0.005,0.011) * shade;
-      gl_FragColor = vec4(base + vec3(0.012,0.03,0.07) * line, 1.0);
+      float sweep = pow(max(0.,cos(lat * 0.7 + lon * 0.5 - fieldTime * 0.75)), 8.);
+      float dist = length(normalize(worldPos-cameraPosition)-normalize(hitPoint-cameraPosition));
+      float front = (dist-hitAge*0.32)/0.034;
+      float wave = exp(-front*front) * exp(-hitAge*4.) * hitPower;
+      // Every fourth meridian carries a wider luminous trace. A rotating sector
+      // reveals the finer radial traces between those permanent conductors.
+      float poleFade = smoothstep(0.07, 0.32, sqrt(max(0.0,1.0-latitude*latitude)));
+      float trunkDist = abs(fract(lon/4.0 + 0.5)-0.5)*4.0;
+      float trunk = (1.0-smoothstep(0.035,0.035+w.y,trunkDist))*poleFade;
+      float fringe = exp(-14.0*trunkDist)*poleFade;
+      float sectorAngle = 6.2831853 * lon/24.0 - fieldTime*0.34;
+      float fan = smoothstep(0.72,0.98,cos(sectorAngle*2.0));
+      float band = smoothstep(0.15,0.8,abs(lat))*(1.0-smoothstep(4.8,5.8,abs(lat)));
+      float spokes = abs(fract(lon*3.0+0.5)-0.5);
+      float fine = (1.0-smoothstep(0.01,0.01+min(0.48,w.y*3.0),spokes))*poleFade;
+      float arcDist = abs(fract((lat+0.18)/3.0+0.5)-0.5)*3.0;
+      float arc = 1.0-smoothstep(0.038,0.038+w.x,arcDist);
+      float trail = fract(-sectorAngle/3.14159265 + floor((lat+0.18)/3.0+0.5)*0.27);
+      float head = smoothstep(0.0,0.012,trail)*exp(-trail*15.0);
+      float tail = smoothstep(0.0,0.012,trail)*exp(-trail*6.5);
+      vec3 cyan = vec3(0.055,0.62,0.72);
+      vec3 light = vec3(0.012,0.03,0.07)*line + cyan*(trunk*(0.18+0.72*sweep)+0.14*fringe);
+      light += band*fan*(cyan*(0.022+0.35*fine+0.36*line));
+      light += arc*(vec3(1.2,0.015,0.42)*tail + vec3(1.1,0.33,0.76)*head);
+      light += vec3(0.46,0.008,0.16)*exp(-arcDist*10.0)*tail;
+      light += vec3(0.95,0.07,0.48)*wave*max(line,trunk);
+      // Distance from the arena centre to the view ray, in world units.
+      vec3 viewRay = normalize(worldPos - cameraPosition);
+      vec3 offset = cross(cameraPosition, viewRay);
+      offset /= 0.70;
+      float distance2 = dot(offset,offset);
+      float haze = exp(-distance2 / 2.4);
+      float halo = exp(-distance2 / 10.0);
+      float ribbon = exp(-distance2*0.66 - 2.1*offset.y*offset.y);
+      vec3 scattered = (vec3(0.60,0.64,0.67)*ribbon + vec3(0.29,0.20,0.27)*haze
+                       + vec3(0.085,0.034,0.105)*halo) * (0.97 + 0.03*sin(fieldTime*1.2));
+      gl_FragColor = vec4(base + light + 0.70 * scattered, 1.0);
       #include <colorspace_fragment>
     }`
 };
@@ -221,7 +287,7 @@ const shieldShader = {
       float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
       float rim = pow(f, 2.2);
       float ripple = 0.5 + 0.5 * sin(vP.y * 60.0 - uTime * 9.0);
-      gl_FragColor = vec4(uColor * uOpacity * (rim * 1.5 + 0.12 + 0.12 * ripple * f), 1.0);
+      gl_FragColor = vec4(uColor, min(0.65, uOpacity * (rim * 0.62 + 0.018 * ripple * f)));
       #include <colorspace_fragment>
     }`
 };
@@ -387,7 +453,7 @@ class Rings {
       if (k >= 1) { r.s.visible = false; continue; }
       const e = 1 - (1 - k) ** 3;
       r.s.scale.setScalar(r.from + (r.to - r.from) * e);
-      r.s.material.opacity = (1 - k) * 1.1;
+      r.s.material.opacity = (1 - k) * 0.48;
     }
   }
   clear() { for (const r of this.pool) r.s.visible = false; }
@@ -604,7 +670,9 @@ export class Stage {
       l.target = target;
     }
 
-    const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.ShaderMaterial({...backdropShader, side: THREE.BackSide, depthWrite: false}));
+    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}};
+    const fieldMaterial = new THREE.ShaderMaterial({...backdropShader, uniforms:this.fieldUniforms, side: THREE.BackSide, depthWrite: false});
+    const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.MeshBasicMaterial({color:0x080d18, side:THREE.BackSide, depthWrite:false}));
     back.renderOrder = -2;
     this.scene.add(back);
     const plane = new THREE.Mesh(new THREE.CircleGeometry(ARENA_RIM + 0.2, 128), new THREE.ShaderMaterial({...planeShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
@@ -618,7 +686,16 @@ export class Stage {
     this.scene.add(this.wall);
 
     this.haloTex = radialTexture(0.9, 0.35);
-    this.coreGeo = new THREE.SphereGeometry(coreRadius, 40, 28);
+    plane.visible = this.wall.visible = false;
+    const field = new THREE.Group();
+    this.scene.add(field);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(28, 96, 72),
+      fieldMaterial);
+    shell.renderOrder = -1;
+    shell.rotation.set(0.3, 0.25, 0.95);
+    field.add(shell);
+    this.coreGeo = new THREE.SphereGeometry(coreRadius, 12, 8);
+    this.coreCollarGeo = new THREE.TorusGeometry(coreRadius*0.94,coreRadius*0.085,5,12);
     this.shieldGeo = new THREE.SphereGeometry(coreRadius * 2.6, 40, 28);
     this.coreTex = TEAM.map(coreTextures);
     this.particles = new Particles(this.scene);
@@ -661,7 +738,7 @@ export class Stage {
     this.cam = {focus: new THREE.Vector3(), dist: 4, yaw: CAM_YAW, pitch: 0.95, ready: false, mode: 'fight', shakeAge: 1, shakeAmp: 0, offset: [0, 0],
       fv: new THREE.Vector3(), logD: 0, logDv: 0, goal: 0, hist: [], clock: 0, offY: 0, offYv: 0, punch: null, only: null, cardTop: null, ahead: null, stat: null};
     this.view = {w: 390, h: 844, top: 70, bottom: 130};
-    this.kitchen = new KitchenPreview(this, [back, plane, this.wall]);
+    this.kitchen = new KitchenPreview(this, [back, field]);
   }
 
   resize(w, h, top, bottom) {
@@ -714,9 +791,17 @@ export class Stage {
     const team = TEAM[i];
     const root = new THREE.Group();
     const coreUniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
-    const coreMat = new THREE.MeshStandardMaterial({map: this.coreTex[i].map, emissiveMap: this.coreTex[i].emissive, emissive: new THREE.Color(1, 1, 1), emissiveIntensity: 0.9, metalness: 0.75, roughness: 0.3});
+    const coreMat = new THREE.MeshStandardMaterial({map: this.coreTex[i].map, emissiveMap: this.coreTex[i].emissive, emissive: new THREE.Color(1, 1, 1), emissiveIntensity: 0.9, metalness: 0.75, roughness: 0.62, flatShading:true});
     patchRim(coreMat, coreUniforms);
     const core = new THREE.Mesh(this.coreGeo, coreMat);
+    for (const side of [-1,1]) {
+      const collar = new THREE.Mesh(this.coreCollarGeo, new THREE.MeshStandardMaterial({
+        color:0x87745b, metalness:0.75, roughness:0.59, flatShading:true
+      }));
+      collar.rotation.x = Math.PI/2;
+      collar.position.y = side*this.coreRadius*0.33;
+      core.add(collar);
+    }
     core.scale.setScalar(0.7);
     root.add(core);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({map: this.haloTex, color: team, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending}));
@@ -905,6 +990,9 @@ export class Stage {
   }
   /** Spark lines and a camera punch at an impact. power: 0..1 (a landed lunge is 1). */
   impact(point, power, colors) {
+    this.fieldUniforms.hitPoint.value.copy(point);
+    this.fieldUniforms.hitAge.value = 0;
+    this.fieldUniforms.hitPower.value = power;
     this.streaks.burst(point, Math.round(5 + 13 * power), 3 + 4 * power, 0.22 + 0.3 * power, 0.025 + 0.02 * power, 0.16 + 0.12 * power, colors);
     this.punch(point, 2 + 9 * power);
   }
@@ -1249,6 +1337,9 @@ export class Stage {
   render(realDt, simDt) {
     this.time += realDt;
     if (this.fighters[0]) this.fadeFront(this.fighters[0], this.cam.mode === 'build');
+    this.fieldUniforms.fieldTime.value = this.time;
+    this.fieldUniforms.fieldZoom.value = 0.84 * (this.kitchen?.photo?.zoom ?? 1);
+    this.fieldUniforms.hitAge.value += realDt;
     for (const f of this.fighters) {
       f.flash *= Math.exp(-realDt * 12);
       f.dim += (f.dimTarget - f.dim) * (1 - Math.exp(-realDt * 4));
@@ -1263,7 +1354,7 @@ export class Stage {
       // Halo behind the core: makes the core readable from far away; it fades once the core is gone.
       f.halo.position.copy(f.center).addScaledVector(tmp.subVectors(f.center, this.camera.position).normalize(), this.coreRadius * 1.2);
       f.halo.scale.setScalar(this.coreRadius * 6.5 * 0.7 * TOP_DISPLAY_SCALE);
-      f.halo.material.opacity = 0.55 * (1 - f.dim);
+      f.halo.material.opacity = 0.25 * (1 - f.dim);
       const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
       for (const p of f.parts) {
         p.flash *= Math.exp(-realDt * 12);
@@ -1299,7 +1390,7 @@ export class Stage {
       f.root.scale.set(sxz * TOP_DISPLAY_SCALE, sy * TOP_DISPLAY_SCALE, sxz * TOP_DISPLAY_SCALE);
       if (a.dash > 0) {
         a.dash = Math.max(0, a.dash - simDt);
-        this.particles.burst(f.center, [TEAM[i], WHITE], 3, 0.15, 0.04, 0.32);
+        if (simDt > 0) this.particles.burst(f.center, [TEAM[i]], 1, 0.15, 0.026, 0.2);
         if (simDt > 0 && a.dir) {
           // Speed lines streaming off the back, and an afterimage every few hundredths of a second.
           for (let k = 0; k < 2; k++) {
@@ -1388,7 +1479,7 @@ export class Stage {
       g.age += simDt;
       const k = g.age / g.life;
       if (k >= 1) { g.s.visible = false; continue; }
-      g.s.material.opacity = 0.75 * (1 - k);
+      g.s.material.opacity = 0.30 * (1 - k);
       g.s.scale.setScalar(this.coreRadius * (5 + 3 * k));
     }
     for (let k = this.debris.length - 1; k >= 0; k--) {
