@@ -806,8 +806,11 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .kfoot p b { color: var(--amber); }
 /* 开始组装: his yellow key; 载入中… until the page is ready (judge.js). */
 .kgo { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1px 10px; border: 11px solid transparent;
-  border-image: url("./assets/terminal/yellow.webp") 73 fill stretch; color: #222519; font-family: var(--kfont); font-size: 21px; font-weight: 900; text-align: left; }
-.kgo:disabled { cursor: default; opacity: 0.6; }
+  border-image: url("./assets/terminal/yellow.webp") 73 fill stretch; color: #222519; font-family: var(--kfont); font-size: 21px; font-weight: 900; text-align: left;
+  /* The key's own colour under the texture, so it is there before the WebP arrives on a slow phone. */
+  background: #e0ae48 padding-box; transition: filter 0.35s, opacity 0.35s; }
+/* Not ready yet: a grey, dimmed key that does not look pressable; it lights up yellow once the page can start (Elara d9ad271c). */
+.kgo:disabled { cursor: default; background-color: #8b8a78; filter: grayscale(1) brightness(0.62); opacity: 0.75; }
 .kgo:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 /* Short phones (iPhone SE, 667 tall): a smaller pot and samples, so 开始组装 is on screen without scrolling. */
 @media (max-height: 740px) {
