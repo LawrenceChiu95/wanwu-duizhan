@@ -173,6 +173,7 @@ async function main() {
       if (b.dataset.combat === (combat ?? '')) return;
       const next = new URLSearchParams(location.search);
       if (b.dataset.combat) next.set('combat', b.dataset.combat); else next.delete('combat');
+      try { sessionStorage.setItem('introSkip', '1'); } catch { /* storage off: the opening page shows again */ }
       location.search = next.toString();
     };
   });
