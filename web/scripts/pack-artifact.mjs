@@ -15,10 +15,12 @@ const at = play.indexOf('<script');
 if (at < 0) throw Error('no script tag in dist/index.html');
 play = play.slice(0, at) + '<script>window.createImageBitmap = undefined;</script>\n' + play.slice(at);
 await writeFile(join(out, 'play/index.html'), play);
-const font = assets.find(f => f.startsWith('smiley-sans-sub-'));
-await writeFile(join(out, 'index.html'), (await readFile('publish/cover.html', 'utf8')).replaceAll('{{FONT}}', `play/assets/${font}`));
-await copyFile('publish/hero.jpg', join(out, 'hero.jpg'));
-const files = ['index.html', 'hero.jpg', 'play/index.html', ...assets.map(f => `play/assets/${f}`)];
+await copyFile('publish/cover.html', join(out, 'index.html'));
+// The cover's pictures (凡朔's reactors and the terminal frame and button faces) sit in media/ beside it.
+await mkdir(join(out, 'media'));
+const media = await readdir('publish/media');
+for (const f of media) await copyFile(join('publish/media', f), join(out, 'media', f));
+const files = ['index.html', ...media.map(f => `media/${f}`), 'play/index.html', ...assets.map(f => `play/assets/${f}`)];
 const text = f => /\.(html|js|css|json|md|txt|svg)$/.test(f);
 const sized = await Promise.all(files.map(async f => { const s = (await stat(join(out, f))).size; return {f, size: s, inline: text(f) ? s : Math.ceil(s / 3) * 4}; }));
 const LIMIT = 4.6e6, batches = [];

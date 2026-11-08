@@ -47,6 +47,7 @@ export const creditsMd = `
 | 拖鞋 | inciprocal | ${CC['by-4']} | [Sketchfab](https://sketchfab.com/3d-models/worn-flip-flop-000074a334c541878360457c672b6c2e) |
 | 拖鞋的碰撞外形 | J-Toastie | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/2wR1M99UwP) |
 | 枕头 | Poly by Google | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/f60emm1Xkas) |
+| 首页的奶锅（照片 → Aholo 生成） | 凡朔（照片自己拍的，改装设计也是他） | 本队自制 | |
 
 Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款使用。模型都统一了尺寸和朝向。
 
@@ -63,11 +64,17 @@ Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款
 | three.js（3D 画面） | three.js 作者们 | MIT | [GitHub](https://github.com/mrdoob/three.js) |
 `;
 
-/** The opening card (index.html, put in by vite.config.js): its 开始玩 waits for the page to be ready. */
+/** The opening page (index.html, put in by vite.config.js): its 开始组装 waits for the page to be ready, and the pot's 3D
+ *  (potview.js) loads only after that, so it never holds up the first screen. */
 export function readyIntro() {
   const intro = document.getElementById('intro'), go = document.getElementById('introGo');
   if (!intro) return;
   go.disabled = false;
-  go.querySelector('span').textContent = '开始玩';
-  go.onclick = () => { intro.classList.add('out'); setTimeout(() => { intro.hidden = true; }, 220); };
+  go.querySelector('span').textContent = '开始组装';
+  let closePot = () => {};
+  go.onclick = () => { intro.classList.add('out'); setTimeout(() => { intro.hidden = true; closePot(); closePot = () => {}; }, 220); };
+  const hint = document.getElementById('introHint');
+  import('./potview.js').then(m => m.showPot(document.getElementById('introModel'), hint)).then(close => {
+    if (intro.hidden) close(); else closePot = close;
+  }).catch(() => { hint.textContent = '3D 未载入 · 显示改装参考图'; });
 }

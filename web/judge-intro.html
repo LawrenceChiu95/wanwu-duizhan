@@ -1,18 +1,21 @@
-  <!-- 评委版 opening card (vite.config.js puts it in for --mode judge): plain HTML so it shows while the game loads behind
-       it; judge.js turns 开始玩 on once the page is ready. One real generation, photo → styled picture → 3D. -->
-  <section id="intro" aria-label="万物对战">
-    <div class="ihead">
-      <div class="imark"><span class="w1">万物</span><span class="w2">对战</span></div>
-      <p>拍身边的东西，变成陀螺角色上场对撞</p>
+  <!-- 评委版 opening page (vite.config.js puts it in for --mode judge): 凡朔's 奶锅 page from his UI preview (11-07,
+       Elara ce042e3d). Plain HTML so it shows while the game loads behind it; judge.js turns 开始组装 on once the page is
+       ready, and only then loads the pot's 3D into the box (the picture stands in until it comes). -->
+  <section id="intro" aria-label="万物对战 · 评委试玩">
+    <header class="khead"><i></i> 万物对战 <small>评委试玩</small></header>
+    <div class="kbench">
+      <div class="ktitle"><span class="kloc">厨房改装台</span><h1>改装<span>奶锅</span></h1></div>
+      <div class="kmodel" id="introModel"><img src="../data/showcase/pot/styled.webp" alt="改装奶锅参考图"></div>
+      <div class="kcap"><span>Aholo 生成模型</span><span id="introHint">3D 稍后载入</span></div>
     </div>
-    <ol class="iflow">
-      <li class="photo"><img src="../data/showcase/flipflop/photo.webp" alt="原照：一双人字拖"><span><i>1</i>一张照片</span></li>
-      <li class="styled"><img src="../data/showcase/flipflop/styled.webp" alt="改成游戏画风的人字拖"><span><i>2</i>改成游戏画风</span></li>
-      <li class="model"><img src="../data/showcase/flipflop/still.webp" alt="人字拖的 3D 角色"><span><i>3</i>变成 3D 角色</span></li>
-    </ol>
-    <p class="ireal">上面是一次真实生成，从照片到角色约 2 分半</p>
-    <div class="ifoot">
-      <button type="button" class="go" id="introGo" disabled><span>载入中…</span></button>
-      <small class="icredit">原照 Michal Osmenda · CC BY-SA 2.0，已裁切、改图并建模</small>
+    <div class="kfoot">
+      <h2>从厨房到赛场</h2>
+      <div class="ksamples">
+        <figure><img src="../data/showcase/pot/photo.webp" alt="拍摄的奶锅"><figcaption>实物照片 · 凡朔拍摄</figcaption></figure>
+        <span aria-hidden="true">→</span>
+        <figure><img src="../data/showcase/pot/styled.webp" alt="改绘的奶锅"><figcaption>改装设计</figcaption></figure>
+      </div>
+      <p>一张照片生成这口锅，装到核心外侧就能替它挡下撞击。<b>你也可以拍一件：</b>进去后在角色库里点「拍一件」。</p>
+      <button type="button" class="kgo" id="introGo" disabled><span>载入中…</span> <b aria-hidden="true">→</b></button>
     </div>
   </section>
