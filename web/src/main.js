@@ -31,13 +31,16 @@ const el = {
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
-// The original six keep this order (pot and lamp are the textured Lux3D generations); other catalog items follow.
-const ORDER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillow'];
-// Everything in the catalog except the drafts a comparisonBase replaces.
+// The trial page (远夏 77df1bda, Elara 910599fc) offers 凡朔's twelve (Sol's rated items, in his order), then the player's
+// own photos, not the drafts a comparisonBase replaces. The earlier items stay in the catalog only for the three
+// opponents, until theirs are made of his things.
+const ROSTER = ['fanshuo-knife', 'fanshuo-pot', 'fanshuo-cushion', 'fanshuo-mouse', 'fanshuo-plate', 'fanshuo-shaver', 'fanshuo-chair',
+  'fanshuo-roller', 'fanshuo-camera', 'fanshuo-feather', 'fanshuo-rabbit', 'fanshuo-cup'];
+const EARLIER = new Set(['scissors', 'lamp', 'broom', 'pot', 'slipper', 'pillow', 'pan-lux3d', 'lamp-lux3d', 'wasteland-knife', 'wasteland-pot', 'wasteland-broom']);
 const offerOf = items => {
   const replaced = new Set(items.map(i => i.comparisonBase).filter(Boolean));
-  const rank = id => ORDER.includes(id) ? ORDER.indexOf(id) : ORDER.length;
-  return items.map(i => i.id).filter(id => !replaced.has(id)).sort((a, b) => rank(a) - rank(b));
+  const rank = id => ROSTER.includes(id) ? ROSTER.indexOf(id) : ROSTER.length;
+  return items.map(i => i.id).filter(id => !replaced.has(id) && !EARLIER.has(id)).sort((a, b) => rank(a) - rank(b));
 };
 // The computer's default build; ?foe= can override it for measurements.
 const DEFAULT_FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
@@ -61,7 +64,8 @@ const SVG = {
   down: '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg>',
   arrow: '<svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>'
 };
-const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
+// Sol bccac3b7: 锅 out, 抱枕 hugging.
+const DEFAULT = {parts: [{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
 const HEX = TEAM.map(c => '#' + c.getHexString());
