@@ -173,6 +173,8 @@ async function main() {
       if (b.dataset.combat === (combat ?? '')) return;
       const next = new URLSearchParams(location.search);
       if (b.dataset.combat) next.set('combat', b.dataset.combat); else next.delete('combat');
+      // The build on screen, not one an older address carried: a reload reads the address first (Sol a160c42f).
+      next.set('mine', buildArg(mine));
       try { sessionStorage.setItem('introSkip', '1'); } catch { /* storage off: the opening page shows again */ }
       location.search = next.toString();
     };

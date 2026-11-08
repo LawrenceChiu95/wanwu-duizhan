@@ -22,7 +22,7 @@
    comes and goes, the game slides under it, and a tap while that page still moves only stops it, 远夏 df5c6f83). Nothing
    scrolls past this page; the arena itself takes no pan at all. Lists inside still scroll. */
 html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
-body { background: var(--bg); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+body { display: block; background: var(--bg); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 #view, #fx, #hud { touch-action: none; }
 .panel, .lgrid, #howView, .sbody, #intro { overscroll-behavior: contain; }
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
