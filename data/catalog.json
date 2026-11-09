@@ -3143,8 +3143,8 @@
       },
       "material": "plastic",
       "condition": "intact",
-      "mass": 0.08,
-      "massBasis": "photo-estimate",
+      "mass": 0.18,
+      "massBasis": "playtest-balance",
       "standardLongSide": 0.11,
       "hull": [
         [
@@ -3347,18 +3347,18 @@
         }
       },
       "rating": {
-        "version": "rating-v1:9-14-51:75-60-45-30-0",
+        "version": "rating-v1:13-14-63:75-60-45-30-0",
         "scores": {
-          "attack": 9,
+          "attack": 13,
           "range": 14,
-          "durability": 51
+          "durability": 63
         },
         "letters": {
           "attack": "D",
           "range": "D",
-          "durability": "B"
+          "durability": "A"
         },
-        "grade": "D"
+        "grade": "C"
       }
     },
     {

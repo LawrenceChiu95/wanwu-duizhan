@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import RAPIER from '../../sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs';
-import {simulateV3,createV3Match,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner} from '../../sim/v3.js';
+import {simulateV3,createV3Match,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner,POSITION_COMBAT_RULES} from '../../sim/v3.js';
 import {loadRules,strikeRoles}from'../../sim/index.js';
 import{vec,arr,add,sub,rotate,euler,length,random}from'../../sim/math.js';
 import{definition}from'./probe.mjs';
@@ -182,6 +182,16 @@ test('manual mode: presses taken per fixed step and recorded; replaying the same
  // Auto replays carry no manual rules or events.
  const auto=await simulateV3({fighters,mode:'A',seed:5});
  assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
+});
+test('late damage ramp is scoped to the twelve-item trial in both combat modes',async()=>{
+ const make=item=>({parts:[{item,mount:'e0',orient:'out'}]});
+ for(const combat of [undefined,'position']){
+  const options={seed:3,combat,combatRules:POSITION_COMBAT_RULES};
+  const old=await simulateV3({...options,fighters:[make('pot'),make('pillow')]});
+  const trial=await simulateV3({...options,fighters:[make('fanshuo-pot'),make('fanshuo-cushion')]});
+  assert.deepEqual(old.meta.rules.top.damageRamp,rules.top.damageRamp);
+  assert.deepEqual(trial.meta.rules.top.damageRamp,[[0,.75],[15,.9],[25,1.65],[33,7]]);
+ }
 });
 test('bounce is opt-in, keeps the opening impact, and replays presses made during recoil',async()=>{
  const fighters=[{parts:[]},{parts:[]}];

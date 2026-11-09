@@ -18,6 +18,8 @@ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
 const UP=[0,1,0];
 // The opening and active moves use the original forces. This profile only changes free motion after the first rebound.
 const BOUNCE={attraction:6,thrust:0,recoilSpeed:1.55};
+// The independent twelve-item trial shortens long matches without altering legacy replays.
+const TRIAL_DAMAGE_RAMP=[[0,.75],[15,.9],[25,1.65],[33,7]];
 // Elara 64b06142 selected inward motion before contact. capHp is the original nine-item mean.
 export const POSITION_COMBAT_RULES=Object.freeze({
  radiusTolerance:.03,recoilBase:.96,recoilLength:.02,outBonus:.08,
@@ -246,6 +248,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(aiProfiles.some((p,i)=>p&&manual.sides[i]!=='ai'))throw Error('An ai profile requires an ai side');
  for(const x of manual?.inputs??[])if(!Number.isInteger(x.step)||x.step<1||![0,1].includes(x.side)||manual.sides[x.side]!=='input'||!ACTIONS.includes(x.action))throw Error(`Bad manual input ${JSON.stringify(x)}`);
  const c=await loadCatalogRules(),r=await loadV3Rules();definitions.forEach(d=>validate(d,c,r));await ready();
+ if(definitions.some(d=>d.parts.some(p=>p.item.startsWith('fanshuo-'))))r.top.damageRamp=structuredClone(TRIAL_DAMAGE_RAMP);
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
  // Automatic play has the same symmetric opening, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
