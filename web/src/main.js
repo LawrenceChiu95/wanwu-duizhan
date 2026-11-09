@@ -56,8 +56,13 @@ const FOES = [
 const SPREAD = {e180: '对面', e90: '挨着'};
 // 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
 // A page built for one set of rules (__COMBAT__, vite.config.js) takes the foe builds tuned for them where there are any
-// (judgeBuilds.<current|position>.<foe id>, Sol b54239d2); names, notes and AI stay the shared ones.
-const LADDER = ladderJson.foes.map(f => { const build = __COMBAT__ && ladderJson.judgeBuilds?.[__COMBAT__]?.[f.id]; return build ? {...f, build} : f; });
+// (judgeBuilds.<current|position>.<foe id>). A tuned build can override its foe's reaction settings.
+const LADDER = ladderJson.foes.map(f => {
+  const tuned = __COMBAT__ && ladderJson.judgeBuilds?.[__COMBAT__]?.[f.id];
+  if (!tuned) return f;
+  const {ai, ...build} = tuned;
+  return {...f, build, ai: ai ? {...f.ai, ...ai} : f.ai};
+});
 const LADDER_KEY = 'wanwu-ladder';
 const SVG = {
   lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>',

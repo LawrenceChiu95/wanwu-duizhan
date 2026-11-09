@@ -127,15 +127,18 @@
       "chang": {
         "parts": [
           {
-            "item": "fanshuo-chair",
+            "item": "fanshuo-feather",
             "orient": "out"
           },
           {
-            "item": "fanshuo-pot",
-            "orient": "out"
+            "item": "fanshuo-chair",
+            "orient": "hug"
           }
         ],
-        "spread": "e90"
+        "spread": "e90",
+        "ai": {
+          "reactionJitter": 0.1
+        }
       }
     },
     "current": {
