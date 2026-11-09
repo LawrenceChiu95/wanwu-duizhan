@@ -4,6 +4,7 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {instantiate} from './models.js';
 import {KitchenPreview} from './kitchen.js';
 
+const BLADE_GOLD = new THREE.Color('#ffc928');
 export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
 const TOP_DISPLAY_SCALE = 1.05 * 1.10 * 1.10;
 const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmp3 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
@@ -264,14 +265,18 @@ const bladeCueShader = {
   fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity; uniform float uLeft; uniform float uTime; uniform float uPop;
     void main(){
       float r = length(vP), w = max(fwidth(r), 1e-5);
-      float band = smoothstep(0.80 - w, 0.80 + w, r) * (1.0 - smoothstep(0.96 - w, 0.96 + w, r));
+      float band = smoothstep(0.74 - w, 0.74 + w, r) * (1.0 - smoothstep(0.98 - w, 0.98 + w, r));
+      // A dark hairline on both edges: it reads as a marker over the arena's own gold (a part's fan, a 「完美」 flash).
+      float edge = (1.0 - smoothstep(0.0, 0.025, abs(r - 0.72))) + (1.0 - smoothstep(0.0, 0.025, abs(r - 1.0)));
       float a = fract(atan(vP.x, vP.y) / 6.2831853 + 1.0);
       float notch = step(0.14, fract(a * 10.0 - uTime * 0.6));
       float left = 1.0 - smoothstep(uLeft - 0.006, uLeft, a);
-      float glow = (1.0 - smoothstep(0.0, 0.9, abs(r - 0.88) / 0.22)) * 0.35;
-      float alpha = (band * notch * left + glow * left + uPop * (1.0 - smoothstep(0.0, 0.06, abs(r - 0.88)))) * uOpacity;
+      float glow = (1.0 - smoothstep(0.0, 0.9, abs(r - 0.86) / 0.26)) * 0.3;
+      float ink = edge * left * (1.0 - band);
+      float alpha = (band * notch * left + glow * left + ink * 0.85 + uPop * (1.0 - smoothstep(0.0, 0.14, abs(r - 0.86)))) * uOpacity;
       if (alpha <= 0.0) discard;
-      gl_FragColor = vec4(mix(uColor, vec3(1.0), 0.12 * band * notch + 0.5 * uPop), min(1.0, alpha));
+      vec3 c = mix(uColor, vec3(1.0), 0.12 * band * notch + 0.7 * uPop);
+      gl_FragColor = vec4(mix(c, vec3(0.08, 0.05, 0.0), ink), min(1.0, alpha));
       #include <colorspace_fragment>
     }`
 };
@@ -750,9 +755,10 @@ export class Stage {
     });
     this.scene.add(this.meRing);
     this.bladeCues = TEAM.map(() => {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({...bladeCueShader, uniforms: {uColor: {value: new THREE.Color('#ffc928')}, uOpacity: {value: 0}, uLeft: {value: 0}, uTime: {value: 0}, uPop: {value: 0}}, transparent: true, depthWrite: false}));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({...bladeCueShader, uniforms: {uColor: {value: BLADE_GOLD.clone()}, uOpacity: {value: 0}, uLeft: {value: 0}, uTime: {value: 0}, uPop: {value: 0}}, transparent: true, depthWrite: false, depthTest: false}));
       m.rotation.x = -Math.PI / 2;
-      m.renderOrder = 9;
+      // Drawn over both tops: in a clinch the models used to hide half of it (Elara 38f125cf).
+      m.renderOrder = 12;
       m.visible = false;
       this.scene.add(m);
       return m;
@@ -966,7 +972,8 @@ export class Stage {
     const a = this.fighters[i]?.act;
     if (!a) return;
     const k = left > 0 && total > 0 ? Math.min(1, left / total) : 0;
-    if (k > 0 && !(a.cue > 0)) a.cueAge = 0;
+    // Opening: a gold ring snaps out from it once, so the moment it opens is caught out of the corner of the eye.
+    if (k > 0 && !(a.cue > 0)) { a.cueAge = 0; this.rings.spawn(this.fighters[i].center, BLADE_GOLD, 0.4, 2.6, 0.5); }
     a.cue = k;
   }
   endLunge(i) { const f = this.fighters[i]; if (f) { f.act.dash = 0; f.act.aimOut = Math.max(f.act.aimOut ?? 0, 0.001); } }
@@ -1502,11 +1509,11 @@ export class Stage {
       if (cue.visible) {
         a.cueAge += realDt;
         cue.position.set(f.center.x, f.center.y - 0.03, f.center.z);
-        cue.scale.setScalar(f.sweep * 1.15 * (1 + 0.25 * Math.max(0, 1 - a.cueAge / 0.2)));
+        cue.scale.setScalar(f.sweep * 1.15 * (1 + 0.35 * Math.max(0, 1 - a.cueAge / 0.3)));
         const u = cue.material.uniforms;
         u.uLeft.value = a.cue;
         u.uTime.value = this.time;
-        u.uPop.value = Math.max(0, 1 - a.cueAge / 0.2);
+        u.uPop.value = Math.max(0, 1 - a.cueAge / 0.3);
         u.uOpacity.value = (0.8 + 0.2 * Math.sin(this.time * 14)) * (1 - f.dim);
       }
       // Motion trail: always on for the player's top (orange), only while lunging or flung for the opponent.

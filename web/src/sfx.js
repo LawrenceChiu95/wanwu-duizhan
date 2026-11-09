@@ -3,7 +3,7 @@ const KEY = 'wanwu-muted';
 const LEVEL = 0.8; // master gain into the limiter
 const FLOOR = 1e-4; // exponential ramps start from and fall back to this instead of 0
 const GAP = 0.035; // the same sound at most this often (s)...
-const ALWAYS = new Set(['dashHit', 'clang', 'ko']); // ...except these, which also ignore the voice cap
+const ALWAYS = new Set(['dashHit', 'counter', 'clang', 'ko']); // ...except these, which also ignore the voice cap
 const LOW = new Set(['hit', 'click']); // dropped while MAX_VOICES sounds are playing
 const MAX_VOICES = 24;
 
@@ -101,6 +101,14 @@ const SOUNDS = {
     v.tone(t, 0.22, 0.3, 'triangle', 360, 150, 0.2);
     v.noise(t, 0.16, 0.5, 'bandpass', 300, 170, 0.9);
     v.noise(t, 0.045, 0.35, 'highpass', 1800);
+  },
+  // A blade counter: the lunge's thump under a bright metal slash ringing off, so it sounds unlike any other hit.
+  counter(v) {
+    SOUNDS.dashHit(v);
+    const t = v.t;
+    v.noise(t, 0.12, 0.4, 'highpass', 5200, 2600);
+    v.tone(t + 0.01, 0.5, 0.16, 'sine', 2600, 1500, 0.5);
+    v.tone(t + 0.01, 0.38, 0.1, 'sine', 3900, 2300, 0.38);
   },
   // Wind-up: a rising tone and a noise swell that peak at the launch, then let go quickly.
   charge(v, secs = 0.3) {
@@ -247,7 +255,7 @@ export const sfx = {
       console.warn('sfx mute', err);
     }
   },
-  hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
+  hit: live('hit'), dashHit: live('dashHit'), counter: live('counter'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
   clang: live('clang'), perfect: live('perfect'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */

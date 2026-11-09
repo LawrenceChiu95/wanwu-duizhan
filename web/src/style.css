@@ -271,16 +271,20 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pad.cooling .left { display: block; }
 .pad.ready::after { content: ""; position: absolute; top: 0; bottom: 0; width: 34%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: shine 2.2s ease-in-out infinite; }
 .pad.on { animation: padOn 0.16s ease-in-out infinite alternate; }
-/* The blade window (see stage bladeCue): a gold edge that breathes over whatever plate the theme draws, and the arrows lean in. */
+/* The blade window (see stage bladeCue): the 冲 plate is already gold, so it moves instead (Elara 38f125cf): it breathes
+   brighter and a band of light sweeps across it, the arrows lean in, and a 「趁它回位」 tag points at it. */
+.pad.dash.blade { animation: bladeBreath 0.42s ease-in-out infinite alternate; }
 .pad.dash.blade::before { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; z-index: 1;
-  background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0) 45%, rgba(255, 250, 220, 0.8));
-  box-shadow: inset 0 0 0 3px #6b3d00, inset 0 0 0 5px #fff4b0; animation: bladeEdge 0.32s ease-in-out infinite alternate; }
-#coach:not([hidden]) ~ #pad .bladeTag { display: none; }
-.bladeTag { position: absolute; left: 25%; bottom: calc(100% + 8px); transform: translateX(-50%); padding: 3px 10px; border-radius: 4px; pointer-events: none;
-  background: #1d1206; color: #ffc928; box-shadow: 0 0 0 1px #ffc92866, 0 2px 8px #000a; font-size: 14px; font-weight: 800; letter-spacing: 2px; white-space: nowrap; }
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.95) 50%, transparent 65%) no-repeat;
+  background-size: 260% 100%; box-shadow: inset 0 0 0 3px #6b3d00, inset 0 0 0 5px #fff4b0; animation: bladeSweep 0.7s linear infinite; }
 .pad.dash.blade svg { animation: bladeNudge 0.32s ease-in-out infinite alternate; }
-@keyframes bladeEdge { from { opacity: 0.45; } to { opacity: 1; } }
+@keyframes bladeBreath { from { filter: brightness(1) saturate(1); } to { filter: brightness(1.45) saturate(1.25); } }
+@keyframes bladeSweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
 @keyframes bladeNudge { to { transform: translateX(4px); } }
+#coach:not([hidden]) ~ #pad .bladeTag { display: none; }
+.bladeTag { position: absolute; left: 25%; bottom: calc(100% + 12px); transform: translateX(-50%); padding: 5px 14px; border-radius: 4px; pointer-events: none;
+  background: #1d1206; color: #ffc928; box-shadow: 0 0 0 2px #ffc928, 0 3px 10px #000c; font-size: 20px; font-weight: 800; letter-spacing: 3px; white-space: nowrap; }
+.bladeTag::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: #ffc928; }
 /* Touchdown: the button sinks and lights from inside until the finger lifts (the cooldown fill and the deny shake stay as they are). */
 .pad .press { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.28s ease-out;
   background: radial-gradient(120% 140% at 50% 115%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.18) 45%, transparent 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85); }
@@ -307,6 +311,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   font: 11px/1.45 ui-monospace, Menlo, monospace; color: #c9f2ff; background: rgba(4, 6, 12, 0.82); border-left: 2px solid #3db4ff; white-space: pre; pointer-events: none; }
 @keyframes padOn { to { filter: brightness(1.35) drop-shadow(0 0 22px rgba(255, 255, 255, 0.6)); } }
 .call.dash em { background: #fff; color: #1a0900; }
+/* 反打: the blade window's hit, in the ring's gold and a size up, over either theme's plate. */
+.call.counter, #fx .call.counter { box-shadow: 0 0 0 2px #ffc928, 0 0 14px #ffc928aa; }
+.call.counter em, #fx .call.counter em { background: #ffc928; color: #1d1206; border-right: 0; padding: 0 6px; font-size: 1.15em; font-weight: 800; }
 .call em.guard { background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); letter-spacing: 0.08em; }
 .call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
 .call.parry b { font-size: 28px; }
@@ -480,7 +487,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* A still is the item itself, not a placeholder: it holds steady (task #39). */
 .card .ghost.still { animation: none; }
 @media (prefers-reduced-motion: reduce) { .card .ghost { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .pad.dash.blade::before, .pad.dash.blade svg { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .pad.dash.blade, .pad.dash.blade::before, .pad.dash.blade svg { animation: none; } .pad.dash.blade { filter: brightness(1.3); } }
 .card .photo { position: absolute; left: 0; top: 0; width: 26%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line); }
 /* The original photo takes the top-left corner; the item sits below and right of it so the photo never covers it
    (Elara d1c1f0ff: stood upright, tall items lost their tops under it). */

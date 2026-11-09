@@ -51,10 +51,11 @@ export class Overlay {
    * Position combat passes `hit` ({side, name, clash}): the plate reads 「拖鞋 打 扫帚」, the struck piece in its own side's
    * colour; a clash is one dark plate 「拖鞋 对撞 扫帚」 (side 0's piece first).
    */
-  callout(point, side, name, {crit = false, dash = false, cls = '', guard = false, hit = null} = {}) {
+  callout(point, side, name, {crit = false, dash = false, counter = false, cls = '', guard = false, hit = null} = {}) {
     const el = document.createElement('div');
-    el.className = `call t${side} ${cls}${dash ? ' dash' : ''}${hit ? ` vs${hit.clash ? ' clash' : ''}` : ''}`;
-    if (dash) { const em = document.createElement('em'); em.textContent = '冲'; el.append(em); }
+    el.className = `call t${side} ${cls}${dash ? ' dash' : ''}${counter ? ' counter' : ''}${hit ? ` vs${hit.clash ? ' clash' : ''}` : ''}`;
+    // 反打: a lunge into a recovering heavy top with a live blade (the blade window), in place of 冲.
+    if (dash) { const em = document.createElement('em'); em.textContent = counter ? '反打' : '冲'; el.append(em); }
     const b = document.createElement('b');
     b.textContent = name;
     el.append(b);

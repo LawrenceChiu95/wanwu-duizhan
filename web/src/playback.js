@@ -9,6 +9,8 @@ const HIT_STOP = {hit: 0.045, weak: 0.16, break: 0.14, ko: 0.24, parry: 0.1};
 const DECISIVE_STOP = 0.3;
 // A landed lunge freezes the picture a beat longer than an ordinary knock.
 const DASH_STOP = 0.08;
+// A blade counter (the window's payoff) holds longer still, so the extra damage is felt as its own blow.
+const COUNTER_STOP = 0.16;
 // A lunge bounced off a shield: after its freeze, play time runs at DILATE_SCALE for DILATE_TIME real seconds, easing back.
 // Like hit-stop this is play time only: live (manual), the sim is held at its small lead over what is shown, so it
 // slows down with it and a press still lands on the next physics step; the replay is unchanged.
@@ -106,7 +108,7 @@ export class Playback {
         const e = events[this.cursor++];
         onEvent(e);
         const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
-        stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+        stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? (e.bladeCounter !== undefined ? COUNTER_STOP : DASH_STOP) : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
         if (e.type === 'parry') parried = true;
         // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
         if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {

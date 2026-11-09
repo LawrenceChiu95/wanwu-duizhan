@@ -76,7 +76,7 @@ const DEFAULT = {parts: [{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-c
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
 const HEX = TEAM.map(c => '#' + c.getHexString());
-const WHITE = new THREE.Color('#ffffff'), HOT = new THREE.Color('#ffe14d'), SPARK = new THREE.Color('#ffd27a'), BLOCK = new THREE.Color('#b8f0ff');
+const WHITE = new THREE.Color('#ffffff'), HOT = new THREE.Color('#ffe14d'), BLADE = new THREE.Color('#ffc928'), SPARK = new THREE.Color('#ffd27a'), BLOCK = new THREE.Color('#b8f0ff');
 const ICON = {
   out: '<svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>',
   hug: '<svg class="ico" viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>'
@@ -532,7 +532,18 @@ async function main() {
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
       const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
-      if (dash) {
+      const counter = dash && e.bladeCounter !== undefined;
+      if (counter) {
+        // The blade window paid off: heavier than any lunge, in the ring's gold, with its own slash (Elara 38f125cf), so
+        // 「看见金环冲过去 = 打得更痛」 is learnt from the hit itself.
+        stage.burst(point, [BLADE, WHITE, HOT, BLADE], 90, 5.4, 0.04, 1.0);
+        stage.impact(point, 1.4, [WHITE, BLADE, HOT]);
+        stage.ring(point, BLADE, 0.1, 2.2, 0.55);
+        overlay.screenFlash(0.22);
+        stage.shake(6);
+        sfx.counter();
+        buzz([30, 40, 60]);
+      } else if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
         stage.burst(point, [SPARK, TEAM[e.attacker], HOT], 48, 4.2, 0.032, 0.85);
         stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
@@ -557,7 +568,7 @@ async function main() {
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
         // 护住 (the hit landed on a hugging piece) rides in the same plate: two plates on one spot piled up (Elara 11-02 a788037f).
-        const opts = {crit: e.type === 'weak', dash: e.dash && !e.parry, guard: !core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry};
+        const opts = {crit: e.type === 'weak', dash: e.dash && !e.parry, counter, guard: !core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry};
         // Position combat names both: 「拖鞋 打 扫帚」; a clash gives one 「对撞」 plate for the pair (side 0's piece first).
         if (!position) overlay.callout(point, e.attacker, pieceName(e.item), opts);
         else if (!e.clash) overlay.callout(point, e.attacker, pieceName(e.item), {...opts, hit: {side: e.target, name: pieceName(e.targetItem)}});
@@ -667,6 +678,8 @@ async function main() {
     if (n > 0) coach(0);
     const wait = coachSince + COACH_HOLD - performance.now() / 1000;
     if (wait > 0) { setTimeout(() => coach(n, broke), wait * 1000 + 50); return; }
+    // The blade window's ring and 「趁它回位」 have the floor while it is open: a line waits for it to close (Elara 1df5e4d7).
+    if (live.match.bladeWindow(0) > 0) { setTimeout(() => coach(n, broke), 250); return; }
     coachSeen.add(n);
     coachSince = performance.now() / 1000;
     coachFirstUp = n === 0;
@@ -1203,6 +1216,8 @@ async function main() {
     // edged gold while a lunge is ready to use it. Off whenever no counter could land, so it never promises one.
     const blade = live && !live.done ? live.match.bladeWindow(0) : 0;
     stage.bladeCue(1, blade, combatRules.bladeCounterWindow);
+    // A line still up when a window opens gives way (「它冲过来时按挡」 next to the ring said block while the ring said lunge).
+    if (blade > 0 && !el.coach.hidden) { hideCoach(); coachSince = -Infinity; }
     if (!live || el.pad.hidden) { el.dashBtn.classList.remove('blade'); el.bladeTag.hidden = true; return; }
     const c = live.match.control(0), M = rules.manual;
     // The button only while a whole lunge pressed now still ends inside the window: the wind-up, the full lunge and one
