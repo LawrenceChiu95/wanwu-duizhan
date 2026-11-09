@@ -193,7 +193,8 @@ export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak
   massImpact=from>=to?advantage:1/advantage;
  }
  const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier*massImpact,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
- return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
+ const coreScale=attacker.id==='__core'&&target.id==='__core'?(positionRules?.coreDamageScale??1):1;
+ return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier*coreScale};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
 // Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.
@@ -285,6 +286,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(position?.roleMode==='inward'&&(!Number.isFinite(position.inwardWindow)||position.inwardWindow<=0||!Number.isFinite(position.inwardTolerance)||position.inwardTolerance<0))throw Error('Inward role rules require a positive window and non-negative tolerance');
  const coreMassImpact=position?.coreMassImpact;
  if(coreMassImpact!==undefined&&(!Number.isFinite(coreMassImpact)||coreMassImpact<0))throw Error('coreMassImpact must be finite and non-negative');
+ const coreDamageScale=position?.coreDamageScale;
+ if(coreDamageScale!==undefined&&(!Number.isFinite(coreDamageScale)||coreDamageScale<=0||coreDamageScale>1))throw Error('coreDamageScale must be in (0, 1]');
  const weightFeel=position?.weightFeel;
  if(weightFeel!==undefined&&(!weightFeel||
   !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||

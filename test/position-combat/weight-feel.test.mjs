@@ -79,8 +79,11 @@ test('assembly weight changes only core-on-core damage, before the existing cap'
  assert(weighted(1,2).damage<base.damage);
  assert(weighted(2,1,{ramp:.5}).damage>tierDamage({...hit,ramp:.5}).damage);
  assert.equal(weighted(2,1,{ramp:100}).damage,base.damageCap);
+ const reduced={...positionRules,coreDamageScale:.65};
+ assert.equal(weighted(2,1,{ramp:100,positionRules:reduced}).damage,base.damageCap*.65);
  for(const overrides of [{attacker:knife},{target:knife},{attacker:knife,target:knife}]){
   assert.deepEqual(weighted(2,1,overrides),tierDamage({...hit,positionRules:JUDGE_POSITION_COMBAT_RULES,...overrides}));
+  assert.deepEqual(weighted(2,1,{...overrides,positionRules:reduced}),weighted(2,1,overrides));
  }
 });
 
@@ -98,5 +101,11 @@ test('weight damage uses the live masses and resimulates with the frozen combat 
  }
  const {combat,combatRules:saved,manual}=result.meta;
  assert.deepEqual(await simulateV3({...scenario,mode:'B',combat,combatRules:saved,manual}),result);
+ const reduced=await simulateV3({...scenario,mode:'B',combat,combatRules:{...saved,coreDamageScale:.65},manual});
+ assert.deepEqual(reduced.events.find(e=>e.type==='contact'),result.events.find(e=>e.type==='contact'));
+ assert.deepEqual(await simulateV3({...scenario,mode:'B',combat,combatRules:reduced.meta.combatRules,manual}),reduced);
  await assert.rejects(simulateV3({...scenario,combat:'position',combatRules:{...combatRules,coreMassImpact:-1}}),/coreMassImpact/);
+ for(const coreDamageScale of [0,1.01,NaN]){
+  await assert.rejects(simulateV3({...scenario,combat:'position',combatRules:{...combatRules,coreDamageScale}}),/coreDamageScale/);
+ }
 });
