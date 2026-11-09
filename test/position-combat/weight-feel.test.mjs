@@ -89,7 +89,7 @@ test('assembly weight changes only core-on-core damage, before the existing cap'
 });
 
 test('weight damage uses the live masses and resimulates with the frozen combat rules',async()=>{
- const {coreLoadout,coreFinishMultiplier,broadHeavyResistance,bareCoreReceive,...combatRules}=JUDGE_POSITION_COMBAT_RULES;
+ const {coreLoadout,coreFinishMultiplier,broadHeavyResistance,bareCoreReceive,bladeCounterWindow,...combatRules}=JUDGE_POSITION_COMBAT_RULES;
  const matchup={...scenario,fighters:[gear('chair'),gear('knife')]};
  const result=await simulateV3({...matchup,mode:'B',combat:'position',combatRules});
  assert(result.events.some(e=>e.massImpact>1&&e.masses[e.attacker]>e.masses[e.target]));
@@ -183,7 +183,7 @@ test('judge late damage only increases actual core hits, with a frozen multiplie
 
 
 test('weak hits do less damage to broad heavy parts without raising their starting HP',async()=>{
- const {broadHeavyResistance,...beforeRules}=JUDGE_POSITION_COMBAT_RULES;
+ const {broadHeavyResistance,bladeCounterWindow,...beforeRules}=JUDGE_POSITION_COMBAT_RULES;
  const params={...scenario,mode:'B',combat:'position'};
  const before=await simulateV3({...params,combatRules:beforeRules});
  const after=await simulateV3({...params,combatRules:JUDGE_POSITION_COMBAT_RULES});
@@ -245,4 +245,36 @@ test('a disarmed top takes more damage only while the opponent retains its lead'
  assert(candidate.meta.duration-disarmed.t<=8);
  assert.deepEqual(await simulateV3({...params,manual:candidate.meta.manual,combatRules:candidate.meta.combatRules}),candidate);
  await assert.rejects(simulateV3({...params,combatRules:{...combatRules,bareCoreReceive:3}}),/Bare core damage/);
+});
+
+test('a blade counters a recovering heavy part on a full lunge unless it is blocked',async()=>{
+ const {bladeCounterWindow,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
+ const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
+ const fighters=['knife','chair'].map(suffix=>({parts:[part(suffix,'e0','out'),part('cushion','e180','hug')]}));
+ const inputs=[
+  {step:26,side:1,action:'dash'},
+  {step:33,side:0,action:'block'},
+  {step:137,side:0,action:'dash'}
+ ];
+ const params={fighters,seed:227007,mode:'B',combat:'position'};
+ const run=(combatRules,steps=inputs)=>simulateV3({
+  ...params,combatRules,manual:{sides:['input','input'],inputs:steps}
+ });
+ const baseline=await run(baselineRules);
+ const candidate=await run(JUDGE_POSITION_COMBAT_RULES);
+ const hit=candidate.events.find(e=>e.bladeCounter!==undefined);
+ assert(hit?.dash);
+ assert.equal(hit.targetItem,'fanshuo-chair');
+ assert(!hit.shield);
+ assert(hit.bladeCounter>0&&hit.bladeCounter<=bladeCounterWindow);
+ const prior=baseline.events.find(e=>e.t===hit.t&&e.target===hit.target&&e.targetPart===hit.targetPart);
+ assert(prior);
+ assert(hit.damageBeforeHpClamp>prior.damageBeforeHpClamp);
+ assert(hit.damageBeforeHpClamp<=candidate.meta.initial[1].parts[0].maxHp*.9);
+ assert.deepEqual(candidate.events.filter(e=>e.t<hit.t),baseline.events.filter(e=>e.t<hit.t));
+ const blocked=await run(JUDGE_POSITION_COMBAT_RULES,[...inputs,{step:160,side:1,action:'block'}]);
+ assert(blocked.events.some(e=>e.t===hit.t&&e.target===1&&e.shield&&e.dash));
+ assert(!blocked.events.some(e=>e.bladeCounter!==undefined));
+ assert.deepEqual(await run(candidate.meta.combatRules,candidate.meta.manual.inputs),candidate);
+ await assert.rejects(run({...baselineRules,bladeCounterWindow:4}),/Invalid blade counter window/);
 });

@@ -29,6 +29,7 @@ export const POSITION_COMBAT_RULES=Object.freeze({
 // Explicitly selected only by the judge candidate. Replays store the full tuning in combatRules.
 export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
  ...POSITION_COMBAT_RULES,
+ bladeCounterWindow:2.4,
  bareCoreReceive:2.2,
  coreMassImpact:1.5,
  coreFinishMultiplier:1.55,
@@ -331,6 +332,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   !['mainShare','attackGain','durabilityGain'].every(k=>Number.isFinite(coreLoadout[k]))||
   coreLoadout.mainShare<=.5||coreLoadout.mainShare>1||coreLoadout.attackGain<=0||coreLoadout.attackGain>4||coreLoadout.durabilityGain<=0||coreLoadout.durabilityGain>4))
   throw Error('Invalid position core loadout');
+ const bladeCounterWindow=position?.bladeCounterWindow;
+ if(bladeCounterWindow!==undefined&&(!position.broadHeavyResistance||!Number.isFinite(bladeCounterWindow)||bladeCounterWindow<=0||bladeCounterWindow>3))
+  throw Error('Invalid blade counter window');
  const bareCoreReceive=position?.bareCoreReceive;
  if(bareCoreReceive!==undefined&&(!coreLoadout||!Number.isFinite(bareCoreReceive)||bareCoreReceive<1||bareCoreReceive>2.5))
   throw Error('Bare core damage requires core loadout and a multiplier in [1, 2.5]');
@@ -413,7 +417,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());
     const speed=M.dashSpeed*(1-weightLoad(f)*(weightFeel?.dashLoss??0));
     f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*speed,v[1],dir[2]*speed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
-   else if(f.ctl.dashUntil===step-1)events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:f.ctl.dashPressStep});});
+   else if(f.ctl.dashUntil===step-1){
+    f.ctl.lastDashEnd=t;
+    events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:f.ctl.dashPressStep});
+   }});
  }
  function advance(){
   if(done)return;
@@ -488,13 +495,18 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      const exposedCore=targetBare&&opponent.parts.length===2&&opponent.parts.every(p=>p.alive)&&opponent.core.hp>=opponent.core.maxHp*.75;
      const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
       coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:exposedCore?Math.min(1,fs[target].coreStats.defense):fs[target].coreStats.defense}:undefined});
+     // A live blade can punish a broad heavy build's recovery with an unblocked full lunge.
+     const recovering=bladeCounterWindow!==undefined&&M&&role==='attack'&&fullLunge.length===1&&fullLunge[0]===attacker&&
+      !shield[target]&&!charging(fs[target])&&!dashing(fs[target])&&t-fs[target].ctl.lastDashEnd<=bladeCounterWindow;
+     const bladeCounter=recovering&&(tp.resistWeakHits||tp.mount==='core'&&fs[target].parts.some(p=>p.alive&&p.resistWeakHits))&&
+      opponent.parts.some(p=>p.alive&&p.item.photoPhysics?.hasBladeOrPoint);
      // Broad heavy attachments resist weaker hits without gaining starting HP.
      if(tp.resistWeakHits){
       const attackScore=ap.mount==='core'?fs[attacker].coreStats.attackScore:ratingScores(ap.item).attack;
       const durability=ratingScores(tp.item).durability;
       if(attackScore<durability){
        d.weakHitResistance=Math.max(.08,(attackScore/durability)**2);
-       d.damage*=d.weakHitResistance;
+       if(!bladeCounter)d.damage*=d.weakHitResistance;
       }
      }
      // Shorten late fights through actual hits to the core. Opening and part durability stay the same.
@@ -506,6 +518,13 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       d.bareCoreReceive=bareCoreReceive;
       d.damageCap=Math.min(d.damageCap*bareCoreReceive,tp.maxHp*.8);
       d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
+     }
+     if(bladeCounter){
+      const core=tp.mount==='core';
+      const limit=tp.maxHp*(core ? .68 : .9)/M.dashDamage;
+      d.damage=Math.max(d.damage,Math.min(d.damage*(core?3.7:5.5),limit));
+      d.damageCap=Math.max(d.damageCap,d.damage);
+      d.bladeCounter=t-fs[target].ctl.lastDashEnd;
      }
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
@@ -527,7 +546,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    }
    if(impulse>=r.minimumImpulse)lastSeen=t;
    // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
-   for(const i of lunge){const f=fs[i],full=fullLunge.includes(i),blocked=full&&(roles.clash||i===roles.attacker)&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0),quality=blocked?'blocked':full?'full':'glance';f.ctl.dashUntil=-1;events.push({t,type:'dash',phase:'end',side:i,outcome:blocked?'blocked':'hit',quality,alignment:alignment.find(x=>x.side===i).value,pressStep:f.ctl.dashPressStep,point:i===0?rightPoint:point});if(blocked)events.push({t,type:'parry',attacker:i,target:1-i,point:i===0?rightPoint:point});}
+   for(const i of lunge){const f=fs[i],full=fullLunge.includes(i),blocked=full&&(roles.clash||i===roles.attacker)&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0),quality=blocked?'blocked':full?'full':'glance';f.ctl.dashUntil=-1;f.ctl.lastDashEnd=t;events.push({t,type:'dash',phase:'end',side:i,outcome:blocked?'blocked':'hit',quality,alignment:alignment.find(x=>x.side===i).value,pressStep:f.ctl.dashPressStep,point:i===0?rightPoint:point});if(blocked)events.push({t,type:'parry',attacker:i,target:1-i,point:i===0?rightPoint:point});}
   }
   for(let i=0;i<2;i++)for(const p of fs[i].parts)if(p.alive&&p.hp<=0){const detached=detachPart(world,fs[i],p);events.push({t,type:'break',target:i,targetPart:p.id,item:p.item.id,mount:p.mount,orient:p.orient,...detached,caption:`${name(p)}碎了`});}
   const projection=correctOverlap(world,fs,r);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
