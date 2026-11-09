@@ -42,7 +42,7 @@ export class Overlay {
     el.className = `num ${cls}`;
     el.textContent = text;
     this.layer.append(el);
-    this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur, rise: 40, half: el.offsetWidth * 0.65, h: el.offsetHeight});
+    this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur, rise: 40, half: el.offsetWidth * 0.65, h: el.offsetHeight, below: cls.includes('broke')});
   }
   /**
    * Who hit with what: a short plate in the striker's colour (「锅」, 「锅 暴击」), held up above the contact point on a
@@ -54,8 +54,14 @@ export class Overlay {
   callout(point, side, name, {crit = false, dash = false, counter = false, cls = '', guard = false, hit = null} = {}) {
     const el = document.createElement('div');
     el.className = `call t${side} ${cls}${dash ? ' dash' : ''}${counter ? ' counter' : ''}${hit ? ` vs${hit.clash ? ' clash' : ''}` : ''}`;
-    // 反打: a lunge into a recovering heavy top with a live blade (the blade window), in place of 冲.
-    if (dash) { const em = document.createElement('em'); em.textContent = counter ? '反打' : '冲'; el.append(em); }
+    // 反打: a lunge into a recovering heavy top with a live blade (the blade window), in place of 冲. Any piece can land it,
+    // so a small knife leads the word: it counts because a blade is on, not because the cushion hits back (Elara 36de665c).
+    if (dash) {
+      const em = document.createElement('em');
+      if (counter) em.innerHTML = '<svg class="knife" viewBox="0 0 24 24" aria-hidden="true"><path d="M.5 10.4h6.5v4.2H.5z" /><path d="M8 7.5h15.5C22 13 16.5 16.5 8 16.5z" /></svg>反打';
+      else em.textContent = '冲';
+      el.append(em);
+    }
     const b = document.createElement('b');
     b.textContent = name;
     el.append(b);
@@ -125,26 +131,31 @@ export class Overlay {
   update(dt, showRings) {
     const {stage, p} = this;
     const W = this.layer.clientWidth;
-    for (let k = this.nums.length - 1; k >= 0; k--) {
-      const n = this.nums[k];
-      n.age += dt;
-      const t = n.age / n.dur;
-      if (t >= 1 || !stage.project(n.at, p)) { n.el.remove(); this.nums.splice(k, 1); continue; }
-      const scale = t < 0.1 ? 0.6 + 6 * t : 1.2 - Math.min(0.2, (t - 0.1) * 2);
-      const y = p.y - ease(Math.min(1, t * 1.4)) * n.rise;
-      n.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
-      const x = Math.min(W - 8 - n.half, Math.max(8 + n.half, p.x));
-      n.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${scale})`;
-    }
     for (let k = this.calls.length - 1; k >= 0; k--) {
       const c = this.calls[k];
       c.age += dt;
       const t = c.age / CALL_TIME;
       if (t >= 1 || !stage.project(c.at, p)) { c.el.remove(); c.pin?.remove(); this.calls.splice(k, 1); continue; }
       const x = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, p.x)), y = p.y - c.base - c.lift, fade = t > 0.65 ? (1 - t) / 0.35 : 1;
+      c.x = x; c.y = y;
       c.el.style.opacity = fade;
       c.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${t < 0.12 ? 0.7 + 2.5 * t : 1})`;
       if (c.pin) { c.pin.style.opacity = fade; c.pin.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; }
+    }
+    for (let k = this.nums.length - 1; k >= 0; k--) {
+      const n = this.nums[k];
+      n.age += dt;
+      const t = n.age / n.dur;
+      if (t >= 1 || !stage.project(n.at, p)) { n.el.remove(); this.nums.splice(k, 1); continue; }
+      const scale = t < 0.1 ? 0.6 + 6 * t : 1.2 - Math.min(0.2, (t - 0.1) * 2);
+      let y = p.y - ease(Math.min(1, t * 1.4)) * n.rise;
+      n.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
+      const x = Math.min(W - 8 - n.half, Math.max(8 + n.half, p.x));
+      // 「对手的椅子碎了」 rises into the plate of the hit that broke it (反打 above all): it steps down under the plate instead.
+      if (n.below) for (const c of this.calls) {
+        if (Math.abs(c.x - x) < c.w / 2 + n.half && y > c.y - c.h - 4 && y - n.h * 1.2 < c.y + 4) y = c.y + n.h * 1.2 + 6;
+      }
+      n.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${scale})`;
     }
     for (let k = this.verdicts.length - 1; k >= 0; k--) {
       const v = this.verdicts[k];

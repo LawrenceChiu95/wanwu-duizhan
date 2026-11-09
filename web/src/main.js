@@ -672,7 +672,7 @@ async function main() {
   // Line 1 stays up until the player first presses 冲 (Elara 11-02 a788037f: it went by before it could be read); a line
   // waiting behind it comes once 冲 is pressed or after COACH_HOLD s. Lines 2 and 3 stay COACH_HOLD s each.
   const COACH_HOLD = 3;
-  let coachTimer = 0, coachSince = -Infinity, coachFirstUp = false;
+  let coachTimer = 0, coachSince = -Infinity, coachFirstUp = false, coachUp = null;
   function coach(n, broke) {
     if (control !== 'manual' || !live || coachSeen.has(n) || phase !== 'play') return;
     if (n > 0) coach(0);
@@ -681,9 +681,10 @@ async function main() {
     // The blade window's ring and 「趁它回位」 have the floor while it is open: a line waits for it to close (Elara 1df5e4d7).
     if (live.match.bladeWindow(0) > 0) { setTimeout(() => coach(n, broke), 250); return; }
     coachSeen.add(n);
+    coachUp = {n, broke};
     coachSince = performance.now() / 1000;
     coachFirstUp = n === 0;
-    try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ }
+    saveCoachSeen();
     // Numbered in the order they actually came up: lines 2 and 3 follow the match (a piece can break before a lunge).
     el.coachTag.textContent = `${coachSeen.size}/3`;
     // 「还有另一件」 is checked when the line actually shows: a line queued behind another can come up after that side's
@@ -694,7 +695,20 @@ async function main() {
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
     clearTimeout(coachTimer);
-    if (!coachFirstUp) coachTimer = setTimeout(() => { el.coach.hidden = true; }, (COACH_HOLD + 1.2) * 1000);
+    if (!coachFirstUp) coachTimer = setTimeout(() => { el.coach.hidden = true; coachUp = null; }, (COACH_HOLD + 1.2) * 1000);
+  }
+  function saveCoachSeen() { try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ } }
+  // A blade window opening cuts the line on screen short. Up for less than COACH_READ s, it is not counted as read and
+  // comes back once the window closes (Sol c212985b) instead of being lost for good; up longer, it was read.
+  const COACH_READ = 1.5;
+  function coachYield() {
+    const up = coachUp, short = performance.now() / 1000 - coachSince < COACH_READ;
+    hideCoach();
+    coachSince = -Infinity;
+    if (!up || !short) return;
+    coachSeen.delete(up.n);
+    saveCoachSeen();
+    coach(up.n, up.broke);
   }
   // The first 冲: line 1 has done its job; it goes, and whatever waits behind it may come now.
   function coachDashed() {
@@ -702,8 +716,9 @@ async function main() {
     coachFirstUp = false;
     coachSince = -Infinity;
     el.coach.hidden = true;
+    coachUp = null;
   }
-  function hideCoach() { clearTimeout(coachTimer); coachFirstUp = false; el.coach.hidden = true; }
+  function hideCoach() { clearTimeout(coachTimer); coachFirstUp = false; coachUp = null; el.coach.hidden = true; }
 
   // ---------- match ----------
   let runId = 0;
@@ -1217,7 +1232,7 @@ async function main() {
     const blade = live && !live.done ? live.match.bladeWindow(0) : 0;
     stage.bladeCue(1, blade, combatRules.bladeCounterWindow);
     // A line still up when a window opens gives way (「它冲过来时按挡」 next to the ring said block while the ring said lunge).
-    if (blade > 0 && !el.coach.hidden) { hideCoach(); coachSince = -Infinity; }
+    if (blade > 0 && !el.coach.hidden) coachYield();
     if (!live || el.pad.hidden) { el.dashBtn.classList.remove('blade'); el.bladeTag.hidden = true; return; }
     const c = live.match.control(0), M = rules.manual;
     // The button only while a whole lunge pressed now still ends inside the window: the wind-up, the full lunge and one

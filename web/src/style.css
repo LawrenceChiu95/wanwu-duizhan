@@ -313,7 +313,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .call.dash em { background: #fff; color: #1a0900; }
 /* 反打: the blade window's hit, in the ring's gold and a size up, over either theme's plate. */
 .call.counter, #fx .call.counter { box-shadow: 0 0 0 2px #ffc928, 0 0 14px #ffc928aa; }
-.call.counter em, #fx .call.counter em { background: #ffc928; color: #1d1206; border-right: 0; padding: 0 6px; font-size: 1.15em; font-weight: 800; }
+.call.counter em, #fx .call.counter em { background: #ffc928; color: #1d1206; border-right: 0; padding: 0 6px; font-size: 1.15em; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
+.call em .knife { width: 1.35em; height: 1.35em; margin: -0.15em 0; fill: currentColor; stroke: none; }
 .call em.guard { background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); letter-spacing: 0.08em; }
 .call.parry { background: linear-gradient(90deg, #e6fbff, #9fe6ff); color: #04121f; }
 .call.parry b { font-size: 28px; }
