@@ -1073,14 +1073,17 @@ async function main() {
   // The sim takes them first; one it turns down never shows up here, so the 好了 card waits for it (task #56 S2).
   // The address's build, once its photo items are in, if the player hasn't changed that side in the meantime.
   // Its models come down first, so the swap shows whole: 开打 pressed meanwhile fights the build on screen (Elara 89e3686f).
+  // One whose model won't open is let go, and the playable build on screen stays, with no error (Elara 80e11ec2).
   async function takeLate() {
     const ready = b => b && b.parts.every(x => OFFER.includes(x.item));
     if (phase !== 'build') return;
-    await loadModels([late.mine, late.foe].filter(ready).flatMap(b => b.parts.map(x => byId.get(x.item)))).catch(() => {});
+    const keys = Object.keys(late).filter(k => ready(late[k]));
+    const opens = await Promise.all(keys.map(k => loadModels(late[k].parts.map(x => byId.get(x.item))).then(() => true, () => false)));
     if (phase !== 'build') return;
-    if (ready(late.mine) && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
-    if (ready(late.foe) && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
-    for (const k of Object.keys(late)) if (ready(late[k])) delete late[k];
+    const take = k => opens[keys.indexOf(k)] && ready(late[k]);
+    if (take('mine') && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
+    if (take('foe') && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
+    for (const k of keys) delete late[k];
   }
   async function addItems(sent) {
     const list = photoItems(sent);
