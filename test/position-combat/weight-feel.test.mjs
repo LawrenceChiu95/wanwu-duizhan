@@ -33,7 +33,10 @@ test('weight feel keeps the first contact and survives the replay round trip',as
 
  const noDashPenalty=structuredClone(JUDGE_POSITION_COMBAT_RULES);
  noDashPenalty.weightFeel.dashLoss=0;
+ delete noDashPenalty.weightFeel.recenterBoost;
  const comparator=await run(noDashPenalty);
+ const rebound=match=>match.events.find(e=>e.type==='recoil');
+ assert.deepEqual(rebound(after),rebound(comparator));
  const speedAtLaunch=(match,step)=>{
   const dash=match.events.find(e=>e.type==='dash'&&e.phase==='go'&&e.pressStep===step);
   assert(dash);
@@ -51,7 +54,9 @@ test('weight feel keeps the first contact and survives the replay round trip',as
 });
 
 test('invalid weight feel settings fail before simulation',async()=>{
- const combatRules=structuredClone(JUDGE_POSITION_COMBAT_RULES);
- combatRules.weightFeel.dashLoss=1;
- await assert.rejects(simulateV3({...scenario,combat:'position',combatRules}),/Invalid position weight feel/);
+ for(const field of ['dashLoss','recenterBoost']){
+  const combatRules=structuredClone(JUDGE_POSITION_COMBAT_RULES);
+  combatRules.weightFeel[field]=1;
+  await assert.rejects(simulateV3({...scenario,combat:'position',combatRules}),/Invalid position weight feel/);
+ }
 });

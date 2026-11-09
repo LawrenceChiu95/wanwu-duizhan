@@ -31,7 +31,7 @@ export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
  ...POSITION_COMBAT_RULES,
  weightFeel:Object.freeze({
   slenderMinLength:.30,slenderMinRatio:2.5,lightMass:1.05,heavyMass:3.10,
-  dashLoss:.20,recenterLoss:.35
+  dashLoss:.28,recenterLoss:.48,recenterBoost:.85
  })
 });
 export async function loadV3Rules(){
@@ -277,7 +277,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||
   weightFeel.slenderMinLength<=0||weightFeel.slenderMinRatio<=1||weightFeel.lightMass<=0||
   weightFeel.heavyMass<=weightFeel.lightMass||weightFeel.dashLoss<0||weightFeel.dashLoss>=1||
-  weightFeel.recenterLoss<0||weightFeel.recenterLoss>=1))throw Error('Invalid position weight feel');
+  weightFeel.recenterLoss<0||weightFeel.recenterLoss>=1||
+  weightFeel.recenterBoost!==undefined&&(!Number.isFinite(weightFeel.recenterBoost)||weightFeel.recenterBoost<0||weightFeel.recenterBoost>=1)))throw Error('Invalid position weight feel');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
@@ -360,7 +361,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    // bleed off velocity across the line between them so the pair cannot orbit without touching.
    const across=sub(v,scale(n,dot(v,n)));
    const load=weightLoad(f),dashScale=1-load*(weightFeel?.dashLoss??0);
-   const attraction=motion.attraction*(1-load*(weightFeel?.recenterLoss??0));
+   // Leave the initial rebound impulse intact. After separation, a light assembly
+   // can turn inward sooner, while a heavy assembly keeps drifting outward.
+   const agile=weightFeel?.recenterBoost&&lastRecoil!==-Infinity
+    ?(1-load)*Math.min(1,(t-lastRecoil)/r.recoilPause)*weightFeel.recenterBoost:0;
+   const attraction=motion.attraction*(1-load*(weightFeel?.recenterLoss??0)+agile);
    let acceleration=add(scale(p,-attraction),scale(n,motion.thrust*pursuit));
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit));
