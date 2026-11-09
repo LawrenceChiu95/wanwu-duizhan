@@ -114,6 +114,15 @@ export function loadModels(items) {
   }));
 }
 
+/** Puts the given items' GLBs in the browser's cache and nothing more (no decoding, so the screen never hitches), one at a
+ *  time at low priority; loadModels finds them there later. A miss here only means that model downloads when used. */
+export async function prefetchModels(items) {
+  for (const item of items) {
+    const url = item && !loading.has(item.id) && urlFor(item.glb);
+    if (url) await fetch(url, {priority: 'low'}).then(r => r.arrayBuffer()).catch(() => {});
+  }
+}
+
 /** An item whose GLB is not bundled is an error (no stand-in box: it would look like the import worked). */
 async function loadOne(item) {
   {

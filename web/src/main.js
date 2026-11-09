@@ -3,7 +3,7 @@ import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
-import {loadModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
+import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -263,7 +263,9 @@ async function main() {
   el.busy.hidden = true;
   // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
   // the opening card and builds, instead of holding up the first screen or the first 开打.
-  if (judge) { judge.readyIntro(); warmEngine().catch(showError); }
+  // The rest of the 角色库's models then come down behind it, after the engine (Elara ead80382): opening the 角色库 or
+  // swapping an item later needn't wait for the network, and the first screen still waits for the first match's only.
+  if (judge) { judge.readyIntro(); warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
