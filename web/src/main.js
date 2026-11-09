@@ -55,7 +55,9 @@ const FOES = [
 ];
 const SPREAD = {e180: '对面', e90: '挨着'};
 // 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
-const LADDER = ladderJson.foes;
+// A page built for one set of rules (__COMBAT__, vite.config.js) takes the foe builds tuned for them where there are any
+// (judgeBuilds.<current|position>.<foe id>, Sol b54239d2); names, notes and AI stay the shared ones.
+const LADDER = ladderJson.foes.map(f => { const build = __COMBAT__ && ladderJson.judgeBuilds?.[__COMBAT__]?.[f.id]; return build ? {...f, build} : f; });
 const LADDER_KEY = 'wanwu-ladder';
 const SVG = {
   lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>',
@@ -163,22 +165,10 @@ async function main() {
   el.busy.hidden = false;
   const q = new URLSearchParams(location.search);
   const feel = q.get('feel') === 'bounce' ? 'bounce' : undefined;
-  const combat = q.get('combat') === 'position' ? 'position' : undefined;
+  // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
+  const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
   const combatOptions = combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
-  // The rules switch on the build screen: the page starts again under the other rules (each keeps its own ladder).
-  document.querySelectorAll('#rulesSeg [data-combat]').forEach(b => {
-    b.setAttribute('aria-checked', String(b.dataset.combat === (combat ?? '')));
-    b.onclick = () => {
-      if (b.dataset.combat === (combat ?? '')) return;
-      const next = new URLSearchParams(location.search);
-      if (b.dataset.combat) next.set('combat', b.dataset.combat); else next.delete('combat');
-      // The build on screen, not one an older address carried: a reload reads the address first (Sol a160c42f).
-      next.set('mine', buildArg(mine));
-      try { sessionStorage.setItem('introSkip', '1'); } catch { /* storage off: the opening page shows again */ }
-      location.search = next.toString();
-    };
-  });
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
   // 评委版 (judge.js, task #4): 拍一件 talks to this origin's backend (Elara edd90212), with one real generation beside it.
@@ -189,9 +179,7 @@ async function main() {
   // says no photo can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again once the page
   // is up: the player's own items stay in the 角色库 after the day's photos run out (Elara cf1366e6).
   const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
-  // The trial page is static (a 魔搭 static space, Elara 7fbbf525): no shoot backend there, so 拍一件 is the judge build's
-  // replay of one real generation, and ?shoot=real / ?capture=1 reach nothing (Sol 3c893f58). ?shoot=fake still works locally.
-  const shoot0 = (q.get('shoot') === 'fake' ? shootApi(q) : Promise.resolve(null)).then(async api => {
+  const shoot0 = shootApi(q, __JUDGE__).then(async api => {
     if (!api) return null;
     if (!__JUDGE__) return {api, items: await within(api.items(), 5000) ?? [], again: true};
     const by = performance.now() + 3000;

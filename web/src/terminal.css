@@ -323,11 +323,3 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .htotal b { color:#e1ddc6; }
 .hnote { color:#92b4a1; }
 .ssteps i { border-radius:1px; }
-/* The rules switch in the 组装台 bar: two small cream keys, the live one lit. */
-.bhead .rules { margin-left:auto;display:flex;gap:3px;flex:none; }
-.bhead .rules button { height:27px;padding:0 4px;border:6px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;border-radius:0;
-  color:#242c20;font-size:11px;font-weight:800;line-height:1;opacity:.5;white-space:nowrap; }
-.bhead .rules button[aria-checked="true"] { opacity:1;box-shadow:0 1px 0 #4bc8ad; }
-.bhead .rules + .terminal-led { margin-left:6px; }
-@media(max-width:360px) { .bhead span { display:none; } }
-.bhead:has(.rules) { align-items:center; }

@@ -27,11 +27,16 @@ const rapierWasm = {
   }
 };
 
+// 评委版候选 (Elara e0e9c290): the rules are chosen when the page is built, not on it. WANWU_COMBAT=current or position
+// gives a page that plays only those rules; unset, ?combat=position picks the new ones as before.
+const combatBuild = process.env.WANWU_COMBAT ?? '';
+if (!['', 'current', 'position'].includes(combatBuild)) throw Error(`WANWU_COMBAT must be current or position, not ${combatBuild}`);
+
 export default defineConfig(({mode}) => {
   const judge = mode === 'judge';
   return {
     base: './',
-    define: {__JUDGE__: JSON.stringify(judge)},
+    define: {__JUDGE__: JSON.stringify(judge), __COMBAT__: JSON.stringify(combatBuild)},
     plugins: judge ? [judgeIntro, rapierWasm] : [],
     resolve: {alias: {'@dimforge/rapier3d-compat': rapier}},
     // ?shoot=real: the local 拍一件 backend (tools/import-item/shoot), same origin through this proxy; start it with

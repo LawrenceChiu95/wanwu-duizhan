@@ -63,17 +63,11 @@ Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款
 | three.js（3D 画面） | three.js 作者们 | MIT | [GitHub](https://github.com/mrdoob/three.js) |
 `;
 
-// The rules switch (main.js) reloads the page: back on the build screen at once, not the opening page again (Wren 41054577).
-try {
-  if (sessionStorage.getItem('introSkip') === '1') document.getElementById('intro')?.setAttribute('hidden', '');
-  sessionStorage.removeItem('introSkip');
-} catch { /* storage off: the opening page shows again */ }
-
 /** The opening page (index.html, put in by vite.config.js): its 开始组装 waits for the page to be ready, and the pot's 3D
  *  (potview.js) loads only after that, so it never holds up the first screen. */
 export function readyIntro() {
   const intro = document.getElementById('intro'), go = document.getElementById('introGo');
-  if (!intro || intro.hidden) return;
+  if (!intro) return;
   go.disabled = false;
   go.querySelector('span').textContent = '开始组装';
   let closePot = () => {};
