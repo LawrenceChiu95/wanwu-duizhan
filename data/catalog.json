@@ -2401,9 +2401,11 @@
       "id": "fanshuo-knife",
       "name": "刀",
       "category": "刀",
-      "materialName": "不锈钢刀身",
+      "materialName": "不锈钢和塑料",
       "photoPhysics": {
-        "hardness": 1.2
+        "hardness": 1.2,
+        "impactHardness": 1.2,
+        "hasBladeOrPoint": true
       },
       "generated": true,
       "scale": 1,
@@ -2627,18 +2629,18 @@
         }
       },
       "rating": {
-        "version": "rating-v1:30-39-55:75-60-45-30-0",
+        "version": "rating-v2:54-39-58:75-60-45-30-0",
         "scores": {
-          "attack": 30,
+          "attack": 54,
           "range": 39,
-          "durability": 55
+          "durability": 58
         },
         "letters": {
-          "attack": "C",
+          "attack": "B",
           "range": "C",
           "durability": "B"
         },
-        "grade": "C"
+        "grade": "B"
       }
     },
     {
@@ -2647,7 +2649,9 @@
       "category": "锅",
       "materialName": "不锈钢",
       "photoPhysics": {
-        "hardness": 1.15
+        "hardness": 1.15,
+        "impactHardness": 1.2,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -2861,11 +2865,11 @@
         }
       },
       "rating": {
-        "version": "rating-v1:51-41-74:75-60-45-30-0",
+        "version": "rating-v2:54-41-68:75-60-45-30-0",
         "scores": {
-          "attack": 51,
+          "attack": 54,
           "range": 41,
-          "durability": 74
+          "durability": 68
         },
         "letters": {
           "attack": "B",
@@ -2879,9 +2883,11 @@
       "id": "fanshuo-cushion",
       "name": "抱枕",
       "category": "抱枕",
-      "materialName": "织物和填充棉",
+      "materialName": "织物",
       "photoPhysics": {
-        "hardness": 0.15
+        "hardness": 0.15,
+        "impactHardness": 0.15,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -3109,27 +3115,29 @@
         }
       },
       "rating": {
-        "version": "rating-v1:5-60-89:75-60-45-30-0",
+        "version": "rating-v2:5-60-67:75-60-45-30-0",
         "scores": {
           "attack": 5,
           "range": 60,
-          "durability": 89
+          "durability": 67
         },
         "letters": {
           "attack": "D",
           "range": "A",
-          "durability": "S"
+          "durability": "A"
         },
-        "grade": "B"
+        "grade": "C"
       }
     },
     {
       "id": "fanshuo-mouse",
       "name": "鼠标",
       "category": "鼠标",
-      "materialName": "硬塑料",
+      "materialName": "塑料",
       "photoPhysics": {
-        "hardness": 0.58
+        "hardness": 0.58,
+        "impactHardness": 0.5,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -3347,16 +3355,16 @@
         }
       },
       "rating": {
-        "version": "rating-v1:13-14-63:75-60-45-30-0",
+        "version": "rating-v2:11-14-56:75-60-45-30-0",
         "scores": {
-          "attack": 13,
+          "attack": 11,
           "range": 14,
-          "durability": 63
+          "durability": 56
         },
         "letters": {
           "attack": "D",
           "range": "D",
-          "durability": "A"
+          "durability": "B"
         },
         "grade": "C"
       }
@@ -3365,9 +3373,11 @@
       "id": "fanshuo-plate",
       "name": "盘子",
       "category": "盘子",
-      "materialName": "釉面陶瓷",
+      "materialName": "陶瓷",
       "photoPhysics": {
-        "hardness": 1.1
+        "hardness": 1.1,
+        "impactHardness": 1.1,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -3585,16 +3595,16 @@
         }
       },
       "rating": {
-        "version": "rating-v1:43-33-71:75-60-45-30-0",
+        "version": "rating-v2:44-33-52:75-60-45-30-0",
         "scores": {
-          "attack": 43,
+          "attack": 44,
           "range": 33,
-          "durability": 71
+          "durability": 52
         },
         "letters": {
           "attack": "C",
           "range": "C",
-          "durability": "A"
+          "durability": "B"
         },
         "grade": "B"
       }
@@ -3603,9 +3613,11 @@
       "id": "fanshuo-shaver",
       "name": "剃须刀",
       "category": "剃须刀",
-      "materialName": "硬塑料外壳",
+      "materialName": "塑料",
       "photoPhysics": {
-        "hardness": 0.65
+        "hardness": 0.65,
+        "impactHardness": 0.5,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -3834,16 +3846,16 @@
         }
       },
       "rating": {
-        "version": "rating-v1:14-20-60:75-60-45-30-0",
+        "version": "rating-v2:11-20-55:75-60-45-30-0",
         "scores": {
-          "attack": 14,
+          "attack": 11,
           "range": 20,
-          "durability": 60
+          "durability": 55
         },
         "letters": {
           "attack": "D",
           "range": "D",
-          "durability": "A"
+          "durability": "B"
         },
         "grade": "C"
       }
@@ -3852,9 +3864,11 @@
       "id": "fanshuo-chair",
       "name": "椅子",
       "category": "椅子",
-      "materialName": "塑料和金属支架",
+      "materialName": "塑料和布",
       "photoPhysics": {
-        "hardness": 0.76
+        "hardness": 0.76,
+        "impactHardness": 0.8,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -4078,14 +4092,14 @@
         }
       },
       "rating": {
-        "version": "rating-v1:57-100-100:75-60-45-30-0",
+        "version": "rating-v2:78-100-78:75-60-45-30-0",
         "scores": {
-          "attack": 57,
+          "attack": 78,
           "range": 100,
-          "durability": 100
+          "durability": 78
         },
         "letters": {
-          "attack": "B",
+          "attack": "S",
           "range": "S",
           "durability": "S"
         },
@@ -4096,9 +4110,11 @@
       "id": "fanshuo-roller",
       "name": "按摩滚筒",
       "category": "按摩滚筒",
-      "materialName": "硬质泡棉",
+      "materialName": "EVA泡沫",
       "photoPhysics": {
-        "hardness": 0.34
+        "hardness": 0.34,
+        "impactHardness": 0.35,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -4321,16 +4337,16 @@
         }
       },
       "rating": {
-        "version": "rating-v1:11-38-80:75-60-45-30-0",
+        "version": "rating-v2:11-38-65:75-60-45-30-0",
         "scores": {
           "attack": 11,
           "range": 38,
-          "durability": 80
+          "durability": 65
         },
         "letters": {
           "attack": "D",
           "range": "C",
-          "durability": "S"
+          "durability": "A"
         },
         "grade": "C"
       }
@@ -4339,9 +4355,11 @@
       "id": "fanshuo-camera",
       "name": "摄像头",
       "category": "摄像头",
-      "materialName": "硬塑料外壳",
+      "materialName": "塑料",
       "photoPhysics": {
-        "hardness": 0.66
+        "hardness": 0.66,
+        "impactHardness": 0.5,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -4564,16 +4582,16 @@
         }
       },
       "rating": {
-        "version": "rating-v1:16-13-63:75-60-45-30-0",
+        "version": "rating-v2:12-13-57:75-60-45-30-0",
         "scores": {
-          "attack": 16,
+          "attack": 12,
           "range": 13,
-          "durability": 63
+          "durability": 57
         },
         "letters": {
           "attack": "D",
           "range": "D",
-          "durability": "A"
+          "durability": "B"
         },
         "grade": "C"
       }
@@ -4582,9 +4600,11 @@
       "id": "fanshuo-feather",
       "name": "羽毛杆",
       "category": "羽毛杆",
-      "materialName": "疑似羽毛和羽轴",
+      "materialName": "羽毛与绳",
       "photoPhysics": {
-        "hardness": 0.22
+        "hardness": 0.22,
+        "impactHardness": 0.2,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -4807,7 +4827,7 @@
         }
       },
       "rating": {
-        "version": "rating-v1:2-56-49:75-60-45-30-0",
+        "version": "rating-v2:2-56-49:75-60-45-30-0",
         "scores": {
           "attack": 2,
           "range": 56,
@@ -4825,9 +4845,11 @@
       "id": "fanshuo-rabbit",
       "name": "兔子靠垫",
       "category": "兔子靠垫",
-      "materialName": "绒布和填充棉",
+      "materialName": "织物",
       "photoPhysics": {
-        "hardness": 0.14
+        "hardness": 0.14,
+        "impactHardness": 0.15,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -5045,16 +5067,16 @@
         }
       },
       "rating": {
-        "version": "rating-v1:4-50-80:75-60-45-30-0",
+        "version": "rating-v2:4-50-63:75-60-45-30-0",
         "scores": {
           "attack": 4,
           "range": 50,
-          "durability": 80
+          "durability": 63
         },
         "letters": {
           "attack": "D",
           "range": "B",
-          "durability": "S"
+          "durability": "A"
         },
         "grade": "C"
       }
@@ -5065,7 +5087,9 @@
       "category": "金属杯",
       "materialName": "不锈钢",
       "photoPhysics": {
-        "hardness": 1.12
+        "hardness": 1.12,
+        "impactHardness": 1.1,
+        "hasBladeOrPoint": false
       },
       "generated": true,
       "scale": 1,
@@ -5293,11 +5317,11 @@
         }
       },
       "rating": {
-        "version": "rating-v1:24-15-52:75-60-45-30-0",
+        "version": "rating-v2:24-15-55:75-60-45-30-0",
         "scores": {
           "attack": 24,
           "range": 15,
-          "durability": 52
+          "durability": 55
         },
         "letters": {
           "attack": "D",

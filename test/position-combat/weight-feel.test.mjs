@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {readFile} from 'node:fs/promises';
 import {
  itemCombat, loadCatalog, loadV3Rules, simulateV3, tierDamage,
  JUDGE_POSITION_COMBAT_RULES, POSITION_COMBAT_RULES
@@ -17,8 +18,8 @@ test('judge candidate distinguishes long thin gear from wide or compact gear',as
  for(const id of ['chair','pot','cushion','mouse']){
   assert.deepEqual(stats(id,JUDGE_POSITION_COMBAT_RULES),stats(id));
  }
- assert.equal(stats('chair',POSITION_COMBAT_RULES).hp,50.4);
- assert.equal(stats('chair',JUDGE_POSITION_COMBAT_RULES).hp,84);
+ assert.equal(stats('chair',POSITION_COMBAT_RULES).hp,stats('chair').hp*.6);
+ assert(stats('chair',JUDGE_POSITION_COMBAT_RULES).hp>stats('mouse',JUDGE_POSITION_COMBAT_RULES).hp);
  for(const id of ['knife','feather']){
   assert(stats(id,JUDGE_POSITION_COMBAT_RULES).hp<stats(id).hp);
   assert(stats(id,JUDGE_POSITION_COMBAT_RULES).power>stats(id).power);
@@ -88,8 +89,9 @@ test('assembly weight changes only core-on-core damage, before the existing cap'
 });
 
 test('weight damage uses the live masses and resimulates with the frozen combat rules',async()=>{
- const combatRules={...JUDGE_POSITION_COMBAT_RULES,coreMassImpact:1.5};
- const result=await simulateV3({...scenario,mode:'B',combat:'position',combatRules});
+ const {coreLoadout,coreFinishMultiplier,broadHeavyResistance,...combatRules}=JUDGE_POSITION_COMBAT_RULES;
+ const matchup={...scenario,fighters:[gear('chair'),gear('knife')]};
+ const result=await simulateV3({...matchup,mode:'B',combat:'position',combatRules});
  assert(result.events.some(e=>e.massImpact>1&&e.masses[e.attacker]>e.masses[e.target]));
  assert(result.events.some(e=>e.massImpact<1&&e.masses[e.attacker]<e.masses[e.target]));
  for(const event of result.events.filter(e=>e.massImpact!==undefined)){
@@ -100,13 +102,13 @@ test('weight damage uses the live masses and resimulates with the frozen combat 
   assert.equal(event.massImpact,from>=to?factor:1/factor);
  }
  const {combat,combatRules:saved,manual}=result.meta;
- assert.deepEqual(await simulateV3({...scenario,mode:'B',combat,combatRules:saved,manual}),result);
- const reduced=await simulateV3({...scenario,mode:'B',combat,combatRules:{...saved,coreDamageScale:.65},manual});
+ assert.deepEqual(await simulateV3({...matchup,mode:'B',combat,combatRules:saved,manual}),result);
+ const reduced=await simulateV3({...matchup,mode:'B',combat,combatRules:{...saved,coreDamageScale:.65},manual});
  assert.deepEqual(reduced.events.find(e=>e.type==='contact'),result.events.find(e=>e.type==='contact'));
- assert.deepEqual(await simulateV3({...scenario,mode:'B',combat,combatRules:reduced.meta.combatRules,manual}),reduced);
- await assert.rejects(simulateV3({...scenario,combat:'position',combatRules:{...combatRules,coreMassImpact:-1}}),/coreMassImpact/);
+ assert.deepEqual(await simulateV3({...matchup,mode:'B',combat,combatRules:reduced.meta.combatRules,manual}),reduced);
+ await assert.rejects(simulateV3({...matchup,combat:'position',combatRules:{...combatRules,coreMassImpact:-1}}),/coreMassImpact/);
  for(const coreDamageScale of [0,1.01,NaN]){
-  await assert.rejects(simulateV3({...scenario,combat:'position',combatRules:{...combatRules,coreDamageScale}}),/coreDamageScale/);
+  await assert.rejects(simulateV3({...matchup,combat:'position',combatRules:{...combatRules,coreDamageScale}}),/coreDamageScale/);
  }
 });
 
@@ -152,4 +154,65 @@ test('starting loadout weights follow orientation and persist after breaks, with
  }
  assert.deepEqual(await simulateV3({...params,manual:result.meta.manual,combatRules:result.meta.combatRules}),result);
  await assert.rejects(simulateV3({...params,combatRules:{...combatRules,coreLoadout:{...config,mainShare:.5}}}),/Invalid position core loadout/);
+});
+
+test('judge late damage only increases actual core hits, with a frozen multiplier',async()=>{
+ const {coreFinishMultiplier,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
+ const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
+ const fighters=[
+  {parts:[part('cushion','e0','hug'),part('knife','e180','hug')]},
+  {parts:[part('pot','e0','out'),part('cushion','e180','hug')]}
+ ];
+ const seed=196102,aiSeeds=[(seed^0xb7e15162)>>>0,(seed^0x243f6a88)>>>0];
+ const {foes}=JSON.parse(await readFile(new URL('../../data/foes.json',import.meta.url),'utf8'));
+ const params={fighters,seed,combat:'position',manual:{sides:['ai','ai'],aiSeeds,aiProfiles:[foes[1].ai,null]}};
+ const baseline=await simulateV3({...params,combatRules:baselineRules});
+ const result=await simulateV3({...params,combatRules:JUDGE_POSITION_COMBAT_RULES});
+ assert.deepEqual(result.events.filter(e=>e.t<=34),baseline.events.filter(e=>e.t<=34));
+ const hit=result.events.find(e=>e.targetPart==='core'&&e.t>34&&e.damageBeforeHpClamp>0);
+ assert(hit);
+ const before=baseline.events.find(e=>e.type===hit.type&&e.t===hit.t&&e.attacker===hit.attacker&&e.targetPart==='core');
+ assert(before);
+ assert(hit.damageCap>before.damageCap);
+ assert(hit.damageBeforeHpClamp>before.damageBeforeHpClamp);
+ assert(result.meta.duration<=baseline.meta.duration);
+ assert.equal(result.meta.combatRules.coreFinishMultiplier,coreFinishMultiplier);
+ assert.deepEqual(await simulateV3({...params,manual:result.meta.manual,combatRules:result.meta.combatRules}),result);
+ await assert.rejects(simulateV3({...params,combatRules:{...baselineRules,coreFinishMultiplier:2.1}}),/coreFinishMultiplier/);
+});
+
+
+test('weak hits do less damage to broad heavy parts without raising their starting HP',async()=>{
+ const {broadHeavyResistance,...beforeRules}=JUDGE_POSITION_COMBAT_RULES;
+ const params={...scenario,mode:'B',combat:'position'};
+ const before=await simulateV3({...params,combatRules:beforeRules});
+ const after=await simulateV3({...params,combatRules:JUDGE_POSITION_COMBAT_RULES});
+ assert.deepEqual(after.frames[0],before.frames[0]);
+ const hit=after.events.find(e=>e.weakHitResistance!==undefined);
+ assert(hit);
+ assert.equal(hit.targetItem,'fanshuo-chair');
+ const original=before.events.find(e=>e.t===hit.t&&e.attacker===hit.attacker&&e.targetPart===hit.targetPart&&e.damage>0);
+ assert(original);
+ assert(hit.damageBeforeHpClamp<original.damageBeforeHpClamp);
+ assert.equal(hit.damageBeforeHpClamp,original.damageBeforeHpClamp*hit.weakHitResistance);
+ assert(after.events.filter(e=>e.weakHitResistance!==undefined).every(e=>e.targetItem==='fanshuo-chair'));
+ assert.deepEqual(await simulateV3({...params,manual:after.meta.manual,combatRules:after.meta.combatRules}),after);
+});
+
+test('candidate pacing adjustment applies only to automatic B and is reproducible',async()=>{
+ const {autoBDamageScale,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
+ const {fighters,seed,manual}=scenario;
+ const run=(mode,combatRules,controls=null)=>
+  simulateV3({fighters,seed,mode,manual:controls,combat:'position',combatRules});
+ for(const [mode,controls] of [['A',null],['B',manual]]){
+  const baseline=await run(mode,baselineRules,controls);
+  const candidate=await run(mode,JUDGE_POSITION_COMBAT_RULES,controls);
+  assert.deepEqual(candidate.events,baseline.events);
+  assert.deepEqual(candidate.frames,baseline.frames);
+ }
+ const baseline=await run('B',baselineRules);
+ const candidate=await run('B',JUDGE_POSITION_COMBAT_RULES);
+ assert.equal(candidate.meta.rules.damageScale.B,baseline.meta.rules.damageScale.B*autoBDamageScale);
+ assert.notDeepEqual(candidate.events,baseline.events);
+ assert.deepEqual(await run('B',candidate.meta.combatRules),candidate);
 });

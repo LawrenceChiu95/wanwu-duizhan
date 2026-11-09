@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {gradeFor,rateItem} from '../../sim/item-rating.js';
+import {gradeFor,rateItem,ratingGrade} from '../../sim/item-rating.js';
 const catalog=JSON.parse(await readFile(new URL('../../data/catalog.json',import.meta.url),'utf8'));
 const {items:designs}=JSON.parse(await readFile(new URL('../../data/default-item-designs.json',import.meta.url),'utf8'));
 const defaults=designs.map(d=>{const item=catalog.items.find(i=>i.id===d.id);assert.ok(item,`Missing default: ${d.id}`);return item;});
@@ -11,7 +11,13 @@ test('grade boundaries use the unrounded arithmetic mean',()=>{
 });
 test('catalog matches deterministic per-object scores, all five tiers and only two or three S defaults',()=>{
  assert.equal(defaults.length,9);
- for(const item of catalog.items){assert.deepEqual(item.rating,rateItem(item,catalog.materials));assert.equal(item.rating.grade,gradeFor(Object.values(item.rating.scores).reduce((a,b)=>a+b,0)/3));}
+ for(const item of catalog.items){
+  assert.deepEqual(item.rating,rateItem(item,catalog.materials));
+  assert.equal(item.rating.grade,ratingGrade(item.rating.scores,item.rating.version));
+ }
+ assert.equal(catalog.items.find(i=>i.id==='fanshuo-mouse').rating.grade,'C');
+ assert.equal(ratingGrade({attack:11,range:14,durability:56},'rating-v2:fixture'),'C');
+ assert.equal(ratingGrade({attack:11,range:14,durability:56},'rating-v1:fixture'),'D');
  assert.deepEqual([...new Set(defaults.map(i=>i.rating.grade))].sort(),['A','B','C','D','S']);
  assert.ok([2,3].includes(defaults.filter(i=>i.rating.grade==='S').length));
 });

@@ -101,11 +101,11 @@
       "mang": {
         "parts": [
           {
-            "item": "fanshuo-knife",
+            "item": "fanshuo-cup",
             "orient": "out"
           },
           {
-            "item": "fanshuo-mouse",
+            "item": "fanshuo-roller",
             "orient": "hug"
           }
         ],
@@ -114,11 +114,11 @@
       "wen": {
         "parts": [
           {
-            "item": "fanshuo-cushion",
+            "item": "fanshuo-rabbit",
             "orient": "hug"
           },
           {
-            "item": "fanshuo-knife",
+            "item": "fanshuo-pot",
             "orient": "hug"
           }
         ],
@@ -127,15 +127,15 @@
       "chang": {
         "parts": [
           {
-            "item": "fanshuo-feather",
+            "item": "fanshuo-chair",
             "orient": "out"
           },
           {
             "item": "fanshuo-pot",
-            "orient": "hug"
+            "orient": "out"
           }
         ],
-        "spread": "e180"
+        "spread": "e90"
       }
     },
     "current": {
