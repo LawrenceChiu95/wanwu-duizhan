@@ -127,8 +127,8 @@ function coreLoadoutStats(parts,{mainShare,attackGain,durabilityGain}){
  const firstShare=out[0]===out[1]?.5:out[0]?mainShare:1-mainShare;
  const score=key=>scores.length===1?scores[0][key]:
   scores[0][key]*firstShare+scores[1][key]*(1-firstShare);
- return {attack:Math.max(.35,1+(score('attack')-15)/50*attackGain),
-  defense:Math.max(.35,1+(score('durability')-75)/50*durabilityGain)};
+ return {attack:Math.max(.15,1+(score('attack')-15)/50*attackGain),
+  defense:Math.max(.35,1+(score('durability')-62)/50*durabilityGain)};
 }
 function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
  const spin=r.top.spinRate*r.top.spinDirections[index];
@@ -209,9 +209,11 @@ export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak
  const loadoutImpact=coreLoadout&&attacker.id==='__core'&&target.id==='__core'
   ?coreLoadout.attack/coreLoadout.defense:undefined;
  const hitDamage=Math.min(rawDamage,damageCap);
+ // Let a strong assembly deal more than the base core cap, within a bounded per-hit bonus.
+ const coreLoadoutCap=loadoutImpact===undefined?damageCap:damageCap*1.25;
  return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),
-  ...(loadoutImpact!==undefined&&{loadoutImpact}),rawDamage,damageCap,
-  damage:(loadoutImpact===undefined?hitDamage:Math.min(hitDamage*loadoutImpact,damageCap))*roleMultiplier*coreScale};
+  ...(loadoutImpact!==undefined&&{loadoutImpact}),rawDamage,damageCap:coreLoadoutCap,
+  damage:(loadoutImpact===undefined?hitDamage:Math.min(hitDamage*loadoutImpact,coreLoadoutCap))*roleMultiplier*coreScale};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
 // Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.

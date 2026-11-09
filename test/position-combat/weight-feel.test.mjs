@@ -110,7 +110,7 @@ test('weight damage uses the live masses and resimulates with the frozen combat 
  }
 });
 
-test('core loadout uses primary attack and opposing durability without changing attachments or the cap',async()=>{
+test('core loadout uses primary attack and opposing durability without changing attachment hits, with a bounded core bonus',async()=>{
  const rules=await loadV3Rules(),{materials,matchups,items}=await loadCatalogRules();
  const core={id:'__core',tag:'core',material:rules.core.material};
  const knife=items.find(item=>item.id==='fanshuo-knife');
@@ -118,7 +118,9 @@ test('core loadout uses primary attack and opposing durability without changing 
  const base=tierDamage(hit);
  assert.equal(tierDamage({...hit,coreLoadout:{attack:.6,defense:1.2}}).damage,base.damage*.5);
  assert(tierDamage({...hit,coreLoadout:{attack:1.4,defense:.8}}).damage>base.damage);
- assert.equal(tierDamage({...hit,coreLoadout:{attack:2,defense:.5},ramp:100}).damage,base.damageCap);
+ const strong=tierDamage({...hit,coreLoadout:{attack:2,defense:.5},ramp:100});
+ assert.equal(strong.damageCap,base.damageCap*1.25);
+ assert.equal(strong.damage,strong.damageCap);
  for(const pair of [{attacker:knife},{target:knife},{attacker:knife,target:knife}]){
   assert.deepEqual(tierDamage({...hit,...pair,coreLoadout:{attack:.6,defense:1.2}}),tierDamage({...hit,...pair}));
  }
@@ -138,8 +140,8 @@ test('starting loadout weights follow orientation and persist after breaks, with
  const {items}=await loadCatalogRules();
  const score=(suffix,key)=>items.find(item=>item.id==='fanshuo-'+suffix).rating.scores[key];
  const weighted=(suffix,key)=>score(suffix,key)*.8+score('cushion',key)*(1-.8);
- const attacks=['knife','mouse'].map(item=>Math.max(.35,1+(weighted(item,'attack')-15)/50*1.65));
- const defenses=['knife','mouse'].map(item=>Math.max(.35,1+(weighted(item,'durability')-75)/50*.8));
+ const attacks=['knife','mouse'].map(item=>Math.max(.15,1+(weighted(item,'attack')-15)/50*1.65));
+ const defenses=['knife','mouse'].map(item=>Math.max(.35,1+(weighted(item,'durability')-62)/50*.8));
  const coreHits=result.events.filter(e=>e.loadoutImpact!==undefined);
  assert(coreHits.length>1);
  assert(result.events.some(e=>e.type==='break'&&coreHits.some(hit=>hit.t>e.t)));
