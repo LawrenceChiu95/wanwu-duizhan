@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES, JUDGE_POSITION_COMBAT_RULES} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
@@ -167,7 +167,8 @@ async function main() {
   const feel = q.get('feel') === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const combatOptions = combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
+  const combatRules = __COMBAT__ === 'position' ? JUDGE_POSITION_COMBAT_RULES : POSITION_COMBAT_RULES;
+  const combatOptions = combat ? {combat, combatRules} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
