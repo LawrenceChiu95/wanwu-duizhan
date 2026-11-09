@@ -119,6 +119,17 @@ export function itemCombat(item,r,positionRules){
  const power=positionRules?1+positionRules.rangeAttack*q:1,hp=positionRules?1-positionRules.rangeHp*q:1;
  return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability)*hp,power:(k.powerBase+k.powerScale*attack)*power,attack:(k.attackBase+k.attackScale*attack)*power,defense:k.defenseBase+k.defenseScale*durability};
 }
+// The starting loadout defines the core. Losing a part still changes the live mass.
+function coreLoadoutStats(parts,{mainShare,attackGain,durabilityGain}){
+ if(!parts.length)return {attack:1,defense:1};
+ const scores=parts.map(p=>ratingScores(p.item));
+ const out=parts.map(p=>p.orient==='out');
+ const firstShare=out[0]===out[1]?.5:out[0]?mainShare:1-mainShare;
+ const score=key=>scores.length===1?scores[0][key]:
+  scores[0][key]*firstShare+scores[1][key]*(1-firstShare);
+ return {attack:Math.max(.35,1+(score('attack')-15)/50*attackGain),
+  defense:Math.max(.35,1+(score('durability')-75)/50*durabilityGain)};
+}
 function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
  const spin=r.top.spinRate*r.top.spinDirections[index];
  const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping));
@@ -134,7 +145,8 @@ function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
  body.recomputeMassPropertiesFromColliders();
  // Opposite sides face each other by a half turn, without reflecting handed geometry.
  const q=index===(openingHalfTurn?1:0)?[0,0,0,1]:[0,1,0,0];body.setRotation(quat(q),true);body.setAngvel(vec(scale(rotate(q,UP),spin)),true);
- return {body,core,parts,spin,mass:body.mass(),inertia:spinInertia(body),definition:structuredClone(def)};
+ const coreStats=positionRules?.coreLoadout?coreLoadoutStats(parts,positionRules.coreLoadout):null;
+ return {body,core,parts,spin,mass:body.mass(),inertia:spinInertia(body),definition:structuredClone(def),coreStats};
 }
 const active=f=>[f.core,...f.parts.filter(p=>p.alive)];
 /** Radius the spinning top sweeps in its equator plane (core included). */
@@ -174,7 +186,7 @@ export function partRecoilFactor(part,rules){
 function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.angular,sub(point,f.before.center)));}
 function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
-export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules,coreMasses}){
+export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules,coreMasses,coreLoadout}){
  const attack=itemCombat(attacker,r,positionRules),defend=itemCombat(target,r,positionRules);
  // Hardness rewards the striker; a soft target no longer raises the damage tier just for being soft.
  const hardness=Math.sqrt(itemHardness(attacker,materials)/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
@@ -194,7 +206,12 @@ export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak
  }
  const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier*massImpact,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
  const coreScale=attacker.id==='__core'&&target.id==='__core'?(positionRules?.coreDamageScale??1):1;
- return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier*coreScale};
+ const loadoutImpact=coreLoadout&&attacker.id==='__core'&&target.id==='__core'
+  ?coreLoadout.attack/coreLoadout.defense:undefined;
+ const hitDamage=Math.min(rawDamage,damageCap);
+ return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),
+  ...(loadoutImpact!==undefined&&{loadoutImpact}),rawDamage,damageCap,
+  damage:(loadoutImpact===undefined?hitDamage:Math.min(hitDamage*loadoutImpact,damageCap))*roleMultiplier*coreScale};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
 // Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.
@@ -288,6 +305,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(coreMassImpact!==undefined&&(!Number.isFinite(coreMassImpact)||coreMassImpact<0))throw Error('coreMassImpact must be finite and non-negative');
  const coreDamageScale=position?.coreDamageScale;
  if(coreDamageScale!==undefined&&(!Number.isFinite(coreDamageScale)||coreDamageScale<=0||coreDamageScale>1))throw Error('coreDamageScale must be in (0, 1]');
+ const coreLoadout=position?.coreLoadout;
+ if(coreLoadout!==undefined&&(!coreLoadout||
+  !['mainShare','attackGain','durabilityGain'].every(k=>Number.isFinite(coreLoadout[k]))||
+  coreLoadout.mainShare<=.5||coreLoadout.mainShare>1||coreLoadout.attackGain<=0||coreLoadout.attackGain>4||coreLoadout.durabilityGain<=0||coreLoadout.durabilityGain>4))
+  throw Error('Invalid position core loadout');
  const weightFeel=position?.weightFeel;
  if(weightFeel!==undefined&&(!weightFeel||
   !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||
@@ -433,7 +455,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     for(const [attacker,target,ap,tp,tpnt] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
      const role=roles.clash||attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
      const weakTouch=weakContact(tp,tpnt),roll=role==='attack'&&weakTouch?critRoll():null,weak=roll!==null&&weakCritical({contact:true,roll,chance:r.weakCritChance});
-     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined});
+     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
+      coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:fs[target].coreStats.defense}:undefined});
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
      const damage=Math.min(tp.hp,d.damage);

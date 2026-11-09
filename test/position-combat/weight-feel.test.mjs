@@ -109,3 +109,45 @@ test('weight damage uses the live masses and resimulates with the frozen combat 
   await assert.rejects(simulateV3({...scenario,combat:'position',combatRules:{...combatRules,coreDamageScale}}),/coreDamageScale/);
  }
 });
+
+test('core loadout uses primary attack and opposing durability without changing attachments or the cap',async()=>{
+ const rules=await loadV3Rules(),{materials,matchups,items}=await loadCatalogRules();
+ const core={id:'__core',tag:'core',material:rules.core.material};
+ const knife=items.find(item=>item.id==='fanshuo-knife');
+ const hit={mode:'B',impulse:2,attacker:core,target:core,materials,matchups,maxHp:rules.core.hp,rules,ramp:.5};
+ const base=tierDamage(hit);
+ assert.equal(tierDamage({...hit,coreLoadout:{attack:.6,defense:1.2}}).damage,base.damage*.5);
+ assert(tierDamage({...hit,coreLoadout:{attack:1.4,defense:.8}}).damage>base.damage);
+ assert.equal(tierDamage({...hit,coreLoadout:{attack:2,defense:.5},ramp:100}).damage,base.damageCap);
+ for(const pair of [{attacker:knife},{target:knife},{attacker:knife,target:knife}]){
+  assert.deepEqual(tierDamage({...hit,...pair,coreLoadout:{attack:.6,defense:1.2}}),tierDamage({...hit,...pair}));
+ }
+});
+
+test('starting loadout weights follow orientation and persist after breaks, with deterministic replay',async()=>{
+ const mixed=(out,hug)=>({parts:[...gear(out).parts,{item:'fanshuo-'+hug,orient:'hug',mount:'e180'}]});
+ const fighters=[mixed('knife','cushion'),mixed('mouse','cushion')];
+ const config={mainShare:.8,attackGain:1.65,durabilityGain:.8};
+ const combatRules={...JUDGE_POSITION_COMBAT_RULES,coreLoadout:config};
+ const params={...scenario,fighters,mode:'B',combat:'position'};
+ const base=await simulateV3({...params,combatRules:JUDGE_POSITION_COMBAT_RULES});
+ const result=await simulateV3({...params,combatRules});
+ for(const type of ['contact','recoil']){
+  assert.deepEqual(result.events.find(e=>e.type===type),base.events.find(e=>e.type===type));
+ }
+ const {items}=await loadCatalogRules();
+ const score=(suffix,key)=>items.find(item=>item.id==='fanshuo-'+suffix).rating.scores[key];
+ const weighted=(suffix,key)=>score(suffix,key)*.8+score('cushion',key)*(1-.8);
+ const attacks=['knife','mouse'].map(item=>Math.max(.35,1+(weighted(item,'attack')-15)/50*1.65));
+ const defenses=['knife','mouse'].map(item=>Math.max(.35,1+(weighted(item,'durability')-75)/50*.8));
+ const coreHits=result.events.filter(e=>e.loadoutImpact!==undefined);
+ assert(coreHits.length>1);
+ assert(result.events.some(e=>e.type==='break'&&coreHits.some(hit=>hit.t>e.t)));
+ for(const e of coreHits){
+  assert.equal(e.part,'core');
+  assert.equal(e.targetPart,'core');
+  assert.equal(e.loadoutImpact,attacks[e.attacker]/defenses[e.target]);
+ }
+ assert.deepEqual(await simulateV3({...params,manual:result.meta.manual,combatRules:result.meta.combatRules}),result);
+ await assert.rejects(simulateV3({...params,combatRules:{...combatRules,coreLoadout:{...config,mainShare:.5}}}),/Invalid position core loadout/);
+});
