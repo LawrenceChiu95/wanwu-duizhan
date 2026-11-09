@@ -95,5 +95,89 @@
         "blockLead": 0.15
       }
     }
-  ]
+  ],
+  "judgeBuilds": {
+    "position": {
+      "mang": {
+        "parts": [
+          {
+            "item": "fanshuo-knife",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-mouse",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "wen": {
+        "parts": [
+          {
+            "item": "fanshuo-cushion",
+            "orient": "hug"
+          },
+          {
+            "item": "fanshuo-knife",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "chang": {
+        "parts": [
+          {
+            "item": "fanshuo-feather",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-pot",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      }
+    },
+    "current": {
+      "mang": {
+        "parts": [
+          {
+            "item": "fanshuo-knife",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-shaver",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "wen": {
+        "parts": [
+          {
+            "item": "fanshuo-roller",
+            "orient": "hug"
+          },
+          {
+            "item": "fanshuo-plate",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90"
+      },
+      "chang": {
+        "parts": [
+          {
+            "item": "fanshuo-chair",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-pot",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      }
+    }
+  }
 }
