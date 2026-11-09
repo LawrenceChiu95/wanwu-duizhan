@@ -1072,8 +1072,11 @@ async function main() {
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
   // The sim takes them first; one it turns down never shows up here, so the 好了 card waits for it (task #56 S2).
   // The address's build, once its photo items are in, if the player hasn't changed that side in the meantime.
-  function takeLate() {
+  // Its models come down first, so the swap shows whole: 开打 pressed meanwhile fights the build on screen (Elara 89e3686f).
+  async function takeLate() {
     const ready = b => b && b.parts.every(x => OFFER.includes(x.item));
+    if (phase !== 'build') return;
+    await loadModels([late.mine, late.foe].filter(ready).flatMap(b => b.parts.map(x => byId.get(x.item)))).catch(() => {});
     if (phase !== 'build') return;
     if (ready(late.mine) && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
     if (ready(late.foe) && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
