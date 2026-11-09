@@ -197,6 +197,8 @@ async function main() {
   });
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), __JUDGE__ ? null : shoot0]);
   const photoLater = __JUDGE__ && q.get('shoot') !== 'off'; // shootApi: the 评委版's photo items may still come in
+  // Anything not shipped in the catalog came from 拍一件: the result tip compares it with the opponent (Elara 365a2667).
+  const shipped = new Set(items.map(i => i.id));
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
   if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
@@ -778,7 +780,7 @@ async function main() {
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
-    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);

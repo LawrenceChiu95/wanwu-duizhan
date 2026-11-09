@@ -172,3 +172,37 @@ test('not won against 长臂猿 only encourages, pointing no way (Elara 803193e6
   s.presses = 0;
   assert.equal(tipLine(s, 1, 'chang'), '按冲朝它扑过去，它冲过来时按挡');
 });
+
+test('a lost photo lighter or graded below the opponent says to bring a heavier, harder one (Elara 365a2667)', async () => {
+  const shot = id => id === 'fanshuo-cup';
+  const chang = {parts: [{item: 'fanshuo-feather', orient: 'out'}, {item: 'fanshuo-chair', orient: 'hug'}]};
+  const lost = (mine, foe = chang, isShot = shot) => matchStats({events: [{type: 'dash', phase: 'end', side: 0, quality: 'full'}]},
+    [{parts: mine.map(item => ({item, orient: 'out'}))}, foe], isShot);
+  const s = lost(['fanshuo-cup', 'fanshuo-pot']);
+  assert.deepEqual(s.outmatched, {item: 'fanshuo-cup', foe: 'fanshuo-chair', by: 'mass'});
+  assert.equal(tipLine(s, 1, 'chang'), '你拍的金属杯比对面的椅子轻，换一件更重、更硬的再来');
+  assert.equal(tipLine(s, 1), tipLine(s, 1, 'chang'), 'any stage, not only the last');
+  // Not lost, or no photo in the build: the tips stay as they were.
+  assert.equal(tipLine(s, 0, 'chang'), tipLine(lost(['fanshuo-cup'], chang, () => false), 0, 'chang'));
+  assert.equal(tipLine(s, null, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  assert.equal(lost(['fanshuo-cup', 'fanshuo-pot'], chang, () => false).outmatched, null);
+  assert.equal(tipLine(lost(['fanshuo-cup'], chang, () => false), 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  // Not pressing anything still hears how to play first.
+  s.presses = 0;
+  assert.equal(tipLine(s, 1, 'chang'), '按冲朝它扑过去，它冲过来时按挡');
+  // Heavier but graded lower names the grades; as heavy and as good says nothing.
+  await withItems([
+    {id: 'heavy-c', name: '大石头', mass: 2, rating: {scores: {attack: 30, range: 30, durability: 40}}},
+    {id: 'heavy-s', name: '铁椅', mass: 2, rating: {scores: {attack: 90, range: 90, durability: 90}}},
+    {id: 'light-s', name: '刀', mass: .3, rating: {scores: {attack: 90, range: 90, durability: 90}}},
+    {id: 'shot-1', name: '我拍的拖鞋', mass: .16, rating: {scores: {attack: 5, range: 10, durability: 40}}}
+  ], ({matchStats: readStats, tipLine: readTip}) => {
+    const read = (mine, foe) => readStats({events: [{type: 'dash', phase: 'end', side: 0, quality: 'full'}]},
+      [{parts: [{item: mine, orient: 'out'}]}, {parts: foe.map(item => ({item, orient: 'out'}))}], () => true);
+    assert.equal(readTip(read('heavy-c', ['heavy-s']), 1), '你拍的大石头是 C 级，对面的铁椅是 S 级，换一件更重、更硬的再来');
+    assert.equal(readTip(read('heavy-c', ['light-s']), 1), '你拍的大石头是 C 级，对面的刀是 S 级，换一件更重、更硬的再来');
+    assert.equal(read('heavy-s', ['heavy-s', 'light-s']).outmatched, null);
+    assert.equal(read('light-s', ['heavy-c']).outmatched.by, 'mass');
+    assert.equal(readTip(read('shot-1', ['heavy-s']), 1), '你拍的拖鞋比对面的铁椅轻，换一件更重、更硬的再来');
+  });
+});

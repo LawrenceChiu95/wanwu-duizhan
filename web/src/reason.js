@@ -3,6 +3,8 @@ import {ratingOf} from './rating.js';
 // Short names from the catalog (the Lux3D tag is shown on its own); filled by setNames before the page draws anything.
 export const NAMES = {};
 const PREFERRED_ORIENT = {};
+const MASS = {}, GRADE = {};
+const GRADE_RANK = {S: 0, A: 1, B: 2, C: 3, D: 4};
 export function setNames(items) {
   for (const it of items) {
     if (typeof it.name !== 'string' || !it.name.trim()) throw Error(`物品 ${it.id} 在 catalog 里没有名字`);
@@ -10,6 +12,8 @@ export function setNames(items) {
     const scores = ratingOf(it)?.scores;
     const offense = scores && Math.max(scores.attack, scores.range);
     PREFERRED_ORIENT[it.id] = !scores || Math.abs(scores.durability - offense) <= 5 ? null : scores.durability > offense ? 'hug' : 'out';
+    MASS[it.id] = Number.isFinite(it.mass) ? it.mass : null;
+    GRADE[it.id] = ratingOf(it)?.grade ?? null;
   }
 }
 
@@ -51,10 +55,12 @@ export function endLine(replay) {
 }
 
 /** What the player did this match, from the replay's own events (the page never judges a hit itself). */
-export function matchStats(replay, defs) {
+/** `shot(id)`: whether the player photographed this item (拍一件), for `outmatched`. */
+export function matchStats(replay, defs, shot = () => false) {
   const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null],
     // Advice follows this item's scores, rather than its category or overall grade.
-    hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null};
+    hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null,
+    outmatched: outmatched(defs[0]?.parts.map(p => p.item).filter(shot) ?? [], defs[1]?.parts.map(p => p.item) ?? [])};
   for (const e of replay.events) {
     if (e.type === 'dash' && e.phase === 'end' && e.side === 0) {
       s.presses++;
@@ -71,6 +77,18 @@ export function matchStats(replay, defs) {
     }
   }
   return s;
+}
+
+// A photographed item lighter than the opponent's heaviest part, or graded below its best one (Elara 365a2667): what
+// the photo was up against, so the tip can name both. Unknown mass or grade compares as nothing.
+function outmatched(mine, foe) {
+  const heavy = foe.filter(id => MASS[id] != null).sort((a, b) => MASS[b] - MASS[a])[0];
+  const best = foe.filter(id => GRADE[id]).sort((a, b) => GRADE_RANK[GRADE[a]] - GRADE_RANK[GRADE[b]])[0];
+  for (const id of mine) {
+    if (heavy && MASS[id] != null && MASS[id] < MASS[heavy]) return {item: id, foe: heavy, by: 'mass'};
+    if (best && GRADE[id] && GRADE_RANK[GRADE[id]] > GRADE_RANK[GRADE[best]]) return {item: id, foe: best, by: 'grade'};
+  }
+  return null;
 }
 
 /** At most three numbers, the ones that most explain this result. */
@@ -95,6 +113,14 @@ export function tipLine(s, winner, foe = null) {
   const mine = s.firstBroken[0];
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
+  // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
+  const o = winner === 1 && s.outmatched;
+  if (o) {
+    // An item still named for what it was taken as (「我拍的拖鞋」) loses the 我拍的: the line says 你拍的 already.
+    const mine = (NAMES[o.item] ?? '那件').replace(/^我拍的/, ''), foe = NAMES[o.foe] ?? '那件';
+    return o.by === 'mass' ? `你拍的${mine}比对面的${foe}轻，换一件更重、更硬的再来`
+      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${GRADE[o.foe]} 级，换一件更重、更硬的再来`;
+  }
   if (FOE_TIP[foe]) return FOE_TIP[foe];
   if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;
   if (mine?.orient === 'out') {
