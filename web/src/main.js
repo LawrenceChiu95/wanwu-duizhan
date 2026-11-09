@@ -27,7 +27,7 @@ const el = {
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
-  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg')
+  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), bladeTag: $('bladeTag'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
@@ -1199,8 +1199,15 @@ async function main() {
   }));
   syncCam();
   function updatePad() {
-    if (!live || el.pad.hidden) return;
+    // The blade window (位置判攻, the player carrying a live blade): a gold ring on the recovering opponent, and the 冲 button
+    // edged gold while a lunge is ready to use it. Off whenever no counter could land, so it never promises one.
+    const blade = live && !live.done ? live.match.bladeWindow(0) : 0;
+    stage.bladeCue(1, blade, combatRules.bladeCounterWindow);
+    if (!live || el.pad.hidden) { el.dashBtn.classList.remove('blade'); el.bladeTag.hidden = true; return; }
     const c = live.match.control(0), M = rules.manual;
+    const lit = blade > 0 && c.dashIn <= 0 && !c.charging && !c.dashing;
+    el.dashBtn.classList.toggle('blade', lit);
+    if (el.bladeTag.hidden === lit) el.bladeTag.hidden = !lit;
     for (const [btn, left, total, on] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield]]) {
       const state = on ? 'on' : left > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
       btn.style.setProperty('--p', on ? 0 : (1 - left / total).toFixed(3));
@@ -1333,7 +1340,7 @@ async function main() {
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, blade: live && !live.done ? live.match.bladeWindow(0) : 0, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },

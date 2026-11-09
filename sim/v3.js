@@ -583,6 +583,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   press(side,action){if(!M||manual.sides[side]!=='input'||!ACTIONS.includes(action))throw Error('press needs a manual input side and dash | block');if(!done)queued[side].push(action);},
   /** Button state for a side: seconds until ready, and what it is doing now. */
   control(side){const k=fs[side].ctl,f=fs[side];return {dashIn:Math.max(0,k.dashReady-step)*r.dt,blockIn:Math.max(0,k.blockReady-step)*r.dt,charging:charging(f),dashing:dashing(f),shield:shielded(f)};},
+  /** Seconds left in which a full lunge by this side would be a blade counter (0 when it would not): the same recovery,
+   live blade and heavy-target conditions as the hit itself, so a cue on screen never promises a counter that cannot land. */
+  bladeWindow(side){if(bladeCounterWindow===undefined||!M||done)return 0;const me=fs[side],o=fs[1-side],left=bladeCounterWindow-(t-o.ctl.lastDashEnd);
+   return left>=0&&!shielded(o)&&!charging(o)&&!dashing(o)&&o.parts.some(p=>p.alive&&p.resistWeakHits)&&me.parts.some(p=>p.alive&&p.item.photoPhysics?.hasBladeOrPoint)?left:0;},
   advance,
   result(){if(!done)throw Error('match not finished');return result;},
   /** Abandon a match before its end (frees the physics world). */

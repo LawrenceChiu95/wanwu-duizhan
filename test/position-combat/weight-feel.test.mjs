@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {
- itemCombat, loadCatalog, loadV3Rules, simulateV3, tierDamage,
+ createV3Match, itemCombat, loadCatalog, loadV3Rules, simulateV3, tierDamage,
  JUDGE_POSITION_COMBAT_RULES, POSITION_COMBAT_RULES
 } from '../../sim/v3.js';
 
@@ -277,4 +277,27 @@ test('a blade counters a recovering heavy part on a full lunge unless it is bloc
  assert(!blocked.events.some(e=>e.bladeCounter!==undefined));
  assert.deepEqual(await run(candidate.meta.combatRules,candidate.meta.manual.inputs),candidate);
  await assert.rejects(run({...baselineRules,bladeCounterWindow:4}),/Invalid blade counter window/);
+});
+
+test('the on-screen blade window is open for the counter and never without a live blade or a heavy target',async()=>{
+ const {bladeCounterWindow}=JUDGE_POSITION_COMBAT_RULES;
+ const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
+ const inputs=[{step:26,side:1,action:'dash'},{step:33,side:0,action:'block'},{step:137,side:0,action:'dash'}];
+ const watch=async mine=>{
+  const fighters=[mine,'chair'].map(suffix=>({parts:[part(suffix,'e0','out'),part('cushion','e180','hug')]}));
+  const m=await createV3Match({fighters,seed:227007,mode:'B',combat:'position',combatRules:JUDGE_POSITION_COMBAT_RULES,manual:{sides:['input','input'],inputs}});
+  const seen=[];
+  while(!m.done){seen.push({t:m.t,mine:m.bladeWindow(0),theirs:m.bladeWindow(1)});m.advance();}
+  assert.equal(m.bladeWindow(0),0);
+  return {seen,result:m.result()};
+ };
+ const knife=await watch('knife');
+ const hit=knife.result.events.find(e=>e.bladeCounter!==undefined);
+ assert(hit);
+ const before=knife.seen.findLast(s=>s.t<hit.t);
+ assert(before.mine>0&&before.mine<=bladeCounterWindow);
+ assert(Math.abs(before.mine-(bladeCounterWindow-hit.bladeCounter)-(hit.t-before.t))<1e-9);
+ assert(knife.seen.every(s=>s.mine<=bladeCounterWindow&&s.theirs===0));
+ const pot=await watch('pot');
+ assert(pot.seen.every(s=>s.mine===0));
 });

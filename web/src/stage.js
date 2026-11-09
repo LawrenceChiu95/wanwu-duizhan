@@ -257,6 +257,24 @@ const meRingShader = {
       #include <colorspace_fragment>
     }`
 };
+// The opponent's recovery after its lunge while the player carries a live blade: a gold ring of notches round its sweep that
+// turns and runs down clockwise with the time left, so 「趁它回位撞上去」 has a moment you can see (Elara bd6f3c56).
+const bladeCueShader = {
+  vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity; uniform float uLeft; uniform float uTime; uniform float uPop;
+    void main(){
+      float r = length(vP), w = max(fwidth(r), 1e-5);
+      float band = smoothstep(0.80 - w, 0.80 + w, r) * (1.0 - smoothstep(0.96 - w, 0.96 + w, r));
+      float a = fract(atan(vP.x, vP.y) / 6.2831853 + 1.0);
+      float notch = step(0.14, fract(a * 10.0 - uTime * 0.6));
+      float left = 1.0 - smoothstep(uLeft - 0.006, uLeft, a);
+      float glow = (1.0 - smoothstep(0.0, 0.9, abs(r - 0.88) / 0.22)) * 0.35;
+      float alpha = (band * notch * left + glow * left + uPop * (1.0 - smoothstep(0.0, 0.06, abs(r - 0.88)))) * uOpacity;
+      if (alpha <= 0.0) discard;
+      gl_FragColor = vec4(mix(uColor, vec3(1.0), 0.12 * band * notch + 0.5 * uPop), min(1.0, alpha));
+      #include <colorspace_fragment>
+    }`
+};
 // Motion trail: a ribbon along the last few tenths of a second of the core's path, brightest at the head.
 const trailShader = {
   uniforms: {uColor: {value: new THREE.Color()}, uOpacity: {value: 0}},
@@ -731,6 +749,14 @@ export class Stage {
       return m;
     });
     this.scene.add(this.meRing);
+    this.bladeCues = TEAM.map(() => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({...bladeCueShader, uniforms: {uColor: {value: new THREE.Color('#ffc928')}, uOpacity: {value: 0}, uLeft: {value: 0}, uTime: {value: 0}, uPop: {value: 0}}, transparent: true, depthWrite: false}));
+      m.rotation.x = -Math.PI / 2;
+      m.renderOrder = 9;
+      m.visible = false;
+      this.scene.add(m);
+      return m;
+    });
     this.showMe = false;
     this.camStyle = 'new';
     this.chase = false;
@@ -935,6 +961,14 @@ export class Stage {
       this.streaks.add(at, f.act.dir, f.act.dir.clone().multiplyScalar(-2.5 - Math.random() * 2), 0.55 + Math.random() * 0.5, 0.035, 0.28 + Math.random() * 0.12, k % 3 ? TEAM[i] : WHITE);
     }
   }
+  /** The blade window on top `i`: `left` of `total` seconds remain (0: closed). Driven every frame by the page while it is open. */
+  bladeCue(i, left, total) {
+    const a = this.fighters[i]?.act;
+    if (!a) return;
+    const k = left > 0 && total > 0 ? Math.min(1, left / total) : 0;
+    if (k > 0 && !(a.cue > 0)) a.cueAge = 0;
+    a.cue = k;
+  }
   endLunge(i) { const f = this.fighters[i]; if (f) { f.act.dash = 0; f.act.aimOut = Math.max(f.act.aimOut ?? 0, 0.001); } }
   /**
    * The lunge's locked direction as an arrow on the floor, from the edge of the top's sweep where it stood at the press:
@@ -1001,7 +1035,7 @@ export class Stage {
     this.streaks.burst(point, Math.round(5 + 13 * power), 3 + 4 * power, 0.22 + 0.3 * power, 0.025 + 0.02 * power, 0.16 + 0.12 * power, colors);
     this.punch(point, 2 + 9 * power);
   }
-  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0, fizzle: 0, aimDir: null}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; }
+  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0, fizzle: 0, aimDir: null, cue: 0}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; for (const m of this.bladeCues) m.visible = false; }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
   shake(px) { const c = this.cam; if (this.chase || (c.shakeAge < SHAKE_TIME && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; }
   /** Camera punch: the picture jumps a few px toward the impact and settles back within PUNCH_TIME (translation only). */
@@ -1463,6 +1497,18 @@ export class Stage {
           mu.uTime.value = this.time;
         }
       } else aim.visible = false;
+      const cue = this.bladeCues[i];
+      cue.visible = a.cue > 0 && f.coreAlive;
+      if (cue.visible) {
+        a.cueAge += realDt;
+        cue.position.set(f.center.x, f.center.y - 0.03, f.center.z);
+        cue.scale.setScalar(f.sweep * 1.15 * (1 + 0.25 * Math.max(0, 1 - a.cueAge / 0.2)));
+        const u = cue.material.uniforms;
+        u.uLeft.value = a.cue;
+        u.uTime.value = this.time;
+        u.uPop.value = Math.max(0, 1 - a.cueAge / 0.2);
+        u.uOpacity.value = (0.8 + 0.2 * Math.sin(this.time * 14)) * (1 - f.dim);
+      }
       // Motion trail: always on for the player's top (orange), only while lunging or flung for the opponent.
       const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe;
       const op = f.dim > 0.5 ? 0 : hot ? 1 : mine ? 0.6 : 0;
