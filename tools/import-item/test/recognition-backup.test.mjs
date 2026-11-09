@@ -11,7 +11,11 @@ import {realGenerator} from '../shoot/real.mjs';
 import {fakeGenerator} from '../shoot/fake.mjs';
 import {openJobs} from '../shoot/jobs.mjs';
 const fixtures = JSON.parse(await fs.readFile(new URL('./fixtures/qwen-demo.json', import.meta.url)));
-const result = fixtures[4].expected;
+// Transport fixtures keep the captured demo text intact. The protocol stubs
+// provide the two fields the new request asks for.
+const currentReply = value => ({...value, hasBladeOrPoint: value.name === '菜刀', impactHardness: value.hardness});
+const result = currentReply(fixtures[4].expected);
+const sampleReply = '```json\n'+JSON.stringify(result)+'\n```';
 const image = await sharp({create:{width:32,height:24,channels:3,background:'#abcabc'}}).jpeg().toBuffer();
 const env={GEMINI_API_KEY:'PRIVATE-GOOGLE',AHOLO_API_KEY:'PRIVATE-AHOLO',SHOOT_RECOGNITION_BACKUP:'qwen',DASHSCOPE_API_KEY:'PRIVATE-QWEN',DASHSCOPE_BASE_URL:'https://test-workspace.cn-beijing.maas.aliyuncs.com/compatible-mode/v1'};
 const backup=qwenBackup(env);
@@ -26,9 +30,9 @@ test('backup is absent by default, requires explicit region-safe credentials, ne
  for(const patch of [{SHOOT_RECOGNITION_BACKUP:'on'},{DASHSCOPE_API_KEY:''},{DASHSCOPE_API_KEY:'key\nX: injected'},{DASHSCOPE_BASE_URL:'http://test.cn-beijing.maas.aliyuncs.com/compatible-mode/v1'},{DASHSCOPE_BASE_URL:'https://evil.example/compatible-mode/v1'},{DASHSCOPE_BASE_URL:env.DASHSCOPE_BASE_URL+'?key=secret'},{DASHSCOPE_BASE_URL:env.DASHSCOPE_BASE_URL.replace('beijing','hongkong')}])assert.throws(()=>qwenBackup({...env,...patch}));
  assert.doesNotThrow(()=>realGenerator({env:{GEMINI_API_KEY:'g',AHOLO_API_KEY:'a'}}));
 });
-test('all eight unchanged demo texts pass only after whole-fence removal and original field validation',()=>{
+test('all eight demo texts decode only after whole-fence removal',()=>{
  assert.equal(fixtures.length,8);
- for(const f of fixtures){assert.throws(()=>JSON.parse(f.text));assert.deepEqual(parseRecognition(JSON.parse(qwenText(f.text))),parseRecognition(f.expected));}
+ for(const f of fixtures){assert.throws(()=>JSON.parse(f.text));assert.deepEqual(JSON.parse(qwenText(f.text)),f.expected);assert.doesNotThrow(()=>parseRecognition(currentReply(f.expected)));}
 });
 test('default path retains three attempts, while normal primary success never calls backup',async()=>{
  let primary=0,secondary=0;await assert.rejects(recognizePhoto({...base,fetch:async()=>{primary++;return broken();},backupFetch:async()=>{secondary++;assert.fail();}}),{code:'recognition-network'});assert.equal(primary,3);assert.equal(secondary,0);
@@ -38,7 +42,7 @@ for(const problem of ['network',500,503,429])test(`primary ${problem} automatica
  const events=[],waits=[];let primary=0,secondary=0;
  const got=await recognizePhoto({...base,backup,diagnose:x=>events.push(x),pause:async ms=>waits.push(ms),fetch:async()=>{primary++;return problem==='network'?broken():new Response('PRIVATE BODY',{status:problem});},backupFetch:async(url,r)=>{
   secondary++;assert.equal(url,backup.url);assert.equal(r.headers.Authorization,'Bearer PRIVATE-QWEN');assert.equal(r.headers['x-goog-api-key'],undefined);assert.equal(r.redirect,'error');
-  const b=JSON.parse(r.body);assert.equal(b.model,'qwen3.5-omni-plus');assert.equal(b.max_tokens,1024);assert.deepEqual(b.modalities,['text']);assert.equal(b.stream,true);assert.equal(b.messages[0].content[0].text,recognitionPrompt+'\n必须包含且只包含这些字段，并遵守下述JSON schema：'+JSON.stringify(recognitionSchema));assert.match(b.messages[0].content[1].image_url.url,/^data:image\/jpeg;base64,/);return qwen(fixtures[4].text);
+  const b=JSON.parse(r.body);assert.equal(b.model,'qwen3.5-omni-plus');assert.equal(b.max_tokens,1024);assert.deepEqual(b.modalities,['text']);assert.equal(b.stream,true);assert.equal(b.messages[0].content[0].text,recognitionPrompt+'\n必须包含且只包含这些字段，并遵守下述JSON schema：'+JSON.stringify(recognitionSchema));assert.match(b.messages[0].content[1].image_url.url,/^data:image\/jpeg;base64,/);return qwen(sampleReply);
  }});
  assert.equal(got.name,result.name);assert.equal(primary,problem===429?1:2);assert.equal(secondary,1);assert.deepEqual(waits,problem===429?[]:[2000]);assert.equal(events.at(-1).provider,'qwen');assert.ok(!JSON.stringify(events).includes('PRIVATE'));
 });
@@ -48,7 +52,7 @@ for(const problem of [400,401,403,404,422,'invalid','unclear'])test(`primary ${p
 });
 test('an interrupted HTTP 401 body still fails as authentication and never switches',async()=>{
  const body=new ReadableStream({start(c){c.error(Error('private body error'));}});let fallback=0;
- await assert.rejects(recognizePhoto({...base,backup,fetch:async()=>new Response(body,{status:401}),backupFetch:async()=>{fallback++;return qwen(fixtures[4].text);}}),{code:'recognition-auth'});
+ await assert.rejects(recognizePhoto({...base,backup,fetch:async()=>new Response(body,{status:401}),backupFetch:async()=>{fallback++;return qwen(sampleReply);}}),{code:'recognition-auth'});
  assert.equal(fallback,0);
 });
 test('backup rejects prose, partial/truncated replies, extra fields and oversized bodies; no guessing',async()=>{
@@ -82,7 +86,7 @@ test('a backup outage leaves the original job retryable and one later generation
  let primaryCalls = 0, backupCalls = 0;
  const real = realGenerator({
   env, fetch: async () => { primaryCalls++; return broken(); }, pause: async () => {},
-  backupFetch: async () => ++backupCalls === 1 ? new Response('', {status: 403}) : qwen(fixtures[4].text)
+  backupFetch: async () => ++backupCalls === 1 ? new Response('', {status: 403}) : qwen(sampleReply)
  });
  fake.recognize = real.recognize;
  const jobs = await openJobs({directory, generator: fake, budget: {stage: 'isolated-backup', limit: 39}});

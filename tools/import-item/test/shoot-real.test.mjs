@@ -19,7 +19,7 @@ import {validateRuntimeItem} from '../../../sim/runtime-items.js';
 import {sha256} from '../mesh.mjs';
 import {recognizePhoto} from '../shoot/recognition.mjs';
 const env = {GEMINI_API_KEY: 'test-gemini-secret', AHOLO_API_KEY: 'test-aholo-secret'};
-const result = {clear: true, recognizable: true, name: '平底锅', materialName: '金属', hardness: 1.2, outwardEnd: 'wide', lengthCm: 42, massKg: 0.72, material: 'metal', condition: 'worn', basis: '可见锅沿，按常见锅估计尺寸，有磨损'};
+const result = {clear: true, recognizable: true, name: '平底锅', materialName: '金属', hardness: 1.2, hasBladeOrPoint: false, impactHardness: 1.2, outwardEnd: 'wide', lengthCm: 42, massKg: 0.72, material: 'metal', condition: 'worn', basis: '可见锅沿，按常见锅估计尺寸，有磨损'};
 const image = await sharp({create: {width: 32, height: 32, channels: 3, background: '#abcabc'}}).png().toBuffer();
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-real-test-'));
 const catalog = await readJson(path.join(REPO, 'data/catalog.json'));
@@ -120,7 +120,7 @@ test('retake real provider automatically starts after expiry and cannot then can
 });
 
 test('strict recognition bounds/enums/refusals do not silently substitute a high rating', () => {
- for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {name: ''}, {name: 'a'.repeat(41)}, {name: 'a\n'}, {materialName: ''}, {hardness: 0}, {hardness: 1.21}, {outwardEnd: 'left'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'recognition-invalid'});
+ for (const patch of [{clear: false}, {clear: 'true'}, {recognizable: false}, {name: ''}, {name: 'a'.repeat(41)}, {name: 'a\n'}, {materialName: ''}, {hardness: 0}, {hardness: 1.21}, {hasBladeOrPoint: 'true'}, {impactHardness: 1.21}, {outwardEnd: 'left'}, {material: 'glass'}, {condition: 'new'}, {inSix: 'yes'}, {lengthCm: 0}, {lengthCm: 301}, {massKg: 0}, {massKg: Infinity}, {massKg: '1'}, {basis: ''}, {basis: 'a\n'}, {basis: 'a'.repeat(161)}, {extra: 1}]) assert.throws(() => parseRecognition({...result, ...patch}), {code: 'recognition-invalid'});
  for (const condition of ['intact', 'worn', 'damaged', 'unknown']) assert.equal(parseRecognition({...result, condition}).condition, condition);
  assert.equal(parseRecognition({...result, lengthCm: 1, massKg: .001}).lengthMeters, .01);
  assert.equal(parseRecognition({...result, name: '保温杯', lengthCm: 300, massKg: 100}).name, '保温杯');
@@ -217,7 +217,7 @@ for (const options of [{visionReply: {status: 'failed', steps: []}}, {recognitio
 });
 
 for (const flags of [{clear: false, recognizable: true}, {clear: true, recognizable: false}]) test(`schema-compliant unclear photo does not guess a category or create paid Aholo work ${JSON.stringify(flags)}`, async t => {
- const recognition = {...flags, name: null, materialName: null, hardness: null, outwardEnd: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '无法辨认一个清楚的主要物品'};
+ const recognition = {...flags, name: null, materialName: null, hardness: null, hasBladeOrPoint: null, impactHardness: null, outwardEnd: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '无法辨认一个清楚的主要物品'};
  assert.deepEqual(Object.keys(recognition).sort(), [...recognitionSchema.required].sort());
  for (const [key, value] of Object.entries(recognition)) {
   const schema = recognitionSchema.properties[key], type = value === null ? 'null' : typeof value;
@@ -235,7 +235,7 @@ for (const name of ['保温杯', '雨伞', '鼠标', '玩具车', '书', '马克
  assert.equal((await finish(jobs, j.id)).status, 'succeeded');
  const [item] = await jobs.items(); validateRuntimeItem(item, catalog);
  assert.equal(item.name, name); assert.equal(item.category, name); assert.equal(item.tag, 'photo');
- assert.equal(item.templateId, undefined); assert.equal(item.materialName, '金属'); assert.equal(item.photoPhysics.hardness, 1.2);
+ assert.equal(item.templateId, undefined); assert.equal(item.materialName, '金属'); assert.deepEqual(item.photoPhysics, {hardness: 1.2, hasBladeOrPoint: false, impactHardness: 1.2});
  const length = Math.max(...item.bounds.max.map((v, i) => v - item.bounds.min[i]));
  assert.ok(Math.abs(length - Math.min(.8, lengthCm / 100)) < 1e-6);
  assert.ok(Math.abs(item.weakPoint.radius / length - .06) < 1e-6);
@@ -244,7 +244,7 @@ for (const name of ['保温杯', '雨伞', '鼠标', '玩具车', '书', '马克
 });
 
 for (const name of ['剪刀', '扫把', '台灯', '拖鞋', '枕头']) test(`recognized ${name} uses this piece's estimates instead of a category template`, async t => {
- const {jobs} = await open(t, {recognition: {...result, name, materialName: '柔软海绵', material: 'cloth', hardness: .1, condition: 'damaged', outwardEnd: 'unknown'}});
+ const {jobs} = await open(t, {recognition: {...result, name, materialName: '柔软海绵', material: 'cloth', hardness: .1, impactHardness: .1, condition: 'damaged', outwardEnd: 'unknown'}});
  const j = await jobs.create({photo: image, clientKey: 'identity-001'}); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
  const [item] = await jobs.items(); assert.equal(item.category, name); assert.equal(item.material, 'cloth'); assert.equal(item.condition, 'damaged'); assert.equal(item.photoPhysics.hardness, .1); validateRuntimeItem(item, catalog);
 });
@@ -651,7 +651,7 @@ test('recognition received during close is persisted and no next charged stage s
 });
 
 for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visionStatus: 429}, 'recognition-limit'],
- [{recognition: {clear: false, recognizable: false, name: null, materialName: null, hardness: null, outwardEnd: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '照片不清楚'}}, 'photo-unclear']])
+ [{recognition: {clear: false, recognizable: false, name: null, materialName: null, hardness: null, hasBladeOrPoint: null, impactHardness: null, outwardEnd: null, lengthCm: null, massKg: null, material: null, condition: null, basis: '照片不清楚'}}, 'photo-unclear']])
  test(`recognition failure ${code} received during close survives restart without another call`, {timeout: 5000}, async () => {
   const directory = await dir(), g = gateway(options); let release, receiving = false;
   const request = async (url, options) => {

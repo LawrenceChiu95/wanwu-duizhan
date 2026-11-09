@@ -13,7 +13,7 @@ import {openJobs} from '../shoot/jobs.mjs';
 import {fakeGenerator} from '../shoot/fake.mjs';
 
 const photo = await sharp({create: {width: 1600, height: 1200, channels: 3, background: '#abcabc'}}).jpeg().toBuffer();
-const result = {clear: true, recognizable: true, name: '保温杯', materialName: '金属', material: 'metal', hardness: 1.2, lengthCm: 20, massKg: .3, condition: 'intact', outwardEnd: 'wide', basis: '杯身按常见尺寸估计'};
+const result = {clear: true, recognizable: true, name: '保温杯', materialName: '金属', material: 'metal', hardness: 1.2, hasBladeOrPoint: false, impactHardness: 1.2, lengthCm: 20, massKg: .3, condition: 'intact', outwardEnd: 'wide', basis: '杯身按常见尺寸估计'};
 const reply = () => Response.json({status: 'completed', steps: [{type: 'model_output', content: [{type: 'text', text: JSON.stringify(result)}]}]});
 const dir = () => fs.mkdtemp(path.join(os.tmpdir(), 'recognition-recovery-'));
 const budget = {stage: 'recovery', limit: 39};

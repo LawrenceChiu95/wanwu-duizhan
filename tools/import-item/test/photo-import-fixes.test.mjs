@@ -7,7 +7,7 @@ import {photoPrompt} from '../shoot/prompt.mjs';
 import {prepareMesh} from '../mesh.mjs';
 // Recognition now preprocesses real pixels; the old literal 'fixture' never reached HTTP.
 const photo = await sharp({create:{width:32,height:24,channels:3,background:'#abcabc'}}).jpeg().toBuffer();
-const recognized = {clear:true, recognizable:true, name:'仙人掌', materialName:'植物', material:'wood', hardness:.5, lengthCm:35, massKg:1.2, condition:'intact', outwardEnd:'wide', basis:'植物在花盆中'};
+const recognized = {clear:true, recognizable:true, name:'仙人掌', materialName:'植物', material:'wood', hardness:.5, hasBladeOrPoint:false, impactHardness:.5, lengthCm:35, massKg:1.2, condition:'intact', outwardEnd:'wide', basis:'植物在花盆中'};
 const response = () => Response.json({status:'completed',steps:[{type:'model_output',content:[{type:'text',text:JSON.stringify(recognized)}]}]});
 for (const transient of ['network', 503, 502]) test(`recognition retries ${transient} before success and calls Gemini only`, async () => {
   const waits=[],urls=[];

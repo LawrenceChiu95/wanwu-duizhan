@@ -49,3 +49,25 @@ test('condition alone changes attack and durability, never range',()=>{
  assert.deepEqual([intact.durability,worn.durability,damaged.durability],[95,85,47]);
  assert.equal(worn.range,intact.range);assert.equal(damaged.range,intact.range);
 });
+
+test('photo contact scores weigh heavy coated objects, sharp edges, soft materials and fragility',()=>{
+ const rate=(mass,material,materialName,hardness,impactHardness,hasBladeOrPoint=false)=>{
+  const item={id:'photo',bounds:{min:[0,0,0],max:[.25,.1,.08]},mass,material,materialName,condition:'intact',
+   photoPhysics:{hardness,impactHardness,hasBladeOrPoint}};
+  return rateItem(item,catalog.materials);
+ };
+ const coated=rate(2,'rubber','橡胶',.45,.45);
+ assert.equal(coated.grade,'A');
+ assert.equal(coated.letters.durability,'S');
+ const solid=rate(2,'metal','金属',1.2,1.2);
+ const pillow=rate(2,'cloth','织物',.15,.15);
+ assert.ok(pillow.scores.attack<solid.scores.attack);
+ assert.equal(pillow.letters.durability,'B');
+ const mug=rate(.4,'metal','陶瓷',.9,.9);
+ assert.equal(mug.letters.durability,'C');
+ assert.equal(rate(.4,'metal','金属',.9,.9).letters.durability,'B');
+ const blade=rate(.25,'metal','不锈钢',1.2,1.2,true);
+ assert.equal(blade.letters.attack,'B');
+ assert.ok(blade.scores.durability<60);
+ assert.ok(blade.scores.attack>rate(.25,'metal','不锈钢',1.2,1.2).scores.attack);
+});
