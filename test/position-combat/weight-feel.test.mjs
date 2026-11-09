@@ -217,8 +217,8 @@ test('candidate pacing adjustment applies only to automatic B and is reproducibl
  assert.deepEqual(await run('B',candidate.meta.combatRules),candidate);
 });
 
-test('a disarmed top takes more damage only while the opponent retains its lead',async()=>{
- const {bareCoreReceive,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
+test('a disarmed top takes more damage while the opponent keeps both attachments',async()=>{
+ const {bareCoreReceive,bareCoreByPartsOnly,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
  const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
  const fighters=[
   {parts:[part('pot','e0','out'),part('cushion','e180','hug')]},
@@ -233,7 +233,7 @@ test('a disarmed top takes more damage only while the opponent retains its lead'
   aiProfiles:[null,{...foes[2].ai,...judgeBuilds.position.chang.ai}]};
  const params={fighters,seed:7007,combat:'position',manual};
  const baseline=await simulateV3({...params,combatRules:baselineRules});
- const combatRules={...baselineRules,bareCoreReceive};
+ const combatRules={...baselineRules,bareCoreReceive,bareCoreByPartsOnly};
  const candidate=await simulateV3({...params,combatRules});
  const disarmed=candidate.events.filter(e=>e.type==='break'&&e.target===0).at(-1);
  assert(disarmed);
@@ -245,4 +245,20 @@ test('a disarmed top takes more damage only while the opponent retains its lead'
  assert(candidate.meta.duration-disarmed.t<=8);
  assert.deepEqual(await simulateV3({...params,manual:candidate.meta.manual,combatRules:candidate.meta.combatRules}),candidate);
  await assert.rejects(simulateV3({...params,combatRules:{...combatRules,bareCoreReceive:3}}),/Bare core damage/);
+
+ // In Wren's recorded 2664 match the bare side countered below the old 75% gate.
+ const counterInputs=[
+  ...[56,604,1155,1696,2242,2791,3354,3902,4455].map(step=>({step,side:0,action:'dash'})),
+  ...[47,1200,3705].map(step=>({step,side:0,action:'block'}))
+ ].sort((a,b)=>a.step-b.step);
+ const counterParams={...params,seed:2664,manual:{...manual,aiSeeds:[608133344,3084999434],inputs:counterInputs}};
+ const old=await simulateV3({...counterParams,combatRules:{...baselineRules,bareCoreReceive:2.2}});
+ const revised=await simulateV3({...counterParams,combatRules});
+ const counter=revised.events.find(e=>e.attacker===0&&e.targetPart==='core'&&e.t>26&&e.damage===60);
+ assert(counter&&counter.hpAfter<revised.meta.initial[1].maxHp*.75);
+ assert(revised.events.some(e=>e.t>counter.t&&e.target===0&&e.bareCoreReceive===bareCoreReceive));
+ assert(!old.events.some(e=>e.t>counter.t&&e.bareCoreReceive!==undefined));
+ const lastBreak=revised.events.filter(e=>e.type==='break'&&e.target===0).at(-1);
+ assert(revised.meta.duration-lastBreak.t<=8);
+ assert.equal(revised.meta.winner,old.meta.winner);
 });

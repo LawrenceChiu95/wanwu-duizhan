@@ -29,7 +29,8 @@ export const POSITION_COMBAT_RULES=Object.freeze({
 // Explicitly selected only by the judge candidate. Replays store the full tuning in combatRules.
 export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
  ...POSITION_COMBAT_RULES,
- bareCoreReceive:2.2,
+ bareCoreReceive:2.5,
+ bareCoreByPartsOnly:true,
  coreMassImpact:1.5,
  coreFinishMultiplier:1.55,
  autoBDamageScale:.8,
@@ -485,7 +486,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      // Accelerate a decisive one-sided finish while leaving even or partly disarmed fights alone.
      const targetBare=bareCoreReceive!==undefined&&tp.mount==='core'&&fs[target].parts.length>0&&fs[target].parts.every(p=>!p.alive);
      const opponent=fs[attacker];
-     const exposedCore=targetBare&&opponent.parts.length===2&&opponent.parts.every(p=>p.alive)&&opponent.core.hp>=opponent.core.maxHp*.75;
+     // Replays saved before the new preset still use the original core HP gate.
+     const exposedCore=targetBare&&opponent.parts.length===2&&opponent.parts.every(p=>p.alive)&&
+      (position.bareCoreByPartsOnly===true||opponent.core.hp>=opponent.core.maxHp*.75);
      const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
       coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:exposedCore?Math.min(1,fs[target].coreStats.defense):fs[target].coreStats.defense}:undefined});
      // Broad heavy attachments resist weaker hits without gaining starting HP.
