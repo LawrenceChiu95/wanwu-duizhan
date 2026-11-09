@@ -206,3 +206,21 @@ test('a lost photo lighter or graded below the opponent says to bring a heavier,
     assert.equal(readTip(read('shot-1', ['heavy-s']), 1), '你拍的拖鞋比对面的铁椅轻，换一件更重、更硬的再来');
   });
 });
+
+test('loss advice compares current catalog grades after photo ratings change', () => {
+  const loss = (photo, foe) => {
+    const replay = {events: [{type: 'dash', phase: 'end', side: 0, quality: 'full'}]};
+    return matchStats(replay, [{parts: [{item: photo, orient: 'out'}]}, {parts: [{item: foe, orient: 'out'}]}],
+      id => id === photo);
+  };
+
+  // The heavier cushion fell to C and the knife rose to B with the photo formula.
+  const cushion = loss('fanshuo-cushion', 'fanshuo-knife');
+  assert.deepEqual(cushion.outmatched, {item: 'fanshuo-cushion', foe: 'fanshuo-knife', by: 'grade'});
+  assert.equal(tipLine(cushion, 1), '你拍的抱枕是 C 级，对面的刀是 B 级，换一件更硬、或者带刃的再来');
+
+  // Using the old unweighted average would incorrectly put the mouse below the cup.
+  const mouse = loss('fanshuo-mouse', 'fanshuo-cup');
+  assert.equal(mouse.outmatched, null);
+  assert.equal(tipLine(mouse, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+});
