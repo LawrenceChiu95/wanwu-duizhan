@@ -29,6 +29,7 @@ export const POSITION_COMBAT_RULES=Object.freeze({
 // Explicitly selected only by the judge candidate. Replays store the full tuning in combatRules.
 export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
  ...POSITION_COMBAT_RULES,
+ coreMassImpact:1.5,
  weightFeel:Object.freeze({
   slenderMinLength:.30,slenderMinRatio:2.5,lightMass:1.05,heavyMass:3.10,
   dashLoss:.28,recenterLoss:.48,recenterBoost:.85
@@ -173,7 +174,7 @@ export function partRecoilFactor(part,rules){
 function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.angular,sub(point,f.before.center)));}
 function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
-export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules}){
+export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules,coreMasses}){
  const attack=itemCombat(attacker,r,positionRules),defend=itemCombat(target,r,positionRules);
  // Hardness rewards the striker; a soft target no longer raises the damage tier just for being soft.
  const hardness=Math.sqrt(itemHardness(attacker,materials)/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
@@ -181,8 +182,18 @@ export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak
  const tier=r.tierThresholds[mode].filter(threshold=>score>=threshold).length;
  // Per-object power and mounting trade-off apply before the existing per-hit cap.
  const attackMultiplier=r.top?.orientPower?.[attackerOrient]??1,receiveMultiplier=(r.top?.orientReceive?.[targetOrient]??1)*(targetOrient==='hug'?(r.top.softHugReceive[target.material]??1):1);
- const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
- return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
+ // Core attack and defence are identical before assembly weight is considered.
+ const strength=positionRules?.coreMassImpact;
+ const weightedCore=strength>0&&attacker.id==='__core'&&target.id==='__core'&&coreMasses;
+ let massImpact=1;
+ if(weightedCore){
+  const [from,to]=coreMasses;
+  // Limit the advantage when a heavy top meets a nearly bare core.
+  const advantage=Math.min(3,1+strength*(Math.max(from,to)/Math.min(from,to)-1));
+  massImpact=from>=to?advantage:1/advantage;
+ }
+ const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier*massImpact,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
+ return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
 // Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.
@@ -272,6 +283,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(position?.capHp!==undefined&&(!Number.isFinite(position.capHp)||position.capHp<=0))throw Error('capHp must be positive and finite');
  if(position?.roleMode!==undefined&&!['radius','inward','reach'].includes(position.roleMode))throw Error('Unknown position role mode');
  if(position?.roleMode==='inward'&&(!Number.isFinite(position.inwardWindow)||position.inwardWindow<=0||!Number.isFinite(position.inwardTolerance)||position.inwardTolerance<0))throw Error('Inward role rules require a positive window and non-negative tolerance');
+ const coreMassImpact=position?.coreMassImpact;
+ if(coreMassImpact!==undefined&&(!Number.isFinite(coreMassImpact)||coreMassImpact<0))throw Error('coreMassImpact must be finite and non-negative');
  const weightFeel=position?.weightFeel;
  if(weightFeel!==undefined&&(!weightFeel||
   !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||
@@ -417,7 +430,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     for(const [attacker,target,ap,tp,tpnt] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
      const role=roles.clash||attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
      const weakTouch=weakContact(tp,tpnt),roll=role==='attack'&&weakTouch?critRoll():null,weak=roll!==null&&weakCritical({contact:true,roll,chance:r.weakCritChance});
-     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position});
+     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined});
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
      const damage=Math.min(tp.hp,d.damage);

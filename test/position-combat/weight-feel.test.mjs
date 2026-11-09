@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
- itemCombat, loadCatalog, loadV3Rules, simulateV3,
+ itemCombat, loadCatalog, loadV3Rules, simulateV3, tierDamage,
  JUDGE_POSITION_COMBAT_RULES, POSITION_COMBAT_RULES
 } from '../../sim/v3.js';
+
+import {loadRules as loadCatalogRules} from '../../sim/index.js';
 
 const gear=id=>({parts:[{item:'fanshuo-'+id,orient:'out',mount:'e0'}]});
 const scenario={fighters:[gear('chair'),gear('mouse')],seed:984000,
@@ -59,4 +61,42 @@ test('invalid weight feel settings fail before simulation',async()=>{
   combatRules.weightFeel[field]=1;
   await assert.rejects(simulateV3({...scenario,combat:'position',combatRules}),/Invalid position weight feel/);
  }
+});
+
+test('assembly weight changes only core-on-core damage, before the existing cap',async()=>{
+ const rules=await loadV3Rules(),{materials,matchups,items}=await loadCatalogRules();
+ const core={id:'__core',tag:'core',material:rules.core.material};
+ const knife=items.find(item=>item.id==='fanshuo-knife');
+ const hit={mode:'B',impulse:2,attacker:core,target:core,materials,matchups,maxHp:rules.core.hp,rules};
+ const base=tierDamage(hit);
+ const positionRules={...JUDGE_POSITION_COMBAT_RULES,coreMassImpact:1.5};
+ const weighted=(from,to,overrides={})=>tierDamage({...hit,positionRules,coreMasses:[from,to],...overrides});
+ const equal=weighted(1,1);
+ assert.equal(equal.massImpact,1);
+ assert.equal(equal.damage,base.damage);
+ assert.equal(weighted(2,1).massImpact,2.5);
+ assert.equal(weighted(1,2).massImpact,.4);
+ assert(weighted(1,2).damage<base.damage);
+ assert(weighted(2,1,{ramp:.5}).damage>tierDamage({...hit,ramp:.5}).damage);
+ assert.equal(weighted(2,1,{ramp:100}).damage,base.damageCap);
+ for(const overrides of [{attacker:knife},{target:knife},{attacker:knife,target:knife}]){
+  assert.deepEqual(weighted(2,1,overrides),tierDamage({...hit,positionRules:JUDGE_POSITION_COMBAT_RULES,...overrides}));
+ }
+});
+
+test('weight damage uses the live masses and resimulates with the frozen combat rules',async()=>{
+ const combatRules={...JUDGE_POSITION_COMBAT_RULES,coreMassImpact:1.5};
+ const result=await simulateV3({...scenario,mode:'B',combat:'position',combatRules});
+ assert(result.events.some(e=>e.massImpact>1&&e.masses[e.attacker]>e.masses[e.target]));
+ assert(result.events.some(e=>e.massImpact<1&&e.masses[e.attacker]<e.masses[e.target]));
+ for(const event of result.events.filter(e=>e.massImpact!==undefined)){
+  assert.equal(event.part,'core');
+  assert.equal(event.targetPart,'core');
+  const from=event.masses[event.attacker],to=event.masses[event.target];
+  const factor=Math.min(3,1+1.5*(Math.max(from,to)/Math.min(from,to)-1));
+  assert.equal(event.massImpact,from>=to?factor:1/factor);
+ }
+ const {combat,combatRules:saved,manual}=result.meta;
+ assert.deepEqual(await simulateV3({...scenario,mode:'B',combat,combatRules:saved,manual}),result);
+ await assert.rejects(simulateV3({...scenario,combat:'position',combatRules:{...combatRules,coreMassImpact:-1}}),/coreMassImpact/);
 });
