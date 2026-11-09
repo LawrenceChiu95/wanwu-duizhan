@@ -26,6 +26,14 @@ export const POSITION_COMBAT_RULES=Object.freeze({
  rangeAttack:.4,rangeHp:.8,capHp:60.800000000000004,
  roleMode:'inward',inwardWindow:.15,inwardTolerance:.1
 });
+// Explicitly selected only by the judge candidate. Replays store the full tuning in combatRules.
+export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
+ ...POSITION_COMBAT_RULES,
+ weightFeel:Object.freeze({
+  slenderMinLength:.30,slenderMinRatio:2.5,lightMass:1.05,heavyMass:3.10,
+  dashLoss:.20,recenterLoss:.35
+ })
+});
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
  return structuredClone(await rulesPromise);
@@ -99,7 +107,14 @@ export function itemCombat(item,r,positionRules){
  if(item.id==='__core')return {hp:r.core.hp,power:1,attack:r.core.attack,defense:r.core.defense};
  const scores=ratingScores(item);
  if(!scores)throw Error(`物品“${item.name??item.id}”（${item.id}）缺评分或评分无效：攻击、范围、耐久必须都是0–100的有限数字`);
- const {attack,durability,range}=scores,k=r.top.itemStats,q=range/100-.5;
+ const {attack,durability,range}=scores,k=r.top.itemStats;
+ let q=range/100-.5;
+ const weightFeel=positionRules?.weightFeel;
+ if(weightFeel){
+  const {long,mid,ext}=itemAxes(item),length=ext[long];
+  const slender=length>=weightFeel.slenderMinLength&&length>=ext[mid]*weightFeel.slenderMinRatio;
+  q=slender?Math.min(.5,length/1.6):0;
+ }
  const power=positionRules?1+positionRules.rangeAttack*q:1,hp=positionRules?1-positionRules.rangeHp*q:1;
  return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability)*hp,power:(k.powerBase+k.powerScale*attack)*power,attack:(k.attackBase+k.attackScale*attack)*power,defense:k.defenseBase+k.defenseScale*durability};
 }
@@ -257,6 +272,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(position?.capHp!==undefined&&(!Number.isFinite(position.capHp)||position.capHp<=0))throw Error('capHp must be positive and finite');
  if(position?.roleMode!==undefined&&!['radius','inward','reach'].includes(position.roleMode))throw Error('Unknown position role mode');
  if(position?.roleMode==='inward'&&(!Number.isFinite(position.inwardWindow)||position.inwardWindow<=0||!Number.isFinite(position.inwardTolerance)||position.inwardTolerance<0))throw Error('Inward role rules require a positive window and non-negative tolerance');
+ const weightFeel=position?.weightFeel;
+ if(weightFeel!==undefined&&(!weightFeel||
+  !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||
+  weightFeel.slenderMinLength<=0||weightFeel.slenderMinRatio<=1||weightFeel.lightMass<=0||
+  weightFeel.heavyMass<=weightFeel.lightMass||weightFeel.dashLoss<0||weightFeel.dashLoss>=1||
+  weightFeel.recenterLoss<0||weightFeel.recenterLoss>=1))throw Error('Invalid position weight feel');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
@@ -265,6 +286,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
+ // Match the original opening, even when the first contact comes from a dash.
+ const weightLoad=f=>weightFeel&&lastRecoil!==-Infinity
+  ?Math.max(0,Math.min(1,(f.mass-weightFeel.lightMass)/(weightFeel.heavyMass-weightFeel.lightMass))):0;
  try{
  buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position));
  extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
@@ -320,7 +344,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   for(let i=0;i<2;i++){
    for(const {action,decisionStep}of wants[i])tryPress(i,action,manual.sides[i],decisionStep);
   }
-  fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*M.dashSpeed,v[1],dir[2]*M.dashSpeed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
+  fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());
+    const speed=M.dashSpeed*(1-weightLoad(f)*(weightFeel?.dashLoss??0));
+    f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*speed,v[1],dir[2]*speed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
    else if(f.ctl.dashUntil===step-1)events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:f.ctl.dashPressStep});});
  }
  function advance(){
@@ -333,15 +359,17 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
    // bleed off velocity across the line between them so the pair cannot orbit without touching.
    const across=sub(v,scale(n,dot(v,n)));
-   let acceleration=add(scale(p,-motion.attraction),scale(n,motion.thrust*pursuit));
+   const load=weightLoad(f),dashScale=1-load*(weightFeel?.dashLoss??0);
+   const attraction=motion.attraction*(1-load*(weightFeel?.recenterLoss??0));
+   let acceleration=add(scale(p,-attraction),scale(n,motion.thrust*pursuit));
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
    if(M&&charging(f))acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
-   else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
+   else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust*dashScale),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
    f.body.resetForces(true);f.body.addForce(vec(scale(acceleration,f.mass)),true);f.body.resetTorques(true);
    driveSpin(f,r);
-   const limit=M&&dashing(f)?M.dashSpeedLimit:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
+   const limit=M&&dashing(f)?M.dashSpeedLimit*dashScale:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
    f.before={velocity:arr(f.body.linvel()),angular:arr(f.body.angvel()),center:arr(f.body.worldCom()),core:arr(f.body.translation())};
   });
   world.step();
