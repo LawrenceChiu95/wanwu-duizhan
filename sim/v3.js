@@ -29,6 +29,7 @@ export const POSITION_COMBAT_RULES=Object.freeze({
 // Explicitly selected only by the judge candidate. Replays store the full tuning in combatRules.
 export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
  ...POSITION_COMBAT_RULES,
+ bareCoreReceive:2.2,
  coreMassImpact:1.5,
  coreFinishMultiplier:1.55,
  autoBDamageScale:.8,
@@ -330,6 +331,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   !['mainShare','attackGain','durabilityGain'].every(k=>Number.isFinite(coreLoadout[k]))||
   coreLoadout.mainShare<=.5||coreLoadout.mainShare>1||coreLoadout.attackGain<=0||coreLoadout.attackGain>4||coreLoadout.durabilityGain<=0||coreLoadout.durabilityGain>4))
   throw Error('Invalid position core loadout');
+ const bareCoreReceive=position?.bareCoreReceive;
+ if(bareCoreReceive!==undefined&&(!coreLoadout||!Number.isFinite(bareCoreReceive)||bareCoreReceive<1||bareCoreReceive>2.5))
+  throw Error('Bare core damage requires core loadout and a multiplier in [1, 2.5]');
  const weightFeel=position?.weightFeel;
  if(weightFeel!==undefined&&(!weightFeel||
   !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||
@@ -478,8 +482,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     for(const [attacker,target,ap,tp,tpnt] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
      const role=roles.clash||attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
      const weakTouch=weakContact(tp,tpnt),roll=role==='attack'&&weakTouch?critRoll():null,weak=roll!==null&&weakCritical({contact:true,roll,chance:r.weakCritChance});
+     // Accelerate a decisive one-sided finish while leaving even or partly disarmed fights alone.
+     const targetBare=bareCoreReceive!==undefined&&tp.mount==='core'&&fs[target].parts.length>0&&fs[target].parts.every(p=>!p.alive);
+     const opponent=fs[attacker];
+     const exposedCore=targetBare&&opponent.parts.length===2&&opponent.parts.every(p=>p.alive)&&opponent.core.hp>=opponent.core.maxHp*.75;
      const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
-      coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:fs[target].coreStats.defense}:undefined});
+      coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:exposedCore?Math.min(1,fs[target].coreStats.defense):fs[target].coreStats.defense}:undefined});
      // Broad heavy attachments resist weaker hits without gaining starting HP.
      if(tp.resistWeakHits){
       const attackScore=ap.mount==='core'?fs[attacker].coreStats.attackScore:ratingScores(ap.item).attack;
@@ -493,6 +501,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      if(tp.mount==='core'&&coreFinishMultiplier!==undefined){
       const finish=damageRamp(t,[[34,1],[42,coreFinishMultiplier]]);
       d.damage*=finish;d.damageCap*=finish;
+     }
+     if(exposedCore){
+      d.bareCoreReceive=bareCoreReceive;
+      d.damageCap=Math.min(d.damageCap*bareCoreReceive,tp.maxHp*.8);
+      d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
      }
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}

@@ -89,7 +89,7 @@ test('assembly weight changes only core-on-core damage, before the existing cap'
 });
 
 test('weight damage uses the live masses and resimulates with the frozen combat rules',async()=>{
- const {coreLoadout,coreFinishMultiplier,broadHeavyResistance,...combatRules}=JUDGE_POSITION_COMBAT_RULES;
+ const {coreLoadout,coreFinishMultiplier,broadHeavyResistance,bareCoreReceive,...combatRules}=JUDGE_POSITION_COMBAT_RULES;
  const matchup={...scenario,fighters:[gear('chair'),gear('knife')]};
  const result=await simulateV3({...matchup,mode:'B',combat:'position',combatRules});
  assert(result.events.some(e=>e.massImpact>1&&e.masses[e.attacker]>e.masses[e.target]));
@@ -215,4 +215,34 @@ test('candidate pacing adjustment applies only to automatic B and is reproducibl
  assert.equal(candidate.meta.rules.damageScale.B,baseline.meta.rules.damageScale.B*autoBDamageScale);
  assert.notDeepEqual(candidate.events,baseline.events);
  assert.deepEqual(await run('B',candidate.meta.combatRules),candidate);
+});
+
+test('a disarmed top takes more damage only while the opponent retains its lead',async()=>{
+ const {bareCoreReceive,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
+ const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
+ const fighters=[
+  {parts:[part('pot','e0','out'),part('cushion','e180','hug')]},
+  {parts:[part('feather','e0','out'),part('chair','e90','hug')]}
+ ];
+ const {foes,judgeBuilds}=JSON.parse(await readFile(new URL('../../data/foes.json',import.meta.url),'utf8'));
+ const dashSteps=[56,598,1148,1692,2238,2782,3332,3872,4417];
+ const blockSteps=[1234,2539,3638,4255];
+ const inputs=[...dashSteps.map(step=>({step,side:0,action:'dash'})),
+  ...blockSteps.map(step=>({step,side:0,action:'block'}))].sort((a,b)=>a.step-b.step);
+ const manual={sides:['input','ai'],blockTime:.25,aiSeeds:[608137687,3084995133],inputs,
+  aiProfiles:[null,{...foes[2].ai,...judgeBuilds.position.chang.ai}]};
+ const params={fighters,seed:7007,combat:'position',manual};
+ const baseline=await simulateV3({...params,combatRules:baselineRules});
+ const combatRules={...baselineRules,bareCoreReceive};
+ const candidate=await simulateV3({...params,combatRules});
+ const disarmed=candidate.events.filter(e=>e.type==='break'&&e.target===0).at(-1);
+ assert(disarmed);
+ assert.deepEqual(candidate.events.filter(e=>e.t<=disarmed.t),baseline.events.filter(e=>e.t<=disarmed.t));
+ const hits=candidate.events.filter(e=>e.bareCoreReceive!==undefined);
+ assert(hits.some(e=>e.shield));
+ assert(hits.every(e=>e.t>disarmed.t&&e.target===0&&e.targetPart==='core'));
+ assert.equal(candidate.meta.winner,baseline.meta.winner);
+ assert(candidate.meta.duration-disarmed.t<=8);
+ assert.deepEqual(await simulateV3({...params,manual:candidate.meta.manual,combatRules:candidate.meta.combatRules}),candidate);
+ await assert.rejects(simulateV3({...params,combatRules:{...combatRules,bareCoreReceive:3}}),/Bare core damage/);
 });
