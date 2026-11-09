@@ -3868,7 +3868,7 @@
       },
       "material": "plastic",
       "condition": "intact",
-      "mass": 2.5,
+      "mass": 2,
       "massBasis": "photo-estimate",
       "standardLongSide": 0.8,
       "hull": [
@@ -4078,14 +4078,14 @@
         }
       },
       "rating": {
-        "version": "rating-v1:63-100-100:75-60-45-30-0",
+        "version": "rating-v1:57-100-100:75-60-45-30-0",
         "scores": {
-          "attack": 63,
+          "attack": 57,
           "range": 100,
           "durability": 100
         },
         "letters": {
-          "attack": "A",
+          "attack": "B",
           "range": "S",
           "durability": "S"
         },
