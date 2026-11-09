@@ -247,14 +247,16 @@ test('a disarmed top takes more damage only while the opponent retains its lead'
  await assert.rejects(simulateV3({...params,combatRules:{...combatRules,bareCoreReceive:3}}),/Bare core damage/);
 });
 
-test('a blade counters a recovering heavy part on a full lunge unless it is blocked',async()=>{
+test('only a blade making contact counters a recovering heavy part on an unblocked full lunge',async()=>{
  const {bladeCounterWindow,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
  const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
- const fighters=['knife','chair'].map(suffix=>({parts:[part(suffix,'e0','out'),part('cushion','e180','hug')]}));
+ const fighters=['chair','knife'].map(suffix=>({parts:[part(suffix,'e0','out'),part('cushion','e180','hug')]}));
  const inputs=[
-  {step:26,side:1,action:'dash'},
-  {step:33,side:0,action:'block'},
-  {step:137,side:0,action:'dash'}
+  {step:26,side:0,action:'dash'},
+  {step:33,side:1,action:'block'},
+  {step:137,side:1,action:'dash'},
+  {step:601,side:0,action:'dash'},
+  {step:689,side:1,action:'dash'}
  ];
  const params={fighters,seed:227007,mode:'B',combat:'position'};
  const run=(combatRules,steps=inputs)=>simulateV3({
@@ -264,16 +266,20 @@ test('a blade counters a recovering heavy part on a full lunge unless it is bloc
  const candidate=await run(JUDGE_POSITION_COMBAT_RULES);
  const hit=candidate.events.find(e=>e.bladeCounter!==undefined);
  assert(hit?.dash);
+ assert.equal(hit.item,'fanshuo-knife');
  assert.equal(hit.targetItem,'fanshuo-chair');
  assert(!hit.shield);
  assert(hit.bladeCounter>0&&hit.bladeCounter<=bladeCounterWindow);
  const prior=baseline.events.find(e=>e.t===hit.t&&e.target===hit.target&&e.targetPart===hit.targetPart);
  assert(prior);
  assert(hit.damageBeforeHpClamp>prior.damageBeforeHpClamp);
- assert(hit.damageBeforeHpClamp<=candidate.meta.initial[1].parts[0].maxHp*.9);
+ assert(hit.damageBeforeHpClamp<=candidate.meta.initial[0].parts[0].maxHp*.9);
  assert.deepEqual(candidate.events.filter(e=>e.t<hit.t),baseline.events.filter(e=>e.t<hit.t));
- const blocked=await run(JUDGE_POSITION_COMBAT_RULES,[...inputs,{step:160,side:1,action:'block'}]);
- assert(blocked.events.some(e=>e.t===hit.t&&e.target===1&&e.shield&&e.dash));
+ const cushionHit=candidate.events.find(e=>e.t<hit.t&&e.dash&&e.item==='fanshuo-cushion');
+ assert.equal(cushionHit?.targetItem,'fanshuo-chair');
+ assert.equal(cushionHit.bladeCounter,undefined);
+ const blocked=await run(JUDGE_POSITION_COMBAT_RULES,[...inputs,{step:748,side:0,action:'block'}]);
+ assert(blocked.events.some(e=>e.t===hit.t&&e.target===0&&e.shield&&e.dash));
  assert(!blocked.events.some(e=>e.bladeCounter!==undefined));
  assert.deepEqual(await run(candidate.meta.combatRules,candidate.meta.manual.inputs),candidate);
  await assert.rejects(run({...baselineRules,bladeCounterWindow:4}),/Invalid blade counter window/);

@@ -499,7 +499,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      const recovering=bladeCounterWindow!==undefined&&M&&role==='attack'&&fullLunge.length===1&&fullLunge[0]===attacker&&
       !shield[target]&&!charging(fs[target])&&!dashing(fs[target])&&t-fs[target].ctl.lastDashEnd<=bladeCounterWindow;
      const bladeCounter=recovering&&(tp.resistWeakHits||tp.mount==='core'&&fs[target].parts.some(p=>p.alive&&p.resistWeakHits))&&
-      opponent.parts.some(p=>p.alive&&p.item.photoPhysics?.hasBladeOrPoint);
+      ap.item.photoPhysics?.hasBladeOrPoint;
      // Broad heavy attachments resist weaker hits without gaining starting HP.
      if(tp.resistWeakHits){
       const attackScore=ap.mount==='core'?fs[attacker].coreStats.attackScore:ratingScores(ap.item).attack;
