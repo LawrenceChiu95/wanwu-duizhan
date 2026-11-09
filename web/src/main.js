@@ -164,6 +164,22 @@ function photoItems(list) {
 async function main() {
   el.busy.hidden = false;
   const q = new URLSearchParams(location.search);
+  const recording = location.hostname === '127.0.0.1' && q.get('recording');
+  const fixed = ['chair-mouse', 'knife-cushion', 'pan-broom'].includes(recording)
+    ? await fetch(`./representative/${recording}.json`).then(r => {
+      if (!r.ok) throw Error('读不到录制对局');
+      return r.json();
+    }) : null;
+  const recordingBuild = i => {
+    const parts = fixed?.meta.initial[i].definition.parts;
+    return parts && {parts: parts.map(({item, orient}) => ({item, orient})), spread: parts[1].mount};
+  };
+  if (fixed) {
+    q.set('shoot', 'off');
+    q.set('mode', fixed.meta.mode);
+    q.set('seed', fixed.meta.seed);
+    q.set('foe', '');
+  }
   const feel = q.get('feel') === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
@@ -234,7 +250,7 @@ async function main() {
   // is gone falls back to the default without a word, and one whose photo item hasn't come in yet waits like the address's.
   const BUILD_KEY = 'wanwu-build';
   const keptArg = (() => { try { return localStorage.getItem(BUILD_KEY); } catch { return null; } })();
-  const mine = structuredClone((q.has('mine') ? fromUrl() : keptArg && readBuild('mine', keptArg)) ?? DEFAULT);
+  const mine = structuredClone(recordingBuild(0) ?? (q.has('mine') ? fromUrl() : keptArg && readBuild('mine', keptArg)) ?? DEFAULT);
   // ?foe= (measurements) keeps no progress: ?foe=mang|wen|chang fights that one of the three, its build and play, with no
   // picking (Wren's recordings, Elara f01a2add); a build fights it with the old 换个对手 list and the old play. Otherwise the ladder.
   const ladderOn = !q.has('foe');
@@ -250,7 +266,7 @@ async function main() {
     return {won, open, at: at < 0 ? LADDER.length - 1 : at};
   })();
   const keepLadder = () => { try { localStorage.setItem(ladderKey, JSON.stringify({won: [...ladder.won], at: LADDER[ladder.at].id})); } catch { /* no storage here */ } };
-  let FOE = structuredClone(ladderOn ? LADDER[ladder.at].build : pinned >= 0 ? LADDER[pinned].build : fromUrl('foe') ?? DEFAULT_FOE);
+  let FOE = structuredClone(recordingBuild(1) ?? (ladderOn ? LADDER[ladder.at].build : pinned >= 0 ? LADDER[pinned].build : fromUrl('foe') ?? DEFAULT_FOE));
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
   // Manual only on the page (远夏 10-28 e3a68f0a): you press 冲 / 挡. The auto fight stays for the test scripts (?play=auto).
@@ -705,7 +721,9 @@ async function main() {
     let r;
     live?.match.free();
     live = null;
-    if (control === 'manual') {
+    if (fixed) {
+      r = fixed;
+    } else if (control === 'manual') {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
       // The opponent's play is fixed with its build as 开打 is pressed; one without its own (a build in ?foe=) plays the old way.
       const ai = fought === null ? null : LADDER[fought].ai;
@@ -751,7 +769,7 @@ async function main() {
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    if (!fixed) try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
