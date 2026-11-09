@@ -1205,7 +1205,9 @@ async function main() {
     stage.bladeCue(1, blade, combatRules.bladeCounterWindow);
     if (!live || el.pad.hidden) { el.dashBtn.classList.remove('blade'); el.bladeTag.hidden = true; return; }
     const c = live.match.control(0), M = rules.manual;
-    const lit = blade > 0 && c.dashIn <= 0 && !c.charging && !c.dashing;
+    // The button only while a whole lunge pressed now still ends inside the window: the wind-up, the full lunge and one
+    // physics step, straight from the rules (Sol 5a15d0b3 f4a1c445). The ring keeps the true countdown to the end.
+    const lit = blade > 0 && c.dashIn <= 0 && !c.charging && !c.dashing && blade > M.chargeTime + M.dashTime + rules.dt;
     el.dashBtn.classList.toggle('blade', lit);
     if (el.bladeTag.hidden === lit) el.bladeTag.hidden = !lit;
     for (const [btn, left, total, on] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield]]) {
@@ -1340,7 +1342,7 @@ async function main() {
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, blade: live && !live.done ? live.match.bladeWindow(0) : 0, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, blade: live && !live.done ? live.match.bladeWindow(0) : 0, bladeRing: stage.bladeCues[1].visible ? stage.bladeCues[1].material.uniforms.uLeft.value : 0, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
