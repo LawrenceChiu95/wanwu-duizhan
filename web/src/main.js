@@ -175,9 +175,11 @@ async function main() {
   const judge = __JUDGE__ ? await import('./judge.js') : null;
   // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with. The 评委版
-  // gives all of it, /quota then the items, 3 s together before 开始玩 (Sol e0a86865), and skips the items when /quota
-  // says no photo can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again once the page
-  // is up: the player's own items stay in the 角色库 after the day's photos run out (Elara cf1366e6).
+  // doesn't wait for it at all (Elara b231705e: a slow /quota held its first screen past 3 s): the first match's models come
+  // down beside /quota and the items, and those go in when they arrive, a build naming one waiting in late like an
+  // address's. It asks /quota then the items, 3 s together (Sol e0a86865), and skips the items when /quota says no photo
+  // can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again: the player's own items
+  // stay in the 角色库 after the day's photos run out (Elara cf1366e6).
   const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
   const shoot0 = shootApi(q, __JUDGE__).then(async api => {
     if (!api) return null;
@@ -187,7 +189,8 @@ async function main() {
     const sent = shootOpen(quota) ? await within(api.items(), by - performance.now()) : null;
     return {api, quota, items: sent ?? [], again: sent === null || Boolean(quota.late)};
   });
-  const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
+  const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), __JUDGE__ ? null : shoot0]);
+  const photoLater = __JUDGE__ && q.get('shoot') !== 'off'; // shootApi: the 评委版's photo items may still come in
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
   if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
@@ -216,7 +219,7 @@ async function main() {
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
     const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
     if (shape && b.parts.every(x => OFFER.includes(x.item))) return b;
-    if (shape && shot && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
+    if (shape && (shot || photoLater) && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
   };
   const buildArg = b => [b.parts[0].item, b.parts[0].orient, b.parts[1].item, b.parts[1].orient, b.spread].join(',');
   const fromUrl = (key = 'mine') => {
@@ -1097,6 +1100,7 @@ async function main() {
     }
     if (!s) return;
     const {api} = s;
+    if (judge) await addItems(s.items);
     // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
     // doesn't wait for these.
     const more = s.again && api.items().then(addItems).catch(() => {});
