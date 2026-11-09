@@ -352,6 +352,10 @@ function strikeShell(team) {
   return new THREE.ShaderMaterial({...strikeShellShader, uniforms: {uColor: {value: team.clone()}, uOpacity: {value: 0}, uWidth: {value: 0.012}},
     side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, visible: false});
 }
+// 旋转拖影 in a match (Elara d0de7850): orange over the orange side's items read as fire to 远夏, so it lights the opening
+// spin-up only, fading out between these two match times (s). null puts it back for the whole match, as it was; the build
+// screen's spinning preview keeps it either way.
+const SPIN_FAN_OPENING = [1.2, 2.0];
 const fanShader = {
   vertexShader: `attribute vec2 aFan; uniform float uTheta; uniform float uSpan; uniform float uR0; uniform float uR1; uniform float uY0; uniform float uY1; uniform float uHug;
     varying vec2 vF;
@@ -849,6 +853,7 @@ export class Stage {
 
   /** Applies one sampled replay state: body transform, angular speed about its up axis, alive flags, HP. */
   pose(state) {
+    this.matchT = state.t; // undefined for the build screen's preview
     state.fighters.forEach((s, i) => {
       const f = this.fighters[i];
       if (!f) return;
@@ -1356,6 +1361,7 @@ export class Stage {
       f.halo.scale.setScalar(this.coreRadius * 6.5 * 0.7 * TOP_DISPLAY_SCALE);
       f.halo.material.opacity = 0.25 * (1 - f.dim);
       const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
+      const [fan0, fan1] = SPIN_FAN_OPENING ?? [], fanLeft = fan0 === undefined || this.matchT === undefined ? 1 : 1 - THREE.MathUtils.smoothstep(this.matchT, fan0, fan1);
       for (const p of f.parts) {
         p.flash *= Math.exp(-realDt * 12);
         p.strike *= Math.exp(-realDt * 2.5);
@@ -1365,7 +1371,7 @@ export class Stage {
         // Worn parts glow red, more and faster as they near breaking.
         p.uniforms.uDanger.value = p.damage > 0.4 ? (p.damage - 0.4) / 0.6 * (0.55 + 0.45 * Math.sin(this.time * (6 + 10 * p.damage))) : 0;
         p.fan.material.uniforms.uSpan.value = span;
-        p.fan.material.uniforms.uOpacity.value = 0.9 * Math.min(1, Math.max(0, Math.abs(f.spin) - 1) / 6);
+        p.fan.material.uniforms.uOpacity.value = 0.9 * fanLeft * Math.min(1, Math.max(0, Math.abs(f.spin) - 1) / 6);
       }
     }
     this.simClock = (this.simClock ?? 0) + simDt;

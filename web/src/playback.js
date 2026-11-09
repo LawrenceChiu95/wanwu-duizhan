@@ -146,6 +146,7 @@ export class Playback {
   }
 
   sample(t) {
+    this.state.t = t; // match time, for effects that belong to one part of the match (stage.js SPIN_FAN_OPENING)
     const f = this.r.frames;
     const i = this.frameIndex(t);
     const j = Math.min(i + 1, f.length - 1);
