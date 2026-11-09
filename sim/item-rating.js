@@ -45,12 +45,12 @@ function contactScores(item,m,factors,range){
  const attack=score((100*m*contact+(hasBladeOrPoint?24:0))*factors[0]);
  // Cosmetic wear matters less than weight; broken parts still lose half their endurance.
  const wear=item.condition==='worn'?.98:factors[1];
- let durability=score(78*weight**.22*wear);
+ let durability=score(78*weight**.14*wear);
  const fragile=/陶瓷|瓷器|瓷质|玻璃/.test(item.materialName);
  if(fragile){
   const floor=GRADE_FLOORS[gradeFor(durability)];
-  durability=floor===0?score(durability*.75):floor-1;
- }else if(soft) durability=score(durability*.72+3*wear);
+  durability=Math.min(score(durability*.8),floor===0?GRADE_FLOORS.C-1:floor-1);
+ }else if(soft) durability=Math.min(score(durability+3*wear),GRADE_FLOORS.S-1);
  if(hasBladeOrPoint)durability=Math.min(durability,GRADE_FLOORS.A-1);
  return {attack,range,durability};
 }

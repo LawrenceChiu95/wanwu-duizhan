@@ -62,10 +62,15 @@ test('photo contact scores weigh heavy coated objects, sharp edges, soft materia
  const solid=rate(2,'metal','金属',1.2,1.2);
  const pillow=rate(2,'cloth','织物',.15,.15);
  assert.ok(pillow.scores.attack<solid.scores.attack);
- assert.equal(pillow.letters.durability,'B');
- const mug=rate(.4,'metal','陶瓷',.9,.9);
- assert.equal(mug.letters.durability,'C');
- assert.equal(rate(.4,'metal','金属',.9,.9).letters.durability,'B');
+ assert.equal(pillow.letters.durability,'A');
+ const base=rate(.6,'metal','金属',.9,.9);
+ assert.equal(base.letters.durability,'A');
+ assert.equal(rate(.6,'cloth','织物',.15,.15).scores.durability,base.scores.durability+3);
+ for(const name of ['陶瓷','玻璃']){
+  const fragile=rate(.6,'metal',name,.9,.9);
+  assert.equal(fragile.letters.durability,'B');
+  assert.ok(fragile.scores.durability<=base.scores.durability-10);
+ }
  const blade=rate(.25,'metal','不锈钢',1.2,1.2,true);
  assert.equal(blade.letters.attack,'B');
  assert.ok(blade.scores.durability<60);
