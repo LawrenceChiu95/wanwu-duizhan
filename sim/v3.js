@@ -41,6 +41,11 @@ export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
   dashLoss:.28,recenterLoss:.48,recenterBoost:.85
  })
 });
+export const HEAVY_JUDGE_COMBAT_OPTIONS=Object.freeze({
+ combat:'position',
+ combatRules:Object.freeze({...JUDGE_POSITION_COMBAT_RULES,broadHeavyMidHit:true}),
+ feelRules:Object.freeze({...BOUNCE,thrust:4})
+});
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
  return structuredClone(await rulesPromise);
@@ -497,6 +502,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       const durability=ratingScores(tp.item).durability;
       if(attackScore<durability){
        d.weakHitResistance=Math.max(.08,(attackScore/durability)**2);
+       if(position.broadHeavyMidHit){
+        const attackRatio=attackScore/durability;
+        d.weakHitResistance=Math.max(.08,attackRatio*attackRatio,Math.min(1,4*attackRatio-1.4));
+       }
        d.damage*=d.weakHitResistance;
       }
      }
