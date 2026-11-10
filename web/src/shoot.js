@@ -307,7 +307,7 @@ export function mountShoot(ctx) {
   const PLAY_LINK = '<button type="button" class="slink" data-act="play">先用现成的角色打一局</button>';
   // 评委版: two real generations, there to look at (and play) whether or not 拍照 is on now (Elara 9e17f724).
   const SAMPLE = ctx.sample && ctx.samples?.length ? `<div class="ssamples"><span>${ICON.play}看真实生成的过程</span><div>${ctx.samples.map(x =>
-    `<button type="button" data-act="sample" data-id="${esc(x.id)}"${x.own ? ' class="own"' : ''}><img src="${esc(x.photo ?? '')}" alt=""><b>${esc(x.name)}</b><small>${esc(x.own ? x.tag : '网上公开照片')}</small><small>用时 ${esc(x.time)}</small></button>`).join('')}</div></div>` : '';
+    `<button type="button" data-act="sample" data-id="${esc(x.id)}"${x.own ? ' class="own"' : ''}><img src="${esc(x.photo ?? '')}" alt=""><b>${esc(x.name)}</b><small>${esc(x.own ? x.tag : '网上公开图片')}</small><small>用时 ${esc(x.time)}</small></button>`).join('')}</div></div>` : '';
 
   function draw(key) {
     const [kind, code] = key.split(':');
