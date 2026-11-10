@@ -134,7 +134,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .kitchen-panel:not([open]):hover { opacity:1; }
 .kitchen-panel select { max-width:135px;background:#10251a;color:var(--ink);border:1px solid #627254;font:11px var(--body);padding:4px; }
 @media(max-width:380px) { .terminal-brand b {font-size:20px;} .item b {font-size:16px;} .hint {font-size:9px;} .bhead span {font-size:9px;} }
-@container (max-height: 720px) { .slot {gap:5px;padding:10px 8px 8px;} .slot-rail {padding-bottom:4px;} .item {min-height:46px;} #build {gap:7px;} .bhead {padding:6px 9px;} }
+@media(max-height:720px) { .slot {gap:5px;padding:10px 8px 8px;} .slot-rail {padding-bottom:4px;} .item {min-height:46px;} #build {gap:7px;} .bhead {padding:6px 9px;} }
+:where(.seen-720) .slot {gap:5px;padding:10px 8px 8px;} :where(.seen-720) .slot-rail {padding-bottom:4px;} :where(.seen-720) .item {min-height:46px;} :where(.seen-720) #build {gap:7px;} :where(.seen-720) .bhead {padding:6px 9px;}
 @media(prefers-reduced-motion:reduce) { .pad.on {animation:none;} }
 
 /* Concept B material pass: actual nine-slice artwork, live labels and controls. */
@@ -187,7 +188,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .panel { border-width:16px;padding:5px 5px 15px; }
 .kitchen-panel { top:122px; }
 @media(min-width:600px) { .module-display {height:82px;} .slot {padding:3px 8px 6px;} .item b {font-size:20px;} .orient button {font-size:15px;} .terminal-id {padding:4px;} }
-@container (max-height: 740px) { .module-display {height:46px;} .slot {gap:3px;border-width:11px;} .bhead {min-height:29px;border-width:8px;} .item {min-height:36px;} .item b {font-size:15px;} .hint {display:none;} #build {gap:5px;} }
+@media(max-height:740px) { .module-display {height:46px;} .slot {gap:3px;border-width:11px;} .bhead {min-height:29px;border-width:8px;} .item {min-height:36px;} .item b {font-size:15px;} .hint {display:none;} #build {gap:5px;} }
+:where(.seen-740) .module-display {height:46px;} :where(.seen-740) .slot {gap:3px;border-width:11px;} :where(.seen-740) .bhead {min-height:29px;border-width:8px;} :where(.seen-740) .item {min-height:36px;} :where(.seen-740) .item b {font-size:15px;} :where(.seen-740) .hint {display:none;} :where(.seen-740) #build {gap:5px;}
 .go,.pad.dash,.actions .primary { border:12px solid transparent;border-image:url('./assets/terminal/yellow.webp') 73 fill stretch;
   background:none;box-shadow:0 4px 4px #0009;border-radius:0;filter:none; }
 .go {font-size:24px;letter-spacing:4px;font-weight:900;text-shadow:0 1px #f6d87166;}
@@ -201,7 +203,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .orient {height:44px;}
 .orient button {font-size:13px;}
 @media(max-width:350px) {.terminal-brand b {font-size:24px;letter-spacing:1px;} .orient button {font-size:11px;} }
-@container (max-height: 740px) {.orient {height:36px;} }
+@media(max-height:740px) {.orient {height:36px;} }
+:where(.seen-740) .orient {height:36px;}
 .spread {gap:5px;}
 .spread button {border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;box-shadow:none;color:#252e22;font-weight:800;opacity:.58;}
 .spread button[aria-checked="true"] {border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;color:#182b21;box-shadow:0 1px #4fc8bd;opacity:1;}

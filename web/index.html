@@ -11,8 +11,9 @@
 <script>
 /* A host page (ModelScope's studio) can make this frame taller than what the phone shows, cutting off every button at
    the foot of the page (Wren 9e1f8394). The page measures how much of itself the top window shows, through a
-   full-height probe (IntersectionObserver reports a cross-origin frame's part in the top viewport), and when the foot
-   is hidden sizes the game to the part that is seen (--seen in style.css). Unclipped, nothing changes. */
+   full-height probe (IntersectionObserver reports a cross-origin frame's part in the top viewport). When the foot is
+   hidden it sets .seen and --seen, plus .seen-720 / .seen-740 for the short-screen rules, and style.css sizes the game
+   to the part that is seen. Unclipped, nothing is set and the page is as before. */
 (function () {
   if (!window.IntersectionObserver) return;
   var probe = document.createElement('i'), root = document.documentElement, steps = [];
@@ -22,8 +23,11 @@
   new IntersectionObserver(function (entries) {
     var e = entries[entries.length - 1], seen = Math.floor(e.intersectionRect.bottom);
     // Off screen altogether, or a few pixels' rounding: keep the frame's own height.
-    if (e.intersectionRatio > 0 && seen > 200 && seen < innerHeight - 2) root.style.setProperty('--seen', seen + 'px');
-    else root.style.removeProperty('--seen');
+    var cut = e.intersectionRatio > 0 && seen > 200 && seen < innerHeight - 2;
+    if (cut) root.style.setProperty('--seen', seen + 'px'); else root.style.removeProperty('--seen');
+    root.classList.toggle('seen', cut);
+    root.classList.toggle('seen-740', cut && seen <= 740);
+    root.classList.toggle('seen-720', cut && seen <= 720);
   }, {threshold: steps}).observe(probe);
   root.appendChild(probe);
 })();
