@@ -150,7 +150,7 @@ export function mountShoot(ctx) {
   let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = ctx.quota ?? null, shown = '', recogAt = -Infinity, timer = 0, ticker = 0;
   let quotaErr = 'generation-browser'; // which allowance the last quota error was about
   // Errors running: polls that got a server error, item fetches that failed after 好了, sends that got a server error.
-  let pollFails = 0, itemFails = 0, sendFails = 0, lastSend = null;
+  let pollFails = 0, itemFails = 0, sendFails = 0, lastSend = null, quotaStale = false;
   // One clientKey per paid action on a job (再提交, 重新生成), reused whenever that request is sent again; kept with the
   // job, so it survives the 角色库 and a reload (PR #57 B1, Elara a14738e8).
   const keyFor = kind => { const ks = stored.keys ??= {}; ks[kind + ':' + job.id] ??= newClientKey(); keep(); return ks[kind + ':' + job.id]; };
@@ -236,7 +236,17 @@ export function mountShoot(ctx) {
   async function loadItems() {
     try { await ctx.addItems(await api.items()); itemFails = fetching() ? itemFails + 1 : 0; } catch (e) { if (MISMATCH.includes(e.code)) startError = e.code; else itemFails++; }
   }
-  async function loadQuota() { if (quota?.lost) return; quota = await readQuota(api, ctx.strict); paintQuota(); }
+  async function loadQuota() { if (quota?.lost) return; quota = await readQuota(api, ctx.strict); if (!quota?.down) quotaStale = false; paintQuota(); }
+  // A send that didn't go through (someone else took the last photo, the network, the backend): the count read before
+  // it may be wrong now, so it goes at once and is asked again; only an answer replaces it, a failed ask leaves the
+  // state as it was (Sol 9e197ca4, Elara c8dc6ca0).
+  async function recheckQuota() {
+    if (quota?.lost) return;
+    quotaStale = true; paintQuota();
+    const q = await readQuota(api, ctx.strict);
+    if (q && !q.down && !q.lost) { quota = q; quotaStale = false; }
+    paintQuota();
+  }
   // An allowance used up today, as a QUOTA_SAY key: a new photo needs a generation and a 认物 left.
   function quotaOut() {
     if (quota?.lost) return 'session';
@@ -279,7 +289,7 @@ export function mountShoot(ctx) {
   function paintQuota() {
     // Nothing to count while no photo can be taken at all: 暂时不能拍, or the backend no longer knows this page.
     const left = ['budget', 'session'].includes(quotaOut()) || ['session', 'storage'].includes(startError) ? [] : [quota?.remaining, quota?.global?.remaining, quota?.recognition?.remaining, quota?.global?.recognition?.remaining].filter(n => n != null);
-    el.quota.textContent = left.length ? `今天还能拍 ${Math.min(...left)} 件` : '';
+    el.quota.textContent = left.length && !quotaStale ? `今天还能拍 ${Math.min(...left)} 件` : '';
   }
   const photo = () => stored?.photo ?? pending?.thumb ?? '';
   const frame = (cls, inner) => `<div class="sframe ${cls}">${photo() ? `<img src="${esc(photo())}" alt="你拍的照片">` : ''}${inner}</div>`;
@@ -476,6 +486,7 @@ export function mountShoot(ctx) {
       poll();
     } catch (e) {
       if (btn) btn.disabled = false;
+      recheckQuota();
       if (e.code === 'offline') {
         if (note) note.innerHTML = `没传上去，网络好了再点一次，或者${PLAY_LINK}`;
         // The photo and 用这张，开始 stay; the two real generations join them (Sol e8c34c47, Elara 489c0d4b).
