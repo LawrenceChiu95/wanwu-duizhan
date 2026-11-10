@@ -494,6 +494,9 @@ export function mountShoot(ctx) {
       poll();
     } catch (e) {
       if (btn) btn.disabled = false;
+      // Out of budget is marked (and older asks dropped) before the count is asked again, so that answer counts: a held
+      // photo given back elsewhere shows here without reopening (Sol c8817327, Elara 826455ed).
+      if (e.code === 'budget') { quotaAsk++; quota = {down: true}; }
       recheckQuota();
       if (e.code === 'offline') {
         if (note) note.innerHTML = `没传上去，网络好了再点一次，或者${PLAY_LINK}`;
@@ -502,7 +505,6 @@ export function mountShoot(ctx) {
         return;
       }
       if (e.code === 'quota') quotaErr = quotaKey(e.kind, e.scope);
-      if (e.code === 'budget') { quotaAsk++; quota = {down: true}; paintQuota(); }
       if (e.code === 'active-job') { await adopt(e.activeJobId); return; }
       if (job && final(job) && (e.code === 'quota' || e.code === 'budget')) { if (note) note.textContent = e.code === 'budget' ? SAY.budget : QUOTA_SAY[quotaErr]; return; }
       startError = e instanceof ShootError ? e.code : 'server';
