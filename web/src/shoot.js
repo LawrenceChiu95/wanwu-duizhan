@@ -150,7 +150,7 @@ export function mountShoot(ctx) {
   let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = ctx.quota ?? null, shown = '', recogAt = -Infinity, timer = 0, ticker = 0;
   let quotaErr = 'generation-browser'; // which allowance the last quota error was about
   // Errors running: polls that got a server error, item fetches that failed after 好了, sends that got a server error.
-  let pollFails = 0, itemFails = 0, sendFails = 0, lastSend = null, quotaStale = false;
+  let pollFails = 0, itemFails = 0, sendFails = 0, lastSend = null, quotaStale = false, quotaAsk = 0;
   // One clientKey per paid action on a job (再提交, 重新生成), reused whenever that request is sent again; kept with the
   // job, so it survives the 角色库 and a reload (PR #57 B1, Elara a14738e8).
   const keyFor = kind => { const ks = stored.keys ??= {}; ks[kind + ':' + job.id] ??= newClientKey(); keep(); return ks[kind + ':' + job.id]; };
@@ -236,14 +236,22 @@ export function mountShoot(ctx) {
   async function loadItems() {
     try { await ctx.addItems(await api.items()); itemFails = fetching() ? itemFails + 1 : 0; } catch (e) { if (MISMATCH.includes(e.code)) startError = e.code; else itemFails++; }
   }
-  async function loadQuota() { if (quota?.lost) return; quota = await readQuota(api, ctx.strict); if (!quota?.down) quotaStale = false; paintQuota(); }
+  // Every ask, and every count set here, takes a number; an answer counts only if nothing came after it, so an ask
+  // from before a send that arrives late can't put back the old count (Sol f3006c38).
+  async function loadQuota() {
+    if (quota?.lost) return;
+    const n = ++quotaAsk, q = await readQuota(api, ctx.strict);
+    if (n !== quotaAsk) return;
+    quota = q; if (!quota?.down) quotaStale = false; paintQuota();
+  }
   // A send that didn't go through (someone else took the last photo, the network, the backend): the count read before
   // it may be wrong now, so it goes at once and is asked again; only an answer replaces it, a failed ask leaves the
   // state as it was (Sol 9e197ca4, Elara c8dc6ca0).
   async function recheckQuota() {
     if (quota?.lost) return;
     quotaStale = true; paintQuota();
-    const q = await readQuota(api, ctx.strict);
+    const n = ++quotaAsk, q = await readQuota(api, ctx.strict);
+    if (n !== quotaAsk) return;
     if (q && !q.down && !q.lost) { quota = q; quotaStale = false; }
     paintQuota();
   }
@@ -494,7 +502,7 @@ export function mountShoot(ctx) {
         return;
       }
       if (e.code === 'quota') quotaErr = quotaKey(e.kind, e.scope);
-      if (e.code === 'budget') { quota = {down: true}; paintQuota(); }
+      if (e.code === 'budget') { quotaAsk++; quota = {down: true}; paintQuota(); }
       if (e.code === 'active-job') { await adopt(e.activeJobId); return; }
       if (job && final(job) && (e.code === 'quota' || e.code === 'budget')) { if (note) note.textContent = e.code === 'budget' ? SAY.budget : QUOTA_SAY[quotaErr]; return; }
       startError = e instanceof ShootError ? e.code : 'server';
@@ -584,7 +592,7 @@ export function mountShoot(ctx) {
     how: () => ctx.openHow(job.itemId),
     sample: b => ctx.sample(b.dataset.id),
     // 评委版, after 401 session: a new token only because the player asked for it; the old job is let go (Sol e0a86865).
-    renew: () => { api.renew?.(); quota = null; fresh(); },
+    renew: () => { api.renew?.(); quotaAsk++; quota = null; fresh(); },
     equip: () => { const id = job.itemId; close(); ctx.equip(id); }
   };
   el.body.onclick = e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) acts[b.dataset.act]?.(b); };
