@@ -350,4 +350,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .hsrc.own { background:var(--c0);color:#1a0900;box-shadow:none; }
 .ssamples img { border-radius:1px;box-shadow:0 0 0 1px #405843; }
 .ssamples .own small:first-of-type { color:var(--c0); }
+/* 拍一件's footer button sits beside 重拍 or 回角色库: 「用这张，开始」 at 24px with 4px spacing wrapped and was cut off. */
+.sfoot .go { font-size:21px;letter-spacing:2px; }
+.sfoot .go span { white-space:nowrap; }
 .ssteps i { border-radius:1px; }

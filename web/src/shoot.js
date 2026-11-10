@@ -90,6 +90,9 @@ const QUEUE_LONG = 3 * 60; // seconds waiting in line before it says there are a
 // 评委版: session (the backend doesn't know this page's token) and storage (the browser won't keep one) are the same:
 // nothing is sent until the player starts again (Sol e0a86865).
 const MISMATCH = ['forbidden', 'bad-request', 'no-backend', 'session', 'storage'];
+// A photo picked that can't go now (used up as it was sent, or the backend went away): the 评委版's two real generations
+// show under the message, the photo and its retry kept (Sol e8c34c47, Elara 489c0d4b).
+const CANT_NOW = ['quota', 'budget', 'offline', 'server', 'server-down'];
 const DOWN_AFTER = 3; // the same server error this many times running: stop offering 再试
 const ICON = {
   camera: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>',
@@ -293,7 +296,7 @@ export function mountShoot(ctx) {
     let html = '';
     if (kind === 'pick') {
       html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一次拍一样，让它占满画面</small></span></div>
-        ${api.kind === 'fake' && !api.named ? `<div class="ssix"><span>会认成这六类之一，不在里面的按形状最像的算</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>`
+        ${api.kind === 'fake' && !api.named ? `<div class="ssix"><span>拍什么都行，会按最像的一类算攻守</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>`
           : '<div class="ssix"><span>拍的是什么就认成什么，大小、轻重、软硬看照片估</span></div>'}${SAMPLE}
         ${foot(ghost('album', '从相册选', ICON.album), go('camera', '拍照'))}`;
     } else if (kind === 'out') {
@@ -358,7 +361,7 @@ export function mountShoot(ctx) {
         .replace(/再试一次.*$/, m => ['retry', 'again', 'resubmit'].some(has) ? m : has('fresh') ? '重新拍一件' : '回角色库重新拍一件');
       html = `${frame('bad', `<span class="sbadge">${kind === 'lost' ? '装不进游戏' : code === 'session' ? '记录找不到了' : code === 'budget' || code === 'storage' ? '暂时不能拍' : MISMATCH.includes(code) ? '连错了后台' : code === 'quota' ? '名额用完了' : job?.recognition ? '没生成出来' : '没做成'}</span>`)}
         <div class="smsg"><b>${esc(say)}</b>${count ? `<small class="scount">${count}</small>` : ''}${code === 'pass' ? '<input type="password" class="spass" id="shootPass" placeholder="输入口令" autocomplete="current-password">' : ''}</div>
-        <p class="serr" data-live="send"></p>${foot(...btns)}`;
+        <p class="serr" data-live="send"></p>${kind === 'err' && CANT_NOW.includes(code) ? SAMPLE : ''}${foot(...btns)}`;
     } else if (kind === 'held') {
       // unknown-submit (Elara 8d32a2a6, 69a1c60d): one sentence and only 回角色库, no retake or retry: the paid
       // submission is being checked. It doesn't hold the one-at-a-time place, so 拍一件 starts a new photo.
@@ -473,7 +476,12 @@ export function mountShoot(ctx) {
       poll();
     } catch (e) {
       if (btn) btn.disabled = false;
-      if (e.code === 'offline') { if (note) note.innerHTML = `没传上去，网络好了再点一次，或者${PLAY_LINK}`; return; }
+      if (e.code === 'offline') {
+        if (note) note.innerHTML = `没传上去，网络好了再点一次，或者${PLAY_LINK}`;
+        // The photo and 用这张，开始 stay; the two real generations join them (Sol e8c34c47, Elara 489c0d4b).
+        if (note && SAMPLE && !el.body.querySelector('.ssamples')) note.insertAdjacentHTML('afterend', SAMPLE);
+        return;
+      }
       if (e.code === 'quota') quotaErr = quotaKey(e.kind, e.scope);
       if (e.code === 'budget') { quota = {down: true}; paintQuota(); }
       if (e.code === 'active-job') { await adopt(e.activeJobId); return; }
