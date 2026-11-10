@@ -3,7 +3,7 @@ import test from 'node:test';
 import {readFile} from 'node:fs/promises';
 import {
  itemCombat, loadCatalog, loadV3Rules, simulateV3, tierDamage,
- JUDGE_POSITION_COMBAT_RULES, POSITION_COMBAT_RULES
+ HEAVY_JUDGE_COMBAT_OPTIONS, JUDGE_POSITION_COMBAT_RULES, POSITION_COMBAT_RULES
 } from '../../sim/v3.js';
 
 import {loadRules as loadCatalogRules} from '../../sim/index.js';
@@ -218,25 +218,27 @@ test('candidate pacing adjustment applies only to automatic B and is reproducibl
 });
 
 test('a disarmed top takes more damage while the opponent keeps both attachments',async()=>{
- const {bareCoreReceive,bareCoreByPartsOnly,...baselineRules}=JUDGE_POSITION_COMBAT_RULES;
- const part=(suffix,mount,orient)=>({item:'fanshuo-'+suffix,mount,orient});
- const fighters=[
-  {parts:[part('pot','e0','out'),part('cushion','e180','hug')]},
-  {parts:[part('feather','e0','out'),part('chair','e90','hug')]}
- ];
+ const {combatRules,...options}=HEAVY_JUDGE_COMBAT_OPTIONS;
+ const {bareCoreReceive,bareCoreByPartsOnly,...baselineRules}=combatRules;
  const {foes,judgeBuilds}=JSON.parse(await readFile(new URL('../../data/foes.json',import.meta.url),'utf8'));
- const dashSteps=[56,598,1148,1692,2238,2782,3332,3872,4417];
- const blockSteps=[1234,2539,3638,4255];
- const inputs=[...dashSteps.map(step=>({step,side:0,action:'dash'})),
-  ...blockSteps.map(step=>({step,side:0,action:'block'}))].sort((a,b)=>a.step-b.step);
- const manual={sides:['input','ai'],blockTime:.25,aiSeeds:[608137687,3084995133],inputs,
-  aiProfiles:[null,{...foes[2].ai,...judgeBuilds.position.chang.ai}]};
- const params={fighters,seed:7007,combat:'position',manual};
+ const foe=foes.find(f=>f.id==='chang');
+ const judgeBuild=judgeBuilds.position[foe.id];
+ const fighters=[
+  {parts:[{item:'fanshuo-pot',mount:'e0',orient:'out'},{item:'fanshuo-cushion',mount:'e180',orient:'hug'}]},
+  {parts:judgeBuild.parts.map((part,index)=>({...part,mount:index?judgeBuild.spread:'e0'}))}
+ ];
+ const dashSteps=[60,612,1164,1716,2268,2820,3372,3924,4476,5028,5580,6132];
+ const blockSteps=[492,1116,1740,2364];
+ const inputsWithBlocks=blocks=>[...dashSteps.map(step=>({step,side:0,action:'dash'})),
+  ...blocks.map(step=>({step,side:0,action:'block'}))].sort((a,b)=>a.step-b.step);
+ const manual={sides:['input','ai'],aiSeeds:[607157222,3085844492],
+  inputs:inputsWithBlocks([...blockSteps,3032]),aiProfiles:[null,{...foe.ai,...judgeBuild.ai}]};
+ const params={...options,fighters,seed:987502,manual};
  const baseline=await simulateV3({...params,combatRules:baselineRules});
- const combatRules={...baselineRules,bareCoreReceive,bareCoreByPartsOnly};
  const candidate=await simulateV3({...params,combatRules});
- const disarmed=candidate.events.filter(e=>e.type==='break'&&e.target===0).at(-1);
- assert(disarmed);
+ const playerBreaks=candidate.events.filter(e=>e.type==='break'&&e.target===0);
+ assert.equal(playerBreaks.length,2);
+ const disarmed=playerBreaks[1];
  assert.deepEqual(candidate.events.filter(e=>e.t<=disarmed.t),baseline.events.filter(e=>e.t<=disarmed.t));
  const hits=candidate.events.filter(e=>e.bareCoreReceive!==undefined);
  assert(hits.some(e=>e.shield));
@@ -246,19 +248,19 @@ test('a disarmed top takes more damage while the opponent keeps both attachments
  assert.deepEqual(await simulateV3({...params,manual:candidate.meta.manual,combatRules:candidate.meta.combatRules}),candidate);
  await assert.rejects(simulateV3({...params,combatRules:{...combatRules,bareCoreReceive:3}}),/Bare core damage/);
 
- // In Wren's recorded 2664 match the bare side countered below the old 75% gate.
- const counterInputs=[
-  ...[56,604,1155,1696,2242,2791,3354,3902,4455].map(step=>({step,side:0,action:'dash'})),
-  ...[47,1200,3705].map(step=>({step,side:0,action:'block'}))
- ].sort((a,b)=>a.step-b.step);
- const counterParams={...params,seed:2664,manual:{...manual,aiSeeds:[608133344,3084999434],inputs:counterInputs}};
+ // Keep the same battle but use a later block cadence so the bare core lands a counter.
+ const counterInputs=inputsWithBlocks([...blockSteps,2988,3612,4236,4860,5484,6108]);
+ const counterParams={...params,manual:{...manual,inputs:counterInputs}};
  const old=await simulateV3({...counterParams,combatRules:{...baselineRules,bareCoreReceive:2.2}});
  const revised=await simulateV3({...counterParams,combatRules});
- const counter=revised.events.find(e=>e.attacker===0&&e.targetPart==='core'&&e.t>26&&e.damage===60);
- assert(counter&&counter.hpAfter<revised.meta.initial[1].maxHp*.75);
+ const lastBreak=revised.events.filter(e=>e.type==='break'&&e.target===0).at(-1);
+ assert(lastBreak);
+ const threshold=revised.meta.initial[1].maxHp*.75;
+ const counter=revised.events.find(e=>e.attacker===0&&e.targetPart==='core'&&
+  e.t>lastBreak.t&&e.damage>0&&e.hpAfter<threshold);
+ assert(counter);
  assert(revised.events.some(e=>e.t>counter.t&&e.target===0&&e.bareCoreReceive===bareCoreReceive));
  assert(!old.events.some(e=>e.t>counter.t&&e.bareCoreReceive!==undefined));
- const lastBreak=revised.events.filter(e=>e.type==='break'&&e.target===0).at(-1);
  assert(revised.meta.duration-lastBreak.t<=8);
  assert.equal(revised.meta.winner,old.meta.winner);
 });

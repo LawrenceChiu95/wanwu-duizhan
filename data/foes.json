@@ -122,23 +122,23 @@
             "orient": "hug"
           }
         ],
-        "spread": "e180"
+        "spread": "e180",
+        "ai": {
+          "blockLead": 0.14
+        }
       },
       "chang": {
         "parts": [
           {
-            "item": "fanshuo-feather",
+            "item": "fanshuo-chair",
             "orient": "out"
           },
           {
-            "item": "fanshuo-chair",
+            "item": "fanshuo-pot",
             "orient": "hug"
           }
         ],
-        "spread": "e90",
-        "ai": {
-          "reactionJitter": 0.1
-        }
+        "spread": "e180"
       }
     },
     "current": {
