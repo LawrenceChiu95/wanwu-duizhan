@@ -134,8 +134,8 @@ async function uploadable(file) {
  * ctx (main.js): api; addItems(items); item(id); refused(id) → the game turned it down; name(id); grade(id) → rating; spec(id); seen(id) / markSeen(id) for the
  * card flip; flip(el, id) turns a face-down card over; turns, loadModels; equipLabel(id) → {text, disabled}; equip(id);
  * libraryOpen(), openLibrary(); openHow(id); goPlay(); tagRoom() → whether the top tag may show now; onChange().
- * 评委版 only: strict (see readQuota); quota, what the page asked as it opened; sample() shows the flip-flop's real
- * generation (beside 拍照, Elara edd90212).
+ * 评委版 only: strict (see readQuota); quota, what the page asked as it opened; samples, the two real generations shown
+ * beside 拍照 ({id, name, tag, own, photo, time}), and sample(id) replays one (Elara edd90212, 9e17f724).
  */
 export function mountShoot(ctx) {
   const $ = id => document.getElementById(id);
@@ -284,8 +284,9 @@ export function mountShoot(ctx) {
   const ghost = (act, label, icon = '') => `<button type="button" class="sghost" data-act="${act}">${icon}<span>${label}</span></button>`;
   const go = (act, label, sub = '') => `<button type="button" class="go" data-act="${act}"><span>${label}</span>${sub ? `<small>${sub}</small>` : ICON.arrow}</button>`;
   const PLAY_LINK = '<button type="button" class="slink" data-act="play">先用现成的角色打一局</button>';
-  // 评委版: one real generation, there to look at whether or not 拍照 is on now.
-  const SAMPLE = ctx.sample ? `<p class="ssample">${ICON.play}<button type="button" class="slink" data-act="sample">看一件真实生成的过程</button></p>` : '';
+  // 评委版: two real generations, there to look at (and play) whether or not 拍照 is on now (Elara 9e17f724).
+  const SAMPLE = ctx.sample && ctx.samples?.length ? `<div class="ssamples"><span>${ICON.play}看真实生成的过程</span><div>${ctx.samples.map(x =>
+    `<button type="button" data-act="sample" data-id="${esc(x.id)}"${x.own ? ' class="own"' : ''}><img src="${esc(x.photo ?? '')}" alt=""><b>${esc(x.name)}</b><small>${esc(x.own ? x.tag : '网上公开照片')}</small><small>用时 ${esc(x.time)}</small></button>`).join('')}</div></div>` : '';
 
   function draw(key) {
     const [kind, code] = key.split(':');
@@ -307,7 +308,7 @@ export function mountShoot(ctx) {
         <p class="snote warn" data-live="warn" hidden></p>
         ${foot(go('play', '先去打一局'))}`;
     } else if (kind === 'confirm') {
-      html = `${frame('', '')}<p class="snote">生成要 1–2 分钟，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
+      html = `${frame('', '')}<p class="snote">生成一般两分半左右，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
         ${foot(ghost('retake', '重拍', ICON.retry), go('submit', '用这张，开始'))}`;
     } else if (kind === 'wait') {
       html = `${frame('scan', '<i class="sline"></i>')}<p class="snote" data-live="warn">正在找回这一件…</p>
@@ -562,12 +563,12 @@ export function mountShoot(ctx) {
     play: () => { close(); ctx.goPlay(); },
     lib: () => { const done = job?.status === 'succeeded'; close(); if (done || ctx.libraryOpen()) ctx.openLibrary(); },
     how: () => ctx.openHow(job.itemId),
-    sample: () => ctx.sample(),
+    sample: b => ctx.sample(b.dataset.id),
     // 评委版, after 401 session: a new token only because the player asked for it; the old job is let go (Sol e0a86865).
     renew: () => { api.renew?.(); quota = null; fresh(); },
     equip: () => { const id = job.itemId; close(); ctx.equip(id); }
   };
-  el.body.onclick = e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) acts[b.dataset.act]?.(); };
+  el.body.onclick = e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) acts[b.dataset.act]?.(b); };
 
   // ---------- open / close ----------
   function open(from) {

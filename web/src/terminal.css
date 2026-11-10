@@ -342,4 +342,12 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .hsteps img,.hsteps .mini3d { border-radius:1px;box-shadow:0 0 0 1px #405843; }
 .htotal b { color:#e1ddc6; }
 .hnote { color:#92b4a1; }
+.hpick button,.ssamples button { border-radius:1px;background:#0b1c15;box-shadow:inset 0 0 0 1px #476649; }
+.hpick b,.ssamples b { color:var(--ink);font-weight:700; }
+.hpick small,.ssamples small { color:#92b4a1; }
+.hpick [aria-current] { background:#132a20;box-shadow:inset 0 0 0 2px var(--c0); }
+.hsrc { border-radius:1px;background:#0b1c15;color:#a8e9cb;box-shadow:inset 0 0 0 1px #476649; }
+.hsrc.own { background:var(--c0);color:#1a0900;box-shadow:none; }
+.ssamples img { border-radius:1px;box-shadow:0 0 0 1px #405843; }
+.ssamples .own small:first-of-type { color:var(--c0); }
 .ssteps i { border-radius:1px; }

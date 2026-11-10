@@ -24,6 +24,7 @@ const el = {
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'), libGrades: $('libGrades'),
   resultBuild: $('resultBuild'), how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
   howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'), howNote: $('howNote'),
+  howSrc: $('howSrc'), howPick: $('howPick'),
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
@@ -198,14 +199,24 @@ async function main() {
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), __JUDGE__ ? null : shoot0]);
   const photoLater = __JUDGE__ && q.get('shoot') !== 'off'; // shootApi: the 评委版's photo items may still come in
   // Anything not shipped in the catalog came from 拍一件: the result tip compares it with the opponent (Elara 365a2667).
+  // 评委版's replayed items (below) aren't the player's photos, so they don't count.
   const shipped = new Set(items.map(i => i.id));
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
   if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
+  // 评委版's two replayed items (judge.js) can be played as well as looked at (Elara 9e17f724): in the sim and the stage
+  // like a photo item, but not in the 角色库's cards (OFFER). One the sim turns down can still be looked at.
+  const SAMPLES = judge?.showcases ?? [];
+  const sampleIds = new Set(SAMPLES.map(x => x.item.id));
+  const playable = new Set((await register(SAMPLES.map(x => x.item))).map(it => it.id));
+  items.push(...SAMPLES.map(x => x.item).filter(it => playable.has(it.id)));
   const byId = new Map(items.map(i => [i.id, i]));
-  setNames(items);
-  // The replayed item can be looked at, not equipped: it is in byId and NAMES but never in the 角色库 (OFFER).
-  if (judge) { byId.set(judge.showcase.id, judge.showcase); setNames([judge.showcase]); }
-  const OFFER = offerOf(items);
+  for (const x of SAMPLES) byId.set(x.item.id, x.item);
+  setNames([...items, ...SAMPLES.map(x => x.item)]);
+  const sampleOf = id => SAMPLES.find(x => x.item.id === id);
+  const offerNow = () => offerOf(items).filter(id => !sampleIds.has(id));
+  const OFFER = offerNow();
+  // What a build may name: the 角色库's items and the replayed ones that play.
+  const usable = id => OFFER.includes(id) || playable.has(id);
   const rate = id => ratingOf(byId.get(id));
   // A grade letter, coloured by grade (empty for an item without one).
   const gradeTag = (id, cls = 'grade') => { const g = rate(id)?.grade; return g ? `<i class="${cls} g${g}">${g}</i>` : ''; };
@@ -226,8 +237,8 @@ async function main() {
     const p = text.split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
     const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
-    if (shape && b.parts.every(x => OFFER.includes(x.item))) return b;
-    if (shape && (shot || photoLater) && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
+    if (shape && b.parts.every(x => usable(x.item))) return b;
+    if (shape && (shot || photoLater) && b.parts.every(x => usable(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
   };
   const buildArg = b => [b.parts[0].item, b.parts[0].orient, b.parts[1].item, b.parts[1].orient, b.spread].join(',');
   const fromUrl = (key = 'mine') => {
@@ -782,7 +793,7 @@ async function main() {
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
-    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id));
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
@@ -1003,7 +1014,9 @@ async function main() {
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
   // each step's real time beside it. 品类 shows only for one of the six; a real item's category is its name (task #84).
   const STEPS = [{key: 'photo', name: '照片', play: 3}, {key: 'styled', name: '改成画风的图', play: 3}, {key: 'model', name: '3D 转起来', play: 4}];
-  const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(sec % 60)).padStart(2, '0')} 秒` : `${Math.round(sec)} 秒`;
+  // Whole seconds first, so 119.6 reads 2 分 00 秒; a total adds the rounded steps, so the parts add up to it.
+  const dur = sec => (sec = Math.round(sec)) >= 60 ? `${Math.floor(sec / 60)} 分 ${String(sec % 60).padStart(2, '0')} 秒` : `${sec} 秒`;
+  const durAll = secs => dur(secs.reduce((a, b) => a + Math.round(b), 0));
   let howItem = null, howT = 0, howTimer = 0, howReq = 0;
   async function openHow(id) {
     const it = byId.get(id), o = it?.origin;
@@ -1017,13 +1030,21 @@ async function main() {
       const pic = st.key === 'model' ? '<canvas class="mini3d"></canvas>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
       return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
     }).join('');
-    el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${dur(secs.reduce((a, b) => a + b, 0))}` : '';
-    // 评委版's replayed item: whose photo it is, and back to the 角色库 instead of 装上它 (it isn't one of the nine).
-    const shown = judge?.showcase.id === id, other = !shown && mine.parts[1 - libSlot].item === id;
-    el.howNote.hidden = !shown;
-    if (shown) el.howNote.textContent = judge.photoCredit;
-    el.howEquip.disabled = other;
-    el.howEquip.querySelector('span').textContent = shown ? (el.shoot.hidden ? '回角色库' : '回拍一件') : other ? '另一边已经装着它' : mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它';
+    el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${durAll(secs)}` : '';
+    // 评委版's replayed items: whose photo it is, the other one a tap away, and 装上去打 (back, for one the sim turned down).
+    const sample = sampleOf(id), other = mine.parts[1 - libSlot].item === id, stuck = sample && !playable.has(id);
+    el.howNote.hidden = !sample;
+    el.howSrc.hidden = !sample;
+    if (sample) {
+      el.howNote.textContent = sample.credit;
+      el.howSrc.textContent = sample.tag;
+      el.howSrc.classList.toggle('own', sample.own);
+    }
+    el.howPick.hidden = !sample || SAMPLES.length < 2;
+    el.howPick.innerHTML = SAMPLES.map(x => `<button type="button" data-id="${esc(x.item.id)}"${x.item.id === id ? ' aria-current="true"' : ''}><b>${esc(NAMES[x.item.id])}</b><small>${esc(x.tag)}</small></button>`).join('');
+    el.howEquip.disabled = !stuck && other;
+    el.howEquip.querySelector('span').textContent = stuck ? (el.shoot.hidden ? '回角色库' : '回拍一件') : other ? '另一边已经装着它'
+      : mine.parts[libSlot].item === id ? '装着，回拼装' : sample ? '装上去打' : '装上它';
     turns.prune();
     turns.show(el.howTurn, id);
     el.how.hidden = false;
@@ -1060,8 +1081,9 @@ async function main() {
   function closeHow() { howReq++; cancelAnimationFrame(howTimer); el.how.hidden = true; }
   $('howBack').onclick = closeHow;
   $('howReplay').onclick = playHow;
+  el.howPick.onclick = e => { const b = e.target.closest('[data-id]'); if (b && b.dataset.id !== howItem) openHow(b.dataset.id); };
   el.howEquip.onclick = () => {
-    if (judge?.showcase.id === howItem) { closeHow(); return; }
+    if (sampleOf(howItem) && !playable.has(howItem)) { closeHow(); return; }
     if (mine.parts[1 - libSlot].item === howItem) return;
     const id = howItem;
     closeHow();
@@ -1085,7 +1107,7 @@ async function main() {
   // Its models come down first, so the swap shows whole: 开打 pressed meanwhile fights the build on screen (Elara 89e3686f).
   // One whose model won't open is let go, and the playable build on screen stays, with no error (Elara 80e11ec2).
   async function takeLate() {
-    const ready = b => b && b.parts.every(x => OFFER.includes(x.item));
+    const ready = b => b && b.parts.every(x => usable(x.item));
     if (phase !== 'build') return;
     const keys = Object.keys(late).filter(k => ready(late[k]));
     const opens = await Promise.all(keys.map(k => loadModels(late[k].parts.map(x => byId.get(x.item))).then(() => true, () => false)));
@@ -1103,16 +1125,16 @@ async function main() {
     if (!fresh.length) return;
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
-    OFFER.splice(0, OFFER.length, ...offerOf(items));
+    OFFER.splice(0, OFFER.length, ...offerNow());
     takeLate();
   }
   let shoot = null;
   shoot0.then(async s => {
-    // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how one real item was made.
+    // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how the two real items were made.
     if (!s && judge) {
       el.shootBtn.lastChild.textContent = '拍一件示例';
       el.shootBtn.hidden = false;
-      el.shootBtn.onclick = () => openHow(judge.showcase.id);
+      el.shootBtn.onclick = () => openHow(SAMPLES[0].item.id);
     }
     if (!s) return;
     const {api} = s;
@@ -1124,7 +1146,11 @@ async function main() {
     takeLate();
     shoot = mountShoot({
       api, addItems, turns, loadModels, equip, equipLabel, openHow,
-      strict: Boolean(judge), quota: s.quota, sample: judge && (() => openHow(judge.showcase.id)),
+      strict: Boolean(judge), quota: s.quota, sample: judge && (id => openHow(id)),
+      samples: SAMPLES.map(x => {
+        const steps = x.item.origin.steps;
+        return {id: x.item.id, name: NAMES[x.item.id], tag: x.tag, own: x.own, photo: pictureUrl(x.item.origin.photo), time: durAll(steps.map(st => st.seconds))};
+      }),
       item: id => byId.get(id), refused: id => simRefused.has(id), name: id => NAMES[id], grade: rate, spec,
       seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),

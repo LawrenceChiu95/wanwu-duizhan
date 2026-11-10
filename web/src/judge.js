@@ -1,32 +1,34 @@
 /**
  * 评委版 (task #4, Elara 51c72819): `npm run build:judge` builds this page with __JUDGE__ on. A judge opens a link on a
  * phone and plays with the nine default items, and 拍一件 shoots through the backend at the same origin (Elara edd90212);
- * when it can't now, the nine still play. Beside 拍照 is one real generation to replay (this flip-flop: a real photo
- * through 认物, 改图 and 建模, Sol's task 26 run, job j_a3187a76), so a judge sees how an item comes from a photo before
- * trying, or instead. With ?shoot=off nothing calls a backend and 拍一件 is only that replay.
- * Loaded only when __JUDGE__ is on, so its pictures and model stay out of the normal build.
+ * when it can't now, the nine still play. Beside 拍照 are two real generations to replay and to play with (Elara
+ * 9e17f724, 9c352da4): first the thermos 远夏 shot on 11-10 (job j_ad9f97af), then the flip-flop made from a public photo
+ * (Sol's task 26 run, job j_a3187a76). With ?shoot=off nothing calls a backend and 拍一件 is only those two.
+ * Loaded only when __JUDGE__ is on, so their pictures and models stay out of the normal build.
  */
-import itemJson from '../../data/showcase/flipflop/item.json';
-import glbUrl from '../../data/showcase/flipflop/model.glb?url';
-import photoUrl from '../../data/showcase/flipflop/photo.webp?url';
-import styledUrl from '../../data/showcase/flipflop/styled.webp?url';
+import thermosJson from '../../data/showcase/thermos/item.json';
+import thermosGlb from '../../data/showcase/thermos/model.glb?url';
+import thermosPhoto from '../../data/showcase/thermos/photo.webp?url';
+import thermosStyled from '../../data/showcase/thermos/styled.webp?url';
+import flipflopJson from '../../data/showcase/flipflop/item.json';
+import flipflopGlb from '../../data/showcase/flipflop/model.glb?url';
+import flipflopPhoto from '../../data/showcase/flipflop/photo.webp?url';
+import flipflopStyled from '../../data/showcase/flipflop/styled.webp?url';
 
-const files = {'model.glb': glbUrl, 'photo.webp': photoUrl, 'styled.webp': styledUrl};
-const bundled = path => files[path.split('/').pop()];
+// The item as the page uses it: the backend's record with its files swapped for the bundled URLs. Steps are the
+// generation's own times: the thermos's as the backend logged them; the flip-flop's without the 155 s the run stood
+// still while the credits were checked by hand (Sol 378c66c6).
+const bundle = (json, glb, photo, styled, extra = {}) => ({...json, ...extra, glb, origin: {...json.origin, photo, styled}});
+// The flip-flop's 3D swings about the upright instead of turning (livecards.js): the model stands on its sole's edge, so it
+// starts three-quarter like the opening card's picture, straps showing, and never turns its sole to the camera (Elara 907b6fa5).
+// tag says whose photo it is, beside the replay; credit is the line under it (Elara 9c352da4).
+export const showcases = [
+  {item: bundle(thermosJson, thermosGlb, thermosPhoto, thermosStyled), tag: '我们真拍', own: true,
+    credit: '我们用手机真拍的照片，已裁切；认物、改图和建模都是真跑的'},
+  {item: bundle(flipflopJson, flipflopGlb, flipflopPhoto, flipflopStyled, {card: {swing: 0.7}}), tag: '照片来自网上公开图片', own: false,
+    credit: '原照 Michal Osmenda · CC BY-SA 2.0，已裁切；改图和建模是真跑的'}
+];
 
-// The item as the page uses it: the catalog-style record with its files swapped for the bundled URLs. Steps are the
-// generation's own times, without the 155 s the run stood still while the credits were checked by hand (Sol 378c66c6).
-// Its 3D swings about the upright instead of turning (livecards.js): the model stands on its sole's edge, so it starts
-// three-quarter like the opening card's picture, straps showing, and never turns its sole to the camera (Elara 907b6fa5).
-export const showcase = {
-  ...itemJson,
-  card: {swing: 0.7},
-  glb: bundled(itemJson.glb),
-  origin: {...itemJson.origin, photo: bundled(itemJson.origin.photo), styled: bundled(itemJson.origin.styled)}
-};
-
-// The photo is a public one, not the player's (Sol 384ad535); 素材署名 and the replay both say whose it is.
-export const photoCredit = '原照 Michal Osmenda · CC BY-SA 2.0，已裁切、改图并建模';
 // 素材署名 in this build (Elara 907b6fa5): Chinese, only what the judges get, one line per thing. The five Lux3D items list
 // the photo each was made from: 锅 and 废土锅 share docoverachiever's cast-iron pan (Wren's imgs/meta.json pan-2.jpg; checked
 // against the Flickr page — data/lux3d/RECEIPT.md named kevin dooley's「Frying pan」, which is pan-0); 废土扫把's photo is
@@ -53,6 +55,7 @@ Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款
 ## 拍一件示例
 | 素材 | 作者 | 许可 | 出处 |
 |---|---|---|---|
+| 保温杯原照（已裁切、改图并建模） | 本队 | 本队自拍 | |
 | 人字拖原照（已裁切、改图并建模） | Michal Osmenda | ${CC['by-sa-2']} | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Flip-flops_%283409558121%29.jpg) |
 
 ## 字体和程序
