@@ -457,7 +457,7 @@ class Rings {
       if (k >= 1) { r.s.visible = false; continue; }
       const e = 1 - (1 - k) ** 3;
       r.s.scale.setScalar(r.from + (r.to - r.from) * e);
-      r.s.material.opacity = (1 - k) * 0.48;
+      r.s.material.opacity = (1 - k) * 1.1;
     }
   }
   clear() { for (const r of this.pool) r.s.visible = false; }
@@ -1000,6 +1000,9 @@ export class Stage {
     this.fieldUniforms.hitPower.value = power;
     this.streaks.burst(point, Math.round(5 + 13 * power), 3 + 4 * power, 0.22 + 0.3 * power, 0.025 + 0.02 * power, 0.16 + 0.12 * power, colors);
     this.punch(point, 2 + 9 * power);
+    // 凡朔's fixed camera: a short push-in, up to a tenth tighter for a landed lunge (photo-kitchen.js plays it).
+    const amount = 0.1 * power;
+    if (!this.cam.push || this.cam.push.amount < amount) this.cam.push = {amount, age: 0};
   }
   clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0, fizzle: 0, aimDir: null}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
@@ -1082,7 +1085,8 @@ export class Stage {
       for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
     }
     this.cam.shakeAge = SHAKE_TIME;
-    this.cam.punch = null;
+    this.cam.punch = this.cam.push = null;
+    this.cam.shake4 = 0;
     this.clearActs();
   }
 
@@ -1102,10 +1106,11 @@ export class Stage {
     this.camera.updateProjectionMatrix();
     this.particles.mat.uniforms.uScale.value = this.view.h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
     // A switch is a clean cut: no jolt started under the other camera carries over (Sol 第 11 版 R1).
-    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0, shakeAge: SHAKE_TIME, shakeAmp: 0, punch: null});
+    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0, shakeAge: SHAKE_TIME, shakeAmp: 0, punch: null, push: null});
   }
   /** Chase camera only: camera-position shake on blows (0..1.2) and the decisive push (0..1), as v4 drove them. */
-  shakeV4(amount) { if (this.chase) this.cam.shake4 = Math.min(1.2, Math.max(this.cam.shake4 ?? 0, amount)); }
+  /** Every blow's shake: the chase cameras and 凡朔's fixed camera (photo-kitchen.js) both play it out. */
+  shakeV4(amount) { this.cam.shake4 = Math.min(1.2, Math.max(this.cam.shake4 ?? 0, amount)); }
   setPushV4(amount) { this.cam.push4 = amount; }
   /** Yesterday's chase camera (03a4da9 updateCamera, fight and result), lifted as it was; only the safe area now counts the 冲/挡 pad. */
   updateCameraV4(dt, snap) {

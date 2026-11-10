@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 
 const PHOTO = new URL('./assets/battle-depth.svg', import.meta.url).href;
+// Impact feel on 凡朔's fixed camera (Elara #万物对战:e6f14ad0): the old chase camera's shake, as px of picture translation
+// (its 0.03 × distance jitter at 58°), and a short push-in that tightens the framing and is back within PUSH_TIME.
+const SHAKE_PX = 0.03 / (2 * Math.tan(THREE.MathUtils.degToRad(58 / 2))), PUSH_TIME = 0.22;
 
 /** A world-space photographic plate sharing the fight camera (2.5D). */
 export class PhotoKitchen {
@@ -103,16 +106,31 @@ export class PhotoKitchen {
           (Math.abs(pos.y)+radius)*view.h/(2*halfHeight*depthToFront*0.9));
       }
     }
+    const c = this.stage.cam;
+    let sx = 0, sy = 0;
+    if (!building && dt > 0) {
+      if (c.push) {
+        c.push.age += dt;
+        const k = c.push.age / PUSH_TIME;
+        if (k >= 1) c.push = null;
+        else tangent /= 1 + c.push.amount * (k < 0.2 ? Math.sin(k / 0.2 * Math.PI / 2) : (1 - (k - 0.2) / 0.8) ** 2);
+      }
+      if (c.shake4 > 0.001) {
+        const amp = c.shake4 * c.shake4 * SHAKE_PX * view.h;
+        sx = (Math.random() - 0.5) * amp; sy = (Math.random() - 0.5) * amp;
+        c.shake4 *= Math.exp(-dt * 9);
+      }
+    } else if (building) { c.push = null; c.shake4 = 0; }
     const desired = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
     camera.fov = desired;
-    this.stage.setOffset(view.w / 2 - x, view.h / 2 - y);
+    const ox = view.w / 2 - x, oy = view.h / 2 - y;
+    this.stage.setOffset(ox + sx, oy + sy);
     camera.updateProjectionMatrix();
     if (this.plate && !this.referenceReady) {
       // Leave a small border reserve even at the new maximum zoom-out.
       const height = 200 * nominal * 2 * 1.02;
       this.plate.scale.set(height * camera.aspect, height, 1);
       this.plate.quaternion.copy(camera.quaternion);
-      const [ox, oy] = this.stage.cam.offset;
       this.plate.position.copy(camera.position).add(new THREE.Vector3(ox * height / view.h, -oy * height / view.h, -100).applyQuaternion(camera.quaternion));
       this.referenceReady = true;
     }

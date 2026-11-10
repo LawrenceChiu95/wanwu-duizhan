@@ -534,26 +534,28 @@ async function main() {
       const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
-        stage.burst(point, [SPARK, TEAM[e.attacker], HOT], 48, 4.2, 0.032, 0.85);
+        // The moment of impact is as bright as the old 评委版 (Elara e6f14ad0); 凡朔's field and colours stay as they are.
+        stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
         stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
-        overlay.screenFlash(0.10);
+        stage.ring(point, WHITE, 0.05, 1.0, 0.3);
+        overlay.screenFlash(0.32);
         sfx.dashHit();
         buzz(40);
       } else {
         // An ordinary knock: the same, scaled down.
-        stage.burst(point, [SPARK, TEAM[e.attacker], BLOCK], big ? 28 : 16, big ? 3.6 : 2.7, big ? 0.028 : 0.020, big ? 0.72 : 0.55);
+        stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
         stage.impact(point, e.shield ? 0.18 : big ? 0.65 : 0.32, [WHITE, SPARK, TEAM[e.attacker]]);
         overlay.screenFlash(big ? 0.05 : 0.025);
         sfx.hit(Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit: e.type === 'weak'});
       }
-      // Yesterday's camera shook on every blow (no-op with the new camera).
+      // Every blow shakes the picture, 凡朔's fixed camera included (photo-kitchen.js).
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
-      stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : TEAM[e.attacker], 0.04, big ? 1.05 : 0.7, big ? 0.44 : 0.34);
+      stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
       // Position combat: the striking piece gets a glowing edge in its colour, the struck one flashes too (a clash: both edged).
       const position = positionCombat(e);
       if (position) stage.strike(e.attacker, e.part, point);
-      stage.flashPart(e.target, e.targetPart, core || position ? 0.32 : 0.18);
+      stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
         // 护住 (the hit landed on a hugging piece) rides in the same plate: two plates on one spot piled up (Elara 11-02 a788037f).
@@ -569,8 +571,8 @@ async function main() {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
       }
-      if (core) overlay.screenFlash(0.06);
-      if (e.type === 'weak') { overlay.screenFlash(0.12); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+      if (core) overlay.screenFlash(0.18);
+      if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
