@@ -8,6 +8,26 @@
 <title>万物对战 · 试玩</title>
 <!-- Until the stylesheets arrive: the page's dark ground, not a moment of unstyled layout (Elara 1bb3ca47); style.css shows the body. -->
 <style>html{background:#101510}body{display:none}</style>
+<script>
+/* A host page (ModelScope's studio) can make this frame taller than what the phone shows, cutting off every button at
+   the foot of the page (Wren 9e1f8394). The page measures how much of itself the top window shows, through a
+   full-height probe (IntersectionObserver reports a cross-origin frame's part in the top viewport), and when the foot
+   is hidden sizes the game to the part that is seen (--seen in style.css). Unclipped, nothing changes. */
+(function () {
+  if (!window.IntersectionObserver) return;
+  var probe = document.createElement('i'), root = document.documentElement, steps = [];
+  for (var i = 0; i <= 400; i++) steps.push(i / 400);
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.cssText = 'position:fixed;left:0;top:0;bottom:0;width:1px;opacity:0;pointer-events:none';
+  new IntersectionObserver(function (entries) {
+    var e = entries[entries.length - 1], seen = Math.floor(e.intersectionRect.bottom);
+    // Off screen altogether, or a few pixels' rounding: keep the frame's own height.
+    if (e.intersectionRatio > 0 && seen > 200 && seen < innerHeight - 2) root.style.setProperty('--seen', seen + 'px');
+    else root.style.removeProperty('--seen');
+  }, {threshold: steps}).observe(probe);
+  root.appendChild(probe);
+})();
+</script>
 <link rel="stylesheet" href="./src/style.css">
 <link rel="stylesheet" href="./src/terminal.css">
 </head>
