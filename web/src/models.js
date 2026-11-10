@@ -43,12 +43,84 @@ function cardPose(item) {
   return {pose, yaw: item.card?.yaw ?? 0, swing: item.card?.swing ?? 0};
 }
 
+const thumbnails = new Map();
+
+/** Render loaded equipment once using the existing renderer, without another WebGL context. */
+export function itemThumbnail(itemId, renderer, environment) {
+  if (thumbnails.has(itemId)) return thumbnails.get(itemId);
+  if (!cache.has(itemId)) return null;
+  const object = cache.get(itemId).clone(true), scene = new THREE.Scene();
+  const bounds = new THREE.Box3().setFromObject(object), center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3()), span = size.length();
+  const camera = new THREE.PerspectiveCamera(35, 1.6, span / 100, span * 10);
+  const extents = size.toArray(), thin = extents.indexOf(Math.min(...extents));
+  const flat = extents[thin] < Math.max(...extents) * 0.28;
+  const direction = new THREE.Vector3(0.85, 0.7, 1.2);
+  if (flat) {
+    direction.set(0.15, 0.15, 0.15).setComponent(thin, 1);
+    if (thin === 1) camera.up.set(0, 0, -1);
+  }
+  direction.normalize();
+  camera.position.copy(center).addScaledVector(direction, span * 3);
+  camera.lookAt(center);
+  camera.updateMatrixWorld(true);
+  // Fit every GLB bounding-box corner with margin, not just its longest dimension.
+  const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const inverse = camera.quaternion.clone().invert();
+  let distance = 0;
+  for (let i = 0; i < 8; i++) {
+    const point = new THREE.Vector3(i & 1 ? bounds.max.x : bounds.min.x, i & 2 ? bounds.max.y : bounds.min.y, i & 4 ? bounds.max.z : bounds.min.z).sub(center).applyQuaternion(inverse);
+    distance = Math.max(distance, point.z + Math.max(Math.abs(point.y) / tangent, Math.abs(point.x) / (tangent * camera.aspect)) * 1.16);
+  }
+  camera.position.copy(center).addScaledVector(direction, distance);
+  camera.updateMatrixWorld(true);
+  scene.environment = environment;
+  scene.environmentIntensity = 0.65;
+  scene.add(object, new THREE.HemisphereLight('#fff5eb', '#344d42', 1));
+  const light = new THREE.DirectionalLight('#fff8ea', 1.6);
+  light.position.copy(camera.position);
+  scene.add(light);
+  const target = new THREE.WebGLRenderTarget(256, 160);
+  const oldTarget = renderer.getRenderTarget(), oldColor = renderer.getClearColor(new THREE.Color());
+  const oldAlpha = renderer.getClearAlpha(), viewport = renderer.getViewport(new THREE.Vector4());
+  try {
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(0, 0);
+    renderer.clear();
+    renderer.render(scene, camera);
+    const bytes = new Uint8Array(256 * 160 * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, 256, 160, bytes);
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 160;
+    const context = canvas.getContext('2d'), pixels = context.createImageData(256, 160);
+    for (let row = 0; row < 160; row++) pixels.data.set(bytes.subarray((159 - row) * 1024, (160 - row) * 1024), row * 1024);
+    context.putImageData(pixels, 0, 0);
+    const url = canvas.toDataURL();
+    thumbnails.set(itemId, url);
+    return url;
+  } finally {
+    renderer.setRenderTarget(oldTarget);
+    renderer.setClearColor(oldColor, oldAlpha);
+    renderer.setViewport(viewport);
+    target.dispose();
+  }
+}
+
 /** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
 export function loadModels(items) {
   return Promise.all(items.map(item => {
     if (!loading.has(item.id)) loading.set(item.id, loadOne(item));
     return loading.get(item.id);
   }));
+}
+
+/** Puts the given items' GLBs in the browser's cache and nothing more (no decoding, so the screen never hitches), one at a
+ *  time at low priority; loadModels finds them there later. A miss here only means that model downloads when used. */
+export async function prefetchModels(items) {
+  for (const item of items) {
+    const url = item && !loading.has(item.id) && urlFor(item.glb);
+    if (url) await fetch(url, {priority: 'low'}).then(r => r.arrayBuffer()).catch(() => {});
+  }
 }
 
 /** An item whose GLB is not bundled is an error (no stand-in box: it would look like the import worked). */

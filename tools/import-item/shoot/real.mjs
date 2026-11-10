@@ -93,7 +93,8 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         }
         state.orientation = prepared.shape.normalization.orientation; await save();
         await fs.writeFile(path.join(folder, 'model.glb'), prepared.bytes);
-        return {name: recognition.name ?? `我拍的${({scissors:"剪刀",pot:"锅",broom:"扫把",lamp:"台灯",slipper:"拖鞋",pillow:"枕头"})[recognition.category]}`, category: recognition.category, ...(unrestricted ? {materialName: recognition.materialName, photoPhysics: {hardness: recognition.hardness}} : {templateId: template.id}),
+        return {name: recognition.name ?? `我拍的${({scissors:"剪刀",pot:"锅",broom:"扫把",lamp:"台灯",slipper:"拖鞋",pillow:"枕头"})[recognition.category]}`, category: recognition.category, ...(unrestricted ? {materialName: recognition.materialName, photoPhysics: {hardness: recognition.hardness,
+            ...(recognition.impactHardness === undefined ? {} : {hasBladeOrPoint: recognition.hasBladeOrPoint, impactHardness: recognition.impactHardness})}} : {templateId: template.id}),
           generated: true, scale: 1, outEnd: 1, tag: unrestricted ? 'photo' : template.tag, stats: unrestricted ? {hp: 60, attack: 11, defense: 4} : structuredClone(template.stats),
           material: recognition.material, condition: recognition.condition, mass: massKg,
           massBasis: 'photo-estimate', standardLongSide: lengthMeters, ...prepared.shape,

@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES, JUDGE_POSITION_COMBAT_RULES} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
-import {loadModels, pictureUrl, stillUrl, outlinePath} from './models.js';
+import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -31,13 +31,16 @@ const el = {
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
-// The original six keep this order (pot and lamp are the textured Lux3D generations); other catalog items follow.
-const ORDER = ['pan-lux3d', 'broom', 'lamp-lux3d', 'scissors', 'slipper', 'pillow'];
-// Everything in the catalog except the drafts a comparisonBase replaces.
+// The trial page (远夏 77df1bda, Elara 910599fc) offers 凡朔's twelve (Sol's rated items, in his order), then the player's
+// own photos, not the drafts a comparisonBase replaces. The earlier items stay in the catalog only for the three
+// opponents, until theirs are made of his things.
+const ROSTER = ['fanshuo-knife', 'fanshuo-pot', 'fanshuo-cushion', 'fanshuo-mouse', 'fanshuo-plate', 'fanshuo-shaver', 'fanshuo-chair',
+  'fanshuo-roller', 'fanshuo-camera', 'fanshuo-feather', 'fanshuo-rabbit', 'fanshuo-cup'];
+const EARLIER = new Set(['scissors', 'lamp', 'broom', 'pot', 'slipper', 'pillow', 'pan-lux3d', 'lamp-lux3d', 'wasteland-knife', 'wasteland-pot', 'wasteland-broom']);
 const offerOf = items => {
   const replaced = new Set(items.map(i => i.comparisonBase).filter(Boolean));
-  const rank = id => ORDER.includes(id) ? ORDER.indexOf(id) : ORDER.length;
-  return items.map(i => i.id).filter(id => !replaced.has(id)).sort((a, b) => rank(a) - rank(b));
+  const rank = id => ROSTER.includes(id) ? ROSTER.indexOf(id) : ROSTER.length;
+  return items.map(i => i.id).filter(id => !replaced.has(id) && !EARLIER.has(id)).sort((a, b) => rank(a) - rank(b));
 };
 // The computer's default build; ?foe= can override it for measurements.
 const DEFAULT_FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
@@ -52,7 +55,14 @@ const FOES = [
 ];
 const SPREAD = {e180: '对面', e90: '挨着'};
 // 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
-const LADDER = ladderJson.foes;
+// A page built for one set of rules (__COMBAT__, vite.config.js) takes the foe builds tuned for them where there are any
+// (judgeBuilds.<current|position>.<foe id>). A tuned build can override its foe's reaction settings.
+const LADDER = ladderJson.foes.map(f => {
+  const tuned = __COMBAT__ && ladderJson.judgeBuilds?.[__COMBAT__]?.[f.id];
+  if (!tuned) return f;
+  const {ai, ...build} = tuned;
+  return {...f, build, ai: ai ? {...f.ai, ...ai} : f.ai};
+});
 const LADDER_KEY = 'wanwu-ladder';
 const SVG = {
   lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>',
@@ -61,7 +71,8 @@ const SVG = {
   down: '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg>',
   arrow: '<svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>'
 };
-const DEFAULT = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'pillow', orient: 'hug'}], spread: 'e180'};
+// Sol bccac3b7: 锅 out, 抱枕 hugging.
+const DEFAULT = {parts: [{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
 const HEX = TEAM.map(c => '#' + c.getHexString());
@@ -87,7 +98,7 @@ const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } 
 
 // The default items Lux3D made from a photo, and who made them when it wasn't us (Elara 907b6fa5): each gets the Lux3D tag
 // on the build screen and in 角色库, and its source line says so. 废土刀 is 凡朔's run (PR #6, same source sha256).
-const LUX = {'pan-lux3d': '', 'lamp-lux3d': '', 'wasteland-knife': '凡朔', 'wasteland-pot': '', 'wasteland-broom': ''};
+const LUX = {'pan-lux3d': '', 'lamp-lux3d': '', 'wasteland-knife': '', 'wasteland-pot': '', 'wasteland-broom': ''};
 const isLux = id => Object.hasOwn(LUX, id);
 // Text and attribute values alike (names will come from outside once 拍一件 is live: quotes must not end an attribute).
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -159,8 +170,10 @@ async function main() {
   el.busy.hidden = false;
   const q = new URLSearchParams(location.search);
   const feel = q.get('feel') === 'bounce' ? 'bounce' : undefined;
-  const combat = q.get('combat') === 'position' ? 'position' : undefined;
-  const combatOptions = combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
+  // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
+  const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
+  const combatRules = __COMBAT__ === 'position' ? JUDGE_POSITION_COMBAT_RULES : POSITION_COMBAT_RULES;
+  const combatOptions = combat ? {combat, combatRules} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
@@ -168,9 +181,11 @@ async function main() {
   const judge = __JUDGE__ ? await import('./judge.js') : null;
   // 拍一件's items are in the catalog before anything reads it, so a reopened page whose address equips one finds it
   // (Elara a510bb73 B2). A backend that doesn't answer within 5 s leaves the page with what it shipped with. The 评委版
-  // gives all of it, /quota then the items, 3 s together before 开始玩 (Sol e0a86865), and skips the items when /quota
-  // says no photo can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again once the page
-  // is up: the player's own items stay in the 角色库 after the day's photos run out (Elara cf1366e6).
+  // doesn't wait for it at all (Elara b231705e: a slow /quota held its first screen past 3 s): the first match's models come
+  // down beside /quota and the items, and those go in when they arrive, a build naming one waiting in late like an
+  // address's. It asks /quota then the items, 3 s together (Sol e0a86865), and skips the items when /quota says no photo
+  // can be taken now (Elara c1bc2dac); what isn't back by then, or was skipped, is asked again: the player's own items
+  // stay in the 角色库 after the day's photos run out (Elara cf1366e6).
   const within = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(ok, Math.max(0, ms), null))]).catch(() => []);
   const shoot0 = shootApi(q, __JUDGE__).then(async api => {
     if (!api) return null;
@@ -180,7 +195,10 @@ async function main() {
     const sent = shootOpen(quota) ? await within(api.items(), by - performance.now()) : null;
     return {api, quota, items: sent ?? [], again: sent === null || Boolean(quota.late)};
   });
-  const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), shoot0]);
+  const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), __JUDGE__ ? null : shoot0]);
+  const photoLater = __JUDGE__ && q.get('shoot') !== 'off'; // shootApi: the 评委版's photo items may still come in
+  // Anything not shipped in the catalog came from 拍一件: the result tip compares it with the opponent (Elara 365a2667).
+  const shipped = new Set(items.map(i => i.id));
   // Only a page with 拍一件 on has fetched /items; a plain page has nothing to check, or to warn about (task #76).
   if (shot) items.push(...await register(photoItems(shot.items).filter(it => !items.some(i => i.id === it.id))));
   const byId = new Map(items.map(i => [i.id, i]));
@@ -209,7 +227,7 @@ async function main() {
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
     const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
     if (shape && b.parts.every(x => OFFER.includes(x.item))) return b;
-    if (shape && shot && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
+    if (shape && (shot || photoLater) && b.parts.every(x => OFFER.includes(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
   };
   const buildArg = b => [b.parts[0].item, b.parts[0].orient, b.parts[1].item, b.parts[1].orient, b.spread].join(',');
   const fromUrl = (key = 'mine') => {
@@ -249,13 +267,16 @@ async function main() {
   // (远夏 10-28 2735f129: keep all three).
   // 第 13 版 hand-feel trial only (no on-page option): ?block=0.2 / 0.25 / 0.3 s block window; default is the rules' own.
   const blockTime = ['0.2', '0.25', '0.3'].includes(q.get('block')) ? Number(q.get('block')) : undefined;
-  let camStyle = ['v4', 'new'].includes(q.get('cam')) ? q.get('cam') : 'slow';
+  let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
+  await stage.kitchen.ready;
   el.busy.hidden = true;
   // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
   // the opening card and builds, instead of holding up the first screen or the first 开打.
-  if (judge) { judge.readyIntro(); warmEngine().catch(showError); }
+  // The rest of the 角色库's models then come down behind it, after the engine (Elara ead80382): opening the 角色库 or
+  // swapping an item later needn't wait for the network, and the first screen still waits for the first match's only.
+  if (judge) { judge.readyIntro(); warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
@@ -363,6 +384,12 @@ async function main() {
       slot.querySelector('.lux').hidden = !isLux(part.item);
       slot.querySelector('.spec').textContent = spec(part.item);
       slot.querySelector('.hint').textContent = HINT[part.orient];
+      const thumb = slot.querySelector('.module-thumb');
+      thumb.dataset.modelId = part.item;
+      thumb.dataset.modelPath = byId.get(part.item).glb;
+      const url = itemThumbnail(part.item, stage.renderer, stage.scene.environment);
+      thumb.hidden = !url;
+      if (url) { thumb.src = url; thumb.alt = NAMES[part.item]; }
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
@@ -376,6 +403,7 @@ async function main() {
     await loadModels(mine.parts.map(p => byId.get(p.item)));
     if (req !== buildReq || phase !== 'build') return;
     stage.replaceFighter(0, toDef(mine));
+    syncBuild();
     stage.pose(previewState());
   }
   function showBuild() {
@@ -499,12 +527,14 @@ async function main() {
   // 谁打谁看位置 (combat=position): the replay says so; a live match's events carry positionClash.
   const positionCombat = e => replay?.meta?.combat === 'position' || typeof e.positionClash === 'boolean';
   function onEvent(e) {
+    if (e.type === 'contact' || e.type === 'hit' || e.type === 'weak') stage.kitchen?.photo.noteCollision();
     const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
       const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
+        // The moment of impact is as bright as the old 评委版 (Elara e6f14ad0); 凡朔's field and colours stay as they are.
         stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
         stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
         stage.ring(point, WHITE, 0.05, 1.0, 0.3);
@@ -514,17 +544,18 @@ async function main() {
       } else {
         // An ordinary knock: the same, scaled down.
         stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
-        stage.impact(point, e.shield ? 0.1 : big ? 0.4 : 0.18, [WHITE, SPARK, TEAM[e.attacker]]);
+        stage.impact(point, e.shield ? 0.18 : big ? 0.65 : 0.32, [WHITE, SPARK, TEAM[e.attacker]]);
+        overlay.screenFlash(big ? 0.05 : 0.025);
         sfx.hit(Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit: e.type === 'weak'});
       }
-      // Yesterday's camera shook on every blow (no-op with the new camera).
+      // Every blow shakes the picture, 凡朔's fixed camera included (photo-kitchen.js).
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
       stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
-      // Position combat: the striking piece gets a glowing edge in its colour, the struck one flashes full white (a clash: both edged).
+      // Position combat: the striking piece gets a glowing edge in its colour, the struck one flashes too (a clash: both edged).
       const position = positionCombat(e);
       if (position) stage.strike(e.attacker, e.part, point);
-      stage.flashPart(e.target, e.targetPart, core || position ? 1 : 0.75);
+      stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
       // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
         // 护住 (the hit landed on a hugging piece) rides in the same plate: two plates on one spot piled up (Elara 11-02 a788037f).
@@ -751,7 +782,7 @@ async function main() {
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
-    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition));
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id));
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
@@ -815,17 +846,20 @@ async function main() {
 
   // ---------- controls ----------
   // 角色库: every item a card (3D turning, name, category, size and weight, where it came from at the foot). The other slot's item
-  // is 「已装」 and can't be picked; this slot's own is 「装着」. Photo-made items with a saved generation record get
+  // is tagged with its side (「右边在用」) and can't be picked; this slot's own says its side too (「左边在用」). Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
   const sourceLine = it => {
     if (isLux(it.id)) return `来源：照片 → Lux3D 生成${LUX[it.id] ? ' · ' + LUX[it.id] : ''}`;
     if (/^CC/.test(it.source?.license ?? '')) return `来源：公开的 CC 模型${it.source.author ? ' · ' + it.source.author : ''}`;
+    if (it.generated && it.tag === 'photo') return '来源：照片生成';
     return '来源：现成的 3D 模型';
   };
   let libSlot = 0, libReq = 0;
   function cardHtml(id, k) {
     const it = byId.get(id), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
-    const badge = other ? '<span class="badge">已装</span>' : own ? '<span class="badge own">装着</span>' : '';
+    // Which side each tag means, not 已装/装着 (same word to a player, Elara 08bbe423).
+    const side = j => j ? '右边' : '左边';
+    const badge = other ? `<span class="badge">${side(1 - k)}在用</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : '';
     const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
@@ -1048,12 +1082,18 @@ async function main() {
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
   // The sim takes them first; one it turns down never shows up here, so the 好了 card waits for it (task #56 S2).
   // The address's build, once its photo items are in, if the player hasn't changed that side in the meantime.
-  function takeLate() {
+  // Its models come down first, so the swap shows whole: 开打 pressed meanwhile fights the build on screen (Elara 89e3686f).
+  // One whose model won't open is let go, and the playable build on screen stays, with no error (Elara 80e11ec2).
+  async function takeLate() {
     const ready = b => b && b.parts.every(x => OFFER.includes(x.item));
     if (phase !== 'build') return;
-    if (ready(late.mine) && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
-    if (ready(late.foe) && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
-    for (const k of Object.keys(late)) if (ready(late[k])) delete late[k];
+    const keys = Object.keys(late).filter(k => ready(late[k]));
+    const opens = await Promise.all(keys.map(k => loadModels(late[k].parts.map(x => byId.get(x.item))).then(() => true, () => false)));
+    if (phase !== 'build') return;
+    const take = k => opens[keys.indexOf(k)] && ready(late[k]);
+    if (take('mine') && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
+    if (take('foe') && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
+    for (const k of keys) delete late[k];
   }
   async function addItems(sent) {
     const list = photoItems(sent);
@@ -1076,6 +1116,7 @@ async function main() {
     }
     if (!s) return;
     const {api} = s;
+    if (judge) await addItems(s.items);
     // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
     // doesn't wait for these.
     const more = s.again && api.items().then(addItems).catch(() => {});

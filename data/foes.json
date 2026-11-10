@@ -1,5 +1,5 @@
 {
-  "note": "三个对手 task #86：固定顺序、装法与版本化 AI 参数；4e86e52同头模拟按豁免接受，实战录像和 400 局留出已验收，第三关只更难，不教换装法。",
+  "note": "独立试玩页的三个对手装法。沿用正式版顺序、说明和 AI；新装法须以独立复测结果为准。",
   "foes": [
     {
       "id": "mang",
@@ -9,11 +9,11 @@
       "build": {
         "parts": [
           {
-            "item": "pan-lux3d",
+            "item": "fanshuo-pot",
             "orient": "out"
           },
           {
-            "item": "slipper",
+            "item": "fanshuo-shaver",
             "orient": "hug"
           }
         ],
@@ -40,11 +40,11 @@
       "build": {
         "parts": [
           {
-            "item": "pillow",
+            "item": "fanshuo-roller",
             "orient": "hug"
           },
           {
-            "item": "pan-lux3d",
+            "item": "fanshuo-plate",
             "orient": "hug"
           }
         ],
@@ -72,11 +72,11 @@
       "build": {
         "parts": [
           {
-            "item": "wasteland-broom",
+            "item": "fanshuo-chair",
             "orient": "out"
           },
           {
-            "item": "pillow",
+            "item": "fanshuo-pot",
             "orient": "hug"
           }
         ],
@@ -95,5 +95,92 @@
         "blockLead": 0.15
       }
     }
-  ]
+  ],
+  "judgeBuilds": {
+    "position": {
+      "mang": {
+        "parts": [
+          {
+            "item": "fanshuo-cup",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-roller",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "wen": {
+        "parts": [
+          {
+            "item": "fanshuo-rabbit",
+            "orient": "hug"
+          },
+          {
+            "item": "fanshuo-pot",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "chang": {
+        "parts": [
+          {
+            "item": "fanshuo-feather",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-chair",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90",
+        "ai": {
+          "reactionJitter": 0.1
+        }
+      }
+    },
+    "current": {
+      "mang": {
+        "parts": [
+          {
+            "item": "fanshuo-knife",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-shaver",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      },
+      "wen": {
+        "parts": [
+          {
+            "item": "fanshuo-roller",
+            "orient": "hug"
+          },
+          {
+            "item": "fanshuo-plate",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90"
+      },
+      "chang": {
+        "parts": [
+          {
+            "item": "fanshuo-chair",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-pot",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e180"
+      }
+    }
+  }
 }

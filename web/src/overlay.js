@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 const ease = k => 1 - (1 - k) ** 3;
 const NS = 'http://www.w3.org/2000/svg';
-const HEX = ['#ff8a3d', '#3db4ff'];
+const HEX = ['#e7b354', '#83e1d7'];
 const CALL_TIME = 0.6;
 
 /** DOM effects over the canvas: a life ring around each core, banners, flash. Animated from update(realDt). */
@@ -42,7 +42,7 @@ export class Overlay {
     el.className = `num ${cls}`;
     el.textContent = text;
     this.layer.append(el);
-    this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur, rise: 40, half: el.offsetWidth * 0.65, h: el.offsetHeight});
+    this.nums.push({el, at: new THREE.Vector3().copy(point), age: 0, dur, rise: 40, half: el.offsetWidth * 0.65, h: el.offsetHeight, below: cls.includes('broke')});
   }
   /**
    * Who hit with what: a short plate in the striker's colour (「锅」, 「锅 暴击」), held up above the contact point on a
@@ -71,7 +71,7 @@ export class Overlay {
     if (guard) { const em = document.createElement('em'); em.className = 'guard'; em.textContent = '护住'; el.append(em); }
     this.layer.append(el);
     const at = new THREE.Vector3().copy(point), w = el.offsetWidth, h = el.offsetHeight, p = this.stage.project(at, {x: 0, y: 0});
-    const base = Math.max(18, Math.round(this.stage.screenRadius(at, 0.55)));
+    const base = Math.max(30, Math.round(this.stage.screenRadius(at, 0.72)));
     // Lift above every live plate it would cover (screen px above its anchor), lowest free spot first.
     let lift = 0;
     for (let moved = Boolean(p); moved;) {
@@ -124,26 +124,31 @@ export class Overlay {
   update(dt, showRings) {
     const {stage, p} = this;
     const W = this.layer.clientWidth;
-    for (let k = this.nums.length - 1; k >= 0; k--) {
-      const n = this.nums[k];
-      n.age += dt;
-      const t = n.age / n.dur;
-      if (t >= 1 || !stage.project(n.at, p)) { n.el.remove(); this.nums.splice(k, 1); continue; }
-      const scale = t < 0.1 ? 0.6 + 6 * t : 1.2 - Math.min(0.2, (t - 0.1) * 2);
-      const y = p.y - ease(Math.min(1, t * 1.4)) * n.rise;
-      n.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
-      const x = Math.min(W - 8 - n.half, Math.max(8 + n.half, p.x));
-      n.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${scale})`;
-    }
     for (let k = this.calls.length - 1; k >= 0; k--) {
       const c = this.calls[k];
       c.age += dt;
       const t = c.age / CALL_TIME;
       if (t >= 1 || !stage.project(c.at, p)) { c.el.remove(); c.pin?.remove(); this.calls.splice(k, 1); continue; }
       const x = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, p.x)), y = p.y - c.base - c.lift, fade = t > 0.65 ? (1 - t) / 0.35 : 1;
+      c.x = x; c.y = y;
       c.el.style.opacity = fade;
       c.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${t < 0.12 ? 0.7 + 2.5 * t : 1})`;
       if (c.pin) { c.pin.style.opacity = fade; c.pin.style.transform = `translate(${p.x}px, ${p.y}px) translate(-50%, -100%)`; }
+    }
+    for (let k = this.nums.length - 1; k >= 0; k--) {
+      const n = this.nums[k];
+      n.age += dt;
+      const t = n.age / n.dur;
+      if (t >= 1 || !stage.project(n.at, p)) { n.el.remove(); this.nums.splice(k, 1); continue; }
+      const scale = t < 0.1 ? 0.6 + 6 * t : 1.2 - Math.min(0.2, (t - 0.1) * 2);
+      let y = p.y - ease(Math.min(1, t * 1.4)) * n.rise;
+      n.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
+      const x = Math.min(W - 8 - n.half, Math.max(8 + n.half, p.x));
+      // 「你的锅碎了」 rises into the plate of the hit that broke it: it steps down under the plate instead (Elara 9dc21521).
+      if (n.below) for (const c of this.calls) {
+        if (Math.abs(c.x - x) < c.w / 2 + n.half && y > c.y - c.h - 4 && y - n.h * 1.2 < c.y + 4) y = c.y + n.h * 1.2 + 6;
+      }
+      n.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%) scale(${scale})`;
     }
     for (let k = this.verdicts.length - 1; k >= 0; k--) {
       const v = this.verdicts[k];
@@ -199,16 +204,22 @@ export class Overlay {
       const f = stage.fighters[i];
       if (!showRings || !f || f.dim > 0.9 || !stage.project(f.center, p)) { r.svg.style.opacity = 0; return; }
       r.shown += (r.hp - r.shown) * (1 - Math.exp(-dt * 10));
-      const rad = Math.max(10, stage.screenRadius(f.center, stage.coreRadius) + 5), w = rad > 22 ? 4 : 3, size = rad * 2 + w * 2;
+      const rad = Math.max(10, stage.screenRadius(f.center, stage.coreRadius) + 5), w = rad > 22 ? 2.6 : 2, size = rad * 2 + w * 2;
       const c = 2 * Math.PI * rad;
+      r.svg.style.color = HEX[i];
       r.svg.setAttribute('width', size);
       r.svg.setAttribute('height', size);
       for (const el of [r.track, r.arc]) { el.setAttribute('cx', size / 2); el.setAttribute('cy', size / 2); el.setAttribute('r', rad); el.setAttribute('stroke-width', w); }
-      r.arc.setAttribute('stroke-dasharray', `${(c * Math.max(0, r.shown)).toFixed(1)} ${c.toFixed(1)}`);
+      const span = c / 4;
+      const segments = Array.from({length:4}, (_,i) => {
+        const fill = Math.min(span * 0.94, Math.max(0, r.shown*c - i*span));
+        return `${fill} ${span-fill}`;
+      });
+      r.arc.setAttribute('stroke-dasharray',segments.join(' '));
       r.arc.setAttribute('transform', `rotate(-90 ${size / 2} ${size / 2})`);
       const low = r.hp < 0.35;
       r.arc.setAttribute('stroke', low ? (Math.sin(performance.now() / 90) > 0 ? '#ff4d5e' : HEX[i]) : HEX[i]);
-      r.svg.style.opacity = 0.95;
+      r.svg.style.opacity = 0.86;
       r.svg.style.transform = `translate(${p.x - size / 2}px, ${p.y - size / 2}px)`;
     });
   }

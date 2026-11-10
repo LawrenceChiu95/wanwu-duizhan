@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import RAPIER from '../../sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs';
-import {simulateV3,createV3Match,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner} from '../../sim/v3.js';
+import {simulateV3,createV3Match,loadV3Rules,loadCatalog,mountTransform,itemAxes,detachPart,tierDamage,damageRamp,doubleKoWinner,POSITION_COMBAT_RULES} from '../../sim/v3.js';
 import {loadRules,strikeRoles}from'../../sim/index.js';
 import{vec,arr,add,sub,rotate,euler,length,random}from'../../sim/math.js';
 import{definition}from'./probe.mjs';
@@ -37,15 +37,21 @@ test('authored wasteland broom and pot finish with finite physics in both modes'
 test('equator slots and orientations, standard dimensions, inner end sunk into the core',()=>{
  const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0),unit=k=>[0,1,2].map(i=>i===k?1:0);
  assert.ok(Object.keys(rules.top.slots).length>=4);assert.deepEqual(rules.top.orients,['out','hug']);
- for(const item of catalog){assert.equal(item.mass,designs.find(d=>d.id===item.id)?.massKg??c.itemStandards[item.category].massKg);const span=Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]));assert.ok(Math.abs(span-c.itemStandards[item.category].longSideMeters)<1e-6);
-  const {long,thin}=itemAxes(item);
+ for(const item of catalog){
+  // Photo items (凡朔's twelve) carry their own estimated size and weight: no category standard to match.
+  const std=c.itemStandards[item.category];
+  if(std){assert.equal(item.mass,designs.find(d=>d.id===item.id)?.massKg??std.massKg);const span=Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]));assert.ok(Math.abs(span-std.longSideMeters)<1e-6);}
+  else assert.ok(item.generated&&item.mass>0&&item.standardLongSide>0,`${item.id}: a non-standard category must be a photo item with its own size and weight`);
+  const {long,thin,ext}=itemAxes(item);
+  // A near-upright photo item hugs with its own top up (mountTransform; the next test covers it), not its long axis.
+  const upright=item.photoPhysics&&ext[long]<ext[1]*1.2;
   for(const mount of Object.keys(rules.top.slots))for(const orient of rules.top.orients){
    const {offset,quat:q,direction:d}=mountTransform(item,mount,orient,rules),points=item.hull.map(v=>add(offset,rotate(q,v)));
    assert.ok(Math.abs(d[1])<1e-12&&Math.abs(length(d)-1)<1e-12);
    assert.ok(Math.abs(Math.min(...points.map(v=>dot(v,d)))-(rules.core.radius-rules.top.embed))<1e-7);
    const L=rotate(q,unit(long)),T=rotate(q,unit(thin));
    if(orient==='out'){assert.ok(Math.abs(dot(L,d)*(rules.top.outEnd[item.id]??1)-1)<1e-6);assert.ok(Math.abs(Math.abs(T[1])-1)<1e-6);assert.ok(dot(offset,d)>rules.core.radius*.5);}
-   else{assert.ok(Math.abs(Math.abs(L[1])-1)<1e-6);assert.ok(Math.abs(dot(T,d)-1)<1e-6);}
+   else if(!upright){assert.ok(Math.abs(Math.abs(L[1])-1)<1e-6);assert.ok(Math.abs(dot(T,d)-1)<1e-6);}
   }
  }
 });
@@ -176,6 +182,16 @@ test('manual mode: presses taken per fixed step and recorded; replaying the same
  // Auto replays carry no manual rules or events.
  const auto=await simulateV3({fighters,mode:'A',seed:5});
  assert.equal(auto.meta.rules.manual,undefined);assert.equal(auto.meta.manual,undefined);assert.ok(!auto.events.some(e=>['press','dash','block','parry'].includes(e.type)));
+});
+test('late damage ramp is scoped to the twelve-item trial in both combat modes',async()=>{
+ const make=item=>({parts:[{item,mount:'e0',orient:'out'}]});
+ for(const combat of [undefined,'position']){
+  const options={seed:3,combat,combatRules:POSITION_COMBAT_RULES};
+  const old=await simulateV3({...options,fighters:[make('pot'),make('pillow')]});
+  const trial=await simulateV3({...options,fighters:[make('fanshuo-pot'),make('fanshuo-cushion')]});
+  assert.deepEqual(old.meta.rules.top.damageRamp,rules.top.damageRamp);
+  assert.deepEqual(trial.meta.rules.top.damageRamp,[[0,.75],[15,.9],[25,1.65],[33,7]]);
+ }
 });
 test('bounce is opt-in, keeps the opening impact, and replays presses made during recoil',async()=>{
  const fighters=[{parts:[]},{parts:[]}];

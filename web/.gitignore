@@ -1,3 +1,5 @@
 node_modules/
 dist/
 dist-judge/
+dist-judge-current/
+dist-judge-position/

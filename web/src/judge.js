@@ -39,7 +39,7 @@ export const creditsMd = `
 |---|---|---|---|
 | 锅（照片 → Lux3D 生成） | 原照 docoverachiever | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/90692748@N04/47347731882) |
 | 台灯（照片 → Lux3D 生成） | 原照 Artdecodude | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/62920259@N03/5771792573) |
-| 废土刀（照片 → Lux3D 生成） | 凡朔 | 本队自制 | |
+| 废土刀（照片 → Lux3D 生成） | 本队 | 本队自制 | |
 | 废土锅（照片 → Lux3D 生成） | 原照 docoverachiever | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/90692748@N04/47347731882) |
 | 废土扫把（照片 → Lux3D 生成，原照的柄出画，改图时补全） | 原照 1024greenstreet | ${CC['by-sa-2']} | [Flickr](https://www.flickr.com/photos/82432653@N00/858454965) |
 | 扫把 | Poly by Google | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/bzCi_ZLQPN4) |
@@ -63,11 +63,17 @@ Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款
 | three.js（3D 画面） | three.js 作者们 | MIT | [GitHub](https://github.com/mrdoob/three.js) |
 `;
 
-/** The opening card (index.html, put in by vite.config.js): its 开始玩 waits for the page to be ready. */
+/** The opening page (index.html, put in by vite.config.js): its 开始组装 waits for the page to be ready, and the pot's 3D
+ *  (potview.js) loads only after that, so it never holds up the first screen. */
 export function readyIntro() {
   const intro = document.getElementById('intro'), go = document.getElementById('introGo');
   if (!intro) return;
   go.disabled = false;
-  go.querySelector('span').textContent = '开始玩';
-  go.onclick = () => { intro.classList.add('out'); setTimeout(() => { intro.hidden = true; }, 220); };
+  go.querySelector('span').textContent = '开始组装';
+  let closePot = () => {};
+  go.onclick = () => { intro.classList.add('out'); setTimeout(() => { intro.hidden = true; closePot(); closePot = () => {}; }, 220); };
+  const hint = document.getElementById('introHint');
+  import('./potview.js').then(m => m.showPot(document.getElementById('introModel'), hint)).then(close => {
+    if (intro.hidden) close(); else closePot = close;
+  }).catch(() => { hint.textContent = '3D 未载入 · 显示改装参考图'; });
 }

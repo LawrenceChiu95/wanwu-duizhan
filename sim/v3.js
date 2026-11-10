@@ -18,11 +18,28 @@ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
 const UP=[0,1,0];
 // The opening and active moves use the original forces. This profile only changes free motion after the first rebound.
 const BOUNCE={attraction:6,thrust:0,recoilSpeed:1.55};
+// The independent twelve-item trial shortens long matches without altering legacy replays.
+const TRIAL_DAMAGE_RAMP=[[0,.75],[15,.9],[25,1.65],[33,7]];
 // Elara 64b06142 selected inward motion before contact. capHp is the original nine-item mean.
 export const POSITION_COMBAT_RULES=Object.freeze({
  radiusTolerance:.03,recoilBase:.96,recoilLength:.02,outBonus:.08,
  rangeAttack:.4,rangeHp:.8,capHp:60.800000000000004,
  roleMode:'inward',inwardWindow:.15,inwardTolerance:.1
+});
+// Explicitly selected only by the judge candidate. Replays store the full tuning in combatRules.
+export const JUDGE_POSITION_COMBAT_RULES=Object.freeze({
+ ...POSITION_COMBAT_RULES,
+ bareCoreReceive:2.5,
+ bareCoreByPartsOnly:true,
+ coreMassImpact:1.5,
+ coreFinishMultiplier:1.55,
+ autoBDamageScale:.8,
+ broadHeavyResistance:true,
+ coreLoadout:Object.freeze({mainShare:.9,attackGain:3.4,durabilityGain:1.2}),
+ weightFeel:Object.freeze({
+  slenderMinLength:.30,slenderMinRatio:2.5,lightMass:1.05,heavyMass:3.10,
+  dashLoss:.28,recenterLoss:.48,recenterBoost:.85
+ })
 });
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
@@ -92,14 +109,36 @@ function buildArena(world,r){
   [x,z]=[x*c-z*s,z*c+x*s];
  }
 }
+function isSlender(item,weightFeel){
+ const {long,mid,ext}=itemAxes(item);
+ return ext[long]>=weightFeel.slenderMinLength&&ext[long]>=ext[mid]*weightFeel.slenderMinRatio;
+}
 /** The same per-object scores the library displays drive combat; total rarity adds no hidden bonus. */
 export function itemCombat(item,r,positionRules){
  if(item.id==='__core')return {hp:r.core.hp,power:1,attack:r.core.attack,defense:r.core.defense};
  const scores=ratingScores(item);
  if(!scores)throw Error(`物品“${item.name??item.id}”（${item.id}）缺评分或评分无效：攻击、范围、耐久必须都是0–100的有限数字`);
- const {attack,durability,range}=scores,k=r.top.itemStats,q=range/100-.5;
+ const {attack,durability,range}=scores,k=r.top.itemStats;
+ let q=range/100-.5;
+ const weightFeel=positionRules?.weightFeel;
+ if(weightFeel){
+  const {long,ext}=itemAxes(item);
+  q=isSlender(item,weightFeel)?Math.min(.5,ext[long]/1.6):0;
+ }
  const power=positionRules?1+positionRules.rangeAttack*q:1,hp=positionRules?1-positionRules.rangeHp*q:1;
  return {hp:r.attachmentHp*(k.hpBase+k.hpScale*durability)*hp,power:(k.powerBase+k.powerScale*attack)*power,attack:(k.attackBase+k.attackScale*attack)*power,defense:k.defenseBase+k.defenseScale*durability};
+}
+// The starting loadout defines the core. Losing a part still changes the live mass.
+function coreLoadoutStats(parts,{mainShare,attackGain,durabilityGain}){
+ if(!parts.length)return {attack:1,defense:1,attackScore:15};
+ const scores=parts.map(p=>ratingScores(p.item));
+ const out=parts.map(p=>p.orient==='out');
+ const firstShare=out[0]===out[1]?.5:out[0]?mainShare:1-mainShare;
+ const score=key=>scores.length===1?scores[0][key]:
+  scores[0][key]*firstShare+scores[1][key]*(1-firstShare);
+ const attackScore=score('attack');
+ return {attackScore,attack:Math.max(.15,1+(attackScore-15)/50*attackGain),
+  defense:Math.max(.35,1+(score('durability')-62)/50*durabilityGain)};
 }
 function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
  const spin=r.top.spinRate*r.top.spinDirections[index];
@@ -111,12 +150,14 @@ function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
   const item=c.items.find(x=>x.id===p.item),{offset,quat:q}=mountTransform(item,p.mount,p.orient,r),d=RAPIER.ColliderDesc.convexHull(new Float32Array(item.hull.flat()));if(!d)throw Error(`Invalid hull ${item.id}`);
   const collider=world.createCollider(d.setMass(item.mass).setTranslation(...offset).setRotation(quat(q)).setRestitution(c.materials[item.material].restitution).setFriction(.12),body);
   const hp=itemCombat(item,r,positionRules).hp;
-  return {id:`part-${i}`,item,mount:p.mount,orient:p.orient,offset,localQuat:q,collider,maxHp:hp,hp,alive:true};
+  const resistWeakHits=positionRules?.broadHeavyResistance&&item.mass>=1.5&&!isSlender(item,positionRules.weightFeel);
+  return {id:`part-${i}`,item,mount:p.mount,orient:p.orient,offset,localQuat:q,collider,maxHp:hp,hp,alive:true,resistWeakHits};
  });
  body.recomputeMassPropertiesFromColliders();
  // Opposite sides face each other by a half turn, without reflecting handed geometry.
  const q=index===(openingHalfTurn?1:0)?[0,0,0,1]:[0,1,0,0];body.setRotation(quat(q),true);body.setAngvel(vec(scale(rotate(q,UP),spin)),true);
- return {body,core,parts,spin,mass:body.mass(),inertia:spinInertia(body),definition:structuredClone(def)};
+ const coreStats=positionRules?.coreLoadout?coreLoadoutStats(parts,positionRules.coreLoadout):null;
+ return {body,core,parts,spin,mass:body.mass(),inertia:spinInertia(body),definition:structuredClone(def),coreStats};
 }
 const active=f=>[f.core,...f.parts.filter(p=>p.alive)];
 /** Radius the spinning top sweeps in its equator plane (core included). */
@@ -156,7 +197,7 @@ export function partRecoilFactor(part,rules){
 function contactVelocity(f,point){return add(f.before.velocity,cross(f.before.angular,sub(point,f.before.center)));}
 function tipRatio(p,point){if(p.mount==='core')return 0;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation()))),radius=hyp(...p.item.bounds.max.map((v,i)=>Math.max(Math.abs(v),Math.abs(p.item.bounds.min[i]))));return Math.max(0,Math.min(1,(length(local)/radius-.65)/.35));}
 function weakContact(p,point){if(p.mount==='core')return false;const local=inverseRotate(qarr(p.collider.rotation()),sub(point,arr(p.collider.translation())));return length(sub(local,p.item.weakPoint.pos))<=p.item.weakPoint.radius;}
-export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules}){
+export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak=false,tipMultiplier=1,maxHp,roleMultiplier=1,ramp=1,attackerOrient='core',targetOrient='core',rules:r,positionRules,coreMasses,coreLoadout}){
  const attack=itemCombat(attacker,r,positionRules),defend=itemCombat(target,r,positionRules);
  // Hardness rewards the striker; a soft target no longer raises the damage tier just for being soft.
  const hardness=Math.sqrt(itemHardness(attacker,materials)/r.top.referenceHardness),matchup=matchups[attacker.tag]?.[target.tag]??1;
@@ -164,8 +205,26 @@ export function tierDamage({mode,impulse,attacker,target,materials,matchups,weak
  const tier=r.tierThresholds[mode].filter(threshold=>score>=threshold).length;
  // Per-object power and mounting trade-off apply before the existing per-hit cap.
  const attackMultiplier=r.top?.orientPower?.[attackerOrient]??1,receiveMultiplier=(r.top?.orientReceive?.[targetOrient]??1)*(targetOrient==='hug'?(r.top.softHugReceive[target.material]??1):1);
- const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
- return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,rawDamage,damageCap,damage:Math.min(rawDamage,damageCap)*roleMultiplier};
+ // Core attack and defence are identical before assembly weight is considered.
+ const strength=positionRules?.coreMassImpact;
+ const weightedCore=strength>0&&attacker.id==='__core'&&target.id==='__core'&&coreMasses;
+ let massImpact=1;
+ if(weightedCore){
+  const [from,to]=coreMasses;
+  // Limit the advantage when a heavy top meets a nearly bare core.
+  const advantage=Math.min(3,1+strength*(Math.max(from,to)/Math.min(from,to)-1));
+  massImpact=from>=to?advantage:1/advantage;
+ }
+ const rawDamage=r.tierDamage[tier]*r.damageScale[mode]*(weak?2:1)*ramp*attack.power*attackMultiplier*receiveMultiplier*massImpact,damageCap=(target.id!=='__core'&&positionRules?.capHp!==undefined?positionRules.capHp:maxHp)*(weak?r.weakCritMaxFraction:r.maxHitFraction);
+ const coreScale=attacker.id==='__core'&&target.id==='__core'?(positionRules?.coreDamageScale??1):1;
+ const loadoutImpact=coreLoadout&&attacker.id==='__core'&&target.id==='__core'
+  ?coreLoadout.attack/coreLoadout.defense:undefined;
+ const hitDamage=Math.min(rawDamage,damageCap);
+ // Let a strong assembly deal more than the base core cap, within a bounded per-hit bonus.
+ const coreLoadoutCap=loadoutImpact===undefined?damageCap:damageCap*1.25;
+ return {score,tier,hardness,matchup,itemPower:attack.power,attackMultiplier,receiveMultiplier,...(weightedCore&&{massImpact}),
+  ...(loadoutImpact!==undefined&&{loadoutImpact}),rawDamage,damageCap:coreLoadoutCap,
+  damage:(loadoutImpact===undefined?hitDamage:Math.min(hitDamage*loadoutImpact,coreLoadoutCap))*roleMultiplier*coreScale};
 }
 /** Loose start, tight finish: real hits count for a little less early and more late (piecewise linear in time). Never damage without a hit. */
 // Same-step double break: overkill[i] is the damage past zero dealt to core i. Less overkill wins; a tie is a draw.
@@ -246,6 +305,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(aiProfiles.some((p,i)=>p&&manual.sides[i]!=='ai'))throw Error('An ai profile requires an ai side');
  for(const x of manual?.inputs??[])if(!Number.isInteger(x.step)||x.step<1||![0,1].includes(x.side)||manual.sides[x.side]!=='input'||!ACTIONS.includes(x.action))throw Error(`Bad manual input ${JSON.stringify(x)}`);
  const c=await loadCatalogRules(),r=await loadV3Rules();definitions.forEach(d=>validate(d,c,r));await ready();
+ if(definitions.some(d=>d.parts.some(p=>p.item.startsWith('fanshuo-'))))r.top.damageRamp=structuredClone(TRIAL_DAMAGE_RAMP);
  if(manual?.blockTime!==undefined){if(![.2,.25,.3].includes(manual.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');r.manual.blockTime=manual.blockTime;}
  // Automatic play has the same symmetric opening, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
@@ -254,6 +314,37 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(position?.capHp!==undefined&&(!Number.isFinite(position.capHp)||position.capHp<=0))throw Error('capHp must be positive and finite');
  if(position?.roleMode!==undefined&&!['radius','inward','reach'].includes(position.roleMode))throw Error('Unknown position role mode');
  if(position?.roleMode==='inward'&&(!Number.isFinite(position.inwardWindow)||position.inwardWindow<=0||!Number.isFinite(position.inwardTolerance)||position.inwardTolerance<0))throw Error('Inward role rules require a positive window and non-negative tolerance');
+ const coreMassImpact=position?.coreMassImpact;
+ if(coreMassImpact!==undefined&&(!Number.isFinite(coreMassImpact)||coreMassImpact<0))throw Error('coreMassImpact must be finite and non-negative');
+ const coreDamageScale=position?.coreDamageScale;
+ if(coreDamageScale!==undefined&&(!Number.isFinite(coreDamageScale)||coreDamageScale<=0||coreDamageScale>1))throw Error('coreDamageScale must be in (0, 1]');
+ const autoBDamageScale=position?.autoBDamageScale;
+ if(autoBDamageScale!==undefined){
+  if(!Number.isFinite(autoBDamageScale)||autoBDamageScale<=0||autoBDamageScale>1)
+   throw Error('autoBDamageScale must be in (0, 1]');
+  if(mode==='B'&&!manual)r.damageScale.B*=autoBDamageScale;
+ }
+ const coreFinishMultiplier=position?.coreFinishMultiplier;
+ if(coreFinishMultiplier!==undefined&&(!Number.isFinite(coreFinishMultiplier)||coreFinishMultiplier<1||coreFinishMultiplier>2))
+  throw Error('coreFinishMultiplier must be in [1, 2]');
+ const coreLoadout=position?.coreLoadout;
+ if(coreLoadout!==undefined&&(!coreLoadout||
+  !['mainShare','attackGain','durabilityGain'].every(k=>Number.isFinite(coreLoadout[k]))||
+  coreLoadout.mainShare<=.5||coreLoadout.mainShare>1||coreLoadout.attackGain<=0||coreLoadout.attackGain>4||coreLoadout.durabilityGain<=0||coreLoadout.durabilityGain>4))
+  throw Error('Invalid position core loadout');
+ const bareCoreReceive=position?.bareCoreReceive;
+ if(bareCoreReceive!==undefined&&(!coreLoadout||!Number.isFinite(bareCoreReceive)||bareCoreReceive<1||bareCoreReceive>2.5))
+  throw Error('Bare core damage requires core loadout and a multiplier in [1, 2.5]');
+ const weightFeel=position?.weightFeel;
+ if(weightFeel!==undefined&&(!weightFeel||
+  !['slenderMinLength','slenderMinRatio','lightMass','heavyMass','dashLoss','recenterLoss'].every(k=>Number.isFinite(weightFeel[k]))||
+  weightFeel.slenderMinLength<=0||weightFeel.slenderMinRatio<=1||weightFeel.lightMass<=0||
+  weightFeel.heavyMass<=weightFeel.lightMass||weightFeel.dashLoss<0||weightFeel.dashLoss>=1||
+  weightFeel.recenterLoss<0||weightFeel.recenterLoss>=1||
+  weightFeel.recenterBoost!==undefined&&(!Number.isFinite(weightFeel.recenterBoost)||weightFeel.recenterBoost<0||weightFeel.recenterBoost>=1)))throw Error('Invalid position weight feel');
+ const resistance=position?.broadHeavyResistance;
+ if(resistance!==undefined&&(typeof resistance!=='boolean'||resistance&&(!weightFeel||!coreLoadout)))
+  throw Error('Broad heavy resistance requires position weight and core loadout rules');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
@@ -262,6 +353,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
+ // Match the original opening, even when the first contact comes from a dash.
+ const weightLoad=f=>weightFeel&&lastRecoil!==-Infinity
+  ?Math.max(0,Math.min(1,(f.mass-weightFeel.lightMass)/(weightFeel.heavyMass-weightFeel.lightMass))):0;
  try{
  buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position));
  extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
@@ -317,7 +411,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   for(let i=0;i<2;i++){
    for(const {action,decisionStep}of wants[i])tryPress(i,action,manual.sides[i],decisionStep);
   }
-  fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*M.dashSpeed,v[1],dir[2]*M.dashSpeed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
+  fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());
+    const speed=M.dashSpeed*(1-weightLoad(f)*(weightFeel?.dashLoss??0));
+    f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*speed,v[1],dir[2]*speed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
    else if(f.ctl.dashUntil===step-1)events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:f.ctl.dashPressStep});});
  }
  function advance(){
@@ -330,15 +426,21 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
    // bleed off velocity across the line between them so the pair cannot orbit without touching.
    const across=sub(v,scale(n,dot(v,n)));
-   let acceleration=add(scale(p,-motion.attraction),scale(n,motion.thrust*pursuit));
+   const load=weightLoad(f),dashScale=1-load*(weightFeel?.dashLoss??0);
+   // Leave the initial rebound impulse intact. After separation, a light assembly
+   // can turn inward sooner, while a heavy assembly keeps drifting outward.
+   const agile=weightFeel?.recenterBoost&&lastRecoil!==-Infinity
+    ?(1-load)*Math.min(1,(t-lastRecoil)/r.recoilPause)*weightFeel.recenterBoost:0;
+   const attraction=motion.attraction*(1-load*(weightFeel?.recenterLoss??0)+agile);
+   let acceleration=add(scale(p,-attraction),scale(n,motion.thrust*pursuit));
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
    if(M&&charging(f))acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
-   else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
+   else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust*dashScale),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
    f.body.resetForces(true);f.body.addForce(vec(scale(acceleration,f.mass)),true);f.body.resetTorques(true);
    driveSpin(f,r);
-   const limit=M&&dashing(f)?M.dashSpeedLimit:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
+   const limit=M&&dashing(f)?M.dashSpeedLimit*dashScale:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
    f.before={velocity:arr(f.body.linvel()),angular:arr(f.body.angvel()),center:arr(f.body.worldCom()),core:arr(f.body.translation())};
   });
   world.step();
@@ -381,7 +483,33 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     for(const [attacker,target,ap,tp,tpnt] of [[0,1,left,right,rightPoint],[1,0,right,left,point]]){
      const role=roles.clash||attacker===roles.attacker?'attack':'recoil',roleMultiplier=role==='attack'?1:r.recoilDamageFraction;
      const weakTouch=weakContact(tp,tpnt),roll=role==='attack'&&weakTouch?critRoll():null,weak=roll!==null&&weakCritical({contact:true,roll,chance:r.weakCritChance});
-     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position});
+     // Accelerate a decisive one-sided finish while leaving even or partly disarmed fights alone.
+     const targetBare=bareCoreReceive!==undefined&&tp.mount==='core'&&fs[target].parts.length>0&&fs[target].parts.every(p=>!p.alive);
+     const opponent=fs[attacker];
+     // Replays saved before the new preset still use the original core HP gate.
+     const exposedCore=targetBare&&opponent.parts.length===2&&opponent.parts.every(p=>p.alive)&&
+      (position.bareCoreByPartsOnly===true||opponent.core.hp>=opponent.core.maxHp*.75);
+     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:tp.maxHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
+      coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:exposedCore?Math.min(1,fs[target].coreStats.defense):fs[target].coreStats.defense}:undefined});
+     // Broad heavy attachments resist weaker hits without gaining starting HP.
+     if(tp.resistWeakHits){
+      const attackScore=ap.mount==='core'?fs[attacker].coreStats.attackScore:ratingScores(ap.item).attack;
+      const durability=ratingScores(tp.item).durability;
+      if(attackScore<durability){
+       d.weakHitResistance=Math.max(.08,(attackScore/durability)**2);
+       d.damage*=d.weakHitResistance;
+      }
+     }
+     // Shorten late fights through actual hits to the core. Opening and part durability stay the same.
+     if(tp.mount==='core'&&coreFinishMultiplier!==undefined){
+      const finish=damageRamp(t,[[34,1],[42,coreFinishMultiplier]]);
+      d.damage*=finish;d.damageCap*=finish;
+     }
+     if(exposedCore){
+      d.bareCoreReceive=bareCoreReceive;
+      d.damageCap=Math.min(d.damageCap*bareCoreReceive,tp.maxHp*.8);
+      d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
+     }
      let flags=null;
      if(M){const dash=role==='attack'&&fullLunge.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?M.dashDamage:1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
      const damage=Math.min(tp.hp,d.damage);

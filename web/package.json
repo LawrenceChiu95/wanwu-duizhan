@@ -8,10 +8,13 @@
     "build": "vite build",
     "dev:judge": "vite --mode judge --host 127.0.0.1 --port 4330 --strictPort",
     "build:judge": "vite build --mode judge --outDir dist-judge && node ../tools/import-item/pack-web-models.mjs dist-judge",
+    "build:judge-current": "WANWU_COMBAT=current vite build --mode judge --outDir dist-judge-current && node ../tools/import-item/pack-web-models.mjs dist-judge-current",
+    "build:judge-position": "WANWU_COMBAT=position vite build --mode judge --outDir dist-judge-position && node ../tools/import-item/pack-web-models.mjs dist-judge-position",
     "preview": "vite preview --host 127.0.0.1 --port 4330 --strictPort",
     "shots": "node scripts/shots.mjs"
   },
   "dependencies": {
+    "@sparkjsdev/spark": "2.4.0",
     "three": "0.186.1"
   },
   "devDependencies": {
