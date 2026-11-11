@@ -848,6 +848,8 @@ async function main() {
     showOutcome(outcome);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false, undefined, true);
+    // The highlight under the HUD goes with it, or it sits on the result's own lines (Elara 5fd78c17).
+    overlay.dropHighlight();
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
@@ -1146,7 +1148,7 @@ async function main() {
     if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuildMine();
   }
   const equipLabel = id => mine.parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
-    : {text: mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它', disabled: false};
+    : {text: mine.parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
 
   // ---------- 拍一件 (task #47) ----------
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
@@ -1204,6 +1206,10 @@ async function main() {
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
       goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
       tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden && el.credits.hidden,
+      fightRoom: () => phase === 'play' || phase === 'finale',
+      hudBusy: () => Boolean(overlay.hilite),
+      // Just under whichever plate is at the top (the build's title or the match's bars), so the tag covers neither.
+      tagTop: () => { const top = [el.foe, el.hud].find(x => !x.hidden); return top ? top.offsetTop + top.offsetHeight + 8 : null; },
       onChange: () => {
         const s = shoot?.state;
         el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
@@ -1542,8 +1548,9 @@ async function main() {
     // cards' 3D instead (看它怎么来的 over the 角色库: only its own).
     if (el.library.hidden && el.shoot.hidden) stage.render(dt, simDt);
     else turns.render(now / 1000, !el.how.hidden ? el.how : !el.shoot.hidden ? el.shoot : el.library);
-    // The 拍一件 tag shows on the build and result screens only: redrawn as the player moves between screens.
-    const tagKey = `${phase}${el.library.hidden}${el.how.hidden}${el.foeSheet.hidden}${el.credits.hidden}`;
+    // The 拍一件 tag shows on the build and result screens only: redrawn as the player moves between screens, and the
+    // frame a highlight goes up or down under the HUD (its 「做好了」 gives way to it).
+    const tagKey = `${phase}${el.library.hidden}${el.how.hidden}${el.foeSheet.hidden}${el.credits.hidden}${Boolean(overlay.hilite)}`;
     if (shoot && tagKey !== lastTagKey) { lastTagKey = tagKey; shoot.paintTag(); }
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }

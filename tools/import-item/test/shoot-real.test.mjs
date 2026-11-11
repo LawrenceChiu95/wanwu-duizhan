@@ -143,6 +143,22 @@ test('names longer than twelve characters are shortened consistently without cut
  assert.equal(parseRecognition({...result,name:'日常名字'}).name,'日常名字');
 });
 
+test('optional verdict reaches the job before 3D and bad copy never blocks recognition', async t => {
+ const verdict = '厚实金属，碰上去闷响一声';
+ const {jobs, g} = await open(t, {recognition: {...result, verdict}});
+ const job = await jobs.create({photo: image, clientKey: 'recognition-verdict-001'});
+ const ready = await until(() => jobs.get(job.id), value => value.retakeUntil);
+ assert.equal(ready.recognition.verdict, verdict);
+ assert.equal(ready.recognition.materialName, '金属');
+ assert.equal(g.visionCalls(), 1);
+ assert.deepEqual(g.creates, []);
+ await jobs.retake(job.id);
+ const plain = parseRecognition(result);
+ for (const optional of [null, undefined, '', 42, '厚'.repeat(25), '上行\n下行', '<b>很硬</b>', '无敌金属', 'Ｓ级锅', '又沉又硬，谁撞谁疼', '这件很强', '這件很強', '这个很弱', '厉害得很', '很厲害', '能秒杀', '能秒殺']) {
+  assert.deepEqual(parseRecognition({...result, verdict: optional}), plain);
+ }
+});
+
 for (const [lengthCm,massKg,expectedMass] of [[300,100,2],[1,.001,.001]]) test(`photo estimate ${lengthCm}cm/${massKg}kg produces bounded combat geometry and mass`, async t => {
  const {jobs}=await open(t,{recognition:{...result,name:'测试物件',lengthCm,massKg}});
  const j=await jobs.create({photo:image,clientKey:'bounded-photo-001'}),done=await finish(jobs,j.id);

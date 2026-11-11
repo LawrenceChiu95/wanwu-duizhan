@@ -15,11 +15,12 @@ const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', sl
 const MATERIAL = {metal: '金属', wood: '木头', plastic: '塑料', cloth: '布', rubber: '橡胶'};
 const WEAR = {intact: '完好', worn: '有点旧', damaged: '破损'};
 // The four steps after 认物 and each one's usual share of the estimate (the real generation's, tools/import-item README).
-const STEPS = [{key: 'styled', name: '改成画风的图', share: 0.25}, {key: 'model', name: '做成 3D', share: 0.59},
-  {key: 'download', name: '取回模型', share: 0.06}, {key: 'process', name: '算等级、放进角色库', share: 0.1}];
+// Only the time left and the bar come from them: the screen no longer lists them (Elara 207a725b).
+const STEPS = [{key: 'styled', share: 0.25}, {key: 'model', share: 0.59}, {key: 'download', share: 0.06}, {key: 'process', share: 0.1}];
 const LATE_HOLD = 1500; // ms 「已经开始生成了」 stays up on 认物 before 生成中
 const RECOG_HOLD = 2600; // ms the 认物 result stays up once it is in, before 生成中 takes over
 const SLOW = 10 * 60; // seconds: past this a job is 比平时慢, not failed
+const TOAST = 4500; // ms 「做好了」 stays over a match
 // What the screen says for each failure code (the draft's 「界面说」); the backend's own words only go to its log.
 const SAY = {
   'photo-invalid': '这张照片用不了，换一张试试',
@@ -111,6 +112,7 @@ const about = sec => sec > 75 ? `${Math.round(sec / 60)} 分钟左右` : sec > 4
 // every photo into the six and says which one it counts as.
 const catOf = r => r?.name ?? CAT[r?.category] ?? '东西';
 const countAs = r => !('inSix' in (r ?? {})) ? catOf(r) : r.inSix ? `按${catOf(r)}算` : `不在六类里，按最像的${catOf(r)}算`;
+const matOf = r => r?.materialName ?? MATERIAL[r?.material] ?? '';
 /** The tag beside an item's name: one of the six, or nothing when the category is just the name again (task #84). */
 export const catLabel = (it, name) => CAT[it?.category] ?? (it?.category && it.category !== name ? it.category : '');
 
@@ -136,7 +138,8 @@ async function uploadable(file) {
 /**
  * ctx (main.js): api; addItems(items); item(id); refused(id) → the game turned it down; name(id); grade(id) → rating; spec(id); seen(id) / markSeen(id) for the
  * card flip; flip(el, id) turns a face-down card over; turns, loadModels; equipLabel(id) → {text, disabled}; equip(id);
- * libraryOpen(), openLibrary(); openHow(id); goPlay(); tagRoom() → whether the top tag may show now; onChange().
+ * libraryOpen(), openLibrary(); openHow(id); goPlay(); tagRoom() → whether the top tag may show now; fightRoom() → whether a
+ * match is on (where 好了 shows a moment, untappable); tagTop() → where the tag goes, under the top plate; onChange().
  * 评委版 only: strict (see readQuota); quota, what the page asked as it opened; samples, the two real generations shown
  * beside 拍照 ({id, name, tag, own, photo, time}), and sample(id) replays one (Elara edd90212, 9e17f724).
  */
@@ -174,6 +177,11 @@ export function mountShoot(ctx) {
   // After 不是它 was tapped: what 认物 says, whether the call is still out, and when the backend said too late. 认物 stays
   // up until the answer is in and a moment after a 「已经开始生成了」, so the tap is never just swallowed.
   let retakeSay = '', retaking = false, lateAt = -Infinity;
+  // The job whose 鉴定卡 has stamped in (it does once; later screens of the same job show it as it is), and its styled
+  // picture: asked for once 改画风 is done, then the photo turns into it, once.
+  let idFor = null, styled = {id: null, url: null, asking: false, tries: 0, shown: false};
+  // 好了 seen arrive during a match: a quiet line over the fight for a moment (Elara 207a725b), then the tag on 结算.
+  let madeFor = null, toastLeft = 0, toastAt = 0;
   const retakeLate = () => lateAt > -Infinity;
   // Seconds left: each step not yet done at its usual share of the estimate, less the time the current one has had.
   function remaining() {
@@ -309,6 +317,37 @@ export function mountShoot(ctx) {
   const SAMPLE = ctx.sample && ctx.samples?.length ? `<div class="ssamples"><span>${ICON.play}看真实生成的过程</span><div>${ctx.samples.map(x =>
     `<button type="button" data-act="sample" data-id="${esc(x.id)}"${x.own ? ' class="own"' : ''}><img src="${esc(x.photo ?? '')}" alt=""><b>${esc(x.name)}</b><small>${esc(x.own ? x.tag : '网上公开图片')}</small><small>用时 ${esc(x.time)}</small></button>`).join('')}</div></div>` : '';
 
+  // 鉴定卡 (Elara 207a725b): what 认物 made of the photo, its name, material and one line (recognition.verdict, Sol
+  // 99c2016a; none, no line), stamped in the moment it is in. Before that, a blank one being read.
+  // A long name (up to 12 characters) gets smaller rather than cut; a long material goes under it.
+  const idFace = r => `<span class="sid-head"><i></i>鉴定单</span><span class="sid-row"><b class="sid-name" style="--n:${Array.from(catOf(r)).length}">${esc(catOf(r))}</b>
+    ${matOf(r) ? `<span class="sid-mat"><small>材质</small>${esc(matOf(r))}</span>` : ''}</span>${r.verdict ? `<p class="sid-say">${esc(r.verdict)}</p>` : ''}
+    ${'inSix' in r && !r.inSix ? `<small class="sid-as">${esc(countAs(r))}</small>` : ''}<i class="sid-seal" aria-hidden="true">已鉴定</i>`;
+  function idCard() {
+    const r = job?.recognition;
+    if (!r) return '<div class="sid wait" data-live="id"><span class="sid-head"><i></i>鉴定单</span><span class="sid-row"><b class="sid-name"></b><span class="sid-scan">正在认是什么</span></span></div>';
+    const fresh = idFor !== job.id;
+    idFor = job.id;
+    return `<div class="sid${fresh ? ' in' : ''}" data-live="id">${idFace(r)}</div>`;
+  }
+  // 改画风's picture over the photo once it is in, decoded first so it turns over whole; three tries, then the photo stays.
+  function paintStyled(img, face) {
+    if (!img || !job?.styledUrl) return;
+    if (styled.id !== job.id) styled = {id: job.id, url: null, asking: false, tries: 0, shown: false};
+    const id = job.id;
+    if (!styled.url && !styled.asking && styled.tries < 3) {
+      styled.asking = true; styled.tries++;
+      api.fileUrl(job.styledUrl).then(async u => { const im = new Image(); im.src = u; await im.decode(); if (styled.id === id) styled.url = u; })
+        .catch(() => {}).finally(() => { if (styled.id === id) styled.asking = false; });
+    }
+    if (!styled.url || !img.hidden) return;
+    img.src = styled.url;
+    img.hidden = false;
+    img.parentElement.classList.add('styled', ...styled.shown ? [] : ['turning']);
+    styled.shown = true;
+    face.textContent = '游戏里的样子';
+  }
+
   function draw(key) {
     const [kind, code] = key.split(':');
     let html = '';
@@ -338,16 +377,17 @@ export function mountShoot(ctx) {
       html = `${frame('gen', '<i class="ssweep"></i>')}<p class="snote">生成好了，正在取回…</p><p class="snote warn" data-live="warn" hidden></p>
         ${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'recog') {
-      html = `${frame('scan', '<i class="sline"></i><span class="stag" data-live="rtag">认物中</span>')}
-        <div class="srec"><span class="lbl">认出来是</span><b class="stamp" data-live="as"></b>
-        <p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? `<p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p>` : ''}</div>
+      html = `${frame(job.recognition ? 'scan got' : 'scan', `<i class="sline"></i><span class="stag" data-live="rtag">${job.recognition ? '认好了' : '认物中'}</span>`)}
+        ${idCard()}${api.kind === 'fake' ? `<div class="sfines"><p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p></div>` : ''}
         <div class="sfoot"><button type="button" class="sghost sretake" data-act="nothis" hidden>${ICON.retry}<span>不是它，重拍</span></button>
           <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
     } else if (kind === 'gen') {
-      html = `${frame('gen', `<i class="ssweep"></i><span class="scat">${esc(countAs(job.recognition))}</span><span class="snow" data-live="now"></span>`)}
+      // The photo, then the styled picture over it as soon as there is one (Elara 207a725b); the 鉴定卡 under it.
+      html = `${frame('gen', `<img class="sstyled" data-live="styled" alt="改成游戏画风的图" hidden><i class="sedge"></i><i class="ssweep"></i>
+          <span class="sface" data-live="face">你拍的</span><span class="snow" data-live="now"></span>`)}
+        ${idCard()}
         <div class="seta"><b data-live="eta"></b><small>好了会在顶部提醒你</small></div>
         <div class="sbar"><i data-live="bar"></i></div>
-        <ol class="hsteps sgsteps">${STEPS.map((st, i) => `<li data-step="${st.key}"><span class="n">${i + 1}</span><b>${st.name}</b><span class="sec"></span></li>`).join('')}</ol>
         <p class="snote warn" data-live="warn" hidden></p>
         ${foot(go('play', '先去打一局'))}`;
     } else if (kind === 'fail' || kind === 'err' || kind === 'lost') {
@@ -416,8 +456,8 @@ export function mountShoot(ctx) {
   function update() {
     const live = n => el.body.querySelector(`[data-live="${n}"]`);
     if (shown === 'recog' && job.recognition) {
-      const as = live('as');
-      if (!as.textContent) { as.textContent = countAs(job.recognition); live('rtag').textContent = '认好了'; el.body.querySelector('.sframe').classList.add('got'); }
+      const card = live('id');
+      if (card.classList.contains('wait')) { card.outerHTML = idCard(); live('rtag').textContent = '认好了'; el.body.querySelector('.sframe').classList.add('got'); }
       const left = Math.ceil(retakeLeft()), btn = el.body.querySelector('[data-act="nothis"]');
       btn.hidden = (!left && !retaking) || retakeLate();
       live('next').textContent = retakeLate() ? retakeSay : !left ? '认好了，马上开始生成' : retakeSay ? `${retakeSay}（还剩 ${left} 秒）` : `${left} 秒后开始生成`;
@@ -432,20 +472,20 @@ export function mountShoot(ctx) {
       if (shown === 'wait') { if (text) warn.textContent = text; live('out').hidden = !text; } else { warn.hidden = !text; warn.textContent = text; }
     }
     if (shown !== 'gen' || !job) return;
-    const left = remaining(), now = STEPS.findIndex(st => !job.steps.find(x => x.key === st.key)?.endedAt);
+    const left = remaining(), done = key => Boolean(job.steps.find(x => x.key === key)?.endedAt);
     live('eta').innerHTML = elapsed() > SLOW || left <= 0 ? '快好了' : `预计还要 <em>${about(left)}</em>`;
     live('bar').style.setProperty('--fill', fraction());
-    live('now').textContent = now >= 0 ? `第 ${now + 1} 步 · ${STEPS[now].name}` : '';
-    for (const li of el.body.querySelectorAll('[data-step]')) {
-      const i = STEPS.findIndex(st => st.key === li.dataset.step), s = job.steps.find(x => x.key === li.dataset.step), sec = li.querySelector('.sec');
-      const state = s?.endedAt ? 'done' : s?.startedAt ? 'now' : '';
-      if (li.className !== state) li.className = state;
-      sec.innerHTML = state === 'done' ? dur((ms(s.endedAt) - ms(s.startedAt)) / 1000) : state === 'now' ? '<i class="spin"></i>进行中'
-        : (t => t === '几秒' ? t : '约 ' + t)(about(STEPS[i].share * (job.estimateSeconds ?? 90) * 0.95));
-      li.querySelector('.n').innerHTML = state === 'done' ? ICON.check : String(i + 1);
-    }
+    // One line in plain words over the picture, not the backend's steps (Elara 207a725b).
+    const now = !done('styled') ? '正在画成游戏里的样子' : !done('model') ? '画好了，正在做成 3D' : '快好了，正在放进角色库';
+    if (live('now').textContent !== now) live('now').textContent = now;
+    paintStyled(live('styled'), live('face'));
   }
   function sync() {
+    // 好了 and in the catalog while a match is on: the quiet line over the fight, once per job.
+    if (job?.status === 'succeeded' && ctx.item(job.itemId) && madeFor !== job.id) {
+      madeFor = job.id;
+      if (stored && !stored.seen && ctx.fightRoom?.()) { toastLeft = TOAST; toastAt = performance.now(); setTimeout(toastTick, 100); }
+    }
     paintTag();
     ctx.onChange?.();
     if (el.view.hidden) return;
@@ -457,21 +497,38 @@ export function mountShoot(ctx) {
   }
 
   // ---------- the tag at the top of the build and result screens ----------
+  // The line under the HUD (冲中, 撞碎了…) goes first: 「做好了」 waits under it, its clock stopped, and gets its whole time
+  // once that is down (Elara 5fd78c17).
+  function toastTick() {
+    const now = performance.now();
+    if (!ctx.hudBusy?.()) toastLeft -= now - toastAt;
+    toastAt = now;
+    if (!ctx.fightRoom?.()) toastLeft = 0;
+    paintTag();
+    if (toastLeft > 0) setTimeout(toastTick, 100);
+  }
   function paintTag() {
     const room = ctx.tagRoom(), state = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (stored.seen ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
-    el.tag.hidden = !room || !el.view.hidden || !state;
+    // In a match only 好了, only for a moment, and not to be tapped: the fight's buttons are right there.
+    const quiet = !room && state === 'done' && ctx.fightRoom?.() && toastLeft > 0 && !ctx.hudBusy?.();
+    el.tag.hidden = !(room || quiet) || !el.view.hidden || !state;
     if (el.tag.hidden) return;
-    el.tag.className = state;
-    const what = catOf(job.recognition);
-    const html = state === 'done' ? `<b>${what}生成好了，去装上</b>${ICON.arrow}`
+    el.tag.className = quiet ? 'done quiet' : state;
+    // Out of reach for keys too, not only taps: Enter on a focused tag would open 拍一件 mid-fight (Sol eab01e32).
+    el.tag.inert = quiet;
+    const top = ctx.tagTop?.();
+    el.tag.style.top = top == null ? '' : `${top}px`;
+    const what = esc(catOf(job.recognition));
+    const html = quiet ? `<b>${what}做好了</b><small>打完就能装上去打</small>`
+      : state === 'done' ? `<b>${what}做好了</b><span class="sgo">装上去打</span>${ICON.arrow}`
       : state === 'bad' ? `<b>${stopped() ? (startError === 'session' ? '拍照记录找不到了，去看看' : '拍一件连错了后台，去看看') : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
       : ahead() ? `<i class="ring" style="--fill:0.02"></i><b>${job.recognition ? what : '新的一件'}排队中</b><small>前面还有 ${ahead()} 人</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
   }
-  el.tag.onclick = () => open('tag');
+  el.tag.onclick = () => { if (!el.tag.inert) open('tag'); };
 
   // ---------- actions ----------
   async function send(fn) {
