@@ -15,6 +15,7 @@ export class Overlay {
     this.nums = [];
     this.calls = [];
     this.verdicts = [];
+    this.hilite = null;
     this.flash = 0;
     this.banner = {age: 0, dur: 0};
     this.p = {x: 0, y: 0};
@@ -101,6 +102,24 @@ export class Overlay {
     this.layer.append(el);
     this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight}];
   }
+  /**
+   * A big moment, said once at a fixed spot (`top` px from the top of the layer) instead of over the tops: 「拖鞋 撞碎了
+   * 马克杯！」, the striker in its side's colour, the struck piece in its own. Held `dur` s; a newer one replaces it.
+   */
+  highlight({who, verb, whom, side, whomSide}, top, dur = 1.4) {
+    this.hilite?.el.remove();
+    const el = document.createElement('div'), b = document.createElement('b'), v = document.createElement('span'), u = document.createElement('u');
+    el.className = `hilite t${side}`;
+    b.textContent = who;
+    v.className = 'verb';
+    v.textContent = verb;
+    u.className = `t${whomSide}`;
+    u.textContent = `${whom}！`;
+    el.append(b, v, u);
+    el.style.top = `${Math.round(top)}px`;
+    this.layer.append(el);
+    this.hilite = {el, age: 0, dur};
+  }
   /** Floating words of one kind (a class, e.g. 'broke') still up: let them fade out now, over about a third of a second. */
   hurry(cls) { for (const n of this.nums) if (n.el.classList.contains(cls)) n.age = Math.max(n.age, n.dur * 0.8); }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
@@ -112,6 +131,8 @@ export class Overlay {
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
   clear() {
     for (const n of [...this.nums, ...this.calls, ...this.verdicts]) { n.el.remove(); n.pin?.remove(); }
+    this.hilite?.el.remove();
+    this.hilite = null;
     this.verdicts = [];
     this.nums = [];
     this.calls = [];
@@ -159,6 +180,15 @@ export class Overlay {
       const x = p.x + r + v.w <= W - 6 ? p.x + r : p.x - r - v.w, y = p.y - v.h / 2 - ease(Math.min(1, t * 1.6)) * 10;
       v.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
       v.el.style.transform = `translate(${x}px, ${y}px) scale(${t < 0.1 ? 0.7 + 3 * t : 1})`;
+    }
+    if (this.hilite) {
+      const h = this.hilite, t = (h.age += dt) / h.dur;
+      if (t >= 1) { h.el.remove(); this.hilite = null; }
+      else {
+        // In with a small punch, held, out over the last fifth.
+        h.el.style.opacity = t > 0.8 ? (1 - t) / 0.2 : 1;
+        h.el.style.transform = `translateX(-50%) scale(${h.age < 0.12 ? 1.25 - 0.25 * ease(h.age / 0.12) : 1})`;
+      }
     }
     this.flash *= Math.exp(-dt * 11);
     this.flashEl.style.opacity = this.flash > 0.01 ? this.flash.toFixed(3) : 0;

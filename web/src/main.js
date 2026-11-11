@@ -296,7 +296,7 @@ async function main() {
   let fought = null, outcome = null;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
-  let lastParryT = -Infinity, lastClashT = -Infinity, lateNums = [];
+  let lastParryT = -Infinity, lateNums = [];
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -481,15 +481,44 @@ async function main() {
   const hudChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .core .bar`) : el.hud.querySelectorAll(`.s${side} .pc`)[Number(part.split('-')[1])];
   // Runs on the game clock (holds through hit-stop and a frozen frame), like the callouts.
   const hudFlash = new Map();
+  const setFlash = (node, cls, dur = 0.55) => {
+    const was = hudFlash.get(node);
+    // A 1.4 s 高光 slot is not cut short by an ordinary blow from the same piece.
+    if (was && was.dur > dur && was.age < was.dur) return;
+    if (was && was.cls !== cls) node.classList.remove(was.cls);
+    hudFlash.set(node, {age: 0, cls, dur});
+  };
+  const strikerChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .ball`) : hudChip(side, part);
   function flashHud(e) {
-    const a = e.part === 'core' ? el.hud.querySelector(`.s${e.attacker} .ball`) : hudChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
-    if (a) hudFlash.set(a, {age: 0, cls: `strike${e.attacker}`});
-    if (b && b !== a) hudFlash.set(b, {age: 0, cls: 'hurt'});
+    const a = strikerChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
+    if (a) setFlash(a, `strike${e.attacker}`);
+    if (b && b !== a) setFlash(b, 'hurt');
+  }
+  // The few big moments of a match (a landed 冲, a 暴击, a piece broken) say who did what to whom, once, where the eye can
+  // find it: one line 「拖鞋 撞碎了 马克杯！」 at a fixed spot under the HUD for about 1.4 s, or with ?call=slot the striking
+  // piece's HUD slot grows and stays lit as long (凡朔 11-11, Pollux 52464265, Elara d021fab4). A break outranks the hit
+  // that caused it; a newer big moment replaces the line, but not a break still being read.
+  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4;
+  const lastHurt = new Map(); // `${side}:${part}` → the piece that last hurt it, for 「…撞碎了…」
+  let hiliteAt = -Infinity, hiliteBreak = false;
+  const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
+  function highlight(side, part, item, verb, target, targetPart, targetItem, broke = false) {
+    const now = pb?.t ?? 0;
+    if (hiliteBreak && !broke && now - hiliteAt < 0.7) return;
+    hiliteAt = now; hiliteBreak = broke;
+    if (phase === 'play') test.highlights++;
+    if (HILITE === 'slot') {
+      const a = strikerChip(side, part);
+      if (a) setFlash(a, `star${side}`, HILITE_TIME);
+      return;
+    }
+    const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
+    overlay.highlight({who: partName(part, item), verb, whom: partName(targetPart, targetItem), side, whomSide: target}, top, HILITE_TIME);
   }
   function updateHudFlash(dt) {
     for (const [node, f] of hudFlash) {
       f.age += dt;
-      const on = f.age < 0.55;
+      const on = f.age < f.dur;
       node.classList.toggle(f.cls, on);
       if (!on) hudFlash.delete(node);
     }
@@ -499,8 +528,8 @@ async function main() {
     el.caption.classList.toggle('on', on);
   }
 
-  // 第 13 版: a one-word verdict on the player's own 冲 / 挡 (完美, 挡空了, 擦边, 冲空, 被挡), small, over its own top, gone
-  // within a second. The opponent's get the picture only (Elara 714284f2), so a clash never sprouts several words.
+  // 第 13 版: a one-word verdict on the player's own 挡, over its own top, gone within a second; since 11-11 only 完美 is
+  // left (Elara d021fab4). The opponent's get the picture only (Elara 714284f2).
   function verdict(side, text, cls) {
     const f = stage.fighters[side];
     if (side !== 0 || !f) return;
@@ -534,7 +563,6 @@ async function main() {
   };
 
   // ---------- events → effects ----------
-  const pieceName = id => id === '__core' ? '核心' : NAMES[id];
   // 谁打谁看位置 (combat=position): the replay says so; a live match's events carry positionClash.
   const positionCombat = e => replay?.meta?.combat === 'position' || typeof e.positionClash === 'boolean';
   function onEvent(e) {
@@ -563,28 +591,22 @@ async function main() {
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
       stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
-      // Position combat: the striking piece gets a glowing edge in its colour, the struck one flashes too (a clash: both edged).
-      const position = positionCombat(e);
-      if (position) stage.strike(e.attacker, e.part, point);
+      // The striking piece gets a glowing edge in its colour, the struck one flashes too (a clash: both edged). It says which
+      // piece hit now that no word plate does (凡朔 11-11, Elara 207a725b b2bd14f1); position combat edges every touch.
+      if (positionCombat(e) || e.damage > 0) stage.strike(e.attacker, e.part, point);
       stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
-      // Which piece struck (the striker's colour), crit added; a hugging piece taking it says so, stacked with it.
       if (e.damage > 0) {
-        // 护住 (the hit landed on a hugging piece) rides in the same plate: two plates on one spot piled up (Elara 11-02 a788037f).
-        const opts = {crit: e.type === 'weak', dash: e.dash && !e.parry, guard: !core && e.targetOrient === 'hug' && e.type === 'hit' && !e.parry};
-        // Position combat names both: 「拖鞋 打 扫帚」; a clash gives one 「对撞」 plate for the pair (side 0's piece first).
-        if (!position) overlay.callout(point, e.attacker, pieceName(e.item), opts);
-        else if (!e.clash) overlay.callout(point, e.attacker, pieceName(e.item), {...opts, hit: {side: e.target, name: pieceName(e.targetItem)}});
-        else if (e.t !== lastClashT) {
-          lastClashT = e.t;
-          const [mine, theirs] = e.attacker === 0 ? [e.item, e.targetItem] : [e.targetItem, e.item];
-          overlay.callout(point, 0, pieceName(mine), {crit: opts.crit, hit: {side: 1, name: pieceName(theirs), clash: true}});
-        }
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
+        lastHurt.set(`${e.target}:${e.targetPart}`, {side: e.attacker, part: e.part, item: e.item});
+        if (e.type === 'weak') highlight(e.attacker, e.part, e.item, '暴击', e.target, e.targetPart, e.targetItem);
+        else if (e.dash && !e.parry) highlight(e.attacker, e.part, e.item, '冲中', e.target, e.targetPart, e.targetItem);
       }
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
+      const by = lastHurt.get(`${e.target}:${e.targetPart}`);
+      if (by) highlight(by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true);
       coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       sfx.crunch();
@@ -608,9 +630,8 @@ async function main() {
         stage.endLunge(e.side);
         // How the lunge ended, as the sim judged it (full / glance / miss / blocked); the page never judges a hit itself.
         const q = quality(e);
-        if (q === 'miss') { stage.whiff(e.side); sfx.whiff(); verdict(e.side, '冲空', 'dud'); }
-        else if (q === 'glance') verdict(e.side, '擦边', 'glance');
-        else if (q === 'blocked') verdict(e.side, '被挡', 'dud');
+        // 冲空, 擦边 and 被挡 say no word (凡朔 11-11, Elara d021fab4); a miss still shows and sounds its whiff.
+        if (q === 'miss') { stage.whiff(e.side); sfx.whiff(); }
       }
     } else if (e.type === 'block') {
       stage.raiseShield(e.side, e.until - e.t);
@@ -627,8 +648,7 @@ async function main() {
         // c65e070d): it still counts as held, one size smaller, no 「完美」.
         stage.perfectBlock(e.side, point, 0.6);
         sfx.ting();
-        verdict(e.side, '挡住', 'held');
-      } else { stage.fizzle(e.side); sfx.fizzle(); verdict(e.side, '挡空了', 'dud'); }
+      } else { stage.fizzle(e.side); sfx.fizzle(); }
     } else if (e.type === 'parry') {
       // A 「…碎了」 still up from an earlier break would read as this blow's result: clear it (Elara 80e885bc, Wren's 被挡 shot).
       lastParryT = e.t;
@@ -759,7 +779,8 @@ async function main() {
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
     lastParryT = -Infinity;
-    lastClashT = -Infinity;
+    lastHurt.clear();
+    hiliteAt = -Infinity; hiliteBreak = false; test.highlights = 0;
     layout_();
     stage.pose(pb.state);
     stage.setLookahead(lookahead());
@@ -1340,7 +1361,7 @@ async function main() {
 
   // ---------- test hooks (Playwright screenshots; no effect on normal play) ----------
   const test = {
-    frozen: false, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, denied: 0, nth: 1, seen: 0, speed: 1, safe: null,
+    frozen: false, highlights: 0, freezeOn: null, freezeDelay: 0, pending: -1, simMs: 0, denied: 0, nth: 1, seen: 0, speed: 1, safe: null,
     onEvent(e) {
       if (!this.freezeOn || this.pending >= 0) return;
       const v13 = V13_FREEZE[this.freezeOn];
@@ -1361,7 +1382,7 @@ async function main() {
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
