@@ -42,9 +42,9 @@ for(const problem of ['network',500,503,429])test(`primary ${problem} automatica
  const events=[],waits=[];let primary=0,secondary=0;
  const got=await recognizePhoto({...base,backup,diagnose:x=>events.push(x),pause:async ms=>waits.push(ms),fetch:async()=>{primary++;return problem==='network'?broken():new Response('PRIVATE BODY',{status:problem});},backupFetch:async(url,r)=>{
   secondary++;assert.equal(url,backup.url);assert.equal(r.headers.Authorization,'Bearer PRIVATE-QWEN');assert.equal(r.headers['x-goog-api-key'],undefined);assert.equal(r.redirect,'error');
-  const b=JSON.parse(r.body);assert.equal(b.model,'qwen3.5-omni-plus');assert.equal(b.max_tokens,1024);assert.deepEqual(b.modalities,['text']);assert.equal(b.stream,true);assert.equal(b.messages[0].content[0].text,recognitionPrompt+'\n必须包含且只包含这些字段，并遵守下述JSON schema：'+JSON.stringify(recognitionSchema));assert.match(b.messages[0].content[1].image_url.url,/^data:image\/jpeg;base64,/);return qwen(sampleReply);
+  const b=JSON.parse(r.body);assert.equal(b.model,'qwen3.5-omni-plus');assert.equal(b.max_tokens,1024);assert.deepEqual(b.modalities,['text']);assert.equal(b.stream,true);assert.equal(b.messages[0].content[0].text,recognitionPrompt+'\n只使用下述JSON schema中的字段，required字段必须提供：'+JSON.stringify(recognitionSchema));assert.match(b.messages[0].content[1].image_url.url,/^data:image\/jpeg;base64,/);return qwen(JSON.stringify({...result, verdict:'金属杯身，碰撞声清脆'}));
  }});
- assert.equal(got.name,result.name);assert.equal(primary,problem===429?1:2);assert.equal(secondary,1);assert.deepEqual(waits,problem===429?[]:[2000]);assert.equal(events.at(-1).provider,'qwen');assert.ok(!JSON.stringify(events).includes('PRIVATE'));
+ assert.equal(got.name,result.name);assert.equal(got.verdict,'金属杯身，碰撞声清脆');assert.equal(primary,problem===429?1:2);assert.equal(secondary,1);assert.deepEqual(waits,problem===429?[]:[2000]);assert.equal(events.at(-1).provider,'qwen');assert.ok(!JSON.stringify(events).includes('PRIVATE'));
 });
 for(const problem of [400,401,403,404,422,'invalid','unclear'])test(`primary ${problem} never switches`,async()=>{
  const unclear={...result,clear:false};for(const k of Object.keys(unclear))if(!['clear','recognizable','basis'].includes(k))unclear[k]=null;
