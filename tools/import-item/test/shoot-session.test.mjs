@@ -7,6 +7,7 @@ import {setTimeout as pause} from 'node:timers/promises';
 import sharp from 'sharp';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
+import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {startShootServer} from '../shoot/server.mjs';
 
@@ -85,6 +86,42 @@ test('cookie-free identities isolate private assets and same-key recovery surviv
 test('header identity cannot be enabled on the private preview or a nonpublic backend', async () => {
   await assert.rejects(startShootServer({headerIdentity: true}), /dedicated public API/);
   await assert.rejects(startShootServer({...options, previewAccessCode: 'a'.repeat(64)}), /dedicated public API/);
+});
+
+test('judge can disable the aggregate caps without bypassing the browser quota', async t => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'shoot-unmetered-'));
+  const budget = {...options.budget, limit: null};
+  const limits = {browser: {generation: 10, recognition: 10}, global: {generation: null, recognition: 400}};
+  await assert.rejects(startShootServer({...options, directory, headerIdentity: false, budget}), /dedicated judge API/);
+  await assert.rejects(startShootServer({...options, directory, headerIdentity: false, limits}), /dedicated judge API/);
+  const clock = () => Date.parse('2026-11-11T04:00:00Z');
+  let app = await startShootServer({...options, directory, clock});
+  const a = await session(app), b = await session(app);
+  await app.close();
+
+  // Existing signed sessions have used today's quota and the old shared budget.
+  const file = path.join(directory, 'state.json');
+  const state = JSON.parse(await fs.readFile(file, 'utf8'));
+  for (const token of [a, b]) for (let i = 0; i < 10; i++) {
+    const id = 'j_' + randomUUID(), day = '2026-11-11';
+    await fs.mkdir(path.join(directory, id));
+    state.jobs[id] = {job: {id, status: 'succeeded'}, owner: token.split('.')[0], queueOrder: ++state.sequence,
+      allowance: {generation: {day}, recognition: {day}}, budget: {stage: budget.stage, credits: 13}};
+  }
+  await fs.writeFile(file, JSON.stringify(state));
+  app = await startShootServer({...options, directory, clock, budget, limits});
+  t.after(() => app.close());
+  const c = await session(app);
+  const quota = await (await call(app, 'quota', c)).json();
+  assert.equal(quota.remaining, 10);
+  assert.equal(quota.recognition.remaining, 10);
+  assert.equal(quota.global.recognition.remaining, 380);
+  assert.equal(quota.global.remaining, null);
+  assert.equal(Object.hasOwn(quota, 'budget'), false);
+  assert.equal((await call(app, 'jobs', a, form())).status, 429);
+  assert.equal((await call(app, 'jobs', c, form())).status, 202);
+  const saved = JSON.parse(await fs.readFile(file, 'utf8'));
+  for (const [id, record] of Object.entries(state.jobs)) assert.deepEqual(saved.jobs[id].budget, record.budget);
 });
 
 

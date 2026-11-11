@@ -44,8 +44,12 @@ async function own(directory) {
 }
 
 export async function openJobs({directory, repo = REPO, generator, fakeOptions, mode = 'fake', env = process.env, realOptions, clock = Date.now, limits = DEFAULT_LIMITS, budget = null} = {}) {
-  for (const scope of ['browser', 'global']) for (const kind of ['generation', 'recognition']) if (!Number.isSafeInteger(limits[scope]?.[kind]) || limits[scope][kind] < 1) throw Error('Invalid daily shoot limits');
-  if (budget && (!/^[A-Za-z0-9_-]{1,64}$/.test(budget.stage) || !Number.isSafeInteger(budget.limit) || budget.limit < 0)) throw Error('Invalid public budget');
+  for (const scope of ['browser', 'global']) for (const kind of ['generation', 'recognition']) {
+    const limit = limits[scope]?.[kind];
+    if (scope === 'global' && kind === 'generation' && limit === null) continue;
+    if (!Number.isSafeInteger(limit) || limit < 1) throw Error('Invalid daily shoot limits');
+  }
+  if (budget && (!/^[A-Za-z0-9_-]{1,64}$/.test(budget.stage) || (budget.limit !== null && (!Number.isSafeInteger(budget.limit) || budget.limit < 0)))) throw Error('Invalid public budget');
   if (!['real', 'fake'].includes(mode)) throw Error('Choose provider real or fake');
   if (!generator && mode === 'real') generator = realGenerator({env, ...realOptions});
   directory ??= path.join(repo, mode === 'real' ? '.aholo/shoot-real' : '.aholo/shoot');
@@ -110,6 +114,8 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   function checkQuota(kind, owner, skip) {
     const day = dayAt(clock());
     for (const scope of ['browser', 'global']) {
+      const limit = limits[scope][kind];
+      if (limit === null) continue;
       const who = scope === 'browser' ? owner : undefined;
       // Only the current reservation is skipped, never earlier retries.
       const receipt = skip?.recognitionAttempts?.at(-1);
@@ -117,7 +123,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         ? Number(skip?.allowance?.recognition?.day === day && receipt?.day === day && (who === undefined || !receipt.refunded))
         : Number(skip?.allowance?.[kind]?.day === day);
       const n = usage(kind, day, who, scope === 'browser') - reserved;
-      if (n >= limits[scope][kind]) throw apiError('quota', kind === 'generation' ? '今天的生成名额用完了，明天再来' : '今天的认物名额用完了，明天再来', 429, {kind, scope, resetsAt: resetAt(clock())});
+      if (n >= limit) throw apiError('quota', kind === 'generation' ? '今天的生成名额用完了，明天再来' : '今天的认物名额用完了，明天再来', 429, {kind, scope, resetsAt: resetAt(clock())});
     }
   }
   // Internal HTTP retries reuse one receipt. A manual retry adds one global
@@ -131,13 +137,13 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   // reservations after the first paid boundary, even if the reply was lost.
   // This is a conservative spend ceiling, not a supplier balance or invoice.
   function publicBudget() {
-    if (!budget) return null;
+    if (!budget || budget.limit === null) return null;
     const reserved = Object.values(store.jobs).reduce((n, r) => n + (r.budget?.stage === budget.stage ? r.budget.credits : 0), 0);
     const remaining = Math.max(0, budget.limit - reserved);
     return {limit: budget.limit, remaining, available: remaining >= 13};
   }
   function checkBudget() {
-    if (budget && !publicBudget().available) throw apiError('budget', '暂时不能拍，请先用现成角色打一局', 503);
+    if (publicBudget()?.available === false) throw apiError('budget', '暂时不能拍，请先用现成角色打一局', 503);
   }
   const sign = id => createHmac('sha256', store.sessionSecret).update(id).digest('hex');
   function session(token) {
@@ -336,9 +342,10 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     items: owner => serial(() => copy(store.items.filter(i => owner === undefined || Object.values(store.jobs).some(r => r.owner === owner && r.job.itemId === i.id)))),
     quota: owner => serial(() => {
       const day = dayAt(clock()), count = (kind, who, browser = false) => usage(kind, day, who, browser);
-      return {...(budget ? {budget: publicBudget()} : {}), provider: provider.real ? 'real' : 'fake', limit: limits.browser.generation, remaining: Math.max(0, limits.browser.generation - count('generation', owner)), resetsAt: resetAt(clock()),
+      const creditBudget = publicBudget(), globalGeneration = limits.global.generation;
+      return {...(creditBudget ? {budget: creditBudget} : {}), provider: provider.real ? 'real' : 'fake', limit: limits.browser.generation, remaining: Math.max(0, limits.browser.generation - count('generation', owner)), resetsAt: resetAt(clock()),
         recognition: {limit: limits.browser.recognition, remaining: Math.max(0, limits.browser.recognition - count('recognition', owner, true))},
-        global: {limit: limits.global.generation, remaining: Math.max(0, limits.global.generation - count('generation')), recognition: {limit: limits.global.recognition, remaining: Math.max(0, limits.global.recognition - count('recognition'))}},
+        global: {limit: globalGeneration, remaining: globalGeneration === null ? null : Math.max(0, globalGeneration - count('generation')), recognition: {limit: limits.global.recognition, remaining: Math.max(0, limits.global.recognition - count('recognition'))}},
         used: Object.values(store.jobs).filter(r => (owner === undefined || r.owner === owner) && charged(r.job.id)).length, activeJobId: active(owner)?.job.id ?? null};
     }),
     retake: (id, owner) => serial(async () => {

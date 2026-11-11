@@ -53,6 +53,7 @@ async function jsonBody(req, allowed) {
 }
 export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, previewAccessCode = null, headerIdentity = false, ...options} = {}) {
   if (typeof headerIdentity !== 'boolean' || (headerIdentity && (!publicOrigin || privateOrigin || previewAccessCode))) throw Error('Header identity requires a dedicated public API');
+  if (!headerIdentity && (options.budget?.limit === null || options.limits?.global?.generation === null)) throw Error('Only the dedicated judge API can disable spend or global generation limits');
   if (privateOrigin !== null) {
     const u = new URL(privateOrigin), parts = u.hostname.split('.').map(Number);
     if (publicOrigin || u.protocol !== 'http:' || u.origin !== privateOrigin || parts.length !== 4 || !parts.every(n => Number.isInteger(n) && n >= 0 && n <= 255) || parts[0] !== 100 || parts[1] < 64 || parts[1] > 127 || !options.budget) throw Error('Private mode requires exact Tailscale HTTP origin and budget');
