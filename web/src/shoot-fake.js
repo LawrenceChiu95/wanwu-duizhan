@@ -32,6 +32,8 @@
  *   ?shootName=保温杯      answers the way the real 认物 does since task #84: that name (and category), no inSix; the item
  *                         takes the name too. &shootMat=不锈钢 adds materialName. The model and numbers still come from
  *                         the six; the game takes such an item once sim/runtime-items.js accepts any category (Sol, task #84).
+ *   ?shootVerdict=<text>  the 认物 line on the 鉴定卡 (recognition.verdict, Sol 99c2016a); =0 leaves it out, as the real
+ *                         one does when the model's line is missing or turned down. Without it each of the six has its own.
  *   ?shootReset=1         forget every fake job, item and the page's current job
  * Many players at once (评委自己拍, Elara 6dee70f7; fields as agreed with Sol df0613d4 f056c835). None of these is on by
  * default, so the stage copies behave as before:
@@ -45,6 +47,7 @@
 import {loadCatalog} from '../../sim/index.js';
 import {loadV3Rules} from '../../sim/v3.js';
 import {stillUrl} from './models.js';
+import potStyled from '../../data/showcase/pot/styled.webp?url';
 import {ShootError, decodeImage, getPass} from './shoot-api.js';
 
 const KEY = 'wanwu-shoot-fake', PHOTO = 'wanwu-shoot-fake-photo:';
@@ -57,6 +60,9 @@ const RETAKE_MS = 5000;
 // What each category becomes: an item already in the repo.
 const SOURCE = {pot: 'wasteland-pot', scissors: 'wasteland-knife', broom: 'wasteland-broom', lamp: 'lamp-lux3d', slipper: 'slipper', pillow: 'pillow'};
 const CAT_NAME = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
+// recognition.verdict: what it is like and how a knock with it feels, never how strong it is (Elara 48e25b06).
+const VERDICT = {pot: '厚实金属，碰上去闷响一声', lamp: '灯罩轻、底座沉，晃一晃才站稳', scissors: '细长一条，刃口先碰到人',
+  broom: '杆子长，毛头一扫一大片', slipper: '扁扁软软，拍上去啪的一声', pillow: '软乎乎的，撞上去先陷进去'};
 const BASIS = {pot: '圆口、有柄', lamp: '灯罩、底座', scissors: '细长、有刃', broom: '长柄、一头散开', slipper: '扁平、鞋形', pillow: '软、方块'};
 // Where each failure happens unless @stage says otherwise: [stage, fraction into it]; 'create' fails the call itself.
 const FAIL_AT = {
@@ -98,6 +104,7 @@ export async function fakeApi(q) {
   const [failCode, failStage] = (q.get('shootFail') ?? '').split('@');
   const pinned = SOURCE[q.get('shootCat')] ? q.get('shootCat') : null, inSix = q.get('shootSix') !== '0';
   const realName = q.get('shootName')?.trim() || null, realMat = q.get('shootMat')?.trim() || null;
+  const verdictOf = cat => q.get('shootVerdict') === '0' ? null : q.get('shootVerdict')?.trim() || VERDICT[cat];
   const FIRST = ['broom', 'scissors'], RANDOM = Object.keys(SOURCE);
   const someCat = n => pinned ?? FIRST[n] ?? RANDOM[Math.floor(Math.random() * RANDOM.length)];
   const st = read(KEY) ?? {v: VERSION, clock: {real0: Date.now(), virt0: Date.now(), speed}, seq: 0, jobs: {}, keys: {}, items: [], used: {day: today(), n: 0}};
@@ -161,6 +168,9 @@ export async function fakeApi(q) {
       status: rec.done?.status ?? (stage === 0 || (rec.from === 0 && !rec.times[0]) ? 'recognizing' : 'generating'), queuePosition,
       recognition: rec.times[0]?.[1] != null || rec.from > 0 ? rec.recognition : null, retakeUntil: iso(rec.retakeUntil),
       steps: STEP_KEYS.map((key, i) => ({key, startedAt: iso(rec.times[i + 1]?.[0]), endedAt: iso(rec.times[i + 1]?.[1])})),
+      // The real one's styled.jpg once 改画风 is done (PR #103); here a real one for the pot (the showcase pan's), the
+      // still of the item it will copy for the rest.
+      styledUrl: rec.times[1]?.[1] != null ? (rec.cat === 'pot' ? potStyled : stillUrl(SOURCE[rec.cat])) : null,
       estimateSeconds: ESTIMATE, error: rec.done?.error ?? null, itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
     };
   }
@@ -198,7 +208,7 @@ export async function fakeApi(q) {
     const src = catalog.find(i => i.id === SOURCE[cat]);
     const lengthMeters = +Math.max(...src.bounds.max.map((v, i) => v - src.bounds.min[i])).toFixed(2);
     const r = {category: cat, inSix, basis: BASIS[cat], lengthMeters, massKg: src.mass, material: src.material, condition: src.condition ?? 'unknown',
-      sizeLabel: lengthMeters < 0.25 ? '小' : lengthMeters < 0.6 ? '中' : '大'};
+      sizeLabel: lengthMeters < 0.25 ? '小' : lengthMeters < 0.6 ? '中' : '大', ...verdictOf(cat) ? {verdict: verdictOf(cat)} : {}};
     if (!realName) return r;
     delete r.inSix;
     return {...r, name: realName, category: realName, ...realMat ? {materialName: realMat} : {}};
@@ -235,6 +245,7 @@ export async function fakeApi(q) {
     named: !!realName, // ?shootName: the screens say what the real one says
     pollMs: 500,
     now: vnow,
+    fileUrl: async path => path,
     async create(photo, clientKey) {
       await tick(300);
       const sig = `${photo.size}:${photo.type}`;

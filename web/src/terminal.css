@@ -365,3 +365,17 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .sfoot .go { font-size:21px;letter-spacing:2px; }
 .sfoot .go span { white-space:nowrap; }
 .ssteps i { border-radius:1px; }
+/* 鉴定卡: a cassette like the 角色库's, on the same screen; 已鉴定 in the gold of the buttons. */
+.sid { border:11px solid transparent;border-image:var(--hardware) 70 stretch;background:var(--screen);background-clip:padding-box;padding:4px 8px 8px;box-shadow:0 8px 18px #000a; }
+.sid-head { color:#83e1d7; }
+.sid-head i { background:var(--c1);box-shadow:0 0 5px #4fc8bd88;border-radius:1px; }
+.sid-name { color:var(--ink); }
+.sid-mat { color:#e1ddc6; }
+.sid-mat small,.sid-as,.sid-scan { color:#92b4a1; }
+.sid-say { color:var(--c0l);border-top-color:#405843; }
+.sid-seal { color:var(--c0);background:#141006d9;border-radius:1px;top:-20px;right:2px; }
+.sface,#shootTag .sgo { clip-path:none;border-radius:1px; }
+#shootTag .sgo { background:#1d1607;color:var(--c0l); }
+/* 拍一件's tag while it runs: the 角色库's screen green, on top of whatever is behind it. */
+#shootTag:not(.done):not(.bad) { clip-path:none;border-radius:1px;background:#0b1c15f2;box-shadow:inset 0 0 0 1px #476649,0 6px 16px #000a;color:var(--ink); }
+#shootTag:not(.done):not(.bad) small { color:#92b4a1; }
