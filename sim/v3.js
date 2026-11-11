@@ -16,6 +16,23 @@ export const warmEngine=()=>ready();
 const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const UP=[0,1,0];
+const horizontalUnit=([x,,z])=>{const n=hyp(x,z);return n>1e-6?[x/n,0,z/n]:[0,0,0];};
+const flat=(a,b)=>horizontalUnit(sub(b,a));
+function keepCoresOnPlane(world,fs){
+ let moved=false;
+ for(const f of fs){
+  const p=f.body.translation(),v=f.body.linvel();
+  // Rapier constrains the centre of mass. A tilted off-centre assembly can
+  // still move the rigid body's origin, which is where the core is mounted.
+  if(p.y!==0){f.body.setTranslation({x:p.x,y:0,z:p.z},true);moved=true;}
+  if(v.y!==0)f.body.setLinvel({x:v.x,y:0,z:v.z},true);
+ }
+ if(moved)world.propagateModifiedBodyPositionsToColliders();
+}
+function planeNormal(normal,fs){
+ const n=horizontalUnit(normal);
+ return n[0]||n[2]?n:flat(arr(fs[0].body.translation()),arr(fs[1].body.translation()));
+}
 // The opening and active moves use the original forces. This profile only changes free motion after the first rebound.
 const BOUNCE={attraction:6,thrust:0,recoilSpeed:1.55};
 // The independent twelve-item trial shortens long matches without altering legacy replays.
@@ -45,6 +62,10 @@ export const HEAVY_JUDGE_COMBAT_OPTIONS=Object.freeze({
  combat:'position',
  combatRules:Object.freeze({...JUDGE_POSITION_COMBAT_RULES,broadHeavyMidHit:true}),
  feelRules:Object.freeze({...BOUNCE,thrust:4})
+});
+export const PLANAR_JUDGE_COMBAT_OPTIONS=Object.freeze({
+ ...HEAVY_JUDGE_COMBAT_OPTIONS,
+ combatRules:Object.freeze({...HEAVY_JUDGE_COMBAT_OPTIONS.combatRules,lockCorePlane:true,dashAimLockTime:.08,weakHitFloor:.5})
 });
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
@@ -147,7 +168,9 @@ function coreLoadoutStats(parts,{mainShare,attackGain,durabilityGain}){
 }
 function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules){
  const spin=r.top.spinRate*r.top.spinDirections[index];
- const body=world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping));
+ const desc=RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping);
+ if(positionRules?.lockCorePlane)desc.enabledTranslations(true,false,true);
+ const body=world.createRigidBody(desc);
  const item={id:'__core',name:'核心',tag:'core',material:r.core.material,stats:{attack:r.core.attack,defense:r.core.defense},bounds:{min:[-r.core.radius,-r.core.radius,-r.core.radius],max:[r.core.radius,r.core.radius,r.core.radius]}};
  const collider=world.createCollider(RAPIER.ColliderDesc.ball(r.core.radius).setMass(r.core.mass).setRestitution(.7).setFriction(.12),body);
  const core={id:'core',item,mount:'core',orient:'core',collider,maxHp:r.core.hp,hp:r.core.hp,alive:true};
@@ -260,7 +283,7 @@ function contactPair(world,left,right){
  * of mass. The total move per step is capped so a wedged compound never jumps; what is left is
  * worked off over the next steps (and by the solver). No velocity or HP change.
  */
-function correctOverlap(world,fs,r){
+function correctOverlap(world,fs,r,planar){
  let before=0,remaining=0,correction=0;
  for(let i=0;i<=r.overlapIterations;i++){
   let deepest=null;
@@ -268,7 +291,7 @@ function correctOverlap(world,fs,r){
   remaining=deepest?-deepest.distance:0;if(i===0)before=remaining;
   const budget=r.top.maxCorrectionPerStep-correction;
   if(remaining<=r.overlapTolerance||i===r.overlapIterations||budget<=1e-9)break;
-  const amount=Math.min(remaining+.0001,budget),total=fs[0].mass+fs[1].mass,delta=scale(arr(deepest.normal1),amount);
+  const amount=Math.min(remaining+.0001,budget),total=fs[0].mass+fs[1].mass,normal=arr(deepest.normal1),delta=scale(planar?planeNormal(normal,fs):normal,amount);
   fs.forEach((f,j)=>f.body.setTranslation(vec(add(arr(f.body.translation()),scale(delta,(j===0?-1:1)*fs[1-j].mass/total))),true));correction+=amount;world.propagateModifiedBodyPositionsToColliders();
  }
  return {before,remaining,correction};
@@ -350,6 +373,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const resistance=position?.broadHeavyResistance;
  if(resistance!==undefined&&(typeof resistance!=='boolean'||resistance&&(!weightFeel||!coreLoadout)))
   throw Error('Broad heavy resistance requires position weight and core loadout rules');
+ const planar=position?.lockCorePlane===true,aimLock=position?.dashAimLockTime,weakHitFloor=position?.weakHitFloor??.08;
+ if(position?.lockCorePlane!==undefined&&typeof position.lockCorePlane!=='boolean')throw Error('lockCorePlane must be boolean');
+ if(aimLock!==undefined&&(!Number.isFinite(aimLock)||aimLock<=0||aimLock>=manualRules.chargeTime))throw Error('dashAimLockTime must be within the charge');
+ if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
@@ -361,6 +388,18 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  // Match the original opening, even when the first contact comes from a dash.
  const weightLoad=f=>weightFeel&&lastRecoil!==-Infinity
   ?Math.max(0,Math.min(1,(f.mass-weightFeel.lightMass)/(weightFeel.heavyMass-weightFeel.lightMass))):0;
+ const dashScale=f=>1-weightLoad(f)*(weightFeel?.dashLoss??0);
+ // A free straight lunge uses the same per-tick cap, acceleration and
+ // damping as Rapier. Contact can end it earlier.
+ let dashReach;
+ if(aimLock!==undefined&&M){
+  let speed=M.dashSpeed;
+  dashReach=0;
+  for(let i=0;i<steps(M.dashTime);i++){
+   speed=(Math.min(speed,M.dashSpeedLimit)+M.dashThrust*r.dt)/(1+r.linearDamping*r.dt);
+   dashReach+=speed*r.dt;
+  }
+ }
  try{
  buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position));
  extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
@@ -375,10 +414,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null,pendingAi:null};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
  const charging=f=>f.ctl.chargeUntil>=step,dashing=f=>f.ctl.dashUntil>=step,shielded=f=>f.ctl.shieldUntil>=step;
  const wenCanDash=i=>{const k=fs[i].ctl;return t<=k.counterUntil||step-(k.dashPressStep??0)>=steps(aiProfiles[i].idleDashAfter);};
- const flat=(a,b)=>{const d=[b[0]-a[0],0,b[2]-a[2]],n=hyp(d[0],d[2]);return n>1e-6?[d[0]/n,0,d[2]/n]:[0,0,0];};
  function tryPress(i,action,source,decisionStep){
   const f=fs[i],k=f.ctl;
-  if(action==='dash'){if(step<k.dashReady||charging(f)||dashing(f))return;k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));k.dashPressStep=step;k.chargeUntil=step+steps(M.chargeTime)-1;k.dashReady=step+steps(M.dashCooldown);events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'dash',phase:'charge',side:i,until:t+M.chargeTime,pressStep:step,lockedDir:k.lockedDir});}
+  if(action==='dash'){if(step<k.dashReady||charging(f)||dashing(f))return;k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));k.dashPressStep=step;k.chargeUntil=step+steps(M.chargeTime)-1;k.dashReady=step+steps(M.dashCooldown);k.aimUntil=t+M.chargeTime;k.aimReach=dashReach===undefined?undefined:dashReach*dashScale(f);events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'dash',phase:'charge',side:i,until:k.aimUntil,pressStep:step,lockedDir:k.lockedDir,...(k.aimReach!==undefined&&{reach:k.aimReach})});}
   else{if(step<k.blockReady)return;k.shieldUntil=step+steps(M.blockTime)-1;k.blockReady=step+steps(M.blockCooldown);k.blockPressStep=step;k.blockResolved=false;events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'block',side:i,until:t+M.blockTime,pressStep:step,windowSteps:steps(M.blockTime)});}
   if(manual.sides[i]==='input')inputs.push({step,side:i,action});
  }
@@ -416,8 +454,18 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   for(let i=0;i<2;i++){
    for(const {action,decisionStep}of wants[i])tryPress(i,action,manual.sides[i],decisionStep);
   }
-  fs.forEach((f,i)=>{if(f.ctl.chargeUntil===step-1){const dir=f.ctl.lockedDir,v=arr(f.body.linvel());
-    const speed=M.dashSpeed*(1-weightLoad(f)*(weightFeel?.dashLoss??0));
+  fs.forEach((f,i)=>{
+   const k=f.ctl;
+   if(aimLock!==undefined&&charging(f)&&step>k.dashPressStep){
+    const tracking=step<=k.chargeUntil+1-steps(aimLock),reach=dashReach*dashScale(f);
+    if(tracking)k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
+    if(tracking||reach!==k.aimReach){
+     k.aimReach=reach;
+     events.push({t,type:'dashAim',side:i,lockedDir:k.lockedDir,reach,until:k.aimUntil,pressStep:k.dashPressStep});
+    }
+   }
+   if(k.chargeUntil===step-1){const dir=k.lockedDir,v=arr(f.body.linvel());
+    const speed=M.dashSpeed*dashScale(f);
     f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*speed,v[1],dir[2]*speed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
    else if(f.ctl.dashUntil===step-1)events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:f.ctl.dashPressStep});});
  }
@@ -427,11 +475,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   if(M)manualStep();
   const motion=bounce&&lastRecoil!==-Infinity?bounce:r;
   fs.forEach((f,i)=>{
-   const p=arr(f.body.worldCom()),delta=sub(arr(fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],pursuit=t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
+   const p=arr(planar?f.body.translation():f.body.worldCom()),delta=sub(arr(planar?fs[1-i].body.translation():fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],pursuit=t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
    // bleed off velocity across the line between them so the pair cannot orbit without touching.
    const across=sub(v,scale(n,dot(v,n)));
-   const load=weightLoad(f),dashScale=1-load*(weightFeel?.dashLoss??0);
+   const load=weightLoad(f),dashSpeedScale=dashScale(f);
    // Leave the initial rebound impulse intact. After separation, a light assembly
    // can turn inward sooner, while a heavy assembly keeps drifting outward.
    const agile=weightFeel?.recenterBoost&&lastRecoil!==-Infinity
@@ -442,13 +490,14 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
    if(M&&charging(f))acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
-   else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust*dashScale),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
+   else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust*dashSpeedScale),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
    f.body.resetForces(true);f.body.addForce(vec(scale(acceleration,f.mass)),true);f.body.resetTorques(true);
    driveSpin(f,r);
-   const limit=M&&dashing(f)?M.dashSpeedLimit*dashScale:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
+   const limit=M&&dashing(f)?M.dashSpeedLimit*dashSpeedScale:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
    f.before={velocity:arr(f.body.linvel()),angular:arr(f.body.angvel()),center:arr(f.body.worldCom()),core:arr(f.body.translation())};
   });
   world.step();
+  if(planar)keepCoresOnPlane(world,fs);
   const pairs=[];for(const p of active(fs[0]))for(const q of active(fs[1])){const hit=contactPair(world,p,q);if(hit)pairs.push(hit);}
   // Select across the complete manifold set before causing any damage/removal.
   pairs.sort((a,b)=>b.impulse-a.impulse||a.left.id.localeCompare(b.left.id)||a.right.id.localeCompare(b.right.id));
@@ -501,10 +550,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       const attackScore=ap.mount==='core'?fs[attacker].coreStats.attackScore:ratingScores(ap.item).attack;
       const durability=ratingScores(tp.item).durability;
       if(attackScore<durability){
-       d.weakHitResistance=Math.max(.08,(attackScore/durability)**2);
+       d.weakHitResistance=Math.max(weakHitFloor,(attackScore/durability)**2);
        if(position.broadHeavyMidHit){
         const attackRatio=attackScore/durability;
-        d.weakHitResistance=Math.max(.08,attackRatio*attackRatio,Math.min(1,4*attackRatio-1.4));
+        d.weakHitResistance=Math.max(weakHitFloor,attackRatio*attackRatio,Math.min(1,4*attackRatio-1.4));
        }
        d.damage*=d.weakHitResistance;
       }
@@ -534,15 +583,17 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     const k=M?[0,1].map(i=>fullLunge.includes(i)?(shield[1-i]?M.bounceRecoil:1):shield[i]?M.blockRecoil:fullLunge.includes(1-i)?M.dashRecoil:1):null;
     const recoilSpeed=bounce&&!lunge.length&&!shield?.some(Boolean)?bounce.recoilSpeed:r.recoilSpeed;
     const partRecoil=position?[left,right].map(p=>partRecoilFactor(p,position)):null;
-    const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(normal,M?(i===0?-1:1)*f.mass*recoilSpeed*k[i]*(partRecoil?.[i]??1):(i===0?-1:1)*f.mass*recoilSpeed*(partRecoil?.[i]??1))),true));
-    events.push({t,type:'recoil',normal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed,...(partRecoil&&{partRecoil}),...(M&&{recoilScale:k})});lastRecoil=t;
+    const recoilNormal=planar?planeNormal(normal,fs):normal;
+    const before=fs.map(f=>arr(f.body.linvel()));fs.forEach((f,i)=>f.body.applyImpulse(vec(scale(recoilNormal,M?(i===0?-1:1)*f.mass*recoilSpeed*k[i]*(partRecoil?.[i]??1):(i===0?-1:1)*f.mass*recoilSpeed*(partRecoil?.[i]??1))),true));
+    events.push({t,type:'recoil',normal:recoilNormal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed,...(partRecoil&&{partRecoil}),...(M&&{recoilScale:k})});lastRecoil=t;
    }
    if(impulse>=r.minimumImpulse)lastSeen=t;
    // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
    for(const i of lunge){const f=fs[i],full=fullLunge.includes(i),blocked=full&&(roles.clash||i===roles.attacker)&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0),quality=blocked?'blocked':full?'full':'glance';f.ctl.dashUntil=-1;events.push({t,type:'dash',phase:'end',side:i,outcome:blocked?'blocked':'hit',quality,alignment:alignment.find(x=>x.side===i).value,pressStep:f.ctl.dashPressStep,point:i===0?rightPoint:point});if(blocked)events.push({t,type:'parry',attacker:i,target:1-i,point:i===0?rightPoint:point});}
   }
   for(let i=0;i<2;i++)for(const p of fs[i].parts)if(p.alive&&p.hp<=0){const detached=detachPart(world,fs[i],p);events.push({t,type:'break',target:i,targetPart:p.id,item:p.item.id,mount:p.mount,orient:p.orient,...detached,caption:`${name(p)}碎了`});}
-  const projection=correctOverlap(world,fs,r);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
+  if(planar)keepCoresOnPlane(world,fs);
+  const projection=correctOverlap(world,fs,r,planar);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
   const dead=fs.map((f,i)=>f.core.hp<=0?i:null).filter(i=>i!==null);
   if(step%r.frameStride===0||dead.length)record();
   if(dead.length){

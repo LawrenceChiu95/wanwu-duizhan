@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {Playback} from '../src/playback.js';
-import {createV3Match, simulateV3} from '../../sim/v3.js';
+import {createV3Match, simulateV3, PLANAR_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
 
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} != ${expected}`);
 const fighter = () => ({pos: [0, 0, 0], quat: [0, 0, 0, 1], angularVelocity: [0, 0, 0], hp: 100, maxHp: 100, parts: []});
@@ -89,4 +89,20 @@ test('four frame intervals retain every byte of the fixed-input 120 Hz replay', 
     } finally { m.free(); }
   }
   assert.equal(new Set(hashes).size, 1);
+});
+
+test('planar charges follow until the last ten steps and preserve the block window', async () => {
+  const r = await simulateV3({...options, ...PLANAR_JUDGE_COMBAT_OPTIONS});
+  assert.ok(r.frames.every(frame => frame.fighters.every(fighter => fighter.pos[1] === 0)));
+  const charge = r.events.find(event => event.type === 'dash' && event.phase === 'charge' && event.side === 0);
+  const go = r.events.find(event => event.type === 'dash' && event.phase === 'go' && event.side === 0);
+  const aims = r.events.filter(event => event.type === 'dashAim' && event.side === 0 && event.pressStep === charge.pressStep);
+  assert.ok(aims.length > 1);
+  assert.ok(aims.every(aim => aim.until === charge.until && aim.lockedDir[1] === 0 && aim.reach > 0));
+  close(go.t - charge.t, .3);
+  close(go.t - aims.at(-1).t, 10 / 120);
+  assert.deepEqual(go.dir, aims.at(-1).lockedDir);
+  const block = r.events.find(event => event.type === 'block' && event.side === 0);
+  close(block.until - block.t, r.meta.rules.manual.blockTime);
+  assert.equal(r.meta.combatRules.lockCorePlane, true);
 });
