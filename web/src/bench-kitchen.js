@@ -26,7 +26,10 @@ export class BenchKitchen {
 
   /** Fetches the renderer (Spark) and the scene; resolves once the splats can be drawn. */
   load() {
-    return this.loading ??= import('@sparkjsdev/spark').then(({SparkRenderer, SplatMesh}) => {
+    // A download begun on the bench can finish in a fight: the setup (scene file, decoding, shaders) still waits for the
+    // bench to be up again (Sol 79525cfb).
+    return this.loading ??= import('@sparkjsdev/spark').then(spark => new Promise(go => { this.onBench = () => go(spark); }))
+      .then(({SparkRenderer, SplatMesh}) => {
       this.spark = new SparkRenderer({renderer: this.stage.renderer, depthTest: false, depthWrite: false});
       this.scene.add(this.spark);
       // Placed as the 3D kitchen preview places it (kitchen.js INITIAL): observation point at EYE, facing the room.
@@ -47,6 +50,7 @@ export class BenchKitchen {
   /** Draws the frame (kitchen, then the game scene over it) when the bench shows it; false leaves it to the stage. */
   draw(building, dt) {
     if (building && this.wanted && !this.loading) this.load().catch(e => console.warn('厨房场景没载入', e));
+    if (building && this.onBench) { this.onBench(); this.onBench = null; }
     this.shown = this.ready && building ? Math.min(1, this.shown + dt / FADE) : 0;
     if (!this.shown) return false;
     const {renderer, scene, camera, view} = this.stage, {back, field, material} = this.backdrop;
