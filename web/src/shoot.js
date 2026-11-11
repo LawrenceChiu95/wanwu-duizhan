@@ -505,6 +505,8 @@ export function mountShoot(ctx) {
     el.tag.hidden = !(room || quiet) || !el.view.hidden || !state;
     if (el.tag.hidden) return;
     el.tag.className = quiet ? 'done quiet' : state;
+    // Out of reach for keys too, not only taps: Enter on a focused tag would open 拍一件 mid-fight (Sol eab01e32).
+    el.tag.inert = quiet;
     const top = ctx.tagTop?.();
     el.tag.style.top = top == null ? '' : `${top}px`;
     const what = esc(catOf(job.recognition));
@@ -516,7 +518,7 @@ export function mountShoot(ctx) {
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
   }
-  el.tag.onclick = () => open('tag');
+  el.tag.onclick = () => { if (!el.tag.inert) open('tag'); };
 
   // ---------- actions ----------
   async function send(fn) {
