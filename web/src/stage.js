@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {instantiate} from './models.js';
 import {KitchenPreview} from './kitchen.js';
+import {BenchKitchen} from './bench-kitchen.js';
 
 export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
 const TOP_DISPLAY_SCALE = 1.05 * 1.10 * 1.10;
@@ -124,7 +125,7 @@ const backdropShader = {
       vec2 tilted = mat2(0.848,-0.530,0.530,0.848)*physical;
       clipXYW = vec3(tilted.x/aspect,tilted.y,1.0)*gl_Position.w;
     }`,
-  fragmentShader: `varying vec3 vP, worldPos, clipXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom;
+  fragmentShader: `varying vec3 vP, worldPos, clipXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom, fieldFade;
     void main(){
       // Stereographic projection curves the peripheral grid without distorting the fighters.
       vec2 lens = clipXYW.xy / clipXYW.z * vec2(0.60,0.78) * fieldZoom;
@@ -179,7 +180,7 @@ const backdropShader = {
       float ribbon = exp(-distance2*0.66 - 2.1*offset.y*offset.y);
       vec3 scattered = (vec3(0.60,0.64,0.67)*ribbon + vec3(0.29,0.20,0.27)*haze
                        + vec3(0.085,0.034,0.105)*halo) * (0.97 + 0.03*sin(fieldTime*1.2));
-      gl_FragColor = vec4(base + light + 0.70 * scattered, 1.0);
+      gl_FragColor = vec4(base + light + 0.70 * scattered, fieldFade);
       #include <colorspace_fragment>
     }`
 };
@@ -674,7 +675,7 @@ export class Stage {
       l.target = target;
     }
 
-    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}};
+    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}, fieldFade:{value:1}};
     const fieldMaterial = new THREE.ShaderMaterial({...backdropShader, uniforms:this.fieldUniforms, side: THREE.BackSide, depthWrite: false});
     const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.MeshBasicMaterial({color:0x080d18, side:THREE.BackSide, depthWrite:false}));
     back.renderOrder = -2;
@@ -743,6 +744,7 @@ export class Stage {
       fv: new THREE.Vector3(), logD: 0, logDv: 0, goal: 0, hist: [], clock: 0, offY: 0, offYv: 0, punch: null, only: null, cardTop: null, ahead: null, stat: null};
     this.view = {w: 390, h: 844, top: 70, bottom: 130};
     this.kitchen = new KitchenPreview(this, [back, field]);
+    this.bench = new URLSearchParams(location.search).get('scene') === 'kitchen' ? new BenchKitchen(this, {back, field, material: fieldMaterial}) : null;
   }
 
   resize(w, h, top, bottom) {
@@ -1522,7 +1524,7 @@ export class Stage {
     this.streaks.update(simDt);
     this.shards.update(simDt);
     this.rings.update(realDt);
-    this.renderer.render(this.scene, this.camera);
+    if (!this.bench?.draw(this.cam.mode === 'build', realDt)) this.renderer.render(this.scene, this.camera);
   }
 
   /**
