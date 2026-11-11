@@ -181,7 +181,7 @@ export function mountShoot(ctx) {
   // picture: asked for once 改画风 is done, then the photo turns into it, once.
   let idFor = null, styled = {id: null, url: null, asking: false, tries: 0, shown: false};
   // 好了 seen arrive during a match: a quiet line over the fight for a moment (Elara 207a725b), then the tag on 结算.
-  let madeFor = null, toastUntil = 0;
+  let madeFor = null, toastLeft = 0, toastAt = 0;
   const retakeLate = () => lateAt > -Infinity;
   // Seconds left: each step not yet done at its usual share of the estimate, less the time the current one has had.
   function remaining() {
@@ -484,7 +484,7 @@ export function mountShoot(ctx) {
     // 好了 and in the catalog while a match is on: the quiet line over the fight, once per job.
     if (job?.status === 'succeeded' && ctx.item(job.itemId) && madeFor !== job.id) {
       madeFor = job.id;
-      if (stored && !stored.seen && ctx.fightRoom?.()) { toastUntil = performance.now() + TOAST; setTimeout(paintTag, TOAST + 50); }
+      if (stored && !stored.seen && ctx.fightRoom?.()) { toastLeft = TOAST; toastAt = performance.now(); setTimeout(toastTick, 100); }
     }
     paintTag();
     ctx.onChange?.();
@@ -497,11 +497,21 @@ export function mountShoot(ctx) {
   }
 
   // ---------- the tag at the top of the build and result screens ----------
+  // The line under the HUD (冲中, 撞碎了…) goes first: 「做好了」 waits under it, its clock stopped, and gets its whole time
+  // once that is down (Elara 5fd78c17).
+  function toastTick() {
+    const now = performance.now();
+    if (!ctx.hudBusy?.()) toastLeft -= now - toastAt;
+    toastAt = now;
+    if (!ctx.fightRoom?.()) toastLeft = 0;
+    paintTag();
+    if (toastLeft > 0) setTimeout(toastTick, 100);
+  }
   function paintTag() {
     const room = ctx.tagRoom(), state = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (stored.seen ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
     // In a match only 好了, only for a moment, and not to be tapped: the fight's buttons are right there.
-    const quiet = !room && state === 'done' && ctx.fightRoom?.() && performance.now() < toastUntil;
+    const quiet = !room && state === 'done' && ctx.fightRoom?.() && toastLeft > 0 && !ctx.hudBusy?.();
     el.tag.hidden = !(room || quiet) || !el.view.hidden || !state;
     if (el.tag.hidden) return;
     el.tag.className = quiet ? 'done quiet' : state;

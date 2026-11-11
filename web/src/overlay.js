@@ -129,6 +129,7 @@ export class Overlay {
     this.banner = {age: 0, dur};
   }
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
+  dropHighlight() { this.hilite?.el.remove(); this.hilite = null; }
   clear() {
     for (const n of [...this.nums, ...this.calls, ...this.verdicts]) { n.el.remove(); n.pin?.remove(); }
     this.hilite?.el.remove();
