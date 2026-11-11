@@ -819,7 +819,7 @@ async function main() {
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
