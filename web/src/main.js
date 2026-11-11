@@ -287,7 +287,11 @@ async function main() {
   // the opening card and builds, instead of holding up the first screen or the first 开打.
   // The rest of the 角色库's models then come down behind it, after the engine (Elara ead80382): opening the 角色库 or
   // swapping an item later needn't wait for the network, and the first screen still waits for the first match's only.
-  if (judge) { judge.readyIntro(); warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
+  let prefetched = Promise.resolve();
+  if (judge) { judge.readyIntro(); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
+  // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
+  // if it fails the bench just keeps the usual backdrop.
+  if (stage.bench) prefetched.finally(() => stage.bench.want());
 
   // ---------- state ----------
   let phase = 'loading'; // loading | build | computing | play | finale | result | replay
