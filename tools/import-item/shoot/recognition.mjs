@@ -43,7 +43,7 @@ export function parseRecognition(value) {
   if (!text(value.name, 40) || !text(value.materialName, 40) || !materials.includes(value.material) || !conditions.includes(value.condition) || !['wide', 'narrow', 'unknown'].includes(value.outwardEnd) || !bounded(value.hardness, .05, 1.2) || typeof value.hasBladeOrPoint !== 'boolean' || !bounded(value.impactHardness, .05, 1.2) || !bounded(value.lengthCm, 1, 300) || !bounded(value.massKg, .001, 100)) throw failure('recognition-invalid');
   const name = Array.from(value.name.trim()).slice(0, 12).join('');
   const recognition = {name, category: name, materialName: value.materialName.trim(), material: value.material, hardness: value.hardness, hasBladeOrPoint: value.hasBladeOrPoint, impactHardness: value.impactHardness, lengthMeters: value.lengthCm / 100, massKg: value.massKg, condition: value.condition, outwardEnd: value.outwardEnd, basis: value.basis.trim(), sizeLabel: `${value.lengthCm} cm`};
-  if (text(value.verdict, verdictMaxLength) && !/[<>]|[SABCDＳＡＢＣＤ]\s*[级档級檔]|最强|最強|最弱|无敌|無敵|碾压|碾壓|必[胜勝败敗]|打不过|打不過|谁撞谁疼|誰撞誰疼/i.test(value.verdict)) recognition.verdict = value.verdict.trim();
+  if (text(value.verdict, verdictMaxLength) && !/[<>]|[SABCDＳＡＢＣＤ]\s*[级档級檔]|[强強弱]|[厉厲]害|秒[杀殺]|无敌|無敵|碾压|碾壓|必[胜勝败敗]|打不过|打不過|谁撞谁疼|誰撞誰疼/i.test(value.verdict)) recognition.verdict = value.verdict.trim();
   return recognition;
 }
 async function replyJson(response, parse = JSON.parse, limit = 65536) {

@@ -154,7 +154,7 @@ test('optional verdict reaches the job before 3D and bad copy never blocks recog
  assert.deepEqual(g.creates, []);
  await jobs.retake(job.id);
  const plain = parseRecognition(result);
- for (const optional of [null, undefined, '', 42, '厚'.repeat(25), '上行\n下行', '<b>很硬</b>', '无敌金属', 'Ｓ级锅', '又沉又硬，谁撞谁疼']) {
+ for (const optional of [null, undefined, '', 42, '厚'.repeat(25), '上行\n下行', '<b>很硬</b>', '无敌金属', 'Ｓ级锅', '又沉又硬，谁撞谁疼', '这件很强', '這件很強', '这个很弱', '厉害得很', '很厲害', '能秒杀', '能秒殺']) {
   assert.deepEqual(parseRecognition({...result, verdict: optional}), plain);
  }
 });
