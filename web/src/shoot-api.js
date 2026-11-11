@@ -108,6 +108,8 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     kind: 'real',
     pollMs: 2000,
     now: () => Date.now(),
+    // A file of this player's for an <img>: the styled picture while the job is still running (styledUrl).
+    fileUrl: async path => file(path),
     async create(photo, clientKey) {
       const form = new FormData();
       form.append('photo', photo);

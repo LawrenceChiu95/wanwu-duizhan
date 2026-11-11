@@ -1146,7 +1146,7 @@ async function main() {
     if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuildMine();
   }
   const equipLabel = id => mine.parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
-    : {text: mine.parts[libSlot].item === id ? '装着，回拼装' : '装上它', disabled: false};
+    : {text: mine.parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
 
   // ---------- 拍一件 (task #47) ----------
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
@@ -1204,6 +1204,9 @@ async function main() {
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
       goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
       tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden && el.credits.hidden,
+      fightRoom: () => phase === 'play' || phase === 'finale',
+      // Just under whichever plate is at the top (the build's title or the match's bars), so the tag covers neither.
+      tagTop: () => { const top = [el.foe, el.hud].find(x => !x.hidden); return top ? top.offsetTop + top.offsetHeight + 8 : null; },
       onChange: () => {
         const s = shoot?.state;
         el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
