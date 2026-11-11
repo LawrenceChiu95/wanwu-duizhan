@@ -944,15 +944,25 @@ export class Stage {
    * below it) until the lunge ends, the arrow goes grey and thin, so a lunge going wide reads as wide (Elara 80e885bc).
    */
   aim(i, dir, secs, len, align = null) {
-    const f = this.fighters[i];
-    if (!f || !dir) return;
+    const f = this.fighters[i], lane = f && this.aimLane(f, dir, len);
+    if (lane) Object.assign(f.act, lane, {aimAge: 0, aimGrow: Math.max(0.05, secs), aimOut: 0, aimAlign: align, aimWide: 0});
+  }
+  // A lane on the floor from where the top stands (it hardly moves while winding up), cut at the wall.
+  aimLane(f, dir, len) {
+    if (!dir) return null;
     const d = new THREE.Vector3().fromArray(dir).setY(0);
-    if (d.lengthSq() < 1e-8) return;
+    if (d.lengthSq() < 1e-8) return null;
     d.normalize();
-    // A fixed lane on the floor from where the top stood at the press (it hardly moves while winding up), cut at the wall.
     const from = f.center.clone(), start = f.sweep * 1.05, pd = from.x * d.x + from.z * d.z;
     const toWall = -pd + Math.sqrt(Math.max(0, pd * pd - (from.x * from.x + from.z * from.z) + ARENA_RIM * ARENA_RIM));
-    Object.assign(f.act, {aimDir: d, aimFrom: from, aimAge: 0, aimGrow: Math.max(0.05, secs), aimLen: Math.max(0.3, Math.min(len, toWall) - start), aimOut: 0, aimAlign: align, aimWide: 0});
+    return {aimDir: d, aimFrom: from, aimLen: Math.max(0.3, Math.min(len, toWall) - start)};
+  }
+  /** The wind-up's arrow follows a lunge that tracks its target: new direction and reach, from where the top stands now. */
+  reaim(i, dir, len) {
+    const f = this.fighters[i];
+    if (!f?.act.aimDir || f.act.aimOut > 0) return;
+    const lane = this.aimLane(f, dir, len);
+    if (lane) Object.assign(f.act, lane);
   }
   raiseShield(i, secs) { const f = this.fighters[i]; if (f) { f.act.shield = f.act.shieldLen = secs; f.act.fizzle = 0; f.shield.visible = true; } }
   /** A block that caught a real hit in its window: the bubble flares and a bright ring snaps out from the core (size < 1: held without damage). */

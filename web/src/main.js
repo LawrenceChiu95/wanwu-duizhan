@@ -554,9 +554,12 @@ async function main() {
     overlay.verdict(f, text, cls);
   }
   // How far the aim arrow reaches from the core: the lunge's carry, but no further than the far side of the target as it
-  // stands at the press (Kimi fbe3bc4a 2678e876: a near-camera arrow running past it took half the phone screen).
-  function aimReach(side) {
-    const a = stage.fighters[side], b = stage.fighters[1 - side], carry = rules.manual.dashSpeed * rules.manual.dashTime;
+  // stands (Kimi fbe3bc4a 2678e876: a near-camera arrow running past it took half the phone screen). The carry is the
+  // sim's own free lunge for this build (`reach`, the core's travel, so its front edge goes a sweep further; heavier
+  // builds lunge shorter); older replays without it use the plain speed × time (Elara 207a725b).
+  function aimReach(side, reach) {
+    const a = stage.fighters[side], b = stage.fighters[1 - side];
+    const carry = reach !== undefined && a ? reach + a.sweep : rules.manual.dashSpeed * rules.manual.dashTime;
     // The head lands just past the target so it is not hidden under it, and the arrow is never shorter than ~0.9 m.
     return a && b ? Math.min(carry, Math.max(Math.hypot(b.center.x - a.center.x, b.center.z - a.center.z) + b.sweep + 0.4, a.sweep * 1.05 + 0.9)) : carry;
   }
@@ -643,9 +646,9 @@ async function main() {
       if (e.phase === 'charge' && e.side === 1) coach(1);
       if (e.phase === 'charge') {
         stage.charge(e.side, e.until - e.t);
-        // 第 13 版: the direction is locked at the press; show it through the wind-up so both sides can read the lunge.
+        // 第 13 版: the direction is set at the press; show it through the wind-up so both sides can read the lunge.
         // Only the player's own arrow greys out when the target leaves the full-lunge lane (Elara 80e885bc); the opponent's is unchanged.
-        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side), e.side === 0 ? rules.manual.dashAlignment : null);
+        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), e.side === 0 ? rules.manual.dashAlignment : null);
         sfx.charge(e.until - e.t);
       } else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
       else {
@@ -655,6 +658,9 @@ async function main() {
         // 冲空, 擦边 and 被挡 say no word (凡朔 11-11, Elara d021fab4); a miss still shows and sounds its whiff.
         if (q === 'miss') { stage.whiff(e.side); sfx.whiff(); }
       }
+    } else if (e.type === 'dashAim') {
+      // The lunge follows the target until just before it goes (Sol, 同平面 PR #103): the arrow turns and resizes with it.
+      stage.reaim(e.side, e.lockedDir, aimReach(e.side, e.reach));
     } else if (e.type === 'block') {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
