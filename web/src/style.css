@@ -213,6 +213,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #caption { position: absolute; left: 14px; right: 14px; bottom: calc(env(safe-area-inset-bottom) + 22px); display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; background: rgba(7, 9, 18, 0.9);
   box-shadow: inset 4px 0 0 var(--hot), 0 10px 26px rgba(0, 0, 0, 0.45); pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; }
 #caption.on { opacity: 1; transform: none; }
+#caption.cut { transition: none; }
 #caption .tag { flex: none; font-family: var(--display); font-size: 14px; color: #1a1400; padding: 3px 9px 2px; background: var(--hot); clip-path: var(--slant); }
 #caption p { margin: 0; font-family: var(--display); font-size: 19px; line-height: 1.3; }
 

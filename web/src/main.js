@@ -426,7 +426,7 @@ async function main() {
     hideCoach();
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
-    overlay.clear(); lateNums = [];
+    overlay.clear(); lateNums = []; resetHighlights();
     stage.setCameraMode('build');
     stage.setFocusOn(null);
     stage.setLookahead(null);
@@ -494,26 +494,35 @@ async function main() {
     if (a) setFlash(a, `strike${e.attacker}`);
     if (b && b !== a) setFlash(b, 'hurt');
   }
-  // The few big moments of a match (a landed 冲, a 暴击, a piece broken) say who did what to whom, once, where the eye can
-  // find it: one line 「拖鞋 撞碎了 马克杯！」 at a fixed spot under the HUD for about 1.4 s, or with ?call=slot the striking
-  // piece's HUD slot grows and stays lit as long (凡朔 11-11, Pollux 52464265, Elara d021fab4). A break outranks the hit
-  // that caused it; a newer big moment replaces the line, but not a break still being read.
-  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4;
-  const lastHurt = new Map(); // `${side}:${part}` → the piece that last hurt it, for 「…撞碎了…」
-  let hiliteAt = -Infinity, hiliteBreak = false;
+  // The few big moments of a match say who did what to whom, once, where the eye can find it: one line 「拖鞋 撞碎了
+  // 马克杯！」 at a fixed spot under the HUD for about 1.4 s, or with ?call=slot the striking piece's HUD slot grows and
+  // stays lit as long (凡朔 11-11, Pollux 52464265, Elara d021fab4). Only the player's own landed 冲 and 暴击, and a piece
+  // broken on either side: three or four a match (Elara 8dbd9359). A line holds at least 1.2 s before a newer one may
+  // replace it, a break its whole 1.4 s; a break in the same step as the 冲 that did it takes that line over, counted once.
+  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4, HILITE_HOLD = 1.2;
+  // `${side}:${part}` → the blow that took its last hp (hpAfter 0), a rebound's included (Sol f82fe05f); the last blow
+  // that hurt it stands in for a replay recorded before hpAfter.
+  const killer = new Map(), lastHurt = new Map();
+  let hilite = null; // {t, broke}: the line now up
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
-  function highlight(side, part, item, verb, target, targetPart, targetItem, broke = false) {
-    const now = pb?.t ?? 0;
-    if (hiliteBreak && !broke && now - hiliteAt < 0.7) return;
-    hiliteAt = now; hiliteBreak = broke;
-    if (phase === 'play') test.highlights++;
+  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false) {
+    const same = hilite && Math.abs(t - hilite.t) < 1e-6;
+    if (same ? !broke || hilite.broke : hilite && t - hilite.t < (hilite.broke ? HILITE_TIME : HILITE_HOLD)) return false;
+    if (phase === 'play' && !same) test.highlights++;
+    hilite = {t, broke};
     if (HILITE === 'slot') {
       const a = strikerChip(side, part);
       if (a) setFlash(a, `star${side}`, HILITE_TIME);
-      return;
+      return true;
     }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
     overlay.highlight({who: partName(part, item), verb, whom: partName(targetPart, targetItem), side, whomSide: target}, top, HILITE_TIME);
+    return true;
+  }
+  // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
+  function resetHighlights() {
+    hilite = null; killer.clear(); lastHurt.clear();
+    for (const [node, f] of hudFlash) if (f.cls.startsWith('star')) { node.classList.remove(f.cls); hudFlash.delete(node); }
   }
   function updateHudFlash(dt) {
     for (const [node, f] of hudFlash) {
@@ -523,8 +532,10 @@ async function main() {
       if (!on) hudFlash.delete(node);
     }
   }
-  function setCaption(on, text) {
+  // cut: gone at once, no fade. The result card rises where it was, and the card says the same reason (Elara 8dbd9359).
+  function setCaption(on, text, cut = false) {
     if (text !== undefined) el.captionText.innerHTML = reasonHtml(text);
+    el.caption.classList.toggle('cut', cut && !on);
     el.caption.classList.toggle('on', on);
   }
 
@@ -568,6 +579,11 @@ async function main() {
   function onEvent(e) {
     if (e.type === 'contact' || e.type === 'hit' || e.type === 'weak') stage.kitchen?.photo.noteCollision();
     const point = e.point ? new THREE.Vector3().fromArray(e.point) : null;
+    if ((e.type === 'hit' || e.type === 'weak') && e.damage > 0) {
+      const k = `${e.target}:${e.targetPart}`, by = {side: e.attacker, part: e.part, item: e.item};
+      lastHurt.set(k, by);
+      if (e.hpAfter === 0 && !killer.has(k)) killer.set(k, by);
+    }
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
       const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
@@ -598,22 +614,21 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        lastHurt.set(`${e.target}:${e.targetPart}`, {side: e.attacker, part: e.part, item: e.item});
-        if (e.type === 'weak') highlight(e.attacker, e.part, e.item, '暴击', e.target, e.targetPart, e.targetItem);
-        else if (e.dash && !e.parry) highlight(e.attacker, e.part, e.item, '冲中', e.target, e.targetPart, e.targetItem);
+        if (e.attacker === 0 && (e.type === 'weak' || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, e.type === 'weak' ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
       }
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
-      const by = lastHurt.get(`${e.target}:${e.targetPart}`);
-      if (by) highlight(by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true);
+      const k = `${e.target}:${e.targetPart}`, by = killer.get(k) ?? lastHurt.get(k);
+      // The line already says it, so the 「…碎了」 over the top is left out (Elara 8dbd9359); a slot names only the striker.
+      const said = Boolean(by) && highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true) && HILITE === 'line';
       coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
       stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
       sfx.crunch();
       buzz(25);
       stage.shakeV4(0.8);
       const broke = [new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
-      if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke);
+      if (!said) { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
       // The camera never moves; only a piece or a core breaking jolts the picture a few px.
       stage.shake(4);
       overlay.screenFlash(0.25);
@@ -765,7 +780,7 @@ async function main() {
     liveSlowShown = false;
     stage.setFighters(r.meta.initial.map(f => f.definition));
     stage.clearFx();
-    overlay.clear(); lateNums = [];
+    overlay.clear(); lateNums = []; resetHighlights();
     stage.setCameraMode('fight');
     stage.setFocusOn(null);
     stage.showMe = true;
@@ -779,8 +794,7 @@ async function main() {
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
     lastParryT = -Infinity;
-    lastHurt.clear();
-    hiliteAt = -Infinity; hiliteBreak = false; test.highlights = 0;
+    test.highlights = 0;
     layout_();
     stage.pose(pb.state);
     stage.setLookahead(lookahead());
@@ -799,7 +813,7 @@ async function main() {
     hideCoach();
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
-      overlay.clear(); lateNums = [];
+      overlay.clear(); lateNums = []; resetHighlights();
       pb.seek(pb.end);
       stage.pose(pb.state);
     }
@@ -820,7 +834,7 @@ async function main() {
     outcome ??= ladderOutcome(m.winner);
     showOutcome(outcome);
     $('replayBtn').hidden = pb.slowAt === null;
-    setCaption(false);
+    setCaption(false, undefined, true);
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
@@ -864,7 +878,7 @@ async function main() {
     el.result.hidden = true;
     el.pad.hidden = true;
     stage.clearFx();
-    overlay.clear(); lateNums = [];
+    overlay.clear(); lateNums = []; resetHighlights();
     pb.slowEnabled = true;
     stage.setCameraMode('fight');
     stage.setFocusOn(null);
