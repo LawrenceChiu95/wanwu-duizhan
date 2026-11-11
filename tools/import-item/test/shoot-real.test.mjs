@@ -59,7 +59,10 @@ function gateway(options = {}) {
    if (u.pathname.endsWith('/create')) {
     const stage = u.pathname.includes('multimodal') ? 'image' : 'mesh'; creates.push(stage);
     if (options.directory) { const disk = await readJson(path.join(options.directory, 'state.json')); observations.push(Object.values(disk.jobs).find(r => r.providerState?.pending)?.providerState.pending); }
-    if (options.busy === stage) return Response.json({c: 'GENERATION_CONCURRENCY_LIMIT_EXCEEDED', d: null});
+    if (options.busy === stage) {
+     await options.beforeBusyReply?.();
+     return Response.json({c: 'GENERATION_CONCURRENCY_LIMIT_EXCEEDED', d: null});
+    }
     if (options.unknown === stage) throw Error('simulated lost reply ' + env.AHOLO_API_KEY);
     const payload = JSON.parse(request.body);
     if (stage === 'mesh') assert.deepEqual(payload, {img: 'https://assets.example/styled.jpg', version: 'G1-Turbo', faceCount: 12000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false});
@@ -96,8 +99,10 @@ async function until(read, accept) { for (let i = 0; i < 1500; i++) { const valu
 const finish = (jobs, id) => until(() => jobs.get(id), j => ['succeeded', 'failed'].includes(j.status));
 async function open(t, options = {}) {
  const directory = options.directory ?? await dir(), g = gateway({...options, directory});
- const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}, timeoutMs: options.visionTimeout ? 10 : 10000}});
- t.after(() => jobs.close()); return {jobs, g, directory};
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: options.pause ?? (async () => {}), timeoutMs: options.visionTimeout ? 10 : 10000}});
+ let closing;
+ const close = () => closing ??= jobs.close();
+ t.after(close); return {jobs, g, directory, close};
 }
 
 test('retake real provider cancels after recognition with no upload, paid creation or quota use', async t => {
@@ -290,7 +295,11 @@ for (const stage of ['image', 'mesh']) for (const status of [4, 6, 9, 0]) test(`
 });
 
 for (const stage of ['image', 'mesh']) test(`confirmed ${stage} busy rejection reports existing charges accurately`, async t => {
- const {jobs, g} = await open(t, {busy: stage}), j = await jobs.create({photo: image, clientKey: 'busy-real-0001'}), done = await finish(jobs, j.id);
+ const waits = [];
+ const {jobs, g} = await open(t, {busy: stage, pause: async ms => waits.push(ms)}), j = await jobs.create({photo: image, clientKey: 'busy-real-0001'}), done = await finish(jobs, j.id);
+ assert.deepEqual(g.creates, stage === 'image' ? ['image', 'image'] : ['image', 'mesh', 'mesh']);
+ assert.equal(waits.length, 1);
+ assert.ok(waits[0] > 7500 && waits[0] <= 8000);
  assert.equal(done.error.code, stage === 'image' ? 'busy' : 'download'); assert.equal(done.error.charged, stage !== 'image');
  if (stage === 'image') {
   const child = await jobs.create({clientKey: 'busy-real-0002', fromJob: j.id});
@@ -302,8 +311,53 @@ for (const stage of ['image', 'mesh']) test(`confirmed ${stage} busy rejection r
  assert.equal(g.visionCalls(), 1);
 });
 
+test('a restart during the busy delay keeps the remaining wait and the single retry', async t => {
+ const waits = [];
+ const {jobs, g, directory, close} = await open(t, {busy: 'image', pause: ms => {
+  waits.push(ms);
+  return new Promise(() => {});
+ }});
+ const job = await jobs.create({photo: image, clientKey: 'busy-restart-001'});
+ await until(() => waits.length, count => count === 1);
+ assert.deepEqual(g.creates, ['image']);
+ const record = (await readJson(path.join(directory, 'state.json'))).jobs[job.id];
+ assert.equal(record.autoRetried, true);
+ assert.equal(record.providerState.pending, undefined);
+ assert.equal(record.providerState.busyRetry.stage, 'multimodal-to-image');
+ await close();
+
+ const afterRestart = gateway({directory}), resumedWaits = [];
+ const resumed = await openJobs({
+  directory, mode: 'real', env,
+  clock: () => record.providerState.busyRetry.notBefore - 4000,
+  realOptions: {fetch: afterRestart.fetch, pause: async ms => resumedWaits.push(ms)},
+ });
+ t.after(() => resumed.close());
+ assert.equal((await finish(resumed, job.id)).status, 'succeeded');
+ assert.deepEqual(resumedWaits, [4000]);
+ assert.deepEqual(afterRestart.creates, ['image', 'mesh']);
+ assert.equal(afterRestart.visionCalls(), 0);
+});
+
+test('shutdown preserves an explicit busy rejection received while closing', async t => {
+ const reply = Promise.withResolvers();
+ const {jobs, g, directory, close} = await open(t, {busy: 'image', beforeBusyReply: () => reply.promise});
+ const job = await jobs.create({photo: image, clientKey: 'busy-shutdown-001'});
+ await until(() => g.observations.length, count => count === 1);
+ const closing = close();
+ reply.resolve();
+ await closing;
+ const record = (await readJson(path.join(directory, 'state.json'))).jobs[job.id];
+ assert.deepEqual(g.creates, ['image']);
+ assert.equal(record.job.status, 'generating');
+ assert.equal(record.autoRetried, true);
+ assert.equal(record.providerState.pending, undefined);
+ assert.equal(record.providerState.busyRetry.stage, 'multimodal-to-image');
+});
+
 for (const stage of ['image', 'mesh']) test(`refunded ${stage} failure retries only the failed stage once`, async t => {
- const {jobs, g, directory} = await open(t, {statuses: {[stage]: [4, 3]}, refunds: [{taskId: stage + '-id', status: 4, consumedCredits: 0}]});
+ const waits = [];
+ const {jobs, g, directory} = await open(t, {statuses: {[stage]: [4, 3]}, refunds: [{taskId: stage + '-id', status: 4, consumedCredits: 0}], pause: async ms => waits.push(ms)});
  const job = await jobs.create({photo: image, clientKey: 'refunded-generation-001'});
  assert.equal((await finish(jobs, job.id)).status, 'succeeded');
  assert.deepEqual(g.creates, stage === 'image' ? ['image', 'image', 'mesh'] : ['image', 'mesh', 'mesh']);
@@ -311,6 +365,7 @@ for (const stage of ['image', 'mesh']) test(`refunded ${stage} failure retries o
  assert.equal(record.providerState.tasks[stage === 'image' ? 'multimodal-to-image' : 'img-to-3d'], stage + '-retry-id');
  assert.equal(record.autoRetried, true);
  assert.equal(g.visionCalls(), 1);
+ assert.deepEqual(waits, []);
 });
 
 test('a charge or refund for another task never authorizes a new generation', async t => {

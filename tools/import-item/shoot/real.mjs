@@ -45,7 +45,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         try {
           const photo = await readPhoto(folder, jobId, now);
           const prompt = photoPrompt(recognition.name ?? recognition.category);
-          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
+          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
         } catch (error) {
           const hasTask = Object.keys(state.tasks).length > 0;
           if (error.code === 'busy' && state.pending) {

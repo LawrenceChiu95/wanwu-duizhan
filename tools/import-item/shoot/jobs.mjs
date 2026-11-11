@@ -228,13 +228,15 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         } catch (error) {
           const pendingStage = record.providerState?.pending;
           if (!error.retryable || record.autoRetried || record.pending || (pendingStage && pendingStage !== error.creationRejected)) throw error;
-          if (closed) return;
           const task = error.retryTask;
           if (task && record.providerState.tasks[task.stage] !== task.id) throw error;
           // Persist the one retry and preserve the refunded ID before another submission.
           await serial(async () => {
             record.autoRetried = true;
-            if (pendingStage) delete record.providerState.pending;
+            if (pendingStage) {
+              delete record.providerState.pending;
+              record.providerState.busyRetry = {stage: pendingStage, notBefore: clock() + 8_000};
+            }
             if (task) {
               record.refundedTask = task;
               delete record.providerState.tasks[task.stage];
