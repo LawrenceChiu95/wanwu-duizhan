@@ -83,6 +83,10 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     signal?.throwIfAborted();
     if (state.tasks[stage]) throw Error('This stage already has a task ID; resume it instead of creating another');
     if (!allowCreate && !allowFirstSubmit) throw Error('First submission is not enabled for this resume');
+    if (state.busyRetry?.stage === stage) {
+      const remaining = state.busyRetry.notBefore - Date.parse(now());
+      if (remaining > 0) await waitPause(remaining);
+    }
     state.pending = stage; await stamp(timestamp);
     // Shutdown can arrive while the pending marker is being saved. No request
     // has left yet, so remove that marker and leave the first submit for restart.
