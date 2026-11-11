@@ -488,6 +488,7 @@ async function main() {
     if (was && was.cls !== cls) node.classList.remove(was.cls);
     hudFlash.set(node, {age: 0, cls, dur});
   };
+  const dropFlash = node => { const f = hudFlash.get(node); if (f) { node.classList.remove(f.cls); hudFlash.delete(node); } };
   const strikerChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .ball`) : hudChip(side, part);
   function flashHud(e) {
     const a = strikerChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
@@ -497,22 +498,27 @@ async function main() {
   // The few big moments of a match say who did what to whom, once, where the eye can find it: one line 「拖鞋 撞碎了
   // 马克杯！」 at a fixed spot under the HUD for about 1.4 s, or with ?call=slot the striking piece's HUD slot grows and
   // stays lit as long (凡朔 11-11, Pollux 52464265, Elara d021fab4). Only the player's own landed 冲 and 暴击, and a piece
-  // broken on either side: three or four a match (Elara 8dbd9359). A line holds at least 1.2 s before a newer one may
-  // replace it, a break its whole 1.4 s; a break in the same step as the 冲 that did it takes that line over, counted once.
+  // broken on either side: three or four a match (Elara 8dbd9359). A line holds at least 1.2 s on screen (the picture's
+  // clock, so slow motion and hit-stop count; Sol 7ff4ad44) before a newer one may replace it, a break its whole 1.4 s;
+  // a break in the same step (replay time) as the 冲 that did it takes that line over, counted once.
   const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4, HILITE_HOLD = 1.2;
   // `${side}:${part}` → the blow that took its last hp (hpAfter 0), a rebound's included (Sol f82fe05f); the last blow
   // that hurt it stands in for a replay recorded before hpAfter.
   const killer = new Map(), lastHurt = new Map();
-  let hilite = null; // {t, broke}: the line now up
+  let hilite = null; // {t, broke, age, node}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
   function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false) {
     const same = hilite && Math.abs(t - hilite.t) < 1e-6;
-    if (same ? !broke || hilite.broke : hilite && t - hilite.t < (hilite.broke ? HILITE_TIME : HILITE_HOLD)) return false;
+    if (same ? !broke || hilite.broke : hilite && hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD)) return false;
     if (phase === 'play' && !same) test.highlights++;
-    hilite = {t, broke};
+    const was = hilite?.node;
+    hilite = {t, broke, age: 0, node: null};
     if (HILITE === 'slot') {
       const a = strikerChip(side, part);
-      if (a) setFlash(a, `star${side}`, HILITE_TIME);
+      // The replaced slot goes out, so two never stay lit together.
+      if (was) dropFlash(was);
+      if (a) { dropFlash(a); setFlash(a, `star${side}`, HILITE_TIME); }
+      hilite.node = a;
       return true;
     }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
@@ -522,9 +528,10 @@ async function main() {
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
   function resetHighlights() {
     hilite = null; killer.clear(); lastHurt.clear();
-    for (const [node, f] of hudFlash) if (f.cls.startsWith('star')) { node.classList.remove(f.cls); hudFlash.delete(node); }
+    for (const [node, f] of hudFlash) if (f.cls.startsWith('star')) dropFlash(node);
   }
   function updateHudFlash(dt) {
+    if (hilite && (hilite.age += dt) >= HILITE_TIME) hilite = null;
     for (const [node, f] of hudFlash) {
       f.age += dt;
       const on = f.age < f.dur;
