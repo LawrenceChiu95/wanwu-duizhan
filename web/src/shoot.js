@@ -378,7 +378,7 @@ export function mountShoot(ctx) {
         ${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'recog') {
       html = `${frame(job.recognition ? 'scan got' : 'scan', `<i class="sline"></i><span class="stag" data-live="rtag">${job.recognition ? '认好了' : '认物中'}</span>`)}
-        ${idCard()}<div class="sfines"><p class="sfine">认物由看图模型定，不能改，免得专挑强的</p>${api.kind === 'fake' ? `<p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p>` : ''}</div>
+        ${idCard()}${api.kind === 'fake' ? `<div class="sfines"><p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p></div>` : ''}
         <div class="sfoot"><button type="button" class="sghost sretake" data-act="nothis" hidden>${ICON.retry}<span>不是它，重拍</span></button>
           <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
     } else if (kind === 'gen') {
