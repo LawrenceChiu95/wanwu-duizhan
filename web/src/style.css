@@ -124,6 +124,12 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .pc.strike1 { background: var(--c1); color: #02101c; }
 .pc.strike0 .ico, .pc.strike1 .ico { color: inherit; }
 .ball.strike0, .ball.strike1 { transform: scale(1.5); }
+/* ?call=slot: through a big moment the striking piece's slot grows and stays lit instead of a line (Elara d021fab4). */
+.pc.star0, .pc.star1 { z-index: 2; transform: scale(1.22); }
+.pc.star0 { background: var(--c0); color: #1a0900; box-shadow: 0 0 14px var(--c0); }
+.pc.star1 { background: var(--c1); color: #02101c; box-shadow: 0 0 14px var(--c1); }
+.pc.star0 .ico, .pc.star1 .ico { color: inherit; }
+.ball.star0, .ball.star1 { transform: scale(1.9); }
 .pc.hurt { background: rgba(255, 255, 255, 0.8); color: #0a0f1c; }
 .bar.hurt { filter: brightness(2.2); box-shadow: inset 0 0 0 2px #fff; }
 .pc .ico { width: 12px; height: 12px; stroke-width: 2.6; color: var(--mute); }
@@ -187,6 +193,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* 「护住」 often lands on a white model: a solid near-black plate with a thin cyan rim keeps it legible (Elara 80e885bc). */
 .call.block { padding: 2px 9px 1px; background: #04060c; color: #eafaff; box-shadow: inset 0 0 0 1.5px rgba(120, 220, 255, 0.55); }
 .call.block b { font-size: 17px; letter-spacing: 0.08em; }
+/* A big moment (11-11, Elara d021fab4): one line at a fixed spot under the HUD, centred; main.js sets its top. */
+.hilite { position: absolute; left: 50%; top: 0; z-index: 4; display: flex; align-items: baseline; gap: 7px; max-width: calc(100% - 24px); padding: 4px 12px 3px; white-space: nowrap; pointer-events: none;
+  will-change: transform, opacity; transform: translateX(-50%); font-family: var(--display); font-size: 22px; line-height: 1.15; color: #fff; background: rgba(7, 9, 18, 0.82); clip-path: var(--slant); }
+.hilite b, .hilite u { min-width: 0; max-width: 6.5em; overflow: hidden; text-overflow: ellipsis; font-weight: 400; text-decoration: none; }
+.hilite .t0, .hilite.t0 b { color: var(--c0l); }
+.hilite .t1, .hilite.t1 b { color: var(--c1l); }
+.hilite .verb { flex: none; font-size: 16px; opacity: 0.85; }
 .callpin { position: absolute; left: 0; top: 0; z-index: 2; width: 2px; pointer-events: none; will-change: transform, opacity; }
 .callpin::after { content: ""; position: absolute; left: -2px; bottom: -3px; width: 6px; height: 6px; border-radius: 50%; background: inherit; }
 .callpin.t0 { background: linear-gradient(rgba(255, 150, 80, 0.95), rgba(255, 150, 80, 0.35)); }
@@ -200,6 +213,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #caption { position: absolute; left: 14px; right: 14px; bottom: calc(env(safe-area-inset-bottom) + 22px); display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; background: rgba(7, 9, 18, 0.9);
   box-shadow: inset 4px 0 0 var(--hot), 0 10px 26px rgba(0, 0, 0, 0.45); pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; }
 #caption.on { opacity: 1; transform: none; }
+#caption.cut { transition: none; }
 #caption .tag { flex: none; font-family: var(--display); font-size: 14px; color: #1a1400; padding: 3px 9px 2px; background: var(--hot); clip-path: var(--slant); }
 #caption p { margin: 0; font-family: var(--display); font-size: 19px; line-height: 1.3; }
 
