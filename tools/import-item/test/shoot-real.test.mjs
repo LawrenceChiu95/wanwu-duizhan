@@ -63,10 +63,14 @@ function gateway(options = {}) {
     if (options.unknown === stage) throw Error('simulated lost reply ' + env.AHOLO_API_KEY);
     const payload = JSON.parse(request.body);
     if (stage === 'mesh') assert.deepEqual(payload, {img: 'https://assets.example/styled.jpg', version: 'G1-Turbo', faceCount: 12000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false});
-    return ok(stage + '-id');
+    return ok(stage + (options.refunds && creates.filter(value => value === stage).length > 1 ? '-retry-id' : '-id'));
+   }
+   if (u.pathname.endsWith('/list')) {
+    assert.equal(u.searchParams.get('status'), '4');
+    return ok({items: options.refunds ?? []});
    }
    if (u.pathname.endsWith('/get')) {
-    const stage = u.searchParams.get('taskid') === 'image-id' ? 'image' : 'mesh';
+    const stage = u.searchParams.get('taskid').startsWith('image-') ? 'image' : 'mesh';
     if (options.queryStatus?.[stage]) return new Response('private query failure', {status: options.queryStatus[stage]});
     const states = options.statuses?.[stage]; const status = states?.length > 1 ? states.shift() : states?.[0] ?? 3;
     return ok({status, outputs: [{content: `https://assets.example/${stage === 'image' ? 'styled.jpg' : 'model.glb'}`} ]});
@@ -158,13 +162,13 @@ test('manual recognition recovery keeps the real job and creates each paid stage
  const j=await jobs.create({photo:image,clientKey:'manual-real-recovery'},'same-owner');
  const failed=await finish(jobs,j.id);
  assert.equal(failed.error.code,'recognition-service');assert.equal(failed.error.retry,'same');assert.equal(failed.error.charged,false);
- assert.equal(g.visionCalls(),3);assert.deepEqual(g.creates,[]);
+ assert.equal(g.visionCalls(),2);assert.deepEqual(g.creates,[]);
  assert.equal((await jobs.quota('same-owner')).recognition.remaining,5);
  const savedPhoto=await fs.readFile(path.join(directory,j.id,'photo.jpg'));
  options.visionStatus=null;
  const accepted=await jobs.retry(j.id,'same-owner');assert.equal(accepted.id,j.id);
  const done=await finish(jobs,j.id);assert.equal(done.status,'succeeded');
- assert.equal(g.visionCalls(),4);assert.deepEqual(g.creates,['image','mesh']);
+ assert.equal(g.visionCalls(),3);assert.deepEqual(g.creates,['image','mesh']);
  const q=await jobs.quota('same-owner');assert.equal(q.recognition.remaining,4);assert.equal(q.global.recognition.remaining,398);assert.equal(q.budget.remaining,26);
  await assert.rejects(jobs.retry(j.id,'same-owner'),{code:'not-allowed'});
  const state=await readJson(path.join(directory,'state.json'));assert.equal(Object.keys(state.jobs).length,1);
@@ -183,14 +187,14 @@ test('real startup names missing env keys before touching disk and refuses provi
 });
 
 test('offline real HTTP task: structured vision, two durable paid stages, geometry/rating, no provider secrets in public output', async t => {
- const directory = await dir(), g = gateway({directory, visionFailures: ['network', 503], statuses: {image: [0, 1, 3], mesh: [1, 3]}});
+ const directory = await dir(), g = gateway({directory, visionFailures: [503], statuses: {image: [0, 1, 3], mesh: [1, 3]}});
  let app = await startShootServer({port: 0, directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
  try {
   const create = async () => { const form = new FormData(); form.append('photo', new Blob([image]), 'test.png'); form.append('clientKey', 'real-key-0001'); const response = await fetch(app.url + '/api/shoot/jobs', {method: 'POST', body: form}); assert.equal(response.status, 202); return (await response.json()).job; };
   const copies = await Promise.all(Array.from({length: 10}, create)); assert.equal(new Set(copies.map(j => j.id)).size, 1);
   const done = await finish(app.jobs, copies[0].id); assert.equal(done.status, 'succeeded');
   assert.equal(done.recognition.lengthMeters, .42); assert.equal(done.recognition.massKg, .72);
-  assert.equal(g.visionCalls(), 3); assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(g.observations, ['multimodal-to-image', 'img-to-3d']);
+  assert.equal(g.visionCalls(), 2); assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(g.observations, ['multimodal-to-image', 'img-to-3d']);
   assert.ok(done.steps.every(s => s.startedAt && s.endedAt));
   const [item] = await app.jobs.items(); validateRuntimeItem(item, catalog); assert.deepEqual(item.rating, rateItem(item, catalog.materials));
   assert.equal(item.material, 'metal'); assert.equal(item.condition, 'worn'); assert.equal(item.mass, .72);
@@ -212,8 +216,8 @@ test('offline real HTTP task: structured vision, two durable paid stages, geomet
 
 for (const options of [{visionReply: {status: 'failed', steps: []}}, {recognition: {...result, massKg: -1}}, {visionTimeout: true}]) test(`vision refusal/bounds/timeout never enters Aholo ${JSON.stringify(options)}`, async t => {
  const {jobs, g} = await open(t, options), j = await jobs.create({photo: image, clientKey: 'vision-fail-0001'}), done = await finish(jobs, j.id);
- assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), options.visionTimeout ? 3 : 1);
- assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), options.visionTimeout ? 3 : 1);
+ assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), options.visionTimeout ? 2 : 1);
+ assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), options.visionTimeout ? 2 : 1);
 });
 
 for (const flags of [{clear: false, recognizable: true}, {clear: true, recognizable: false}]) test(`schema-compliant unclear photo does not guess a category or create paid Aholo work ${JSON.stringify(flags)}`, async t => {
@@ -296,6 +300,31 @@ for (const stage of ['image', 'mesh']) test(`confirmed ${stage} busy rejection r
   await assert.rejects(jobs.create({clientKey: 'busy-real-0002', regenerateOf: j.id, confirm: true}), {code: 'not-allowed'});
  }
  assert.equal(g.visionCalls(), 1);
+});
+
+for (const stage of ['image', 'mesh']) test(`refunded ${stage} failure retries only the failed stage once`, async t => {
+ const {jobs, g, directory} = await open(t, {statuses: {[stage]: [4, 3]}, refunds: [{taskId: stage + '-id', status: 4, consumedCredits: 0}]});
+ const job = await jobs.create({photo: image, clientKey: 'refunded-generation-001'});
+ assert.equal((await finish(jobs, job.id)).status, 'succeeded');
+ assert.deepEqual(g.creates, stage === 'image' ? ['image', 'image', 'mesh'] : ['image', 'mesh', 'mesh']);
+ const record = (await readJson(path.join(directory, 'state.json'))).jobs[job.id];
+ assert.equal(record.providerState.tasks[stage === 'image' ? 'multimodal-to-image' : 'img-to-3d'], stage + '-retry-id');
+ assert.equal(record.autoRetried, true);
+ assert.equal(g.visionCalls(), 1);
+});
+
+test('a charge or refund for another task never authorizes a new generation', async t => {
+ const {jobs, g} = await open(t, {statuses: {image: [4]}, refunds: [{taskId: 'image-id', status: 4, consumedCredits: 5}, {taskId: 'other-id', status: 4, consumedCredits: 0}]});
+ const job = await jobs.create({photo: image, clientKey: 'unrefunded-generation-001'});
+ assert.equal((await finish(jobs, job.id)).error.charged, true);
+ assert.deepEqual(g.creates, ['image']);
+});
+
+test('automatic generation retry has one shared budget across both stages', async t => {
+ const {jobs, g} = await open(t, {statuses: {image: [4, 3], mesh: [4]}, refunds: [{taskId: 'image-id', status: 4, consumedCredits: 0}, {taskId: 'mesh-id', status: 4, consumedCredits: 0}]});
+ const job = await jobs.create({photo: image, clientKey: 'bounded-generation-001'});
+ assert.equal((await finish(jobs, job.id)).status, 'failed');
+ assert.deepEqual(g.creates, ['image', 'image', 'mesh']);
 });
 
 test('download failure resumes saved model IDs without new vision or paid creation; processing failure keeps paid source', async t => {
@@ -425,8 +454,10 @@ for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visi
   const j = await jobs.create({photo: image, clientKey: 'vision-classified-001'}), failed = await finish(jobs, j.id);
   assert.equal(failed.error.code, code); assert.equal(failed.error.retry, ['recognition-network', 'recognition-service'].includes(code) ? 'same' : 'none'); assert.equal(failed.error.charged, false);
   await jobs.close(); jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
-  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), options.visionStatus === 503 || options.visionNetwork ? 3 : 1); assert.deepEqual(g.creates, []);
-  assert.equal(logs.length, options.visionStatus === 503 || options.visionNetwork ? 3 : 1); assert.ok(logs.every(x => x.includes(code)));
+  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), options.visionStatus === 503 || options.visionNetwork ? 2 : 1); assert.deepEqual(g.creates, []);
+  assert.equal(logs.filter(line => line.startsWith('Shoot recognition attempt:')).length, g.visionCalls());
+  assert.equal(logs.filter(line => line.startsWith('Shoot job failed:')).length, 1);
+  assert.ok(logs.every(line => line.includes(code) && line.includes(j.id) && line.includes('"time":')));
   for (const secret of [...Object.values(env), 'private-body', 'private malformed', 'https://']) assert.ok(!logs.join().includes(secret));
  } finally { console.error = log; await jobs?.close(); }
 });
@@ -685,7 +716,12 @@ test('local photo read failure is distinct and makes no recognition request', as
  try {
   const j = await jobs.create({photo: image, clientKey: 'unreadable-photo-001'}), failed = await finish(jobs, j.id);
   assert.equal(failed.error.code, 'photo-read'); assert.equal(failed.error.retry, 'none'); assert.equal(g.visionCalls(), 0); assert.deepEqual(g.creates, []);
-  assert.deepEqual(logs, ['Shoot local photo read failed: EIO']);
+  assert.equal(logs.length, 2);
+  const [readLog, failureLog] = logs;
+  const diagnostic = JSON.parse(readLog.slice('Shoot local photo read failed: '.length));
+  assert.equal(diagnostic.jobId, j.id); assert.equal(diagnostic.type, 'EIO'); assert.ok(Number.isFinite(Date.parse(diagnostic.time)));
+  assert.match(failureLog, /Shoot job failed:.*photo-read/);
+  assert.ok(!logs.join().includes('private path'));
  } finally { fs.readFile = read; console.error = log; await jobs.close(); }
 });
 
@@ -720,7 +756,13 @@ test('image-only paid ID survives a missing photo and recovery submits the first
    await jobs.retry(j.id); const failed = await finish(jobs, j.id);
    assert.equal(failed.error.code, 'download'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, true);
   }
-  assert.deepEqual(logs, ['Shoot local photo read failed: ENOENT', 'Shoot local photo read failed: ENOENT']);
+  const readLogs = logs.filter(line => line.startsWith('Shoot local photo read failed: '));
+  assert.equal(readLogs.length, 2);
+  for (const line of readLogs) {
+   const diagnostic = JSON.parse(line.slice('Shoot local photo read failed: '.length));
+   assert.equal(diagnostic.jobId, j.id); assert.equal(diagnostic.type, 'ENOENT');
+   assert.ok(Number.isFinite(Date.parse(diagnostic.time)));
+  }
   assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image']);
  } finally { console.error = log; await fs.rename(backup, file); }
  await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');

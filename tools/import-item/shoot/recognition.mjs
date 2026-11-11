@@ -70,7 +70,7 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
     let input;
     try { input = await pipeline.toBuffer(); }
     catch { throw failure('recognition-invalid'); }
-    const attemptLimit = backup ? 2 : 3;
+    const attemptLimit = 2;
     for (let attempt = 0; attempt < attemptLimit; attempt++) {
       signal.throwIfAborted();
       let status = null;
@@ -97,7 +97,7 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
         report(error, code);
         signal.throwIfAborted();
         const temporary = code === 'recognition-network' || code === 'recognition-service' && status >= 500 && status <= 599;
-        if (attempt < attemptLimit - 1 && temporary) { await pause([2000, 5000][attempt], undefined, {signal}); continue; }
+        if (attempt < attemptLimit - 1 && temporary) { await pause(2000, undefined, {signal}); continue; }
         if (backup && (temporary || status === 429)) {
           signal.throwIfAborted();
           deadlineCode = code;

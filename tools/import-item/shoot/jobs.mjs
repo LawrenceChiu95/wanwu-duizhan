@@ -97,7 +97,10 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const serial = fn => { const result = chain.then(() => { if (storageError) throw apiError('server', 'Persistence failed; restart after fixing storage', 503); return fn(); }); chain = result.catch(() => {}); return result; };
   const pending = () => Object.values(store.jobs).filter(activeStatus).sort((a, b) => a.queueOrder - b.queueOrder);
   const active = owner => pending().find(r => owner === undefined || r.owner === owner);
-  const publicJob = record => copy({retakeUntil: null, ...record.job, queuePosition: activeStatus(record) && !record.job.steps[0].startedAt ? Math.max(0, pending().indexOf(record)) : null});
+  const styledReady = record => Boolean(record.job.steps[0].endedAt);
+  const publicJob = record => copy({retakeUntil: null, ...record.job,
+    styledUrl: styledReady(record) ? `/api/shoot/files/shoot_${record.job.id.slice(2)}/styled.jpg` : null,
+    queuePosition: activeStatus(record) && !record.job.steps[0].startedAt ? Math.max(0, pending().indexOf(record)) : null});
   const get = (id, owner) => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id) || (owner !== undefined && r.owner !== owner)) throw apiError('not-found', 'No such job', 404); return r; };
   const scopedKey = (owner, key) => owner === LOCAL ? key : `${owner}:${key}`;
   const receiptCount = (r, kind, day, browser) => kind === 'recognition'
@@ -145,14 +148,15 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     const id = randomUUID(); return {owner: id, token: `${id}.${sign(id)}`};
   }
   const charged = id => provider.real ? provider.charged(get(id).providerState) : provider.charged(id);
-  const context = record => ({state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
+  const context = record => ({jobId: record.job.id, now, checkFailedCredits: !record.autoRetried, state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
   async function fail(record, code, details = {}) {
     if (!record.job.recognition && code !== 'photo-unclear' && record.recognitionAttempts?.length) record.recognitionAttempts.at(-1).refunded = true;
     if (!record.job.steps[0].startedAt || code === 'busy') delete record.allowance?.generation;
     if (!record.job.steps[0].startedAt || (code === 'busy' && !charged(record.job.id))) delete record.budget;
     record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id), ...details}; await save();
+    if (provider.real) console.error('Shoot job failed:', JSON.stringify({time: now(), jobId: record.job.id, code, charged: record.job.error.charged}));
   }
-  // No automatic paid retry, including an interrupted call before providerId was saved.
+  // Never repeat a paid submission whose outcome is unknown.
   try {
     for (const record of Object.values(store.jobs)) {
       const parent = store.jobs[record.job.fromJob ?? record.job.regenerateOf];
@@ -212,7 +216,29 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         if (closed) return;
         if (step.endedAt) continue;
         await serial(async () => { step.startedAt ??= now(); await save(); });
-        const prepared = await provider.step(step.key, j.id, context(record), catalog);
+        let prepared;
+        try {
+          prepared = await provider.step(step.key, j.id, context(record), catalog);
+        } catch (error) {
+          const pendingStage = record.providerState?.pending;
+          if (!error.retryable || record.autoRetried || record.pending || (pendingStage && pendingStage !== error.creationRejected)) throw error;
+          if (closed) return;
+          const task = error.retryTask;
+          if (task && record.providerState.tasks[task.stage] !== task.id) throw error;
+          // Persist the one retry and preserve the refunded ID before another submission.
+          await serial(async () => {
+            record.autoRetried = true;
+            if (pendingStage) delete record.providerState.pending;
+            if (task) {
+              record.refundedTask = task;
+              delete record.providerState.tasks[task.stage];
+            }
+            await save();
+          });
+          if (provider.real) console.error('Shoot generation retry:', JSON.stringify({time: now(), jobId: j.id, step: step.key, code: error.code}));
+          if (closed) return;
+          prepared = await provider.step(step.key, j.id, context(record), catalog);
+        }
         if (closed) return;
         if (!provider.real && step.key === 'styled') await fs.copyFile(path.join(folder, 'photo.jpg'), path.join(folder, 'styled.jpg'));
         if (!provider.real && step.key === 'download') await fs.copyFile(path.join(repo, template.glb), path.join(folder, 'model.glb'));
@@ -235,8 +261,10 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     } catch (error) {
       // Received recognition failures are paid responses too: preserve their
       // classification during close, just as a successful recognition is saved.
-      if ((!closed || !j.recognition) && !storageError) await serial(async () => {
+      const rejectedStage = error.creationRejected && error.creationRejected === record.providerState?.pending;
+      if ((!closed || !j.recognition || rejectedStage) && !storageError) await serial(async () => {
         if (!j.recognition && record.providerState) delete record.providerState.recognitionPending;
+        if (rejectedStage) delete record.providerState.pending;
         if (error.code === 'quota') { await fail(record, 'quota', {message: error.message, retry: 'none', kind: error.kind, scope: error.scope, resetsAt: error.resetsAt}); return; }
         await fail(record, Object.hasOwn(retryFor, error.code) ? error.code : j.recognition ? (j.steps[3].startedAt ? 'process' : 'download') : 'photo-unclear');
       });
@@ -338,8 +366,9 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     }),
     file: (id, name, owner) => serial(() => {
       if (!['model.glb', 'photo.jpg', 'styled.jpg'].includes(name)) throw apiError('not-found', 'No such file', 404);
-      const item = store.items.find(i => i.id === id), record = Object.values(store.jobs).find(r => r.job.itemId === id);
-      if (!item || !record || (owner !== undefined && record.owner !== owner)) throw apiError('not-found', 'No such item', 404);
+      const record = get(`j_${id.slice(6)}`, owner);
+      const available = name === 'styled.jpg' ? styledReady(record) : record.job.itemId === id && store.items.some(i => i.id === id);
+      if (!available) throw apiError('not-found', 'No such file', 404);
       return path.join(directory, record.job.id, name);
     }),
     async close() { closed = true; abort.abort(); try { await runner; await chain; } finally { await release(); } }

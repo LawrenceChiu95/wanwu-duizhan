@@ -68,6 +68,34 @@ test('two real HTTP browser identities isolate keys, status, actions, items and 
  assert.ok(!JSON.stringify(x).includes(disk.jobs[x.id].owner));
 });
 
+test('only the owner can fetch the finished styled picture while the mesh is pending', async t => {
+ const dir = await directory(), generator = await fakeGenerator(dir, {delayMs: 1});
+ const originalStep = generator.step.bind(generator);
+ let unblock;
+ const modelGate = new Promise(resolve => { unblock = resolve; });
+ generator.step = async (step, ...args) => {
+  if (step === 'model') await modelGate;
+  return originalStep(step, ...args);
+ };
+ const app = await appFor(t, {directory: dir, generator}), a = browser(app), b = browser(app);
+ try {
+  const {job} = await a.create('early-styled-001');
+  assert.equal(job.styledUrl, null);
+  const {job: pending} = await until(() => a.call('jobs/' + job.id), reply => reply.job.styledUrl);
+  assert.equal(pending.status, 'generating');
+  assert.equal(pending.itemId, null);
+  const picture = await fetch(app.url + pending.styledUrl, {headers: {cookie: a.cookie}});
+  assert.equal(picture.status, 200);
+  assert.equal(picture.headers.get('content-type'), 'image/jpeg');
+  assert.ok((await picture.arrayBuffer()).byteLength > 0);
+  await b.call('quota');
+  assert.equal((await fetch(app.url + pending.styledUrl, {headers: {cookie: b.cookie}})).status, 404);
+  for (const name of ['model.glb', 'photo.jpg']) {
+   assert.equal((await fetch(app.url + pending.styledUrl.replace('styled.jpg', name), {headers: {cookie: a.cookie}})).status, 404);
+  }
+ } finally { unblock(); }
+});
+
 test('global reservations and per-browser single job serialize concurrent acceptance before any provider call', async t => {
  const dir = await directory(), generator = await fakeGenerator(dir, {delayMs: 1});
  let release; const gate = new Promise(r => release = r); const recognize = generator.recognize;

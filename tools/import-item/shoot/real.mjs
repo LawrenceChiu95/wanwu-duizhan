@@ -9,12 +9,12 @@ import {recognizePhoto} from './recognition.mjs';
 import {qwenBackup} from './qwen.mjs';
 import {photoPrompt} from './prompt.mjs';
 export {parseRecognition, recognitionPrompt, recognitionSchema} from './recognition.mjs';
-const failure = code => Object.assign(Error(code), {code});
-async function readPhoto(folder) {
+const failure = (code, retryable = false) => Object.assign(Error(code), {code, retryable});
+async function readPhoto(folder, jobId, now) {
   try { return await fs.readFile(path.join(folder, 'photo.jpg')); }
   catch (error) {
     const type = typeof error.code === 'string' && /^[A-Z0-9_]{1,32}$/.test(error.code) ? error.code : 'UNKNOWN';
-    console.error('Shoot local photo read failed:', type);
+    console.error('Shoot local photo read failed:', JSON.stringify({time: now(), jobId, type}));
     throw failure('photo-read');
   }
 }
@@ -31,28 +31,30 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
     health: () => recognitionProxyHealth(env),
     waitingForPaidId: () => submitting,
     async recognize(_template, context) {
-      const {state, save, folder} = context;
+      const {state, save, folder, jobId, now} = context;
       if (state.recognitionPending) throw failure('recognition-interrupted');
       state.recognitionPending = true; await save();
-      return recognizePhoto({photo: await readPhoto(folder), key: geminiKey, fetch: request, timeoutMs, pause, backup, backupFetch, totalTimeoutMs});
+      return recognizePhoto({photo: await readPhoto(folder, jobId, now), key: geminiKey, fetch: request, timeoutMs, pause, backup, backupFetch, totalTimeoutMs, diagnose: event => console.error('Shoot recognition attempt:', JSON.stringify({...event, time: now(), jobId}))});
     },
     charged: state => Boolean(state?.pending || Object.keys(state?.tasks ?? {}).length),
-    async step(step, _id, context, catalog) {
-      const {state, folder, save, recognition, allowCreate, signal, mountRules} = context;
+    async step(step, jobId, context, catalog) {
+      const {state, folder, save, recognition, allowCreate, signal, mountRules, checkFailedCredits, now} = context;
       if (step !== 'process') {
-        // Each stage may submit once when it has neither an ID nor pending;
+        // Only a stage without an accepted ID or pending submission may submit;
         // free resume can finish that first submission (Elara 0e7833a1).
         try {
-          const photo = await readPhoto(folder);
+          const photo = await readPhoto(folder, jobId, now);
           const prompt = photoPrompt(recognition.name ?? recognition.category);
-          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, onCreate: value => { submitting = value; }});
+          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
         } catch (error) {
-          if (error.code === 'busy' && state.pending) { delete state.pending; await save(); }
+          const hasTask = Object.keys(state.tasks).length > 0;
+          if (error.code === 'busy' && state.pending) {
+            throw Object.assign(failure(hasTask ? 'download' : 'busy', true), {creationRejected: state.pending});
+          }
           if (state.pending) throw failure('unknown-submit');
-          if (error.code === 'busy' && !Object.keys(state.tasks).length) throw failure('busy');
-          if (error.code === 'step-failed') throw failure('step-failed');
-          if (!Object.keys(state.tasks).length) throw failure('photo-upload');
-          throw failure('download');
+          if (error.code === 'step-failed') throw Object.assign(error, {retryable: Boolean(error.retryTask)});
+          if (error.code === 'busy') throw failure(hasTask ? 'download' : 'busy');
+          throw failure(hasTask ? 'download' : 'photo-upload');
         }
         return;
       }
@@ -102,7 +104,6 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
             preparation: {triangles: prepared.report.triangles, textureSizes: prepared.report.textureSizes}}};
       } catch (error) {
         const code = ['process-corrupt', 'process-too-large'].includes(error.code) ? error.code : error.code ? 'process' : 'process-unfixable';
-        if (code === 'process-too-large' || code === 'process-corrupt') console.error('Shoot processing failed:', code);
         throw failure(code);
       }
     }

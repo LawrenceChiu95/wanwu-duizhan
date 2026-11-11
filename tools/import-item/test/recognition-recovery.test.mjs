@@ -31,17 +31,17 @@ test('recognition shrinks only its request and logs each safe diagnostic with sp
   const body=JSON.parse(request.body),bytes=Buffer.from(body.input[1].data,'base64'),m=await sharp(bytes).metadata();
   assert.equal(m.width,1024);assert.equal(m.height,768);assert.equal(m.format,'jpeg');assert.ok(bytes.length<photo.length);
   if(n++===0)throw Object.assign(Error('PRIVATE SECRET URL'),{cause:{code:'ECONNREFUSED'}});
-  if(n===2)return new Response('PRIVATE BODY',{status:503});return reply();
+  return reply();
  };
  assert.equal((await recognizePhoto({photo,key:'PRIVATE KEY',fetch,pause:async ms=>waits.push(ms),diagnose:x=>events.push(x)})).name,'保温杯');
- assert.deepEqual(photo,original);assert.deepEqual(waits,[2000,5000]);assert.equal(events.length,3);assert.equal(events[0].cause,'ECONNREFUSED');assert.equal(events[1].status,503);assert.equal(events[2].error,null);
- assert.ok(!JSON.stringify(events).includes('PRIVATE'));assert.ok(3*15000+waits.reduce((a,b)=>a+b,0)<60000);
+ assert.deepEqual(photo,original);assert.deepEqual(waits,[2000]);assert.equal(events.length,2);assert.equal(events[0].cause,'ECONNREFUSED');assert.equal(events[1].error,null);
+ assert.ok(!JSON.stringify(events).includes('PRIVATE'));assert.ok(2*15000+waits.reduce((a,b)=>a+b,0)<60000);
 });
 
-test('timeout produces three per-attempt abort diagnostics; authentication is not retried',async()=>{
+test('timeout produces two per-attempt abort diagnostics; authentication is not retried',async()=>{
  const events=[],waits=[];
  await assert.rejects(recognizePhoto({photo,key:'KEY',timeoutMs:5,diagnose:x=>events.push(x),pause:async x=>waits.push(x),fetch:(_u,o)=>new Promise((_r,reject)=>o.signal.addEventListener('abort',()=>reject(o.signal.reason),{once:true}))}),{code:'recognition-network'});
- assert.equal(events.length,3);assert.ok(events.every(x=>x.timedOut));assert.deepEqual(waits,[2000,5000]);
+ assert.equal(events.length,2);assert.ok(events.every(x=>x.timedOut));assert.deepEqual(waits,[2000]);
  let calls=0;await assert.rejects(recognizePhoto({photo,key:'KEY',diagnose:()=>{},pause:async()=>assert.fail(),fetch:async()=>{calls++;return new Response('',{status:401});}}),{code:'recognition-auth'});assert.equal(calls,1);
 });
 

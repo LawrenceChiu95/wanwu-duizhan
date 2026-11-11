@@ -22,8 +22,9 @@ node tools/import-item/shoot/server.mjs
 - 公开 job 的 `fromJob` 是 busy 再提交的父任务 ID；普通新拍和重新生成时为 null；旧记录可能没有 fromJob，前端按 null 处理，重新生成的父任务另在 `regenerateOf`。同 key 重发返回同一个子任务及相同父关系。
 - 新照片认物后 `retakeUntil` 为五秒后的 ISO 时间；窗口内四步均未开始，POST `/api/shoot/jobs/:id/retake` 空body返回 `{job}`，状态failed、error为retake/none/charged:false。取消成功不进入生成、不增加used，认物费已发生；释放活动位后新照片须换clientKey，原key仍返回原任务，重复取消也返回原结果。已过截止或首步已开始回409 not-allowed。未重拍自动生成，关闭/重启沿原截止继续等待，不再认物；旧记录无此字段按null，继承认物和免费续查不另给窗口。
 - POST `/api/shoot/jobs/:id/retry`空body，续查已有阶段、下载或处理；真模式也可补该单从未提交过的阶段；无ID且无pending才允许首次提交（见下文）。busy通过POST jobs JSON `{fromJob,clientKey}`再次提交。每个busy或可重新生成的父任务只能产生一个子任务；原key重发仍返回该子任务，换key再用同一父任务409 not-allowed，重启后也一样。重新生成通过POST `/jobs/:id/regenerate` JSON `{confirm:true,clientKey}`，只对可重新生成的失败开放。
+- 认物遇到 5xx 或超时会自动再试一次。真生成在供应商明确拒绝建单，或任务失败且任务历史确认该任务实扣 0 分时，整单自动再试一次。未收到建单回执、扣分未知或已经实扣的失败沿用人工核账。
 - unknown-submit保留原记录、永不自动再提交；retry和regenerate均拒绝。它不占active位，新的clientKey可以拍另一件。活动任务冲突409 active-job并带activeJobId。
-- 成功一次原子提交同时公开itemId和/items。文件URL是根路径 `/api/shoot/files/<itemId>/model.glb`、photo.jpg、styled.jpg。只有入库文件可读。origin三段真实秒数，steps四步时间戳。
+- 成功一次原子提交同时公开itemId和/items。文件URL是根路径 `/api/shoot/files/<itemId>/model.glb`、photo.jpg、styled.jpg。改画风一步完成后，任务回包的 `styledUrl` 可供原会话取图，其他会话不能读取；原照和 3D 仍在入库后开放。认物回包的 `materialName` 是材质名称。origin三段真实秒数，steps四步时间戳。
 - 新件必填 `outEnd: -1 | 1`：模型最长轴哪一端朝外。本轮假锅沿用锅样本 pan-lux3d 的规范化模型、凸包、弱点和 `outEnd=-1`；换 id 不换装向。新照片生成模型保留生成文件的世界Y向上，凸包和弱点与网格一起归一化；outEnd记实际最长轴的安装端，不能只改字段。旧六类存档和CLI沿既有品类朝向。登记入口缺字段/非±1直接报错，旧内置件仍沿原 id 表。
 - 页面启动先GET items、`await registerItems(items)`（sim/index.js），然后再显示/装配/回放；同样在任务成功后登记新件。返回的评分须与rateItem逐项一致，登记入口拒绝篡改、不替无效数据补分。内置id拒绝，同运行时id同数据可重复登记、不同数据报错。
 - 不接受跨源请求；Host固定127.0.0.1加实际端口，不开CORS。开发接入使用同源代理或本服务的已构建页面，不把服务改成裸露的0.0.0.0。Vite代理需changeOrigin=true，后台通过 `--frontend-origin http://localhost:5173` 显式允许实际开发页的精确Origin（按实际端口填）；只允许本地HTTP来源，仍不开CORS，不改写或信任任意外部Origin。
@@ -89,7 +90,7 @@ server: {
 
 认物用 Gemini 3.5 Flash-Lite 的 Interactions（固定提示+JSON schema，store=false）；同任务一次请求，失败或崩溃不自动重认。供应商回包的clear、recognizable都必须为true才接受物品字段；拒答仍符合schema，物品字段填null，报photo-unclear、不建Aholo收费任务。清楚的单件东西照实返回原名，不限品类，不再映射六类或返回 inSix；只有不清楚、无主体或多件主体不明确才拒答。物理数据是照片估计，不是测量；name/category 同为原名（1–40字），materialName 是实际材质名，material 只是 metal/wood/plastic/cloth/rubber 五种弹性族，hardness 为0.05–1.2，outwardEnd 为 wide/narrow/unknown。长边1–300cm、重量0.001–100kg、新旧 intact/worn/damaged/unknown，输出越界同样拒绝。子任务继承既有认物。只核认物可用 recognition.mjs 的 recognizePhoto({photo,key})，只需 Gemini key、只发 Gemini 请求，不会创建 Aholo 任务。
 
-Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建GLB；每阶段先落pending，收到任务ID才继续。未知结果不重提。官方明确并发满且没有已付费阶段时返回busy；每单改图和建模各最多一次被接受的创建。免费「再试」续查已有ID；该阶段从未被接受且无pending时，允许补原单的第一次提交，包括上传失败后第一次改图、改图完成后第一次建模，这仍是原单费用的一部分。不新增确认接口或按钮。已有模型ID只查询和下载；有 pending 或创建结果不明时不补提。查询失败最多退避重试三次（1、2、4秒），仍失败就保留原ID供免费续查。单次404/403、未知业务码或旧签名URL失效都不证明任务过期；当前官方文档没有明确的任务过期码，不据此显示 expired 或引导再付费。供应商明确失败/取消才用 step-failed；将来核到明确任务过期契约后才能用 expired。
+Aholo 两阶段：先 multimodal-to-image 改画风，再 G1-Turbo 100K/PBR 建GLB；每阶段先落pending，收到任务ID才继续。未知结果不重提。官方明确并发满且没有已付费阶段时返回busy；已成功或扣过分的阶段不自动重建。终态失败只有核到该任务实扣 0 分才能自动重建一次。免费「再试」续查已有ID；该阶段从未被接受且无pending时，允许补原单的第一次提交，包括上传失败后第一次改图、改图完成后第一次建模，这仍是原单费用的一部分。不新增确认接口或按钮。已有模型ID只查询和下载；有 pending 或创建结果不明时不补提。查询失败最多退避重试三次（1、2、4秒），仍失败就保留原ID供免费续查。单次404/403、未知业务码或旧签名URL失效都不证明任务过期；当前官方文档没有明确的任务过期码，不据此显示 expired 或引导再付费。供应商明确失败/取消才用 step-failed；将来核到明确任务过期契约后才能用 expired。
 
 quota 新增 provider 字段（real/fake），供单件验收先确认后台模式；现有页面可忽略。真quota的limit/remaining/resetsAt仍null，used是可能已创建收费阶段的本地任务数，**不是余额、金额或两个阶段的账单次数**。任务charged=true包含尚不能确定是否扣费的pending窗口。Gemini看图单独按token计费，不在该标记里。后台不设置付费预算，必须先由Lead确认单件真实验收和账号费用范围，再启真模式。
 
@@ -118,7 +119,7 @@ quota 新增 provider 字段（real/fake），供单件验收先确认后台模�
 | process-corrupt | 源副本校验失败且原模型缺失，或两份原件均无法校验 | none | 人工恢复本机原件，不提示再付费 |
 | process-too-large | 本机原模型超过64MiB | none | 人工减小/离线导入，不反复免费处理 |
 
-诊断只记固定错误分类和HTTP状态，不记供应商原始消息、响应体、URL或凭据。本机读图失败统一用 Shoot local photo read failed 前缀，只记安全错误类（如 EIO、ENOENT），不记路径，也不混叫 recognition failed；已有 ID 后照片永久缺失也可据此区分本地文件与供应商下载。认物请求可能已经花费 token，charged 仍只代表 Aholo 阶段，不能据 charged=false 说认物没花钱。
+诊断只记固定错误分类和HTTP状态，不记供应商原始消息、响应体、URL或凭据。本机读图失败统一用 Shoot local photo read failed 前缀，记时间、任务号和安全错误类（如 EIO、ENOENT），不记路径，也不混叫 recognition failed；已有 ID 后照片永久缺失也可据此区分本地文件与供应商下载。认物请求可能已经花费 token，charged 仍只代表 Aholo 阶段，不能据 charged=false 说认物没花钱。
 
 官方契约：[Gemini Interactions](https://aistudio.google.com/api-reference/interactions-api)、[结构化输出](https://aistudio.google.com/docs/structured-output)、[Aholo OpenAPI](https://labs.aholo.ai/api-docs/en/openapi.json)。这次实现与离线通过不等于供应商实测，真实照片、账单和生成质量仍待密钥授权后验收。
 

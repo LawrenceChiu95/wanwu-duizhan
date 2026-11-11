@@ -53,7 +53,7 @@ async function download(url, file, request, cancelled) {
 }
 
 /** The key is only attached to the fixed official API gateway, never result/upload URLs. */
-export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstSubmit = false, signal, onCreate}) {
+export async function photoToGlb({photo, key, prompt, folder, state, save, fetch: request = globalThis.fetch, pause, now = () => new Date().toISOString(), stopAfter = 'download', allowCreate = true, allowFirstSubmit = false, signal, onCreate, checkFailedCredits = false}) {
   const waitPause = async ms => {
     signal?.throwIfAborted();
     if (!pause) return sleep(ms, undefined, {signal});
@@ -96,7 +96,18 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
       state.tasks[stage] = id; delete state.pending; await save();
     } finally { onCreate?.(false); }
   };
-  const wait = async (id, timestamp) => {
+  const refunded = async (id, submittedAt) => {
+    const submitted = Date.parse(submittedAt);
+    if (!Number.isFinite(submitted)) return false;
+    try {
+      const query = new URLSearchParams({status: '4', pagesize: '100', starttime: String(submitted - 300_000)});
+      const history = unwrap(await api(`/lux3d/v1/generate/task/list?${query}`));
+      const entry = Array.isArray(history?.items) && history.items.find(item => String(item?.taskId) === String(id));
+      return entry?.status === 4 && entry.consumedCredits === 0;
+    } catch { return false; }
+  };
+  const wait = async (stage, timestamp, submitTimestamp) => {
+    const id = state.tasks[stage];
     for (let i = 0; i < 240; i++) {
       signal?.throwIfAborted();
       let detail;
@@ -107,7 +118,11 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
         catch (error) { signal?.throwIfAborted(); if (attempt === 3) throw error; await waitPause(1000 * 2 ** attempt); }
       }
       if (detail?.status === 3) { if (!Array.isArray(detail.outputs)) throw Error('Completed task has no output list'); await stamp(timestamp); return detail.outputs; }
-      if ([4, 6].includes(detail?.status)) throw Object.assign(Error('Existing generation task failed or was canceled'), {code: 'step-failed'});
+      if ([4, 6].includes(detail?.status)) {
+        const error = Object.assign(Error('Existing generation task failed or was canceled'), {code: 'step-failed'});
+        if (detail.status === 4 && checkFailedCredits && await refunded(id, state.timestamps[submitTimestamp])) error.retryTask = {stage, id};
+        throw error;
+      }
       if (![0, 1].includes(detail?.status)) throw Error('Unknown task status; stop without creating a new task');
       await waitPause(10000);
     }
@@ -149,7 +164,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
       await create(imageStage, {img: state.photoUrl, prompt}, 'image_submit');
     }
     if (!state.tasks[imageStage]) throw Error('Existing model task has no image task record; restore its history, never regenerate blindly');
-    const outputs = await wait(state.tasks[imageStage], 'image_success_observed');
+    const outputs = await wait(imageStage, 'image_success_observed', 'image_submit');
     // Current multimodal-to-image contract returns the styled image first.
     const styled = https(outputs[0]?.content);
     if (!state.styledSha256) {
@@ -163,7 +178,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     if (stopAfter === 'styled') return path.join(folder, 'styled.jpg');
     if (!state.tasks[meshStage]) await create(meshStage, {img: styled, version: 'G1-Turbo', faceCount: 12000, enablePbr: true, outputFormat: ['zip', 'glb'], aiPredictSize: false}, 'mesh_submit');
   }
-  const outputs = await wait(state.tasks[meshStage], 'mesh_success_observed');
+  const outputs = await wait(meshStage, 'mesh_success_observed', 'mesh_submit');
   if (stopAfter === 'model') return null;
   // Pick by explicit format or pathname, never a fixed output position.
   const output = outputs.find(x => String(x.format ?? x.type ?? '').toLowerCase() === 'glb' || (() => { try { return new URL(x.content).pathname.toLowerCase().endsWith('.glb'); } catch { return false; } })());
