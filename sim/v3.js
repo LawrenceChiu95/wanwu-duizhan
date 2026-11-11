@@ -65,7 +65,7 @@ export const HEAVY_JUDGE_COMBAT_OPTIONS=Object.freeze({
 });
 export const PLANAR_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...HEAVY_JUDGE_COMBAT_OPTIONS,
- combatRules:Object.freeze({...HEAVY_JUDGE_COMBAT_OPTIONS.combatRules,lockCorePlane:true,dashAimLockTime:.08,weakHitFloor:.5})
+ combatRules:Object.freeze({...HEAVY_JUDGE_COMBAT_OPTIONS.combatRules,lockCorePlane:true,planeOverlapCorrectionCap:.04,dashAimLockTime:.08,weakHitFloor:.5})
 });
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
@@ -283,15 +283,19 @@ function contactPair(world,left,right){
  * of mass. The total move per step is capped so a wedged compound never jumps; what is left is
  * worked off over the next steps (and by the solver). No velocity or HP change.
  */
-function correctOverlap(world,fs,r,planar){
+function correctOverlap(world,fs,r,planar,planeOverlapCorrectionCap){
  let before=0,remaining=0,correction=0;
  for(let i=0;i<=r.overlapIterations;i++){
   let deepest=null;
   for(const p of active(fs[0]))for(const q of active(fs[1])){const hit=p.collider.contactCollider(q.collider,0);if(hit&&hit.distance<0&&(!deepest||hit.distance<deepest.distance))deepest=hit;}
   remaining=deepest?-deepest.distance:0;if(i===0)before=remaining;
-  const budget=r.top.maxCorrectionPerStep-correction;
+  const budget=(planeOverlapCorrectionCap??r.top.maxCorrectionPerStep)-correction;
   if(remaining<=r.overlapTolerance||i===r.overlapIterations||budget<=1e-9)break;
-  const amount=Math.min(remaining+.0001,budget),total=fs[0].mass+fs[1].mass,normal=arr(deepest.normal1),delta=scale(planar?planeNormal(normal,fs):normal,amount);
+  const normal=arr(deepest.normal1);
+  // Horizontal movement only clears the horizontal component of an inclined contact.
+  const separation=planeOverlapCorrectionCap!==undefined?(remaining+.0001)/Math.max(.1,Math.hypot(normal[0],normal[2])):remaining+.0001;
+  const amount=Math.min(separation,budget),total=fs[0].mass+fs[1].mass;
+  const delta=scale(planar?planeNormal(normal,fs):normal,amount);
   fs.forEach((f,j)=>f.body.setTranslation(vec(add(arr(f.body.translation()),scale(delta,(j===0?-1:1)*fs[1-j].mass/total))),true));correction+=amount;world.propagateModifiedBodyPositionsToColliders();
  }
  return {before,remaining,correction};
@@ -375,6 +379,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   throw Error('Broad heavy resistance requires position weight and core loadout rules');
  const planar=position?.lockCorePlane===true,aimLock=position?.dashAimLockTime,weakHitFloor=position?.weakHitFloor??.08;
  if(position?.lockCorePlane!==undefined&&typeof position.lockCorePlane!=='boolean')throw Error('lockCorePlane must be boolean');
+ const planeOverlapCorrectionCap=position?.planeOverlapCorrectionCap;
+ if(planeOverlapCorrectionCap!==undefined&&(!planar||!Number.isFinite(planeOverlapCorrectionCap)||planeOverlapCorrectionCap<=0))
+  throw Error('planeOverlapCorrectionCap must be positive and requires lockCorePlane');
  if(aimLock!==undefined&&(!Number.isFinite(aimLock)||aimLock<=0||aimLock>=manualRules.chargeTime))throw Error('dashAimLockTime must be within the charge');
  if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
@@ -593,7 +600,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   }
   for(let i=0;i<2;i++)for(const p of fs[i].parts)if(p.alive&&p.hp<=0){const detached=detachPart(world,fs[i],p);events.push({t,type:'break',target:i,targetPart:p.id,item:p.item.id,mount:p.mount,orient:p.orient,...detached,caption:`${name(p)}碎了`});}
   if(planar)keepCoresOnPlane(world,fs);
-  const projection=correctOverlap(world,fs,r,planar);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
+  const projection=correctOverlap(world,fs,r,planar,planeOverlapCorrectionCap);diagnostics.maxResidualPenetration=Math.max(diagnostics.maxResidualPenetration,projection.remaining);diagnostics.maxGeometricPenetration=Math.max(diagnostics.maxGeometricPenetration,projection.before);diagnostics.maxPositionCorrection=Math.max(diagnostics.maxPositionCorrection,projection.correction);if(projection.correction>0)diagnostics.correctionSteps++;
   const dead=fs.map((f,i)=>f.core.hp<=0?i:null).filter(i=>i!==null);
   if(step%r.frameStride===0||dead.length)record();
   if(dead.length){

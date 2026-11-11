@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {simulateV3,createV3Match,positionStrikeRoles,partRecoilFactor,itemCombat,loadV3Rules,loadCatalog} from '../../sim/v3.js';
+import {simulateV3,createV3Match,positionStrikeRoles,partRecoilFactor,itemCombat,loadV3Rules,loadCatalog,PLANAR_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
 const rules={radiusTolerance:.03,recoilBase:.7,recoilLength:.25,outBonus:.12,rangeAttack:.8,rangeHp:.5};
 const fighters=[{parts:[{item:'pan-lux3d',orient:'out',mount:'e0'},{item:'pillow',orient:'hug',mount:'e180'}]},{parts:[{item:'broom',orient:'out',mount:'e0'},{item:'slipper',orient:'hug',mount:'e180'}]}];
 const sha=r=>createHash('sha256').update(JSON.stringify(r)).digest('hex');
@@ -49,4 +49,24 @@ for(const mode of ['A','B'])test(`position ${mode} rules freeze in replay and re
 });
 test('position request rejects missing or invalid frozen parameters',async()=>{
  for(const combatRules of [undefined,{}, {...rules,rangeHp:2},{...rules,rangeAttack:Infinity},{...rules,outBonus:-1}])await assert.rejects(createV3Match({fighters,seed:1,combat:'position',combatRules}));
+});
+
+test('oblique chair contact separates further in the plane while older replays keep their rule',async()=>{
+ const seed=110212,chair={item:'fanshuo-chair',orient:'out',mount:'e0'};
+ const fighters=['pot','cushion'].map(id=>({parts:[chair,{item:'fanshuo-'+id,orient:'hug',mount:'e180'}]}));
+ const inputs=[];
+ for(let step=60;step<7200;step+=552)inputs.push({step,side:1,action:'dash'});
+ for(let step=300;step<7200;step+=624)inputs.push({step,side:1,action:'block'});
+ inputs.sort((a,b)=>a.step-b.step);
+ const manual={sides:['ai','input'],aiSeeds:[(seed^0xb7e15162)>>>0,(seed^0x243f6a88)>>>0],inputs,
+  aiProfiles:[{version:1,id:'chang',think:.05,reactionDelay:.02,reactionJitter:.02,dashRange:[.5,3],blockLead:.15},null]};
+ const params={...PLANAR_JUDGE_COMBAT_OPTIONS,fighters,seed,manual};
+ const {planeOverlapCorrectionCap,...oldRules}=params.combatRules;
+ const old=await simulateV3({...params,combatRules:oldRules});
+ const fixed=await simulateV3(params);
+ assert(old.meta.diagnostics.maxResidualPenetration>.20);
+ assert(fixed.meta.diagnostics.maxResidualPenetration<.05);
+ assert(fixed.meta.diagnostics.maxPositionCorrection<=planeOverlapCorrectionCap);
+ assert(fixed.frames.every(frame=>frame.fighters.every(fighter=>fighter.pos[1]===0)));
+ assert.equal(fixed.meta.combatRules.planeOverlapCorrectionCap,planeOverlapCorrectionCap);
 });
