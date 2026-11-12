@@ -389,6 +389,7 @@ class Particles {
     this.vel = new Float32Array(n * 3);
     this.life = new Float32Array(n);
     this.max = new Float32Array(n).fill(1);
+    this.tag = new Array(n).fill(null); // whose they are, for drop()
     this.next = 0;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
@@ -402,10 +403,11 @@ class Particles {
     scene.add(this.points);
     this.geo = g;
   }
-  burst(at, colors, count, speed, size, life, drift) {
+  burst(at, colors, count, speed, size, life, drift, tag = null) {
     for (let k = 0; k < count; k++) {
       const i = this.next;
       this.next = (this.next + 1) % this.n;
+      this.tag[i] = tag;
       tmp.randomDirection().multiplyScalar(speed * (0.35 + Math.random() * 0.9));
       if (drift) tmp.add(drift);
       this.pos.set([at.x, at.y, at.z], i * 3);
@@ -427,6 +429,8 @@ class Particles {
     for (const name of ['position', 'aAlpha', 'color', 'aSize']) this.geo.attributes[name].needsUpdate = true;
   }
   clear() { this.life.fill(0); this.alpha.fill(0); this.geo.attributes.aAlpha.needsUpdate = true; }
+  /** Only the ones laid with `tag`. */
+  drop(tag) { for (let i = 0; i < this.n; i++) if (this.tag[i] === tag) this.life[i] = this.alpha[i] = 0; this.geo.attributes.aAlpha.needsUpdate = true; }
 }
 
 /** Expanding billboard rings at impact points. Driven by real time. */
@@ -480,7 +484,7 @@ class Streaks {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 6;
     scene.add(this.mesh);
-    this.items = Array.from({length: n}, () => ({life: 0, max: 1, pos: new THREE.Vector3(), vel: new THREE.Vector3(), dir: new THREE.Vector3(1, 0, 0), len: 0.3, width: 0.03, a: 1}));
+    this.items = Array.from({length: n}, () => ({life: 0, max: 1, pos: new THREE.Vector3(), vel: new THREE.Vector3(), dir: new THREE.Vector3(1, 0, 0), len: 0.3, width: 0.03, a: 1, tag: null}));
     this.next = 0;
     this.n = n;
     this.m = new THREE.Matrix4();
@@ -488,7 +492,7 @@ class Streaks {
     this.s = new THREE.Vector3();
   }
   /** One streak: head at `at`, pointing along `dir` (xz), moving with `vel`. */
-  add(at, dir, vel, len, width, life, color, a = 1) {
+  add(at, dir, vel, len, width, life, color, a = 1, tag = null) {
     const i = this.next, it = this.items[i];
     this.next = (this.next + 1) % this.n;
     it.pos.copy(at);
@@ -496,7 +500,7 @@ class Streaks {
     if (it.dir.lengthSq() < 1e-8) it.dir.set(1, 0, 0);
     it.dir.normalize();
     it.vel.copy(vel);
-    Object.assign(it, {len, width, life, max: life, a});
+    Object.assign(it, {len, width, life, max: life, a, tag});
     this.color.setXYZ(i, color.r, color.g, color.b);
   }
   /** Spark lines bursting out of a point in the spin plane. */
@@ -523,6 +527,8 @@ class Streaks {
     this.mesh.instanceMatrix.needsUpdate = this.alpha.needsUpdate = this.color.needsUpdate = true;
   }
   clear() { for (const it of this.items) it.life = 0; this.update(0); }
+  /** Only the ones laid with `tag`. */
+  drop(tag) { for (const it of this.items) if (it.tag === tag) it.life = 0; this.update(0); }
 }
 
 /** Debris when an item breaks: small shards that burst out, tumble, fall to the floor and fade. */
@@ -534,17 +540,18 @@ class Shards {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 4;
     scene.add(this.mesh);
-    this.items = Array.from({length: n}, () => ({life: 0, max: 1, pos: new THREE.Vector3(), vel: new THREE.Vector3(), axis: new THREE.Vector3(0, 1, 0), spin: 0, q: new THREE.Quaternion(), size: 0.05}));
+    this.items = Array.from({length: n}, () => ({life: 0, max: 1, pos: new THREE.Vector3(), vel: new THREE.Vector3(), axis: new THREE.Vector3(0, 1, 0), spin: 0, q: new THREE.Quaternion(), size: 0.05, tag: null}));
     this.n = n;
     this.next = 0;
     this.m = new THREE.Matrix4();
     this.s = new THREE.Vector3();
     this.update(0);
   }
-  burst(at, count, speed, colors, drift) {
+  burst(at, count, speed, colors, drift, tag = null) {
     for (let k = 0; k < count; k++) {
       const i = this.next, it = this.items[i];
       this.next = (this.next + 1) % this.n;
+      it.tag = tag;
       it.pos.copy(at);
       const ang = Math.random() * Math.PI * 2;
       it.vel.set(Math.cos(ang), 0.5 + Math.random() * 0.9, Math.sin(ang)).multiplyScalar(speed * (0.5 + Math.random() * 0.8));
@@ -576,6 +583,8 @@ class Shards {
     this.mesh.instanceMatrix.needsUpdate = true;
   }
   clear() { for (const it of this.items) it.life = 0; this.update(0); }
+  /** Only the ones laid with `tag`. */
+  drop(tag) { for (const it of this.items) if (it.tag === tag) it.life = 0; this.update(0); }
 }
 
 /** A short ribbon behind a core: its path over the last TRAIL_TIME of sim time, tapering to the tail. */
@@ -585,6 +594,8 @@ class Shards {
  * calls back once. Built on the first real burst, and neither updated nor drawn while none is in the air.
  */
 // White glaze with one blue-and-white chip in three, so they still read over a white plate.
+// What the bursts lay in the shared effect pools, so the result card can take back just those (dropCeramic).
+const CERAMIC_FX = 'ceramic';
 const GLAZE = [new THREE.Color('#fbf8f2'), new THREE.Color('#dbe8f3'), new THREE.Color('#4a7fd6')];
 class ShardFlight {
   constructor(scene, streaks, n = 18) {
@@ -645,7 +656,7 @@ class ShardFlight {
       const k = Math.min(1, flown / it.dur), e = 1 - (1 - k) ** 1.4, a = (1 - e) * (1 - e), b = 2 * e * (1 - e), c = e * e;
       const at = tmp.copy(it.from).multiplyScalar(a).addScaledVector(it.via, b).addScaledVector(it.group.to(), c);
       // A thin white wake, laid every frame so it reads as one line.
-      if (dt > 0 && k < 0.92) this.streaks.add(at, tmp2.subVectors(at, it.last), tmp3.set(0, 0, 0), 0.22, 0.014, 0.12, WHITE, 0.7);
+      if (dt > 0 && k < 0.92) this.streaks.add(at, tmp2.subVectors(at, it.last), tmp3.set(0, 0, 0), 0.22, 0.014, 0.12, WHITE, 0.7, CERAMIC_FX);
       it.last.copy(at);
       it.q.premultiply(tmpQ.setFromAxisAngle(it.axis, it.spin * dt));
       this.m.compose(at, it.q, this.s.setScalar(it.size * (k < 0.85 ? 1 : (1 - k) / 0.15)));
@@ -1187,7 +1198,7 @@ export class Stage {
         const a0 = Math.random() * Math.PI * 2;
         for (let k = 0; k < 5; k++) {
           const ang = a0 + k * 1.257 + (Math.random() - 0.5) * 0.5, d = tmp2.set(Math.cos(ang), 0, Math.sin(ang)), len = 0.1 + Math.random() * 0.06;
-          this.streaks.add(tmp.copy(c.from).addScaledVector(d, len), d, c.f.vel ?? tmp3.set(0, 0, 0), len, 0.014, CERAMIC_CRACK + 0.04, CRACK, 1);
+          this.streaks.add(tmp.copy(c.from).addScaledVector(d, len), d, c.f.vel ?? tmp3.set(0, 0, 0), len, 0.014, CERAMIC_CRACK + 0.04, CRACK, 1, CERAMIC_FX);
         }
       }
       if (c.cracked && c.age < CERAMIC_WAIT + CERAMIC_CRACK && c.src.alive) c.src.flash = Math.max(c.src.flash, 0.5);
@@ -1203,11 +1214,11 @@ export class Stage {
   }
   burstCeramic(c) {
     const {f, from, dst} = c;
-    this.particles.burst(from, GLAZE, 8, 1.2, 0.02, 0.3);
+    this.particles.burst(from, GLAZE, 8, 1.2, 0.02, 0.3, null, CERAMIC_FX);
     c.burst?.();
     const out = from.clone().sub(f.center).setY(0);
     if (!dst) {
-      this.shards.burst(from, 7, 2.0, GLAZE, out.lengthSq() > 1e-6 ? out.normalize().multiplyScalar(1.4) : null);
+      this.shards.burst(from, 7, 2.0, GLAZE, out.lengthSq() > 1e-6 ? out.normalize().multiplyScalar(1.4) : null, CERAMIC_FX);
       c.floor = CERAMIC_FLY * 0.7;
       return;
     }
@@ -1230,10 +1241,14 @@ export class Stage {
   }
   /**
    * The result card is up: shards still in the air, and what they were holding back, go without a sound or a word
-   * (Elara 4f446065, Pollux edf1ce39 #3). A piece they were to break shows broken at the next pose.
+   * (Elara 4f446065, Pollux edf1ce39 #3). A piece they were to break shows broken at the next pose. With or without a
+   * target, and their wakes and cracks too; the KO's own debris in the same pools stays (Elara 322e5482).
    */
   dropCeramic() {
     this.flight?.clear();
+    this.shards.drop(CERAMIC_FX);
+    this.streaks.drop(CERAMIC_FX);
+    this.particles.drop(CERAMIC_FX);
     this.ceramic = [];
     for (const f of this.fighters) for (const p of f.parts) { p.held = false; p.owed = 0; }
   }
