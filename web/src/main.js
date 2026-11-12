@@ -278,6 +278,9 @@ async function main() {
   // (远夏 10-28 2735f129: keep all three).
   // 第 13 版 hand-feel trial only (no on-page option): ?block=0.2 / 0.25 / 0.3 s block window; default is the rules' own.
   const blockTime = ['0.2', '0.25', '0.3'].includes(q.get('block')) ? Number(q.get('block')) : undefined;
+  // 陶瓷炸片 (Elara 207a725b 7fffc02e), off unless ?ceramic=1: the player's ceramic piece, struck hard, hurts a piece of the
+  // other side's (Sol's combatRules.ceramicShards, played live only).
+  const ceramic = q.get('ceramic') === '1' && combatOptions.combatRules?.lockCorePlane === true;
   let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
@@ -584,7 +587,8 @@ async function main() {
     miss: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'miss' && e.side === 0,
     glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0,
     // Any end of the player's own lunge (aim-check.mjs compares the arrow's grey with the sim's verdict).
-    'end-mine': e => e.type === 'dash' && e.phase === 'end' && e.side === 0
+    'end-mine': e => e.type === 'dash' && e.phase === 'end' && e.side === 0,
+    shards: e => e.type === 'archetype' && e.archetype === 'brittle'
   };
 
   // ---------- events → effects ----------
@@ -646,6 +650,18 @@ async function main() {
       // The camera never moves; only a piece or a core breaking jolts the picture a few px.
       stage.shake(4);
       overlay.screenFlash(0.25);
+    } else if (e.type === 'archetype' && e.archetype === 'brittle') {
+      // 陶瓷炸片: shards from the player's ceramic piece into the piece the sim hurt; no new words. A piece it breaks comes
+      // as the usual break in the same step, its line naming the ceramic piece.
+      if (e.damage > 0) {
+        const k = `${e.target}:${e.targetPart}`, by = {side: e.side, part: e.part, item: e.item};
+        lastHurt.set(k, by);
+        if (e.hpAfter === 0) killer.set(k, by);
+        const chip = hudChip(e.target, e.targetPart);
+        if (chip) setFlash(chip, 'hurt');
+      }
+      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, e.hpAfter === 0);
+      sfx.porcelain();
     } else if (e.type === 'dash') {
       if (e.phase === 'charge' && e.side === 1) coach(1);
       if (e.phase === 'charge') {
@@ -781,7 +797,7 @@ async function main() {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
       // The opponent's play is fixed with its build as 开打 is pressed; one without its own (a build in ?foe=) plays the old way.
       const ai = fought === null ? null : LADDER[fought].ai;
-      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
+      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules, ...(combat && {combat})}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false};
@@ -823,7 +839,7 @@ async function main() {
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${stage.bench ? '&scene=kitchen' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramic ? '&ceramic=1' : ''}${stage.bench ? '&scene=kitchen' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;

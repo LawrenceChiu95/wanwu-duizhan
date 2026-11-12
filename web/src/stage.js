@@ -579,6 +579,79 @@ class Shards {
 }
 
 /** A short ribbon behind a core: its path over the last TRAIL_TIME of sim time, tapering to the tail. */
+/**
+ * 陶瓷炸片 (Elara 207a725b 7fffc02e): a few glazed shards that leave the player's ceramic piece and fly into the opposing
+ * piece the sim hurt, about 0.3 s on the sim clock (so hit-stop holds them too). The first to land calls back once.
+ */
+// White glaze with one blue-and-white chip in three, so they still read over a white plate.
+const GLAZE = [new THREE.Color('#fbf8f2'), new THREE.Color('#dbe8f3'), new THREE.Color('#4a7fd6')];
+class ShardFlight {
+  constructor(scene, streaks, n = 18) {
+    this.streaks = streaks;
+    // A flat chip rather than a tetrahedron: it flashes as it turns over.
+    this.mesh = new THREE.InstancedMesh(new THREE.TetrahedronGeometry(1).scale(1, 0.28, 1.25), new THREE.MeshStandardMaterial({color: '#ffffff', metalness: 0.1, roughness: 0.22, emissive: new THREE.Color('#e4eef6'), emissiveIntensity: 0.85, depthTest: false, depthWrite: false}), n);
+    // Drawn over the tops (like the streaks): the pieces they fly round would otherwise hide most of the flight.
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.mesh.setColorAt(0, new THREE.Color());
+    this.mesh.frustumCulled = false;
+    this.mesh.renderOrder = 5;
+    scene.add(this.mesh);
+    this.items = Array.from({length: n}, () => ({life: 0, wait: 0, dur: 0.3, from: new THREE.Vector3(), last: new THREE.Vector3(), via: new THREE.Vector3(), axis: new THREE.Vector3(0, 1, 0), spin: 0, q: new THREE.Quaternion(), size: 0.05, group: null}));
+    this.n = n;
+    this.next = 0;
+    this.m = new THREE.Matrix4();
+    this.s = new THREE.Vector3();
+    this.update(0);
+  }
+  /**
+   * `count` shards from `from` to wherever `to()` is as they fly; `landed()` once, when the first gets there. The two
+   * pieces are often a few px apart at 390 px, so each first fans out along `out` (and up) and then curves back in.
+   */
+  fling(from, to, out, count, dur, landed) {
+    const group = {to, landed, done: false};
+    const base = Math.atan2(out.z, out.x);
+    for (let k = 0; k < count; k++) {
+      const i = this.next, it = this.items[i];
+      this.next = (this.next + 1) % this.n;
+      it.from.copy(from).add(tmp3.set(Math.random() - 0.5, 0, Math.random() - 0.5).multiplyScalar(0.08));
+      const ang = base + ((k + 0.5) / count - 0.5) * 2.4 + (Math.random() - 0.5) * 0.25, reach = 0.38 + Math.random() * 0.14;
+      it.via.copy(it.from).add(tmp3.set(Math.cos(ang) * reach, 0.35 + Math.random() * 0.12, Math.sin(ang) * reach));
+      it.wait = k === 0 ? 0 : Math.random() * 0.05;
+      it.dur = dur * (k === 0 ? 1 : 0.9 + Math.random() * 0.25);
+      it.life = it.wait + it.dur;
+      it.axis.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+      it.spin = 14 + Math.random() * 12;
+      it.q.setFromAxisAngle(it.axis, Math.random() * Math.PI);
+      it.size = 0.08 + Math.random() * 0.04;
+      it.last.copy(it.from);
+      it.group = group;
+      this.mesh.setColorAt(i, GLAZE[k % GLAZE.length]);
+    }
+    this.mesh.instanceColor.needsUpdate = true;
+  }
+  update(dt) {
+    for (let i = 0; i < this.n; i++) {
+      const it = this.items[i];
+      if (it.life <= 0) { this.m.makeScale(0, 0, 0); this.mesh.setMatrixAt(i, this.m); continue; }
+      it.life -= dt;
+      const flown = it.dur - it.life; // negative while it waits its turn
+      if (flown < 0) { this.m.makeScale(0, 0, 0); this.mesh.setMatrixAt(i, this.m); continue; }
+      // Quadratic curve from → via → the piece, quick out of the tangle and slowing as it comes round.
+      const k = Math.min(1, flown / it.dur), e = 1 - (1 - k) ** 1.4, a = (1 - e) * (1 - e), b = 2 * e * (1 - e), c = e * e;
+      const at = tmp.copy(it.from).multiplyScalar(a).addScaledVector(it.via, b).addScaledVector(it.group.to(), c);
+      // A short white wake every other frame.
+      if (dt > 0 && (it.tick = !it.tick) && k < 0.9) this.streaks.add(at, tmp2.subVectors(at, it.last), tmp3.set(0, 0, 0), 0.16, 0.022, 0.08, WHITE, 0.75);
+      it.last.copy(at);
+      it.q.premultiply(tmpQ.setFromAxisAngle(it.axis, it.spin * dt));
+      this.m.compose(at, it.q, this.s.setScalar(it.size * (k < 0.85 ? 1 : (1 - k) / 0.15)));
+      this.mesh.setMatrixAt(i, this.m);
+      if (k >= 1) { it.life = 0; if (!it.group.done) { it.group.done = true; it.group.landed(); } }
+    }
+    this.mesh.instanceMatrix.needsUpdate = true;
+  }
+  clear() { for (const it of this.items) it.life = 0; this.update(0); }
+}
+
 const TRAIL_N = 28;
 class Trail {
   constructor(scene, color) {
@@ -707,6 +780,7 @@ export class Stage {
     this.rings = new Rings(this.scene);
     this.streaks = new Streaks(this.scene);
     this.shards = new Shards(this.scene);
+    this.flight = new ShardFlight(this.scene, this.streaks);
     this.trails = TEAM.map(c => new Trail(this.scene, c));
     // Afterimages of a lunging core: a few fading team-coloured glows left along its path.
     this.ghosts = Array.from({length: 14}, () => {
@@ -1071,6 +1145,36 @@ export class Stage {
     this.ring(at, TEAM[i], 0.1, 1.4, 0.6);
     this.ring(at, WHITE, 0.05, 0.7, 0.35);
   }
+  /**
+   * 陶瓷炸片: the player's ceramic piece, struck hard, throws a few shards. With a piece of the other side in reach they
+   * fly into it and it flashes as they land (the sim has already taken its hp); with none they scatter over the floor.
+   * Only the pieces' models and pooled effects: no words, few particles.
+   */
+  ceramicShards(i, partId, toSide, toPartId, fast) {
+    const f = this.fighters[i], src = f?.parts[Number(partId.split('-')[1])];
+    if (!src) return;
+    src.obj.updateWorldMatrix(true, false);
+    const from = new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld);
+    src.flash = Math.max(src.flash, 0.6);
+    this.particles.burst(from, GLAZE, 8, 1.2, 0.02, 0.3);
+    const o = toSide === null ? null : this.fighters[toSide], dst = o && toPartId ? o.parts[Number(toPartId.split('-')[1])] : null;
+    if (!dst) {
+      const out = from.clone().sub(f.center).setY(0);
+      this.shards.burst(from, 7, 2.0, GLAZE, out.lengthSq() > 1e-6 ? out.normalize().multiplyScalar(1.4) : null);
+      return;
+    }
+    const to = new THREE.Vector3(), track = () => to.setFromMatrixPosition(dst.obj.matrixWorld);
+    track();
+    // Out from the player's own top first, away from the other one, so the fan clears both.
+    const out = from.clone().sub(f.center).setY(0);
+    if (out.lengthSq() < 1e-6) out.copy(from).sub(to).setY(0);
+    // A shard that breaks the piece lands with the break the sim records in the same step (Sol db0ade04).
+    this.flight.fling(from, track, out, 6, fast ? 0.1 : 0.3, () => {
+      dst.flash = 1;
+      this.particles.burst(to.clone(), GLAZE, 10, 1.6, 0.022, 0.32);
+      this.ring(to.clone(), GLAZE[1], 0.05, 0.6, 0.3);
+    });
+  }
   /** The loser's core is gone: whatever is still mounted falls away. */
   scatter(i) {
     const f = this.fighters[i];
@@ -1089,6 +1193,7 @@ export class Stage {
     this.rings.clear();
     this.streaks.clear();
     this.shards.clear();
+    this.flight.clear();
     for (const t of this.trails) t.clear();
     for (const g of this.ghosts) g.s.visible = false;
     this.clearDebris();
@@ -1518,11 +1623,12 @@ export class Stage {
     // Test aid (camera-motion.mjs HIDE=1): draw only the floor, wall and backdrop, to measure the camera without the tops.
     if (this.debugHide) {
       for (const f of this.fighters) f.root.visible = f.halo.visible = false;
-      for (const o of [this.particles.points, this.streaks.mesh, this.shards.mesh, this.meRing, ...this.trails.map(t => t.mesh), ...this.ghosts.map(g => g.s), ...this.rings.pool.map(r => r.s), ...this.debris.map(d => d.piece)]) o.visible = false;
+      for (const o of [this.particles.points, this.streaks.mesh, this.shards.mesh, this.flight.mesh, this.meRing, ...this.trails.map(t => t.mesh), ...this.ghosts.map(g => g.s), ...this.rings.pool.map(r => r.s), ...this.debris.map(d => d.piece)]) o.visible = false;
     }
     this.particles.update(simDt);
     this.streaks.update(simDt);
     this.shards.update(simDt);
+    this.flight.update(simDt);
     this.rings.update(realDt);
     if (!this.bench?.draw(this.cam.mode === 'build', realDt)) this.renderer.render(this.scene, this.camera);
   }
