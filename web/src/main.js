@@ -477,9 +477,10 @@ async function main() {
       side.querySelector('.core .fill').style.transform = `scaleX(${v.core})`;
       side.querySelector('.core .chip').style.transform = `scaleX(${v.chip})`;
       side.querySelectorAll('.pc').forEach((pc, k) => {
-        // A piece the ceramic shards broke keeps its slot as it was until they land.
-        if (stage.fighters[i]?.parts[k]?.held) return;
-        const p = f.parts[k], pf = Math.max(0, p.hp / p.maxHp), bar = pc.querySelector('.mini i');
+        // A piece the ceramic shards broke keeps its slot as it was until they land; one they only hurt, its hp.
+        const sp = stage.fighters[i]?.parts[k];
+        if (sp?.held) return;
+        const p = f.parts[k], pf = Math.max(0, Math.min(p.maxHp, p.hp + (p.alive ? sp?.owed ?? 0 : 0)) / p.maxHp), bar = pc.querySelector('.mini i');
         bar.style.transform = `scaleX(${pf})`;
         bar.classList.toggle('low', pf < 0.4);
         pc.classList.toggle('gone', !p.alive);
@@ -679,14 +680,14 @@ async function main() {
         if (e.hpAfter === 0) killer.set(k, by);
       }
       const batch = heldBreaks.shoot(k, e.hpAfter === 0);
-      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, e.hpAfter === 0 ? batch : null, () => sfx.porcelain(), () => {
+      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, {hold: e.hpAfter === 0 ? batch : null, owe: e.damage, burst: () => sfx.porcelain(), landed: () => {
         sfx.chink();
         const chip = e.damage > 0 && hudChip(e.target, e.targetPart);
         if (chip) setFlash(chip, 'hurt', 0.7);
         const b = heldBreaks.land(batch);
         // Gone already if its core broke while they flew (scatter took it).
         if (b && stage.fighters[e.target]?.parts[Number(e.targetPart.split('-')[1])]?.alive) breakNow(b, true);
-      });
+      }});
     } else if (e.type === 'dash') {
       if (e.phase === 'charge' && e.side === 1) coach(1);
       if (e.phase === 'charge') {
@@ -873,6 +874,11 @@ async function main() {
       stage.clearFx();
       overlay.clear(); lateNums = []; resetHighlights();
       pb.seek(pb.end);
+      stage.pose(pb.state);
+    } else {
+      // Ended right on the last frame: ceramic shards still in the air go now, not over the card (Elara 4f446065).
+      stage.dropCeramic();
+      heldBreaks.clear();
       stage.pose(pb.state);
     }
     phase = 'result';
