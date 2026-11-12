@@ -787,6 +787,7 @@ async function main() {
     el.coachText.textContent = n === 2 && brokeLine ? brokeLine : COACH[n].text;
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
+    for (const n of [el.dashNope, el.blockNope]) if (n.classList.contains('show')) seatNope(n);
     clearTimeout(coachTimer);
     if (!coachFirstUp) coachTimer = setTimeout(() => { el.coach.hidden = true; }, (COACH_HOLD + 1.2) * 1000);
   }
@@ -1293,13 +1294,22 @@ async function main() {
     // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes and
     // 还没好 rises over it, so a tap that cannot count never looks like a dead button.
     if (left > rules.dt + 1e-9) {
-      replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); replay_(action === 'dash' ? el.dashNope : el.blockNope, 'show');
+      const nope = action === 'dash' ? el.dashNope : el.blockNope;
+      replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); seatNope(nope); replay_(nope, 'show');
       test.denied++; sfx.deny(); diag.tap(action, `冷却 ${left.toFixed(1)}s`); return;
     }
     diag.tap(action, '收下');
     live.match.press(0, action);
     if (action === 'dash') coachDashed();
     sfx.click();
+  }
+  // 还没好 and a coach line share the band just above the buttons: while a line is up across it, 还没好 rises clear of it instead
+  // of covering its first words (Wren 并排-打碎 at 17 s, Elara 3b8c6897). offsetTop, so the line's slide-in is not counted.
+  function seatNope(n) {
+    n.style.bottom = '';
+    if (el.coach.hidden) return;
+    const a = n.getBoundingClientRect(), c = el.coach.getBoundingClientRect();
+    if (a.right > c.left && a.left < c.right) n.style.bottom = `${el.pad.offsetTop + el.pad.offsetHeight - el.coach.offsetTop + 6}px`;
   }
   // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).
   function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
