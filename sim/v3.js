@@ -384,6 +384,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   throw Error('planeOverlapCorrectionCap must be positive and requires lockCorePlane');
  if(aimLock!==undefined&&(!Number.isFinite(aimLock)||aimLock<=0||aimLock>=manualRules.chargeTime))throw Error('dashAimLockTime must be within the charge');
  if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
+ const ceramicShards=position?.ceramicShards===true;
+ if(ceramicShards&&(!planar||!M))throw Error('Ceramic shards require planar combat with manual controls');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
@@ -505,6 +507,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   });
   world.step();
   if(planar)keepCoresOnPlane(world,fs);
+  let ceramicHit;
   const pairs=[];for(const p of active(fs[0]))for(const q of active(fs[1])){const hit=contactPair(world,p,q);if(hit)pairs.push(hit);}
   // Select across the complete manifold set before causing any damage/removal.
   pairs.sort((a,b)=>b.impulse-a.impulse||a.left.id.localeCompare(b.left.id)||a.right.id.localeCompare(b.right.id));
@@ -580,7 +583,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
-    for(const {tp,event}of pending){tp.hp=Math.max(0,tp.hp-event.damage);event.hpAfter=tp.hp;events.push(event);if(M&&event.role==='attack'&&event.shield&&event.damage>0)shieldDamageApplied[event.target]=true;}
+    for(const {tp,event}of pending){
+     tp.hp=Math.max(0,tp.hp-event.damage);
+     event.hpAfter=tp.hp;
+     events.push(event);
+     if(M&&event.role==='attack'&&event.damage>0){
+      if(event.shield)shieldDamageApplied[event.target]=true;
+      else if(ceramicShards&&event.target===0&&event.damage>=tp.maxHp*.20&&!tp.shardsReleased&&
+       /^(陶瓷|瓷器|瓷质|瓷)$/.test(tp.item.materialName?.trim()??''))ceramicHit=tp;
+     }
+    }
     lastDamage=t;
    }else if(newEpisode&&roles.attacker===null&&!roles.clash)diagnostics.skippedSlowContacts++;
    // A correctly timed guard is contact feedback, independent of the shared damage cooldown.
@@ -597,6 +609,23 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    if(impulse>=r.minimumImpulse)lastSeen=t;
    // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
    for(const i of lunge){const f=fs[i],full=fullLunge.includes(i),blocked=full&&(roles.clash||i===roles.attacker)&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0),quality=blocked?'blocked':full?'full':'glance';f.ctl.dashUntil=-1;events.push({t,type:'dash',phase:'end',side:i,outcome:blocked?'blocked':'hit',quality,alignment:alignment.find(x=>x.side===i).value,pressStep:f.ctl.dashPressStep,point:i===0?rightPoint:point});if(blocked)events.push({t,type:'parry',attacker:i,target:1-i,point:i===0?rightPoint:point});}
+  }
+  if(ceramicHit){
+   // Release once per attachment, including when no opposing attachment is in range.
+   ceramicHit.shardsReleased=true;
+   const point=arr(ceramicHit.collider.translation());
+   let nearest=null;
+   for(const target of fs[1].parts){
+    if(!target.alive||target.hp<=0)continue;
+    const distance=length(sub(point,arr(target.collider.projectPoint(vec(point),true).point)));
+    if(distance<=.75&&(!nearest||distance<nearest.distance))nearest={target,distance};
+   }
+   const target=nearest?.target;
+   const damage=target?Math.min(14,target.maxHp*.30,target.hp):0;
+   if(target)target.hp-=damage;
+   events.push({t,type:'archetype',archetype:'brittle',side:0,part:ceramicHit.id,item:ceramicHit.item.id,sourceHpAfter:ceramicHit.hp,
+    target:target?1:null,targetPart:target?.id??null,targetItem:target?.item.id??null,
+    point,distance:nearest?.distance??null,damage,hpAfter:target?.hp??null});
   }
   for(let i=0;i<2;i++)for(const p of fs[i].parts)if(p.alive&&p.hp<=0){const detached=detachPart(world,fs[i],p);events.push({t,type:'break',target:i,targetPart:p.id,item:p.item.id,mount:p.mount,orient:p.orient,...detached,caption:`${name(p)}碎了`});}
   if(planar)keepCoresOnPlane(world,fs);
