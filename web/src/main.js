@@ -16,6 +16,8 @@ import {shootApi} from './shoot-api.js';
 import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
 
 const $ = id => document.getElementById(id);
+// Inside another page (ModelScope's studio frame), whose floating ball sits over our right edge: the sheets keep below it (style.css).
+document.documentElement.toggleAttribute('data-framed', self !== top);
 const el = {
   app: $('app'), canvas: $('view'), fx: $('fx'), flash: $('flash'), banner: $('banner'),
   caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),

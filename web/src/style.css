@@ -379,6 +379,12 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- Sheets ---------- */
 #credits, #foeSheet { position: absolute; inset: 0; background: rgba(2, 4, 9, 0.6); display: flex; align-items: flex-end; z-index: 5; }
 .panel { width: 100%; max-height: 80%; overflow: auto; background: #0c111f; padding: 16px 14px calc(env(safe-area-inset-bottom) + 18px); box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 138, 61, 0.35); user-select: text; -webkit-user-select: text; animation: rise 0.25s ease-out both; }
+/* ModelScope's frame floats its ball at the right edge, 200px down and 18.67vw x 13.87vw (measured at 360-430 wide): on a
+   phone a sheet starts below it, so the × and the words are never under the ball (Sol 77ffa0a8, Elara c4947c8d). */
+@media not all and (min-aspect-ratio: 3/4) {
+  [data-framed] .panel { max-height: min(80%, calc(100% - 200px - 13.9vw - 8px)); }
+  [data-framed] #error { right: calc(18.7vw + 6px); } /* a long error's lines would run under it */
+}
 .head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .head b { font-family: var(--display); font-weight: 400; font-size: 22px; }
 .close { margin-left: auto; width: 36px; height: 36px; font-size: 24px; line-height: 1; color: var(--mute); }
