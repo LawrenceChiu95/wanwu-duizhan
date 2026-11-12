@@ -1,5 +1,28 @@
 # Model credits
 
+## The twelve characters
+
+The 角色库 and all three opponents use only these twelve, from the team's own package 保留原色改装版 2026-11-05 R1 (`fanshuo-*` in catalog.json, `data/models/generated/`). Each comes as a real photo, a wasteland-punk restyle of it and a textured GLB; the package's release notes say the GLBs were made with Aholo G1-Turbo, Lux3D's generator. Credited to the team, without a personal name (远夏 #万物对战 71a7f90f). Who took each photo is not recorded in the package and the photos carry no camera data, so the page says only 实拍原照. Inventory, hashes and the import record are in the shared dev archive 凡朔模型包 (RESULT.md, inventory.json).
+
+| Item (id) | Made from | Credit |
+|---|---|---|
+| 刀 (fanshuo-knife) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 锅 (fanshuo-pot) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 抱枕 (fanshuo-cushion) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 鼠标 (fanshuo-mouse) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 盘子 (fanshuo-plate) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 剃须刀 (fanshuo-shaver) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 椅子 (fanshuo-chair) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 按摩滚筒 (fanshuo-roller) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 摄像头 (fanshuo-camera) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 羽毛杆 (fanshuo-feather) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 兔子靠垫 (fanshuo-rabbit) | real photo → restyle → Lux3D (G1-Turbo) | team |
+| 金属杯 (fanshuo-cup) | real photo → restyle → Lux3D (G1-Turbo) | team |
+
+## Earlier models
+
+None of the models below plays any more, but the page still ships their files (the judge build bundles the catalog's models), so their credits stay on the page under 早期版本的模型 until the build drops them (Elara b7d81a8b). The judge page lists only the ones it ships: the Quaternius pot and the desk lamp, replaced by their Lux3D variants, are not in it.
+
 Downloaded 2026-10-26 from the following model pages. License links on all six pages were checked directly. CC BY 3.0 permits commercial reuse with attribution; keep this file and show an accessible credits link in the prototype.
 
 | File | Original title / author | Source | License |

@@ -29,15 +29,34 @@ export const showcases = [
     credit: '原照 Michal Osmenda · CC BY-SA 2.0，已裁切；改图和建模是真跑的'}
 ];
 
-// 素材署名 in this build (Elara 907b6fa5): Chinese, only what the judges get, one line per thing. The five Lux3D items list
-// the photo each was made from: 锅 and 废土锅 share docoverachiever's cast-iron pan (Wren's imgs/meta.json pan-2.jpg; checked
-// against the Flickr page — data/lux3d/RECEIPT.md named kevin dooley's「Frying pan」, which is pan-0); 废土扫把's photo is
-// 1024greenstreet's (Wren 520f0486, 开发归档/素材署名-原照溯源).
+// 素材署名 in this build (Elara 907b6fa5): Chinese, only what the judges get, one line per thing. The twelve characters
+// (the 角色库 and all three opponents) come from the team's package 保留原色改装版 2026-11-05 R1: per item a photo, its
+// wasteland restyle and a GLB its notes say Aholo G1-Turbo (Lux3D's generator) made (开发归档/凡朔模型包/RESULT.md); no
+// name, 远夏 71a7f90f (Elara b7d81a8b). The models after them no longer play but still ship in this build, so their credits stay.
+// The five Lux3D ones list the photo each was made from: 锅 and 废土锅 share docoverachiever's cast-iron pan (Wren's
+// imgs/meta.json pan-2.jpg; checked against the Flickr page — data/lux3d/RECEIPT.md named kevin dooley's「Frying pan」,
+// which is pan-0); 废土扫把's photo is 1024greenstreet's (Wren 520f0486, 开发归档/素材署名-原照溯源).
 const CC = {'by-2': '[CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)', 'by-3': '[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)',
   'by-4': '[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)', 'by-sa-2': '[CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)'};
 export const creditsMd = `
 ## 角色
 | 角色 | 作者 | 许可 | 出处 |
+|---|---|---|---|
+| 刀（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 锅（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 抱枕（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 鼠标（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 盘子（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 剃须刀（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 椅子（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 按摩滚筒（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 摄像头（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 羽毛杆（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 兔子靠垫（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+| 金属杯（实拍原照 → 改图 → Lux3D 生成） | 本队 | 本队自制 | |
+
+## 早期版本的模型（随页面附带，对战中不出现）
+| 模型 | 作者 | 许可 | 出处 |
 |---|---|---|---|
 | 锅（照片 → Lux3D 生成） | 原照 docoverachiever | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/90692748@N04/47347731882) |
 | 台灯（照片 → Lux3D 生成） | 原照 Artdecodude | ${CC['by-2']} | [Flickr](https://www.flickr.com/photos/62920259@N03/5771792573) |
@@ -50,7 +69,7 @@ export const creditsMd = `
 | 拖鞋的碰撞外形 | J-Toastie | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/2wR1M99UwP) |
 | 枕头 | Poly by Google | ${CC['by-3']} | [Poly Pizza](https://poly.pizza/m/f60emm1Xkas) |
 
-Lux3D 生成的五件由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款使用。模型都统一了尺寸和朝向。
+标「Lux3D 生成」的都由 Aholo Lux3D 从照片生成，按 Aholo 黑客松条款使用。模型都统一了尺寸和朝向。
 
 ## 拍一件示例
 | 素材 | 作者 | 许可 | 出处 |
