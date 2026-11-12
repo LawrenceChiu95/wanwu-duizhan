@@ -1160,16 +1160,17 @@ export class Stage {
   }
   /**
    * 陶瓷炸片: the player's ceramic piece, struck hard, cracks and throws a few shards. With a piece of the other side in
-   * reach they fly into it; that piece keeps its look (hp, danger glow, mounted) until they land, then flashes for
-   * CERAMIC_HOLD. With none they scatter over the floor. `burst()` when it bursts, `landed()` when they land (the
-   * page's sounds, HUD and a break the sim recorded in the same step). Only the pieces' models and pooled effects.
+   * reach they fly into it and it flashes for CERAMIC_HOLD as they land; one they break (`breaks`) keeps its look (hp,
+   * danger glow, mounted) until then, and a later blow that breaks a piece they only hurt is not held (Sol 73406e0c).
+   * With none they scatter over the floor. `burst()` when it bursts, `landed()` when they land or settle (the page's
+   * sounds, HUD and the break the sim recorded in the same step). Only the pieces' models and pooled effects.
    */
-  ceramicShards(i, partId, toSide, toPartId, burst, landed) {
+  ceramicShards(i, partId, toSide, toPartId, breaks, burst, landed) {
     const f = this.fighters[i], src = f?.parts[Number(partId.split('-')[1])];
     if (!src) return;
     src.obj.updateWorldMatrix(true, false);
     const o = toSide === null ? null : this.fighters[toSide], dst = o && toPartId ? o.parts[Number(toPartId.split('-')[1])] : null;
-    if (dst) dst.held = true;
+    if (dst && breaks) dst.held = true;
     this.ceramic.push({age: 0, f, src, from: new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld), dst, burst, landed, cracked: false, flown: false, hold: -1});
   }
   updateCeramic(dt) {
@@ -1190,10 +1191,12 @@ export class Stage {
       if (!c.flown && c.age >= CERAMIC_WAIT + CERAMIC_CRACK) { c.flown = true; this.burstCeramic(c); }
       if (c.hold >= 0) {
         c.hold += dt;
-        if (c.dst.alive) c.dst.flash = 1.2;
+        if (c.dst?.alive) c.dst.flash = 1.2;
       }
+      // Scattered over the floor: they settle about when they would have landed.
+      if (c.floor > 0 && (c.floor -= dt) <= 0) { c.done = true; c.landed?.(); }
     }
-    this.ceramic = this.ceramic.filter(c => !c.flown || c.dst && !c.done || c.hold >= 0 && c.hold < CERAMIC_HOLD);
+    this.ceramic = this.ceramic.filter(c => !c.flown || !c.done || c.dst && c.hold < CERAMIC_HOLD);
   }
   burstCeramic(c) {
     const {f, from, dst} = c;
@@ -1202,6 +1205,7 @@ export class Stage {
     const out = from.clone().sub(f.center).setY(0);
     if (!dst) {
       this.shards.burst(from, 7, 2.0, GLAZE, out.lengthSq() > 1e-6 ? out.normalize().multiplyScalar(1.4) : null);
+      c.floor = CERAMIC_FLY * 0.7;
       return;
     }
     const to = new THREE.Vector3(), track = () => to.setFromMatrixPosition(dst.obj.matrixWorld);

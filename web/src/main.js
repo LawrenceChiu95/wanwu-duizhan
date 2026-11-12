@@ -475,7 +475,7 @@ async function main() {
       side.querySelector('.core .fill').style.transform = `scaleX(${v.core})`;
       side.querySelector('.core .chip').style.transform = `scaleX(${v.chip})`;
       side.querySelectorAll('.pc').forEach((pc, k) => {
-        // A piece the ceramic shards are flying at keeps its slot as it was until they land.
+        // A piece the ceramic shards broke keeps its slot as it was until they land.
         if (stage.fighters[i]?.parts[k]?.held) return;
         const p = f.parts[k], pf = Math.max(0, p.hp / p.maxHp), bar = pc.querySelector('.mini i');
         bar.style.transform = `scaleX(${pf})`;
@@ -658,7 +658,7 @@ async function main() {
       if (core) overlay.screenFlash(0.18);
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
-      // A piece the ceramic shards are still flying at breaks when they land (Elara f08a6c36).
+      // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       const k = Number(e.targetPart.split('-')[1]);
       if (stage.fighters[e.target]?.parts[k]?.held) heldBreaks.set(`${e.target}:${e.targetPart}`, e);
       else breakNow(e);
@@ -671,7 +671,7 @@ async function main() {
         lastHurt.set(k, by);
         if (e.hpAfter === 0) killer.set(k, by);
       }
-      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, () => sfx.porcelain(), () => {
+      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, e.hpAfter === 0, () => sfx.porcelain(), () => {
         sfx.chink();
         const chip = e.damage > 0 && hudChip(e.target, e.targetPart);
         if (chip) setFlash(chip, 'hurt', 0.7);
