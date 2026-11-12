@@ -148,16 +148,19 @@ const SOUNDS = {
     f.frequency.exponentialRampToValueAtTime(260, t + 0.26);
   },
   crunch(v) { crackle(v, v.t); },
-  // 陶瓷炸片: a glazed piece cracking (a bright snap, a few high inharmonic rings), then small chips tinkling as they
-  // land about 0.3 s on. Thin and high, so it sits apart from the hit's thump under it.
+  // 陶瓷炸片: a glazed piece cracking (a bright snap, a few high inharmonic rings) as it bursts, a beat after the hit's
+  // thump. Thin and high, so it sits apart from it.
   porcelain(v) {
     const t = v.t;
     v.noise(t, 0.035, 0.32, 'highpass', 3800);
     v.noise(t, 0.06, 0.16, 'bandpass', 2400, 1600, 3);
     for (const [f, peak, dur] of [[2960, 0.07, 0.3], [4410, 0.05, 0.22], [6230, 0.03, 0.16]]) v.tone(t + 0.004, dur, peak, 'sine', f, f * 0.985, dur, 0.001);
+  },
+  // The shards landing: a few tiny high chinks, a little spread.
+  chink(v) {
     for (let i = 0; i < 5; i++) {
-      const at = t + 0.24 + i * 0.03 + Math.random() * 0.02, f = 3400 + Math.random() * 2600;
-      v.tone(at, 0.07, 0.035 * (1 - i / 7), 'sine', f, f, 0.07, 0.001);
+      const at = v.t + i * 0.03 + Math.random() * 0.02, f = 3400 + Math.random() * 2600;
+      v.tone(at, 0.07, 0.045 * (1 - i / 7), 'sine', f, f, 0.07, 0.001);
     }
   },
   // A core shattering: a long boom, the crackle, and a falling tone.
@@ -260,7 +263,7 @@ export const sfx = {
     }
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
-  clang: live('clang'), perfect: live('perfect'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  clang: live('clang'), perfect: live('perfect'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {

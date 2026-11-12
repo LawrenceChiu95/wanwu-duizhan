@@ -580,8 +580,9 @@ class Shards {
 
 /** A short ribbon behind a core: its path over the last TRAIL_TIME of sim time, tapering to the tail. */
 /**
- * 陶瓷炸片 (Elara 207a725b 7fffc02e): a few glazed shards that leave the player's ceramic piece and fly into the opposing
- * piece the sim hurt, about 0.3 s on the sim clock (so hit-stop holds them too). The first to land calls back once.
+ * 陶瓷炸片 (Elara 207a725b 7fffc02e, f08a6c36): a few large glazed shards that leave the player's ceramic piece and fly
+ * into the opposing piece the sim hurt, about 0.45 s on the sim clock, each with a thin white wake. The first to land
+ * calls back once. Built on the first real burst, and neither updated nor drawn while none is in the air.
  */
 // White glaze with one blue-and-white chip in three, so they still read over a white plate.
 const GLAZE = [new THREE.Color('#fbf8f2'), new THREE.Color('#dbe8f3'), new THREE.Color('#4a7fd6')];
@@ -596,12 +597,13 @@ class ShardFlight {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 5;
     scene.add(this.mesh);
-    this.items = Array.from({length: n}, () => ({life: 0, wait: 0, dur: 0.3, from: new THREE.Vector3(), last: new THREE.Vector3(), via: new THREE.Vector3(), axis: new THREE.Vector3(0, 1, 0), spin: 0, q: new THREE.Quaternion(), size: 0.05, group: null}));
+    this.items = Array.from({length: n}, () => ({life: 0, wait: 0, dur: 0.45, from: new THREE.Vector3(), last: new THREE.Vector3(), via: new THREE.Vector3(), axis: new THREE.Vector3(0, 1, 0), spin: 0, q: new THREE.Quaternion(), size: 0.1, group: null}));
     this.n = n;
     this.next = 0;
+    this.busy = false;
     this.m = new THREE.Matrix4();
     this.s = new THREE.Vector3();
-    this.update(0);
+    this.clear();
   }
   /**
    * `count` shards from `from` to wherever `to()` is as they fly; `landed()` once, when the first gets there. The two
@@ -614,33 +616,36 @@ class ShardFlight {
       const i = this.next, it = this.items[i];
       this.next = (this.next + 1) % this.n;
       it.from.copy(from).add(tmp3.set(Math.random() - 0.5, 0, Math.random() - 0.5).multiplyScalar(0.08));
-      const ang = base + ((k + 0.5) / count - 0.5) * 2.4 + (Math.random() - 0.5) * 0.25, reach = 0.38 + Math.random() * 0.14;
-      it.via.copy(it.from).add(tmp3.set(Math.cos(ang) * reach, 0.35 + Math.random() * 0.12, Math.sin(ang) * reach));
-      it.wait = k === 0 ? 0 : Math.random() * 0.05;
-      it.dur = dur * (k === 0 ? 1 : 0.9 + Math.random() * 0.25);
+      const ang = base + ((k + 0.5) / count - 0.5) * 2.4 + (Math.random() - 0.5) * 0.25, reach = 0.4 + Math.random() * 0.14;
+      it.via.copy(it.from).add(tmp3.set(Math.cos(ang) * reach, 0.38 + Math.random() * 0.12, Math.sin(ang) * reach));
+      it.wait = k === 0 ? 0 : Math.random() * 0.04;
+      it.dur = dur * (k === 0 ? 1 : 0.95 + Math.random() * 0.15);
       it.life = it.wait + it.dur;
       it.axis.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-      it.spin = 14 + Math.random() * 12;
+      it.spin = 9 + Math.random() * 8;
       it.q.setFromAxisAngle(it.axis, Math.random() * Math.PI);
-      it.size = 0.08 + Math.random() * 0.04;
+      it.size = 0.16 + Math.random() * 0.08;
       it.last.copy(it.from);
       it.group = group;
       this.mesh.setColorAt(i, GLAZE[k % GLAZE.length]);
     }
     this.mesh.instanceColor.needsUpdate = true;
+    this.busy = this.mesh.visible = true;
   }
   update(dt) {
+    let busy = false;
     for (let i = 0; i < this.n; i++) {
       const it = this.items[i];
       if (it.life <= 0) { this.m.makeScale(0, 0, 0); this.mesh.setMatrixAt(i, this.m); continue; }
+      busy = true;
       it.life -= dt;
       const flown = it.dur - it.life; // negative while it waits its turn
       if (flown < 0) { this.m.makeScale(0, 0, 0); this.mesh.setMatrixAt(i, this.m); continue; }
       // Quadratic curve from → via → the piece, quick out of the tangle and slowing as it comes round.
       const k = Math.min(1, flown / it.dur), e = 1 - (1 - k) ** 1.4, a = (1 - e) * (1 - e), b = 2 * e * (1 - e), c = e * e;
       const at = tmp.copy(it.from).multiplyScalar(a).addScaledVector(it.via, b).addScaledVector(it.group.to(), c);
-      // A short white wake every other frame.
-      if (dt > 0 && (it.tick = !it.tick) && k < 0.9) this.streaks.add(at, tmp2.subVectors(at, it.last), tmp3.set(0, 0, 0), 0.16, 0.022, 0.08, WHITE, 0.75);
+      // A thin white wake, laid every frame so it reads as one line.
+      if (dt > 0 && k < 0.92) this.streaks.add(at, tmp2.subVectors(at, it.last), tmp3.set(0, 0, 0), 0.22, 0.014, 0.12, WHITE, 0.7);
       it.last.copy(at);
       it.q.premultiply(tmpQ.setFromAxisAngle(it.axis, it.spin * dt));
       this.m.compose(at, it.q, this.s.setScalar(it.size * (k < 0.85 ? 1 : (1 - k) / 0.15)));
@@ -648,9 +653,13 @@ class ShardFlight {
       if (k >= 1) { it.life = 0; if (!it.group.done) { it.group.done = true; it.group.landed(); } }
     }
     this.mesh.instanceMatrix.needsUpdate = true;
+    if (!busy) this.busy = this.mesh.visible = false;
   }
   clear() { for (const it of this.items) it.life = 0; this.update(0); }
 }
+// The beats of one burst on the sim clock (Elara f08a6c36): the blow's own white flash fades, the plate shows its
+// cracks, then it bursts and the shards fly. Hit-stop holds the whole thing, so it never adds a freeze of its own.
+const CRACK = new THREE.Color('#ffc65a'), CERAMIC_WAIT = 0.1, CERAMIC_CRACK = 0.1, CERAMIC_FLY = 0.45, CERAMIC_HOLD = 0.25;
 
 const TRAIL_N = 28;
 class Trail {
@@ -780,7 +789,8 @@ export class Stage {
     this.rings = new Rings(this.scene);
     this.streaks = new Streaks(this.scene);
     this.shards = new Shards(this.scene);
-    this.flight = new ShardFlight(this.scene, this.streaks);
+    this.flight = null; // 陶瓷炸片: built on the first burst
+    this.ceramic = [];
     this.trails = TEAM.map(c => new Trail(this.scene, c));
     // Afterimages of a lunging core: a few fading team-coloured glows left along its path.
     this.ghosts = Array.from({length: 14}, () => {
@@ -942,6 +952,8 @@ export class Stage {
       s.parts.forEach((p, k) => {
         const part = f.parts[k];
         if (!part) return;
+        // A piece the shards are flying at stays as it was until they land (Elara f08a6c36); the sim has already moved on.
+        if (part.held) return;
         if (part.alive !== p.alive) { part.alive = p.alive; part.holder.visible = p.alive; part.fan.visible = p.alive; }
         part.damage = 1 - p.hp / p.maxHp;
       });
@@ -1117,7 +1129,7 @@ export class Stage {
     g.life = life;
   }
 
-  /** A part breaks off: its model flies away from the break pose with the recorded velocity, tumbling and shrinking. */
+  /** A part breaks off: its model flies away from the break pose with the recorded velocity, tumbling and shrinking. Returns where it broke. */
   breakPart(i, partIndex, e) {
     const f = this.fighters[i];
     const part = f?.parts[partIndex];
@@ -1134,7 +1146,7 @@ export class Stage {
     if (out.lengthSq() > 1e-6) vel.addScaledVector(out.normalize(), 1.2);
     const spinAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
     this.debris.push({piece, vel, spinAxis, spin: 6 + Math.random() * 6, age: 0, life: 1.6, scale0: piece.scale.x});
-    part.alive = false;
+    part.alive = part.held = false;
     part.holder.visible = false;
     part.fan.visible = false;
     const at = piece.position.clone();
@@ -1144,33 +1156,66 @@ export class Stage {
     this.streaks.burst(at, 10, 4.5, 0.35, 0.035, 0.24, [WHITE, TEAM[i]]);
     this.ring(at, TEAM[i], 0.1, 1.4, 0.6);
     this.ring(at, WHITE, 0.05, 0.7, 0.35);
+    return at;
   }
   /**
-   * 陶瓷炸片: the player's ceramic piece, struck hard, throws a few shards. With a piece of the other side in reach they
-   * fly into it and it flashes as they land (the sim has already taken its hp); with none they scatter over the floor.
-   * Only the pieces' models and pooled effects: no words, few particles.
+   * 陶瓷炸片: the player's ceramic piece, struck hard, cracks and throws a few shards. With a piece of the other side in
+   * reach they fly into it; that piece keeps its look (hp, danger glow, mounted) until they land, then flashes for
+   * CERAMIC_HOLD. With none they scatter over the floor. `burst()` when it bursts, `landed()` when they land (the
+   * page's sounds, HUD and a break the sim recorded in the same step). Only the pieces' models and pooled effects.
    */
-  ceramicShards(i, partId, toSide, toPartId, fast) {
+  ceramicShards(i, partId, toSide, toPartId, burst, landed) {
     const f = this.fighters[i], src = f?.parts[Number(partId.split('-')[1])];
     if (!src) return;
     src.obj.updateWorldMatrix(true, false);
-    const from = new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld);
-    src.flash = Math.max(src.flash, 0.6);
-    this.particles.burst(from, GLAZE, 8, 1.2, 0.02, 0.3);
     const o = toSide === null ? null : this.fighters[toSide], dst = o && toPartId ? o.parts[Number(toPartId.split('-')[1])] : null;
+    if (dst) dst.held = true;
+    this.ceramic.push({age: 0, f, src, from: new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld), dst, burst, landed, cracked: false, flown: false, hold: -1});
+  }
+  updateCeramic(dt) {
+    for (const c of this.ceramic) {
+      c.age += dt;
+      // Follow the plate while it is still on its top; the shards leave from wherever it is by then.
+      if (c.src.alive) c.from.setFromMatrixPosition(c.src.obj.matrixWorld);
+      if (!c.cracked && c.age >= CERAMIC_WAIT) {
+        c.cracked = true;
+        // Cracks: a few thin gold lines from the middle of the plate (white would vanish on a white plate), the plate lit.
+        const a0 = Math.random() * Math.PI * 2;
+        for (let k = 0; k < 5; k++) {
+          const ang = a0 + k * 1.257 + (Math.random() - 0.5) * 0.5, d = tmp2.set(Math.cos(ang), 0, Math.sin(ang)), len = 0.1 + Math.random() * 0.06;
+          this.streaks.add(tmp.copy(c.from).addScaledVector(d, len), d, c.f.vel ?? tmp3.set(0, 0, 0), len, 0.014, CERAMIC_CRACK + 0.04, CRACK, 1);
+        }
+      }
+      if (c.cracked && c.age < CERAMIC_WAIT + CERAMIC_CRACK && c.src.alive) c.src.flash = Math.max(c.src.flash, 0.5);
+      if (!c.flown && c.age >= CERAMIC_WAIT + CERAMIC_CRACK) { c.flown = true; this.burstCeramic(c); }
+      if (c.hold >= 0) {
+        c.hold += dt;
+        if (c.dst.alive) c.dst.flash = 1.2;
+      }
+    }
+    this.ceramic = this.ceramic.filter(c => !c.flown || c.dst && !c.done || c.hold >= 0 && c.hold < CERAMIC_HOLD);
+  }
+  burstCeramic(c) {
+    const {f, from, dst} = c;
+    this.particles.burst(from, GLAZE, 8, 1.2, 0.02, 0.3);
+    c.burst?.();
+    const out = from.clone().sub(f.center).setY(0);
     if (!dst) {
-      const out = from.clone().sub(f.center).setY(0);
       this.shards.burst(from, 7, 2.0, GLAZE, out.lengthSq() > 1e-6 ? out.normalize().multiplyScalar(1.4) : null);
       return;
     }
     const to = new THREE.Vector3(), track = () => to.setFromMatrixPosition(dst.obj.matrixWorld);
     track();
     // Out from the player's own top first, away from the other one, so the fan clears both.
-    const out = from.clone().sub(f.center).setY(0);
     if (out.lengthSq() < 1e-6) out.copy(from).sub(to).setY(0);
-    // A shard that breaks the piece lands with the break the sim records in the same step (Sol db0ade04).
-    this.flight.fling(from, track, out, 6, fast ? 0.1 : 0.3, () => {
-      dst.flash = 1;
+    this.flight ??= new ShardFlight(this.scene, this.streaks);
+    this.flight.fling(from, track, out, 6, CERAMIC_FLY, () => {
+      c.done = true;
+      c.hold = 0;
+      // The page breaks it first if the sim did (breakPart takes the hold off); otherwise it catches up with the sim.
+      c.landed?.();
+      dst.held = false;
+      dst.flash = 1.2;
       this.particles.burst(to.clone(), GLAZE, 10, 1.6, 0.022, 0.32);
       this.ring(to.clone(), GLAZE[1], 0.05, 0.6, 0.3);
     });
@@ -1193,13 +1238,14 @@ export class Stage {
     this.rings.clear();
     this.streaks.clear();
     this.shards.clear();
-    this.flight.clear();
+    this.flight?.clear();
+    this.ceramic = [];
     for (const t of this.trails) t.clear();
     for (const g of this.ghosts) g.s.visible = false;
     this.clearDebris();
     for (const f of this.fighters) {
       f.flash = f.strike = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
-      for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.holder.visible = p.fan.visible = true; }
+      for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.held = false; p.holder.visible = p.fan.visible = true; }
     }
     this.cam.shakeAge = SHAKE_TIME;
     this.cam.punch = this.cam.push = null;
@@ -1463,6 +1509,8 @@ export class Stage {
   /** realDt drives camera, rings and glow; simDt drives particles and debris (slow motion applies). */
   render(realDt, simDt) {
     this.time += realDt;
+    // Before the pieces' flash decays, so a plate's cracks and a struck piece read at full brightness.
+    if (this.ceramic.length) this.updateCeramic(simDt);
     if (this.fighters[0]) this.fadeFront(this.fighters[0], this.cam.mode === 'build');
     this.fieldUniforms.fieldTime.value = this.time;
     this.fieldUniforms.fieldZoom.value = 0.84 * (this.kitchen?.photo?.zoom ?? 1);
@@ -1623,12 +1671,12 @@ export class Stage {
     // Test aid (camera-motion.mjs HIDE=1): draw only the floor, wall and backdrop, to measure the camera without the tops.
     if (this.debugHide) {
       for (const f of this.fighters) f.root.visible = f.halo.visible = false;
-      for (const o of [this.particles.points, this.streaks.mesh, this.shards.mesh, this.flight.mesh, this.meRing, ...this.trails.map(t => t.mesh), ...this.ghosts.map(g => g.s), ...this.rings.pool.map(r => r.s), ...this.debris.map(d => d.piece)]) o.visible = false;
+      for (const o of [this.particles.points, this.streaks.mesh, this.shards.mesh, ...(this.flight ? [this.flight.mesh] : []), this.meRing, ...this.trails.map(t => t.mesh), ...this.ghosts.map(g => g.s), ...this.rings.pool.map(r => r.s), ...this.debris.map(d => d.piece)]) o.visible = false;
     }
     this.particles.update(simDt);
     this.streaks.update(simDt);
     this.shards.update(simDt);
-    this.flight.update(simDt);
+    if (this.flight?.busy) this.flight.update(simDt);
     this.rings.update(realDt);
     if (!this.bench?.draw(this.cam.mode === 'build', realDt)) this.renderer.render(this.scene, this.camera);
   }
