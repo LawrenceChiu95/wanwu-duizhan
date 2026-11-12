@@ -8,6 +8,7 @@ import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback} from './playback.js';
+import {BreakHolds} from './break-holds.js';
 import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
@@ -514,13 +515,16 @@ async function main() {
   // `${side}:${part}` → the blow that took its last hp (hpAfter 0), a rebound's included (Sol f82fe05f); the last blow
   // that hurt it stands in for a replay recorded before hpAfter.
   const killer = new Map(), lastHurt = new Map();
-  // 'break' events waiting for the ceramic shards still flying at their piece, by `${side}:${part}` (Elara f08a6c36).
-  const heldBreaks = new Map();
+  // 'break' events waiting for the batch of ceramic shards that caused them (Elara f08a6c36, 937d44f2).
+  const heldBreaks = new BreakHolds();
   let hilite = null; // {t, broke, age, node}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
   function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false) {
     const same = hilite && Math.abs(t - hilite.t) < 1e-6;
-    if (same ? !broke || hilite.broke : hilite && hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD)) return false;
+    // A break always takes the line, even over another break: a broken piece never goes without its words, and none
+    // follow the top (Elara 937d44f2). The 1.2 s hold is for the other lines, and ?call=slot keeps its own rules.
+    const takes = broke && HILITE === 'line';
+    if (!takes && (same ? !broke || hilite.broke : hilite && hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
     if (phase === 'play' && !same) test.highlights++;
     const was = hilite?.node;
     hilite = {t, broke, age: 0, node: null};
@@ -610,7 +614,8 @@ async function main() {
     buzz(25);
     stage.shakeV4(0.8);
     const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
-    if (!said) { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
+    // Over the top only with ?call=slot, or for a break no recorded blow explains; the line always takes a break (937d44f2).
+    if (!said && (HILITE === 'slot' || !by)) { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
     // The camera never moves; only a piece or a core breaking jolts the picture a few px.
     stage.shake(4);
     overlay.screenFlash(0.25);
@@ -659,9 +664,7 @@ async function main() {
       if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
-      const k = Number(e.targetPart.split('-')[1]);
-      if (stage.fighters[e.target]?.parts[k]?.held) heldBreaks.set(`${e.target}:${e.targetPart}`, e);
-      else breakNow(e);
+      if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
     } else if (e.type === 'archetype' && e.archetype === 'brittle') {
       // 陶瓷炸片: the plate cracks a beat after the blow, bursts, and the shards fly into the piece the sim hurt; no new
       // words. Its HUD slot, and a break the sim records in the same step (its line naming the ceramic piece), wait for them.
@@ -671,13 +674,14 @@ async function main() {
         lastHurt.set(k, by);
         if (e.hpAfter === 0) killer.set(k, by);
       }
-      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, e.hpAfter === 0, () => sfx.porcelain(), () => {
+      const batch = heldBreaks.shoot(k, e.hpAfter === 0);
+      stage.ceramicShards(e.side, e.part, e.target, e.targetPart, e.hpAfter === 0 ? batch : null, () => sfx.porcelain(), () => {
         sfx.chink();
         const chip = e.damage > 0 && hudChip(e.target, e.targetPart);
         if (chip) setFlash(chip, 'hurt', 0.7);
-        const b = heldBreaks.get(k);
+        const b = heldBreaks.land(batch);
         // Gone already if its core broke while they flew (scatter took it).
-        if (b) { heldBreaks.delete(k); if (stage.fighters[e.target]?.parts[Number(e.targetPart.split('-')[1])]?.alive) breakNow(b, true); }
+        if (b && stage.fighters[e.target]?.parts[Number(e.targetPart.split('-')[1])]?.alive) breakNow(b, true);
       });
     } else if (e.type === 'dash') {
       if (e.phase === 'charge' && e.side === 1) coach(1);

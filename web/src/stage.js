@@ -1160,18 +1160,19 @@ export class Stage {
   }
   /**
    * 陶瓷炸片: the player's ceramic piece, struck hard, cracks and throws a few shards. With a piece of the other side in
-   * reach they fly into it and it flashes for CERAMIC_HOLD as they land; one they break (`breaks`) keeps its look (hp,
-   * danger glow, mounted) until then, and a later blow that breaks a piece they only hurt is not held (Sol 73406e0c).
+   * reach they fly into it and it flashes for CERAMIC_HOLD as they land; one they break (`hold`, the batch's token) keeps
+   * its look (hp, danger glow, mounted) until this batch lands, not an earlier one at the same piece (Elara 937d44f2);
+   * a later blow that breaks a piece they only hurt is not held (Sol 73406e0c).
    * With none they scatter over the floor. `burst()` when it bursts, `landed()` when they land or settle (the page's
    * sounds, HUD and the break the sim recorded in the same step). Only the pieces' models and pooled effects.
    */
-  ceramicShards(i, partId, toSide, toPartId, breaks, burst, landed) {
+  ceramicShards(i, partId, toSide, toPartId, hold, burst, landed) {
     const f = this.fighters[i], src = f?.parts[Number(partId.split('-')[1])];
     if (!src) return;
     src.obj.updateWorldMatrix(true, false);
     const o = toSide === null ? null : this.fighters[toSide], dst = o && toPartId ? o.parts[Number(toPartId.split('-')[1])] : null;
-    if (dst && breaks) dst.held = true;
-    this.ceramic.push({age: 0, f, src, from: new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld), dst, burst, landed, cracked: false, flown: false, hold: -1});
+    if (dst && hold) dst.held = hold;
+    this.ceramic.push({age: 0, f, src, from: new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld), dst, token: dst && hold, burst, landed, cracked: false, flown: false, hold: -1});
   }
   updateCeramic(dt) {
     for (const c of this.ceramic) {
@@ -1218,7 +1219,7 @@ export class Stage {
       c.hold = 0;
       // The page breaks it first if the sim did (breakPart takes the hold off); otherwise it catches up with the sim.
       c.landed?.();
-      dst.held = false;
+      if (c.token && dst.held === c.token) dst.held = false;
       dst.flash = 1.2;
       this.particles.burst(to.clone(), GLAZE, 10, 1.6, 0.022, 0.32);
       this.ring(to.clone(), GLAZE[1], 0.05, 0.6, 0.3);
