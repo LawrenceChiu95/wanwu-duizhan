@@ -138,7 +138,10 @@
             "orient": "hug"
           }
         ],
-        "spread": "e180"
+        "spread": "e180",
+        "ai": {
+          "reactionDelay": 0.067
+        }
       }
     },
     "current": {
