@@ -955,7 +955,7 @@ export class Stage {
         // A piece the shards are flying at stays as it was until they land (Elara f08a6c36); the sim has already moved on.
         if (part.held) return;
         if (part.alive !== p.alive) { part.alive = p.alive; part.holder.visible = p.alive; part.fan.visible = p.alive; }
-        part.damage = 1 - p.hp / p.maxHp;
+        part.damage = 1 - Math.min(p.maxHp, p.hp + (p.alive ? part.owed ?? 0 : 0)) / p.maxHp;
       });
       f.coreDamage = 1 - s.hp / s.maxHp;
       if (f.coreAlive !== s.hp > 0) { f.coreAlive = s.hp > 0; f.dimTarget = f.coreAlive ? 0 : 1; }
@@ -1162,17 +1162,19 @@ export class Stage {
    * 陶瓷炸片: the player's ceramic piece, struck hard, cracks and throws a few shards. With a piece of the other side in
    * reach they fly into it and it flashes for CERAMIC_HOLD as they land; one they break (`hold`, the batch's token) keeps
    * its look (hp, danger glow, mounted) until this batch lands, not an earlier one at the same piece (Elara 937d44f2);
-   * a later blow that breaks a piece they only hurt is not held (Sol 73406e0c).
+   * a later blow that breaks a piece they only hurt is not held (Sol 73406e0c). One they only hurt shows the hp they
+   * took (`owe`) only as they land: its danger glow and the page's HUD bar read `owed` until then (Elara 4f446065).
    * With none they scatter over the floor. `burst()` when it bursts, `landed()` when they land or settle (the page's
    * sounds, HUD and the break the sim recorded in the same step). Only the pieces' models and pooled effects.
    */
-  ceramicShards(i, partId, toSide, toPartId, hold, burst, landed) {
+  ceramicShards(i, partId, toSide, toPartId, {hold = null, owe = 0, burst, landed} = {}) {
     const f = this.fighters[i], src = f?.parts[Number(partId.split('-')[1])];
     if (!src) return;
     src.obj.updateWorldMatrix(true, false);
     const o = toSide === null ? null : this.fighters[toSide], dst = o && toPartId ? o.parts[Number(toPartId.split('-')[1])] : null;
     if (dst && hold) dst.held = hold;
-    this.ceramic.push({age: 0, f, src, from: new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld), dst, token: dst && hold, burst, landed, cracked: false, flown: false, hold: -1});
+    else if (dst) { owe = Math.max(0, owe); dst.owed = (dst.owed ?? 0) + owe; }
+    this.ceramic.push({age: 0, f, src, from: new THREE.Vector3().setFromMatrixPosition(src.obj.matrixWorld), dst, token: dst && hold, owe: dst && !hold ? owe : 0, burst, landed, cracked: false, flown: false, hold: -1});
   }
   updateCeramic(dt) {
     for (const c of this.ceramic) {
@@ -1218,12 +1220,22 @@ export class Stage {
       c.done = true;
       c.hold = 0;
       // The page breaks it first if the sim did (breakPart takes the hold off); otherwise it catches up with the sim.
+      if (c.owe) { dst.owed = Math.max(0, dst.owed - c.owe); c.owe = 0; }
       c.landed?.();
       if (c.token && dst.held === c.token) dst.held = false;
       dst.flash = 1.2;
       this.particles.burst(to.clone(), GLAZE, 10, 1.6, 0.022, 0.32);
       this.ring(to.clone(), GLAZE[1], 0.05, 0.6, 0.3);
     });
+  }
+  /**
+   * The result card is up: shards still in the air, and what they were holding back, go without a sound or a word
+   * (Elara 4f446065, Pollux edf1ce39 #3). A piece they were to break shows broken at the next pose.
+   */
+  dropCeramic() {
+    this.flight?.clear();
+    this.ceramic = [];
+    for (const f of this.fighters) for (const p of f.parts) { p.held = false; p.owed = 0; }
   }
   /** The loser's core is gone: whatever is still mounted falls away. */
   scatter(i) {
@@ -1250,7 +1262,7 @@ export class Stage {
     this.clearDebris();
     for (const f of this.fighters) {
       f.flash = f.strike = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
-      for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.held = false; p.holder.visible = p.fan.visible = true; }
+      for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.held = false; p.owed = 0; p.holder.visible = p.fan.visible = true; }
     }
     this.cam.shakeAge = SHAKE_TIME;
     this.cam.punch = this.cam.push = null;
