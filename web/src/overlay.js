@@ -115,7 +115,8 @@ export class Overlay {
     v.textContent = verb;
     u.className = `t${whomSide}`;
     u.textContent = `${whom}！`;
-    el.append(b, v, u);
+    // No one to name on the receiving end (「盘子 碎了！」): the 「！」 ends the verb.
+    if (whom) el.append(b, v, u); else { v.textContent += '！'; el.append(b, v); }
     el.style.top = `${Math.round(top)}px`;
     this.layer.append(el);
     this.hilite = {el, age: 0, dur};

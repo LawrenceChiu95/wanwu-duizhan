@@ -519,7 +519,8 @@ async function main() {
   const heldBreaks = new BreakHolds();
   let hilite = null; // {t, broke, age, node}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
-  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false) {
+  // `who`: words for the striker in place of its piece's name (a break no recorded blow explains).
+  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false, who = partName(part, item)) {
     const same = hilite && Math.abs(t - hilite.t) < 1e-6;
     // A break always takes the line, even over another break: a broken piece never goes without its words, and none
     // follow the top (Elara 937d44f2). The 1.2 s hold is for the other lines, and ?call=slot keeps its own rules.
@@ -537,7 +538,7 @@ async function main() {
       return true;
     }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
-    overlay.highlight({who: partName(part, item), verb, whom: partName(targetPart, targetItem), side, whomSide: target}, top, HILITE_TIME);
+    overlay.highlight({who, verb, whom: targetPart ? partName(targetPart, targetItem) : '', side, whomSide: target}, top, HILITE_TIME);
     return true;
   }
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
@@ -602,20 +603,22 @@ async function main() {
   // ---------- events → effects ----------
   // 谁打谁看位置 (combat=position): the replay says so; a live match's events carry positionClash.
   const positionCombat = e => replay?.meta?.combat === 'position' || typeof e.positionClash === 'boolean';
-  // A piece breaking: its line (or 「…碎了」), the model flying off, a crunch and a jolt. `late`: it waited for ceramic
-  // shards, so the 「…碎了」 goes where the piece is now.
+  // A piece breaking: its line (with ?call=slot, its striker's slot and 「…碎了」 over the top), the model flying off, a
+  // crunch and a jolt. `late`: it waited for ceramic shards, so the 「…碎了」 goes where the piece is now.
   function breakNow(e, late = false) {
     const k = `${e.target}:${e.targetPart}`, by = killer.get(k) ?? lastHurt.get(k);
-    // The line already says it, so the 「…碎了」 over the top is left out (Elara 8dbd9359); a slot names only the striker.
-    const said = Boolean(by) && highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true) && HILITE === 'line';
+    // A break always takes the line (Elara 8dbd9359, 937d44f2); with no recorded blow it still says what broke:
+    // 「盘子 碎了！」 (Elara cd8eb72d).
+    if (by) highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true);
+    else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '');
     coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     const at = stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
     sfx.crunch();
     buzz(25);
     stage.shakeV4(0.8);
     const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
-    // Over the top only with ?call=slot, or for a break no recorded blow explains; the line always takes a break (937d44f2).
-    if (!said && (HILITE === 'slot' || !by)) { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
+    // Over the top only with ?call=slot; the line always takes a break (Elara 937d44f2).
+    if (HILITE === 'slot') { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
     // The camera never moves; only a piece or a core breaking jolts the picture a few px.
     stage.shake(4);
     overlay.screenFlash(0.25);
