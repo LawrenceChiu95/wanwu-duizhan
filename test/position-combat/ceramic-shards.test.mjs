@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {loadRules,registerItems} from '../../sim/index.js';
+import {rateItem} from '../../sim/item-rating.js';
 import {PLANAR_JUDGE_COMBAT_OPTIONS as rules,simulateV3} from '../../sim/v3.js';
 
 const plateAndCushion={parts:[
@@ -7,8 +9,8 @@ const plateAndCushion={parts:[
  {item:'fanshuo-cushion',mount:'e180',orient:'hug'}
 ]};
 const shardEvents=match=>match.events.filter(event=>event.type==='archetype'&&event.archetype==='brittle');
-const run=(opponent,combatRules=rules.combatRules)=>simulateV3({
- ...rules,combatRules,fighters:[plateAndCushion,opponent],seed:110304,manual:{sides:['ai','ai']}
+const run=(opponent,combatRules=rules.combatRules,player=plateAndCushion)=>simulateV3({
+ ...rules,combatRules,fighters:[player,opponent],seed:110304,manual:{sides:['ai','ai']}
 });
 const enabled={...rules.combatRules,ceramicShards:true};
 
@@ -39,4 +41,24 @@ test('a ceramic can release shards without hitting the opponent core',async()=>{
  assert.equal(shards[0].targetPart,null);
  assert.equal(shards[0].damage,0);
  assert.equal(shards[0].hpAfter,null);
+});
+
+test('ceramic material names trigger shards under the same impact rules as a plain plate',async(t)=>{
+ const {items,materials}=await loadRules();
+ const plate=items.find(item=>item.id==='fanshuo-plate');
+ for(const [index,[materialName,expected]] of [
+  ['陶瓷和布',1],['陶瓷和织物',1],['瓷器和木',1],['瓷质釉面',1],['瓷',1],['搪瓷',0],['玻璃',0]
+ ].entries()){
+  await t.test(materialName,async()=>{
+   const item={...plate,id:`ceramic-test-${index}`,materialName,generated:true,massBasis:'photo-estimate'};
+   item.rating=rateItem(item,materials);
+   await registerItems([item]);
+   const player={parts:[{...plateAndCushion.parts[0],item:item.id},plateAndCushion.parts[1]]};
+   const match=await run(plateAndCushion,enabled,player);
+   const part=match.meta.initial[0].parts[0];
+   assert(match.events.some(hit=>hit.target===0&&hit.targetPart===part.id&&
+    hit.role==='attack'&&!hit.shield&&hit.damage>=part.maxHp*.20));
+   assert.equal(shardEvents(match).length,expected);
+  });
+ }
 });

@@ -590,7 +590,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      if(M&&event.role==='attack'&&event.damage>0){
       if(event.shield)shieldDamageApplied[event.target]=true;
       else if(ceramicShards&&event.target===0&&event.damage>=tp.maxHp*.20&&!tp.shardsReleased&&
-       /^(陶瓷|瓷器|瓷质|瓷)$/.test(tp.item.materialName?.trim()??''))ceramicHit=tp;
+       /陶瓷|瓷器|瓷质|^瓷$/.test(tp.item.materialName?.trim()??''))ceramicHit=tp;
      }
     }
     lastDamage=t;
