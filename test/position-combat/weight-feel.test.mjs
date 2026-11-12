@@ -231,8 +231,9 @@ test('a disarmed top takes more damage while the opponent keeps both attachments
  const blockSteps=[492,1116,1740,2364];
  const inputsWithBlocks=blocks=>[...dashSteps.map(step=>({step,side:0,action:'dash'})),
   ...blocks.map(step=>({step,side:0,action:'block'}))].sort((a,b)=>a.step-b.step);
+ // This historical replay's fixed block inputs were recorded with the 20 ms reaction base.
  const manual={sides:['input','ai'],aiSeeds:[607157222,3085844492],
-  inputs:inputsWithBlocks([...blockSteps,3032]),aiProfiles:[null,{...foe.ai,...judgeBuild.ai}]};
+  inputs:inputsWithBlocks([...blockSteps,3032]),aiProfiles:[null,{...foe.ai,...judgeBuild.ai,reactionDelay:.02}]};
  const params={...options,fighters,seed:987502,manual};
  const baseline=await simulateV3({...params,combatRules:baselineRules});
  const candidate=await simulateV3({...params,combatRules});
