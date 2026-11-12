@@ -279,9 +279,10 @@ async function main() {
   // (远夏 10-28 2735f129: keep all three).
   // 第 13 版 hand-feel trial only (no on-page option): ?block=0.2 / 0.25 / 0.3 s block window; default is the rules' own.
   const blockTime = ['0.2', '0.25', '0.3'].includes(q.get('block')) ? Number(q.get('block')) : undefined;
-  // 陶瓷炸片 (Elara 207a725b 7fffc02e), off unless ?ceramic=1: the player's ceramic piece, struck hard, hurts a piece of the
-  // other side's (Sol's combatRules.ceramicShards, played live only).
-  const ceramic = q.get('ceramic') === '1' && combatOptions.combatRules?.lockCorePlane === true;
+  // Enable ceramic shards in the planar judge build. Keep the explicit toggle for local trials.
+  const ceramicArg = q.get('ceramic');
+  const ceramic = combatOptions.combatRules?.lockCorePlane === true
+    && (ceramicArg === '1' || (__JUDGE__ && __COMBAT__ === 'position' && ceramicArg !== '0'));
   let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
   await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
@@ -863,7 +864,7 @@ async function main() {
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramic ? '&ceramic=1' : ''}${stage.bench ? '&scene=kitchen' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     el.pad.hidden = true;
