@@ -588,11 +588,15 @@ test('transient query recovers inside bounded backoff without duplicate creation
  assert.deepEqual(delays, [1000, 2000]); assert.deepEqual(g.creates, ['image', 'mesh']);
 });
 
-for (const [phase, route, response] of [
- ['credential', '/asset/v1/token', () => new Response('secret', {status: 503})],
- ['send-file', '/single/upload', () => { throw new TypeError('private transport details'); }],
- ['poll-status', '/upload/status', () => { throw new DOMException('private timeout details', 'TimeoutError'); }]
-]) test(`one transient ${phase} failure retries the original photo before the first paid request`, async t => {
+for (const [phase, route, reason, response] of [
+ ['credential', '/asset/v1/token', 'http', () => new Response('secret', {status: 503})],
+ ['send-file', '/single/upload', 'transport', () => { throw new TypeError('private transport details'); }],
+ ['poll-status', '/upload/status', 'timeout', () => { throw new DOMException('private timeout details', 'TimeoutError'); }],
+ ['poll-status', '/upload/status', 'upload-failed', () => Response.json({c: '0', d: {status: 6, errorCode: 5}})],
+ ['send-file', '/single/upload', 'business', () => Response.json({c: 'UNKNOWN_UPLOAD_ERROR', m: 'private reply', d: null})],
+ ['poll-status', '/upload/status', 'invalid-reply', () => Response.json({c: '0', d: {status: 5}})],
+ ['credential', '/asset/v1/token', 'invalid-reply', () => new Response('private malformed reply')]
+]) test(`one ${phase} ${reason} failure retries the original photo before the first paid request`, async t => {
  const directory = await dir(), g = gateway(), sent = [], logs = [];
  const request = async (url, options) => {
   if (url.endsWith('/single/upload')) sent.push(sha256(Buffer.from(await options.body.get('file').arrayBuffer())));
@@ -625,6 +629,7 @@ for (const [phase, route, response] of [
   const diagnostic = JSON.parse(uploadLogs[0].slice(prefix.length));
   assert.equal(diagnostic.jobId, j.id);
   assert.equal(diagnostic.step, phase);
+  assert.equal(diagnostic.reason, reason);
   assert.equal(diagnostic.attempt, 1);
   assert.equal(diagnostic.retry, true);
   assert.ok(Number.isFinite(Date.parse(diagnostic.time)));
@@ -688,19 +693,67 @@ test('two upload failures refund the same browser, preserve the photo and requir
  assert.equal((await jobs.quota(owner)).used, 1);
 });
 
-test('an upload credential rejection refunds the slot without automatic retry', async t => {
- const directory = await dir(), g = gateway();
- let credentials = 0;
- const request = (url, options) => url.endsWith('/asset/v1/token')
-  ? (credentials++, new Response('', {status: 403})) : g.fetch(url, options);
- const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async () => {}}});
+for (const [route, reason, response] of [
+ ['/asset/v1/token', 'http', () => new Response('', {status: 403})],
+ ['/upload/status', 'upload-stopped', () => Response.json({c: '0', d: {status: 8}})],
+ ['/single/upload', 'business', () => Response.json({c: 'INVALID_CONTENT', d: {errorCode: 5}})]
+]) test(`an upload ${reason} rejection refunds the slot without automatic retry`, async t => {
+ const directory = await dir(), g = gateway(), logs = [];
+ let calls = 0;
+ const request = (url, options) => url.endsWith(route) ? (calls++, response()) : g.fetch(url, options);
+ const jobs = await openJobs({directory, mode: 'real', env,
+  limits: {browser: {generation: 1, recognition: 5}, global: {generation: 2, recognition: 400}},
+  realOptions: {fetch: request, pause: async () => {}}});
  t.after(() => jobs.close());
- const j = await jobs.create({photo: image, clientKey: 'upload-credential-test-001'});
- assert.equal((await finish(jobs, j.id)).error.code, 'photo-upload');
- assert.equal(credentials, 1);
+ const {owner} = jobs.session();
+ const j = await jobs.create({photo: image, clientKey: 'upload-rejected-test-001'}, owner);
+ const log = console.error; console.error = (...args) => logs.push(args.join(' '));
+ let failed;
+ try { failed = await until(() => jobs.get(j.id, owner), job => job.status === 'failed'); }
+ finally { console.error = log; }
+ assert.equal(failed.error.code, 'photo-upload');
+ assert.equal(failed.error.charged, false);
+ assert.equal(calls, 1);
  assert.deepEqual(g.creates, []);
- const quota = await jobs.quota();
- assert.equal(quota.remaining, quota.limit);
+ const quota = await jobs.quota(owner);
+ assert.equal(quota.remaining, 1);
+ assert.equal(quota.global.remaining, 2);
+ assert.equal(quota.used, 0);
+ const prefix = 'Shoot photo upload failed: ';
+ const diagnostic = JSON.parse(logs.find(line => line.startsWith(prefix)).slice(prefix.length));
+ assert.equal(diagnostic.reason, reason);
+ assert.equal(diagnostic.retry, false);
+});
+
+test('shutdown during photo upload refunds the slot and never retries automatically after restart', async t => {
+ const directory = await dir(), g = gateway();
+ let uploads = 0;
+ const request = (url, options) => {
+  if (!url.endsWith('/single/upload')) return g.fetch(url, options);
+  uploads++;
+  return new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(options.signal.reason), {once: true}));
+ };
+ const open = () => openJobs({directory, mode: 'real', env,
+  limits: {browser: {generation: 1, recognition: 5}, global: {generation: 2, recognition: 400}},
+  realOptions: {fetch: request, pause: async () => {}}});
+ let jobs = await open();
+ t.after(() => jobs.close());
+ const {owner, token} = jobs.session();
+ const j = await jobs.create({photo: image, clientKey: 'upload-shutdown-test-001'}, owner);
+ await until(async () => uploads, Boolean);
+ await jobs.close();
+ jobs = await open();
+ assert.equal(jobs.session(token).owner, owner);
+ const saved = await jobs.get(j.id, owner);
+ assert.equal(saved.status, 'failed');
+ assert.equal(saved.error.code, 'photo-upload');
+ assert.equal(saved.error.charged, false);
+ const quota = await jobs.quota(owner);
+ assert.equal(quota.remaining, 1);
+ assert.equal(quota.global.remaining, 2);
+ assert.equal(quota.used, 0);
+ assert.equal(uploads, 1);
+ assert.deepEqual(g.creates, []);
 });
 
 // Include the fixed 5-second retake window before exercising shutdown.

@@ -275,8 +275,9 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     } catch (error) {
       // Received recognition failures are paid responses too: preserve their
       // classification during close, just as a successful recognition is saved.
+      // Interrupted photo uploads finish here so shutdown refunds the unused slot.
       const rejectedStage = error.creationRejected && error.creationRejected === record.providerState?.pending;
-      if ((!closed || !j.recognition || rejectedStage) && !storageError) await serial(async () => {
+      if ((!closed || !j.recognition || rejectedStage || error.uploadInterrupted) && !storageError) await serial(async () => {
         if (!j.recognition && record.providerState) delete record.providerState.recognitionPending;
         if (rejectedStage) delete record.providerState.pending;
         if (error.code === 'quota') { await fail(record, 'quota', {message: error.message, retry: 'none', kind: error.kind, scope: error.scope, resetsAt: error.resetsAt}); return; }

@@ -24,6 +24,22 @@ function unwrap(reply) {
   return reply.d;
 }
 
+function uploadReply(reply, polling = false) {
+  if (!['number', 'string'].includes(typeof reply?.c) || String(reply.c).trim() === '') throw Error('Invalid upload reply');
+  const detail = reply.d;
+  if (polling && detail?.status === 8) {
+    throw Object.assign(Error('Upload was stopped'), {reason: 'upload-stopped', uploadRetryable: false});
+  }
+  if (polling && detail?.status === 6) throw Object.assign(Error('Photo upload failed'), {reason: 'upload-failed'});
+  const subcode = Number(detail?.errorCode);
+  if (String(reply.c) !== '0' || (Number.isSafeInteger(subcode) && subcode > 0)) {
+    // OUS codes that require changing the configuration or uploaded file.
+    const uploadRetryable = ![1, 2, 4, 5, 11].includes(subcode);
+    throw Object.assign(Error('Upload service returned a business error'), {reason: 'business', uploadRetryable});
+  }
+  return detail;
+}
+
 // Only credential-free asset GETs may redirect. Every hop is checked, including
 // relative Location values; API and upload requests keep redirect:'error'.
 async function download(url, file, request, cancelled) {
@@ -72,14 +88,14 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     catch (error) {
       const timeout = error.name === 'TimeoutError';
       throw Object.assign(Error('Network request failed. Existing task IDs and pending flags are kept; rerun to resume, never recreate blindly.'), {
-        transient: timeout || error instanceof TypeError, reason: timeout ? 'timeout' : 'transport'
+        reason: timeout ? 'timeout' : 'transport'
       });
     }
     if (!response.ok) {
-      await response.body?.cancel();
+      await response.body?.cancel().catch(() => {});
       const status = response.status;
       throw Object.assign(Error(`HTTP ${status}; existing tasks are kept; no generation retry.`), {
-        transient: status >= 500 || status === 408 || status === 429, reason: 'http', status
+        reason: 'http', status
       });
     }
     return response;
@@ -91,7 +107,7 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
     catch (error) {
       const timeout = error.name === 'TimeoutError';
       throw Object.assign(Error('Could not read the API reply. Pending task creation is not retried.'), {
-        transient: timeout || error instanceof TypeError, reason: timeout ? 'timeout' : 'response-read'
+        reason: timeout ? 'timeout' : 'response-read'
       });
     }
     try { return JSON.parse(bytes.toString()); }
@@ -167,31 +183,31 @@ export async function photoToGlb({photo, key, prompt, folder, state, save, fetch
         let uploadStep = 'credential';
         try {
           const token = await api('/asset/v1/token');
-          if (!token?.ousToken || !Number.isSafeInteger(Number(token.blockSize)) || Number(token.blockSize) <= 0) throw Error('Invalid upload token reply');
+          if (typeof token?.ousToken !== 'string' || !token.ousToken.trim() || !Number.isSafeInteger(Number(token.blockSize)) || Number(token.blockSize) <= 0) throw Error('Invalid upload token reply');
           const domain = https(token.globalDomain).replace(/\/$/, ''), headers = {'ous-token-v2': token.ousToken};
           const md5 = crypto.createHash('md5').update(photo).digest('hex'), size = Number(token.blockSize);
           uploadStep = 'send-file';
           const part = async (route, fields, content) => {
             const form = new FormData(); for (const [k, v] of Object.entries(fields)) form.append(k, String(v));
             form.append('file', new Blob([content], {type: 'application/octet-stream'}), 'photo.jpg');
-            unwrap(await json(domain + route, {method: 'POST', headers, body: form}));
+            uploadReply(await json(domain + route, {method: 'POST', headers, body: form}));
           };
           if (photo.length > size) {
             const query = new URLSearchParams({md5, blocks: String(Math.ceil(photo.length / size)), size: String(photo.length), name: 'photo.jpg'});
-            const init = unwrap(await json(`${domain}/ous/api/v2/block/upload/init?${query}`, {method: 'POST', headers}));
-            if (!init?.deduplicated) for (let offset = 0; offset < photo.length; offset += size) await part('/ous/api/v2/block/upload/part', {block: offset / size + 1}, photo.subarray(offset, offset + size));
+            const init = uploadReply(await json(`${domain}/ous/api/v2/block/upload/init?${query}`, {method: 'POST', headers}));
+            if (!init || typeof init !== 'object' || Array.isArray(init)) throw Error('Invalid multipart upload reply');
+            if (!init.deduplicated) for (let offset = 0; offset < photo.length; offset += size) await part('/ous/api/v2/block/upload/part', {block: offset / size + 1}, photo.subarray(offset, offset + size));
           } else await part('/ous/api/v2/single/upload', {md5}, photo);
           uploadStep = 'poll-status';
           for (let i = 0; i < 150; i++) {
-            const detail = unwrap(await json(`${domain}/ous/api/v2/upload/status`, {headers}));
-            if (detail?.status === 5 && detail.url) { state.photoUrl = https(detail.url); break; }
-            if ([6, 8].includes(detail?.status)) throw Error('Photo upload failed');
+            const detail = uploadReply(await json(`${domain}/ous/api/v2/upload/status`, {headers}), true);
+            if (detail?.status === 5) { state.photoUrl = https(detail.url); break; }
+            if (![0, 1, 2, 3, 4, 7].includes(detail?.status)) throw Error('Invalid upload status reply');
             await waitPause(2000);
           }
-          if (!state.photoUrl) throw Object.assign(Error('Photo upload timed out; no generation was submitted'), {transient: true, reason: 'timeout'});
+          if (!state.photoUrl) throw Object.assign(Error('Photo upload timed out; no generation was submitted'), {reason: 'timeout'});
         } catch (error) {
-          signal?.throwIfAborted();
-          throw Object.assign(error, {uploadStep});
+          throw Object.assign(error, {uploadStep, uploadRetryable: error.status !== 403 && error.uploadRetryable !== false});
         }
         await stamp('upload_finished');
       }
