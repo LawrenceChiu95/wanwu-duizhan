@@ -380,23 +380,25 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #shootTag:not(.done):not(.bad) { clip-path:none;border-radius:1px;background:#0b1c15f2;box-shadow:inset 0 0 0 1px #476649,0 6px 16px #000a;color:var(--ink); }
 #shootTag:not(.done):not(.bad) small { color:#92b4a1; }
 
-/* ---------- 冲挡加重 (Elara fa18a1da, 8723e99a, 9eb901cb) ---------- */
-/* A locked pad (stunned, or 冲 held after a block that caught nothing): the plate goes grey under dark hazard stripes and a
-   pale sweep runs across it over the lock, so a press that does nothing reads as locked rather than missed. */
-#pad .pad.locked { filter:grayscale(1) brightness(.62);color:#2a2e2b; }
-#pad .pad.locked:not(.deny)::before { content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:repeating-linear-gradient(135deg,#0b0f0d99 0 7px,transparent 7px 15px); }
-#pad .pad.locked .cd { opacity:1;background:linear-gradient(90deg,#ffffff10,#ffffff55); }
-#pad .pad.locked .cd::after { background:#f2f2ea;box-shadow:0 0 8px 2px #f2f2ea88; }
-#pad .pad.locked svg { opacity:.45; }
-/* The cooldown seconds, light on the dark chip on both pads: 挡's dark-green ink (cream plate) left its number almost
-   unreadable, and with an empty block now locking 冲 the player needs to see when 挡 is back (Elara 968a997a). */
-#pad .pad .left { color:#f4f1e4; }
-#pad .pad.locked .left { background:#0b0f0dcc; }
-/* 弹开！: the lit plate of a hit, in a cold white phosphor; a perfect block bigger, with a brass edge. */
-#fx .num.verdict.deflect {
-  --signal:#c9f3ff;background:linear-gradient(170deg,#ffffff,var(--signal));color:#0c1513;
-  border:1px solid #fff;border-left:3px solid #0c1918;font:900 21px/1.15 var(--display);padding:4px 10px;
-  box-shadow:0 0 14px #c9f3ffaa,0 1px 3px #000a;
-}
-#fx .num.verdict.deflect.perfect { font-size:26px;padding:5px 12px;border-left-color:#e7b354;box-shadow:0 0 18px #ffe9a8cc,0 0 6px #fff,0 1px 3px #000a; }
+/* ---------- 冲挡加重 (Elara fa18a1da; reworked to the plates after his 「丑」, Elara 2065efad, Castor 11968242) ---------- */
+/* Cooling: the part of the plate not yet back is in shade, the whole face top to bottom out to the frame's rim, shrinking
+   to the right as the button recovers; no bar, no light edge. Multiply keeps the plate's wear showing through. */
+#pad .pad { overflow:visible; }
+#pad .pad .cd { left:calc(var(--p,0) * (100% + 8px) - 4px);right:-4px;top:-4px;bottom:-4px;width:auto;
+  background:#76807a;mix-blend-mode:multiply;transition:none; }
+#pad .pad .cd::after { content:none; }
+#pad .pad.cooling { background:none;color:inherit; }
+#pad .pad.dash.cooling { color:#252819; }
+#pad .pad.block.cooling { color:#253c2d; }
+#pad .pad.cooling span { text-shadow:none; }
+/* The seconds left, stamped on the plate in the same face and ink as 冲 / 挡. */
+#pad .pad .left { background:none;box-shadow:none;border-radius:0;min-width:0;color:inherit;
+  font:inherit;line-height:1;letter-spacing:0;font-variant-numeric:tabular-nums; }
+/* Locked (stunned): the whole face in the same shade, the icon dimmed; nothing else. */
+#pad .pad.locked { filter:none; }
+#pad .pad.locked .cd { opacity:1;left:-4px; }
+#pad .pad.locked svg { opacity:.5; }
+/* 弹开！: a small plate in the line under the HUD where 冲中 goes, the HUD's dark enamel with a brass edge; one look, since
+   every block that bounces a top now caught a 冲 (Elara 03075914). */
+#fx .hilite.deflect { --signal:#e7b354;border-color:#b8913f;font-size:19px;padding:4px 12px;letter-spacing:.12em;
+  box-shadow:inset 0 0 0 1px #e7b35440,0 1px 3px #000a; }

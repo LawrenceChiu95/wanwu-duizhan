@@ -525,7 +525,7 @@ async function main() {
   // broken on either side: three or four a match (Elara 8dbd9359). A line holds at least 1.2 s on screen (the picture's
   // clock, so slow motion and hit-stop count; Sol 7ff4ad44) before a newer one may replace it, a break its whole 1.4 s;
   // a break in the same step (replay time) as the 冲 that did it takes that line over, counted once.
-  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4, HILITE_HOLD = 1.2;
+  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4, HILITE_HOLD = 1.2, DEFLECT_LINE_TIME = 0.9;
   // `${side}:${part}` → the blow that took its last hp (hpAfter 0), a rebound's included (Sol f82fe05f); the last blow
   // that hurt it stands in for a replay recorded before hpAfter.
   const killer = new Map(), lastHurt = new Map();
@@ -662,7 +662,7 @@ async function main() {
   }
   // 冲挡加重 (Elara fa18a1da): a block that bounced the other top away (Sol 661f75e1). The blocker's bubble flares and the
   // bounced top is flung with streaks, the picture shakes, Playback slows 0.12 s (0.15 s for a perfect one, a lunge caught
-  // head-on), and over the player's own top one word: 「弹开！」, the perfect one bigger and brighter. The other top's
+  // head-on), and for the player's own block one word, 「弹开！」, in the line under the HUD (deflectLine). The other top's
   // block gets the picture only. It stands in for the parry of the same step.
   function deflect(e, point) {
     lastDeflectT = e.t;
@@ -670,13 +670,24 @@ async function main() {
     if (!at) return;
     stage.parry(e.side, at, e.attacker);
     if (perfect) stage.perfectBlock(e.side, at);
-    overlay.screenFlash(perfect ? 0.5 : 0.32);
+    // Every bounce is a perfect one now: the screen flash stays at the plain block's, so the flash, the ring and the plate
+    // are never all white at once (Elara 2065efad).
+    overlay.screenFlash(0.32);
     stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
     if (perfect) sfx.perfect();
     buzz(perfect ? [30, 40, 60] : [25, 40]);
-    verdict(e.side, '弹开！', perfect ? 'deflect perfect' : 'deflect');
+    if (e.side === 0) deflectLine(e.t);
+  }
+  // 「弹开！」: a small dark plate where 冲中 goes, not on the tops (Elara 2065efad), one look for every bounce (Elara 03075914).
+  // It takes the line from anything but a break, which a broken piece never goes without.
+  function deflectLine(t) {
+    if (hilite?.broke && hilite.age < HILITE_TIME) return;
+    if (hilite?.node) dropFlash(hilite.node);
+    hilite = {t, broke: false, age: 0, node: null};
+    const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
+    overlay.plate('弹开！', 'deflect', top, DEFLECT_LINE_TIME);
   }
   function onEvent(e) {
     if (e.type === 'contact' || e.type === 'hit' || e.type === 'weak') stage.kitchen?.photo.noteCollision();
@@ -908,7 +919,8 @@ async function main() {
     if (id !== runId) return;
     el.busy.hidden = true;
     replay = r;
-    pb = new Playback(r);
+    // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
+    pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true});
     // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.
     pb.softGlance = Boolean(live) && !oldFx;
     liveSlowShown = false;
@@ -1420,8 +1432,8 @@ async function main() {
     if (!live || el.pad.hidden) return;
     const c = live.match.control(0), M = rules.manual;
     // 冲挡加重 (Elara 8723e99a, 9eb901cb): locked, not cooling, while the top is stunned (both buttons) or 冲 is held after
-    // a block that caught nothing (Sol 4ef6dad5): the button goes grey and striped and a grey fill runs across it over the
-    // lock, no seconds. A button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps the
+    // a block that caught nothing (Sol 4ef6dad5; gone from the rules since Elara 2065efad): the whole plate goes into
+    // shade, no seconds (terminal.css). A button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps the
     // cooldown's seconds and fill under the stripes. The lock wins over a 冲 or 挡 already going (a shield up as a heavy
     // lunge ends, a lunge charging as the shield runs out empty): that keeps going, but the button no longer lights as if
     // a tap would count (Sol e0535c0d). A tap shakes it as in cooling.
