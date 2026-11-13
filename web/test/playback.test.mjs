@@ -77,6 +77,23 @@ test('a deflect in the same step stands in for the parry: its own shorter freeze
   close(p.dilate, 0);
 });
 
+test('live in the new feel a glance that strikes freezes as an ordinary knock, whatever it hit (Elara fc75c4cc)', () => {
+  const crit = {t: .01, type: 'weak', role: 'attack', dashQuality: 'glance'};
+  for (const [soft, stop] of [[true, .045], [false, .16]]) {
+    const p = new Playback(fixture([crit]));
+    p.slowEnabled = false;
+    p.softGlance = soft;
+    p.advance(.02, 1, () => {});
+    close(p.hold, stop - .01);
+  }
+  // A crit that was no glance keeps its beat.
+  const p = new Playback(fixture([{...crit, dashQuality: null}]));
+  p.slowEnabled = false;
+  p.softGlance = true;
+  p.advance(.02, 1, () => {});
+  close(p.hold, .15);
+});
+
 const options = {
   fighters: [
     {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'pillow', mount: 'e180', orient: 'hug'}]},

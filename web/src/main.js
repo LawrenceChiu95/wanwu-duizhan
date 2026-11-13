@@ -312,7 +312,8 @@ async function main() {
   let fought = null, outcome = null;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
-  let lastParryT = -Infinity, lateNums = [];
+  // lastKnockT: the step of the latest ordinary knock shown, so a glance in the same step does not knock twice.
+  let lastParryT = -Infinity, lastKnockT = -Infinity, lateNums = [];
   // The latest lunge direction per side (its 'go'), for the push of a landed 冲; a bounce off a shield, held a step so a
   // deflect in the same step can stand in for it (Sol 661f75e1: the two come together, said once).
   const lungeDir = [null, null];
@@ -687,7 +688,10 @@ async function main() {
     }
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
-      const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
+      // 冲挡加重: a glance (a lunge off its lane) is the smallest ordinary knock however it struck: no core-sized shake, no
+      // 暴击 flash or line, so it never reads like a landed 冲; its damage and breaks show as usual (Elara 14f39c4f).
+      const glance = !oldFx && e.dashQuality === 'glance', crit = e.type === 'weak' && !glance;
+      const core = e.targetPart === 'core' && !glance, big = core || crit || e.tier >= 2 && !glance, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
         // The moment of impact is as bright as the old 评委版 (Elara e6f14ad0); 凡朔's field and colours stay as they are.
@@ -701,10 +705,11 @@ async function main() {
         buzz(40);
       } else {
         // An ordinary knock: the same, scaled down.
+        lastKnockT = e.t;
         stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
         stage.impact(point, e.shield ? 0.18 : big ? 0.65 : 0.32, [WHITE, SPARK, TEAM[e.attacker]]);
         overlay.screenFlash(big ? 0.05 : 0.025);
-        sfx.hit(Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit: e.type === 'weak'});
+        sfx.hit(glance ? 0.6 : Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit});
       }
       // Every blow shakes the picture, 凡朔's fixed camera included (photo-kitchen.js).
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
@@ -717,10 +722,10 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if (e.attacker === 0 && (e.type === 'weak' || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, e.type === 'weak' ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
+        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
       }
       if (core) overlay.screenFlash(0.18);
-      if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+      if (crit) { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
@@ -757,6 +762,19 @@ async function main() {
         const q = quality(e);
         // 冲空, 擦边 and 被挡 say no word (凡朔 11-11, Elara d021fab4); a miss still shows and sounds its whiff.
         if (q === 'miss') { stage.whiff(e.side); sfx.whiff(); }
+        // 冲挡加重: a glance (off the lunge's lane) still knocks like an ordinary collision, its spark, sound and small shake,
+        // when the step showed none (a hit inside the shared damage cooldown sends no hit); never the 冲中 treatment, no
+        // word (Elara 61eededb). ?feel=old keeps the 评委版's silence.
+        else if (q === 'glance' && !oldFx && e.t !== lastKnockT) {
+          const at = point ?? stage.fighters[e.side]?.center;
+          if (at) {
+            stage.burst(at, [WHITE, SPARK, TEAM[e.side], WHITE], 22, 2.0, 0.022, 0.45);
+            stage.impact(at, 0.32, [WHITE, SPARK, TEAM[e.side]]);
+          }
+          overlay.screenFlash(0.025);
+          sfx.hit(0.6);
+          stage.shakeV4(0.3);
+        }
       }
     } else if (e.type === 'dashAim') {
       // The lunge follows the target until just before it goes (Sol, 同平面 PR #103): the arrow turns and resizes with it.
@@ -889,6 +907,8 @@ async function main() {
     el.busy.hidden = true;
     replay = r;
     pb = new Playback(r);
+    // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.
+    pb.softGlance = Boolean(live) && !oldFx;
     liveSlowShown = false;
     stage.setFighters(r.meta.initial.map(f => f.definition));
     stage.clearFx();
@@ -905,7 +925,7 @@ async function main() {
     el.pad.hidden = !live;
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
-    lastParryT = -Infinity;
+    lastParryT = lastKnockT = -Infinity;
     test.highlights = 0;
     layout_();
     stage.pose(pb.state);
@@ -945,7 +965,7 @@ async function main() {
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
-    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id));
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx});
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
