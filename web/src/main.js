@@ -543,6 +543,8 @@ async function main() {
     if (!takes && hilite && !hilite.deflect && (same ? !broke || hilite.broke : hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
     if (phase === 'play' && !same) test.highlights++;
     const was = hilite?.node;
+    // ?call=slot: a 「弹开！」 plate still up goes with the line it gave way to (Sol 9961be5a).
+    if (hilite?.deflect) overlay.dropHighlight();
     hilite = {t, broke, age: 0, node: null};
     if (HILITE === 'slot') {
       const a = strikerChip(side, part);
@@ -744,7 +746,8 @@ async function main() {
         if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
       }
       if (core && !caught) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
-      if (crit && !caught) { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+      // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
+      if (crit && !caught) { overlay.screenFlash(dash && !oldFx ? 0.06 : 0.45); stage.ring(point, HOT, 0.05, dash && !oldFx ? 0.6 : 0.9, 0.45); }
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
