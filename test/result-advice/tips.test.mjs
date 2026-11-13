@@ -145,6 +145,17 @@ test('the result card counts 冲中 and 完美挡 as the match showed them (冲�
   assert.equal(s.landed, 1);
   assert.equal(s.perfect, 3);
   assert.equal(s.blocks, 6);
+  // ?feel=old counts as the 评委版 does: a glance is a 冲中 there (Elara 14f39c4f).
+  const old = matchStats({events: [
+    {type: 'dash', phase: 'end', side: 0, quality: 'full'},
+    {type: 'dash', phase: 'end', side: 0, quality: 'glance'},
+    {type: 'dash', phase: 'end', side: 0, quality: 'miss'},
+    {type: 'blockResult', side: 0, outcome: 'perfect', damageApplied: true},
+    {type: 'blockResult', side: 0, outcome: 'perfect', damageApplied: false}
+  ]}, [{parts: []}, {parts: []}], undefined, {oldFeel: true});
+  assert.equal(old.landed, 2);
+  assert.equal(old.missed, 1);
+  assert.equal(old.perfect, 1);
 });
 
 test('effective blocks do not suppress explicit defensive orientation advice or winning advice', () => {

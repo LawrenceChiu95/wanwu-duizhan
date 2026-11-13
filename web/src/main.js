@@ -688,7 +688,10 @@ async function main() {
     }
     if (e.type === 'hit' || e.type === 'weak') {
       if (e.role === 'recoil') { stage.flashPart(e.target, e.targetPart, 0.3); return; }
-      const core = e.targetPart === 'core', big = core || e.type === 'weak' || e.tier >= 2, dash = e.dash && !e.parry;
+      // 冲挡加重: a glance (a lunge off its lane) is the smallest ordinary knock however it struck: no core-sized shake, no
+      // 暴击 flash or line, so it never reads like a landed 冲; its damage and breaks show as usual (Elara 14f39c4f).
+      const glance = !oldFx && e.dashQuality === 'glance', crit = e.type === 'weak' && !glance;
+      const core = e.targetPart === 'core' && !glance, big = core || crit || e.tier >= 2 && !glance, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
         // The moment of impact is as bright as the old 评委版 (Elara e6f14ad0); 凡朔's field and colours stay as they are.
@@ -706,7 +709,7 @@ async function main() {
         stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
         stage.impact(point, e.shield ? 0.18 : big ? 0.65 : 0.32, [WHITE, SPARK, TEAM[e.attacker]]);
         overlay.screenFlash(big ? 0.05 : 0.025);
-        sfx.hit(Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit: e.type === 'weak'});
+        sfx.hit(glance ? 0.6 : Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit});
       }
       // Every blow shakes the picture, 凡朔's fixed camera included (photo-kitchen.js).
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
@@ -719,10 +722,10 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if (e.attacker === 0 && (e.type === 'weak' || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, e.type === 'weak' ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
+        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
       }
       if (core) overlay.screenFlash(0.18);
-      if (e.type === 'weak') { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+      if (crit) { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
@@ -960,7 +963,7 @@ async function main() {
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
-    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id));
+    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx});
     el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);

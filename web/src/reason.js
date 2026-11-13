@@ -55,8 +55,9 @@ export function endLine(replay) {
 }
 
 /** What the player did this match, from the replay's own events (the page never judges a hit itself). */
-/** `shot(id)`: whether the player photographed this item (拍一件), for `outmatched`. */
-export function matchStats(replay, defs, shot = () => false) {
+/** `shot(id)`: whether the player photographed this item (拍一件), for `outmatched`. `oldFeel`: ?feel=old, counted exactly as
+ * the 评委版 counts (a glance is a 冲中 there, Elara 14f39c4f). */
+export function matchStats(replay, defs, shot = () => false, {oldFeel = false} = {}) {
   const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null],
     // Advice follows this item's scores, rather than its category or overall grade.
     hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null,
@@ -66,7 +67,7 @@ export function matchStats(replay, defs, shot = () => false) {
       s.presses++;
       const q = e.quality ?? (e.outcome === 'hit' ? 'full' : e.outcome);
       // 冲中 counts the lunges the match showed as landed; a glance shows none of that, so it is not one (Elara 61eededb).
-      if (q === 'full') s.landed++;
+      if (q === 'full' || oldFeel && q === 'glance') s.landed++;
       else if (q === 'blocked') s.blocked++;
       else if (q === 'miss') s.missed++;
     } else if (e.type === 'blockResult' && e.side === 0) {
