@@ -891,7 +891,7 @@ export class Stage {
   buildFighter(def, i) {
     const team = TEAM[i];
     const root = new THREE.Group();
-    const coreUniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
+    const coreUniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uWarm: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
     const coreMat = new THREE.MeshStandardMaterial({map: this.coreTex[i].map, emissiveMap: this.coreTex[i].emissive, emissive: new THREE.Color(1, 1, 1), emissiveIntensity: 0.9, metalness: 0.75, roughness: 0.62, flatShading:true});
     patchRim(coreMat, coreUniforms);
     const core = new THREE.Mesh(this.coreGeo, coreMat);
@@ -909,7 +909,7 @@ export class Stage {
     halo.renderOrder = 3;
     this.scene.add(halo);
     const parts = this.layout(def).map(p => {
-      const uniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
+      const uniforms = {uRim: {value: team.clone()}, uFlash: {value: 0}, uWarm: {value: 0}, uStrike: {value: 0}, uDanger: {value: 0}, uDim: {value: 0}};
       const obj = instantiate(p.item, uniforms);
       obj.scale.multiplyScalar(1.5);
       const holder = new THREE.Group();
@@ -989,10 +989,13 @@ export class Stage {
     if (!f) return;
     const p = partId === 'core' ? f : f.parts[Number(partId.split('-')[1])];
     if (!p) return;
-    p.strike = 1;
-    // Shells are built on a piece's first strike, so default-mode matches (which never strike) carry none.
-    if (p === f && !f.coreShell) f.core.add(new THREE.Mesh(this.coreGeo, f.coreShell = strikeShell(TEAM[i])));
-    else if (p !== f && !p.shell) {
+    p.strike = this.shortHitLight ? 0.7 : 1;
+    // Shells are built on a piece's first strike, so default-mode matches (which never strike) carry none. The new feel
+    // builds none: on a flat-shaded piece (the pillow) the pushed-out shell swells into a glowing blob over the piece's
+    // face under the push-in (Elara c53fc626), so its short gold edge comes from the rim term alone.
+    const shells = !this.shortHitLight;
+    if (shells && p === f && !f.coreShell) f.core.add(new THREE.Mesh(this.coreGeo, f.coreShell = strikeShell(TEAM[i])));
+    else if (shells && p !== f && !p.shell) {
       const shell = p.obj.clone(true), mat = p.shell = strikeShell(TEAM[i]);
       shell.traverse(o => { if (o.isMesh) { o.geometry = shellGeometry(o.geometry); o.material = mat; } });
       p.holder.add(shell);
@@ -1578,12 +1581,16 @@ export class Stage {
     this.fieldUniforms.fieldTime.value = this.time;
     this.fieldUniforms.fieldZoom.value = 0.84 * (this.kitchen?.photo?.zoom ?? 1);
     this.fieldUniforms.hitAge.value += realDt;
+    // 冲挡加重 (Elara c53fc626): with shortHitLight (the new feel) a struck piece's flash is warm and gone in about 0.1 s,
+    // and the striker's edge too, so a piece never sits whited out under the push-in; ?feel=old keeps the 评委版's.
+    const short = this.shortHitLight, flashFade = short ? 20 : 12, strikeFade = short ? 14 : 2.5, warm = short ? 1 : 0;
     for (const f of this.fighters) {
-      f.flash *= Math.exp(-realDt * 12);
+      f.flash *= Math.exp(-realDt * flashFade);
       f.dim += (f.dimTarget - f.dim) * (1 - Math.exp(-realDt * 4));
       const danger = Math.max(0, (f.coreDamage ?? 0) - 0.5) * 2;
-      f.strike *= Math.exp(-realDt * 2.5);
+      f.strike *= Math.exp(-realDt * strikeFade);
       f.coreUniforms.uFlash.value = f.flash;
+      f.coreUniforms.uWarm.value = warm;
       f.coreUniforms.uStrike.value = f.strike;
       if (f.coreShell) { f.coreShell.uniforms.uOpacity.value = f.strike; f.coreShell.visible = f.strike > 0.04; }
       f.coreUniforms.uDim.value = f.dim;
@@ -1596,9 +1603,10 @@ export class Stage {
       const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
       const [fan0, fan1] = SPIN_FAN_OPENING ?? [], fanLeft = fan0 === undefined || this.matchT === undefined ? 1 : 1 - THREE.MathUtils.smoothstep(this.matchT, fan0, fan1);
       for (const p of f.parts) {
-        p.flash *= Math.exp(-realDt * 12);
-        p.strike *= Math.exp(-realDt * 2.5);
+        p.flash *= Math.exp(-realDt * flashFade);
+        p.strike *= Math.exp(-realDt * strikeFade);
         p.uniforms.uFlash.value = p.flash;
+        p.uniforms.uWarm.value = warm;
         p.uniforms.uStrike.value = p.strike;
         if (p.shell) { p.shell.uniforms.uOpacity.value = p.strike; p.shell.visible = p.strike > 0.04; }
         // Worn parts glow red, more and faster as they near breaking.
@@ -1615,7 +1623,9 @@ export class Stage {
         // Wind-up: the core brightens in pulses, the whole top sinks a little and squashes flat and wide.
         a.charge = Math.max(0, a.charge - simDt);
         const k = 1 - a.charge / a.chargeLen, e = 1 - (1 - k) * (1 - k);
-        f.coreUniforms.uFlash.value = Math.max(f.coreUniforms.uFlash.value, 0.3 + 0.7 * k * (0.6 + 0.4 * Math.sin(this.time * 40)));
+        const pulse = 0.3 + 0.7 * k * (0.6 + 0.4 * Math.sin(this.time * 40));
+        // The wind-up's pulse stays white in either feel.
+        if (pulse > f.coreUniforms.uFlash.value) { f.coreUniforms.uFlash.value = pulse; f.coreUniforms.uWarm.value = 0; }
         f.root.position.y -= 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.2));
         sxz = 1 + 0.16 * e;
         sy = 1 - 0.35 * e;
@@ -1818,14 +1828,14 @@ export class Stage {
   }
 }
 
-const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
+const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uWarm;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
 const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
   totalEmissiveRadiance += uRim * (rim * 1.1 + 0.015) * (1.0 - uDim * 0.8);
-  totalEmissiveRadiance += vec3(1.0) * uFlash * 1.6;
-  totalEmissiveRadiance += uRim * uStrike * rim * 1.6;
+  totalEmissiveRadiance += mix(vec3(1.6), vec3(1.0, 0.55, 0.24), uWarm) * uFlash;
+  totalEmissiveRadiance += uRim * uStrike * rim * mix(1.6, 0.9, uWarm);
   totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.35 + rim);
 }`;
 function patchRim(m, uniforms) {
