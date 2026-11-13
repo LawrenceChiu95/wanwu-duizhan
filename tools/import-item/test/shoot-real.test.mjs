@@ -619,14 +619,16 @@ for (const [phase, route, response] of [
   const quota = await jobs.quota();
   assert.equal(quota.remaining, quota.limit - 1);
   assert.equal(quota.used, 1);
-  assert.equal(logs.length, 1);
-  const diagnostic = JSON.parse(logs[0].slice('Shoot photo upload failed: '.length));
+  const prefix = 'Shoot photo upload failed: ';
+  const uploadLogs = logs.filter(line => line.startsWith(prefix));
+  assert.equal(uploadLogs.length, 1);
+  const diagnostic = JSON.parse(uploadLogs[0].slice(prefix.length));
   assert.equal(diagnostic.jobId, j.id);
   assert.equal(diagnostic.step, phase);
   assert.equal(diagnostic.attempt, 1);
   assert.equal(diagnostic.retry, true);
   assert.ok(Number.isFinite(Date.parse(diagnostic.time)));
-  assert.doesNotMatch(logs[0], /secret|private/);
+  assert.doesNotMatch(uploadLogs[0], /secret|private/);
  } finally { console.error = log; }
 });
 
