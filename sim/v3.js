@@ -70,7 +70,7 @@ export const PLANAR_JUDGE_COMBAT_OPTIONS=Object.freeze({
 export const IMPACT_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...PLANAR_JUDGE_COMBAT_OPTIONS,
  feelRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.feelRules,thrust:1.5,recoilSpeed:.75}),
- combatRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.combatRules,impactControls:true,impactDashContacts:true,hpScale:1.37})
+ combatRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.combatRules,impactControls:true,impactDashContacts:true,resolveMutualDashContact:true,hpScale:1.37})
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,dashDamage:2.2,heavyTurnLoss:.55,
@@ -349,6 +349,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const c=await loadCatalogRules(),r=await loadV3Rules();definitions.forEach(d=>validate(d,c,r));await ready();
  const impact=combat==='position'&&combatRules?.impactControls===true;
  const impactDashContacts=impact&&combatRules.impactDashContacts===true;
+ const resolveMutualDashContact=impactDashContacts&&combatRules.resolveMutualDashContact===true;
  if(impact)r.top.damageRamp=[];
  else if(definitions.some(d=>d.parts.some(p=>p.item.startsWith('fanshuo-'))))r.top.damageRamp=structuredClone(TRIAL_DAMAGE_RAMP);
  if(manual?.blockTime!==undefined){
@@ -614,7 +615,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const positionInfo=positionContact?{positionRadii:positionContact.positionRadii,positionAttacker:positionContact.attacker,positionClash:positionContact.clash,...(positionContact.positionMode&&{positionMode:positionContact.positionMode,positionValues:positionContact.positionValues}),dashOverridesPosition:Boolean(M&&dashBlows.length===1&&positionContact.attacker!==dashBlows[0])}:null;
    // A lunge is the blow: the lunging side strikes (which pieces touch is still the physics' call).
    if(M&&dashBlows.length===1)roles={...roles,clash:false,attacker:dashBlows[0],tipMultiplier:1+r.tipBonus*roles.tipRatios[dashBlows[0]]};
-   // If two full lunges land at once, both get their hit instead of one becoming recoil damage.
+   // Simultaneous full lunges each deal dash damage. Two glances tied by the
+   // contact roles each deal ordinary attack damage.
    else if(dashBlows.length===2&&dashContact&&(strikes.length===2||roles.attacker===null))roles={...roles,clash:true,attacker:null};
    if(newEpisode)events.push({t,type:'contact',point,rightPoint,normal,impulse,closingSpeed,parts:[left.id,right.id],items:[left.item.id,right.item.id],orients:[left.orient,right.orient],closingSpeeds:roles.normalSpeeds,attackScores:roles.scores,attacker:roles.attacker,clash:roles.clash,...positionInfo,pairCount:pairs.length});
    const shieldDamageApplied=[false,false];
@@ -701,15 +703,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     events.push({t,type:'recoil',normal:recoilNormal,impulse,velocityBefore:before,velocityAfter:fs.map(f=>arr(f.body.linvel())),recoilSpeed,...(partRecoil&&{partRecoil}),...(M&&!impact&&{recoilScale:k})});lastRecoil=t;
    }
    if(impulse>=r.minimumImpulse)lastSeen=t;
-   // A lunge ends at its first new contact: landed, or bounced off a shield (parry).
-   for(const i of lunge){
+   // A resolved dash contact also ends an active dash on the receiving side.
+   const endedDashes=resolveMutualDashContact&&dashContact?[0,1].filter(i=>dashing(fs[i])):lunge;
+   for(const i of endedDashes){
     const f=fs[i],full=fullLunge.includes(i);
     const blocked=impact?Boolean(guards?.[1-i]):full&&(roles.clash||i===roles.attacker)&&shield[1-i]&&events.some(e=>e.t===t&&e.attacker===i&&e.parry&&e.damage>0);
-    const outcome=blocked?'blocked':guards?.[i]?'interrupted':'hit';
+    const outcome=blocked?'blocked':guards?.[i]||!lunge.includes(i)?'interrupted':'hit';
     const quality=outcome==='hit'?(full?'full':'glance'):outcome;
     const targetPoint=i===0?rightPoint:point;
     f.ctl.dashUntil=-1;
-    events.push({t,type:'dash',phase:'end',side:i,outcome,quality,alignment:alignment.find(x=>x.side===i).value,...(impactDashContacts&&{contactClosing}),pressStep:f.ctl.dashPressStep,point:targetPoint});
+    events.push({t,type:'dash',phase:'end',side:i,outcome,quality,alignment:alignment.find(x=>x.side===i)?.value??null,...(impactDashContacts&&{contactClosing}),pressStep:f.ctl.dashPressStep,point:targetPoint});
     if(blocked&&(!impact||full))events.push({t,type:'parry',attacker:i,target:1-i,point:targetPoint});
    }
   }
