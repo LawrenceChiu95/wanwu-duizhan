@@ -39,6 +39,7 @@ test('a passive contact in the damage cooldown still deflects, stuns and resets 
  assert.equal(block.windowSteps, 45);
  assert.equal(guard.t, 1);
  assert.equal(guard.perfect, false);
+ assert.equal(guard.dashLockedUntil, undefined);
  assert.equal(guard.damageApplied, false);
  assert.equal(guard.stunUntil, 1.5);
  const lastDamage = game.events.findLast(e => e.type === 'hit');
@@ -47,6 +48,7 @@ test('a passive contact in the damage cooldown still deflects, stuns and resets 
  assert(game.events.some(e => e.type === 'press' && e.side === 0 && e.action === 'dash'));
  assert(!game.events.some(e => e.type === 'press' && e.side === 1));
  assert(game.control(1).stunIn > 0);
+ assert.equal(game.control(0).dashLockIn, 0);
 });
 
 test('the opponent keeps its 36-step charge and a frontal dash into the shield is perfect', async t => {
@@ -66,4 +68,57 @@ test('impact replays preserve the rule set and the recorded presses', async () =
  const {manual, combat, combatRules, feel, feelRules} = result.meta;
  const replay = await simulateV3({...options, manual, combat, combatRules, feel, feelRules});
  assert.deepEqual(replay, result);
+});
+
+test('an empty guard locks the next dash for 54 steps, discarding presses during the lock', async t => {
+ const game = await match(t, [input(60, 0, 'block')]);
+ advanceTo(game, 105);
+ const empty = game.events.find(e => e.type === 'blockResult' && e.outcome === 'empty');
+ assert.equal(empty.resolvedStep, 105);
+ assert(Math.abs(empty.dashLockedUntil - empty.t - .45) < 1e-9);
+ assert(Math.abs(game.control(0).dashLockIn - .45) < 1e-9);
+ game.press(0, 'dash');
+ advanceTo(game, 157);
+ game.press(0, 'dash');
+ advanceTo(game, 160);
+ assert.equal(game.control(0).dashLockIn, 0);
+ assert(!game.events.some(e => e.type === 'press' && e.side === 0 && e.action === 'dash'));
+ game.press(0, 'dash');
+ game.advance();
+ assert(game.events.some(e => e.type === 'press' && e.side === 0 && e.action === 'dash'));
+});
+
+test('the durability multiplier increases both sides’ core and part HP without increasing opening damage', async t => {
+ const top = {parts: [{item: 'fanshuo-pot', mount: 'e0', orient: 'out'}]};
+ const unscaled = await createV3Match({...options, combatRules: {...rules.combatRules, hpScale: 1}, fighters: [top, top], manual: {sides}});
+ t.after(() => unscaled.free());
+ const scaled = await match(t, [], [top, top]);
+ for (const i of [0, 1]) {
+  assert.equal(scaled.initial[i].core.maxHp, unscaled.initial[i].core.maxHp * 1.37);
+  assert.equal(scaled.initial[i].parts[0].maxHp, unscaled.initial[i].parts[0].maxHp * 1.37);
+ }
+ for (const game of [unscaled, scaled]) advanceTo(game, 65);
+ const damage = game => game.events.filter(e => e.type === 'hit' || e.type === 'weak').map(e => e.damageBeforeHpClamp);
+ assert(damage(scaled).length > 0);
+ assert.deepEqual(damage(scaled), damage(unscaled));
+});
+
+test('a heavy assembly uses full dash reach and cannot block on the first missed-dash recovery step', async t => {
+ const chair = {parts: [
+  {item: 'fanshuo-chair', mount: 'e0', orient: 'out'},
+  {item: 'fanshuo-cushion', mount: 'e180', orient: 'hug'}
+ ]};
+ const light = await createV3Match({...options, mode: 'A', seed: 111300, manual: {sides, inputs: [input(100, 0, 'dash')]}});
+ t.after(() => light.free());
+ const heavy = await createV3Match({...options, mode: 'A', seed: 111300, fighters: [chair, chair],
+  manual: {sides, inputs: [input(100, 0, 'dash'), input(163, 0, 'block')]}});
+ t.after(() => heavy.free());
+ advanceTo(light, 100);
+ advanceTo(heavy, 163);
+ const reach = game => game.events.find(e => e.type === 'dash' && e.phase === 'charge').reach;
+ assert(reach(light) > 0);
+ assert.equal(reach(heavy), reach(light));
+ assert(heavy.events.some(e => e.type === 'dash' && e.side === 0 && e.outcome === 'miss'));
+ assert.equal(heavy.control(0).stunIn, .25);
+ assert(!heavy.events.some(e => e.type === 'press' && e.action === 'block'));
 });

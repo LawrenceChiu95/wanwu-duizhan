@@ -64,8 +64,8 @@ const SPREAD = {e180: '对面', e90: '挨着'};
 const LADDER = ladderJson.foes.map(f => {
   const tuned = __COMBAT__ && ladderJson.judgeBuilds?.[__COMBAT__]?.[f.id];
   if (!tuned) return f;
-  const {ai, ...build} = tuned;
-  return {...f, build, ai: ai ? {...f.ai, ...ai} : f.ai};
+  const {ai, impactAi, ...build} = tuned;
+  return {...f, build, ai: ai ? {...f.ai, ...ai} : f.ai, impactAi};
 });
 const LADDER_KEY = 'wanwu-ladder';
 const SVG = {
@@ -826,7 +826,10 @@ async function main() {
     if (control === 'manual') {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
       // The opponent's play is fixed with its build as 开打 is pressed; one without its own (a build in ?foe=) plays the old way.
-      const ai = fought === null ? null : LADDER[fought].ai;
+      const opponent = fought === null ? null : LADDER[fought];
+      const ai = opponent && (combatOptions.combatRules?.impactControls && opponent.impactAi
+        ? {...opponent.ai, ...opponent.impactAi}
+        : opponent.ai);
       const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules, ...(combat && {combat})}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};

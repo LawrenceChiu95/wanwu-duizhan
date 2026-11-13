@@ -141,6 +141,9 @@
         "spread": "e180",
         "ai": {
           "reactionDelay": 0.067
+        },
+        "impactAi": {
+          "reactionDelay": 0.108
         }
       }
     },
