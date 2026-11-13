@@ -588,22 +588,117 @@ test('transient query recovers inside bounded backoff without duplicate creation
  assert.deepEqual(delays, [1000, 2000]); assert.deepEqual(g.creates, ['image', 'mesh']);
 });
 
-for (const failedStage of ['token', 'upload']) test(`free retry after ${failedStage} failure submits each stage for the first time once`, async () => {
- const directory = await dir(), g = gateway(); let broken = true;
- const request = (url, options) => {
-  if (broken && (failedStage === 'token' ? url.endsWith('/token') : url.includes('/single/upload'))) throw Error('offline upload failure');
+for (const [phase, route, response] of [
+ ['credential', '/asset/v1/token', () => new Response('secret', {status: 503})],
+ ['send-file', '/single/upload', () => { throw new TypeError('private transport details'); }],
+ ['poll-status', '/upload/status', () => { throw new DOMException('private timeout details', 'TimeoutError'); }]
+]) test(`one transient ${phase} failure retries the original photo before the first paid request`, async t => {
+ const directory = await dir(), g = gateway(), sent = [], logs = [];
+ const request = async (url, options) => {
+  if (url.endsWith('/single/upload')) sent.push(sha256(Buffer.from(await options.body.get('file').arrayBuffer())));
+  if (url.endsWith(route) && ++attempts === 1) {
+   assert.deepEqual(g.creates, []);
+   return response();
+  }
   return g.fetch(url, options);
  };
+ let attempts = 0;
  const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async () => {}}});
+ t.after(() => jobs.close());
+ const log = console.error; console.error = (...args) => logs.push(args.join(' '));
  try {
-  const j = await jobs.create({photo: image, clientKey: 'upload-first-stage-001'}), failed = await finish(jobs, j.id);
-  assert.equal(failed.error.code, 'photo-upload'); assert.equal(failed.error.retry, 'same'); assert.equal(failed.error.charged, false);
-  assert.deepEqual(g.creates, []);
-  broken = false; await jobs.retry(j.id); assert.equal((await finish(jobs, j.id)).status, 'succeeded');
-  assert.equal(g.visionCalls(), 1); assert.deepEqual(g.creates, ['image', 'mesh']);
-  assert.equal((await jobs.create({photo: image, clientKey: 'upload-first-stage-001'})).id, j.id);
+  const j = await jobs.create({photo: image, clientKey: 'upload-retry-test-001'});
+  const done = await finish(jobs, j.id);
+  assert.equal(done.status, 'succeeded');
+  assert.equal(done.id, j.id);
+  assert.equal(attempts, 2);
+  assert.equal(g.visionCalls(), 1);
   assert.deepEqual(g.creates, ['image', 'mesh']);
- } finally { await jobs.close(); }
+  const original = await fs.readFile(path.join(directory, j.id, 'photo.jpg'));
+  assert.deepEqual(sent, Array(phase === 'credential' ? 1 : 2).fill(sha256(original)));
+  const quota = await jobs.quota();
+  assert.equal(quota.remaining, quota.limit - 1);
+  assert.equal(quota.used, 1);
+  assert.equal(logs.length, 1);
+  const diagnostic = JSON.parse(logs[0].slice('Shoot photo upload failed: '.length));
+  assert.equal(diagnostic.jobId, j.id);
+  assert.equal(diagnostic.step, phase);
+  assert.equal(diagnostic.attempt, 1);
+  assert.equal(diagnostic.retry, true);
+  assert.ok(Number.isFinite(Date.parse(diagnostic.time)));
+  assert.doesNotMatch(logs[0], /secret|private/);
+ } finally { console.error = log; }
+});
+
+test('two upload failures refund the same browser, preserve the photo and require a new reservation on manual retry', async t => {
+ const directory = await dir(), g = gateway(), logs = [];
+ let failures = 0;
+ const request = (url, options) => {
+  if (url.endsWith('/single/upload') && failures < 2) {
+   failures++;
+   return new Response('private', {status: 502});
+  }
+  return g.fetch(url, options);
+ };
+ const open = () => openJobs({directory, mode: 'real', env,
+  limits: {browser: {generation: 1, recognition: 5}, global: {generation: 2, recognition: 400}},
+  budget: {limit: null, stage: 'test'}, realOptions: {fetch: request, pause: async () => {}}});
+ let jobs = await open();
+ t.after(() => jobs.close());
+ const {owner, token} = jobs.session();
+ const j = await jobs.create({photo: image, clientKey: 'upload-refund-test-001'}, owner);
+ const log = console.error; console.error = (...args) => logs.push(args.join(' '));
+ let failed;
+ try { failed = await until(() => jobs.get(j.id, owner), job => job.status === 'failed'); }
+ finally { console.error = log; }
+ assert.equal(failed.error.code, 'photo-upload');
+ assert.equal(failed.error.retry, 'same');
+ assert.equal(failed.error.charged, false);
+ assert.deepEqual(g.creates, []);
+ assert.equal(failures, 2);
+ const diagnostics = logs.filter(line => line.startsWith('Shoot photo upload failed: ')).map(line => JSON.parse(line.slice('Shoot photo upload failed: '.length)));
+ assert.deepEqual(diagnostics.map(row => [row.step, row.attempt, row.retry]), [['send-file', 1, true], ['send-file', 2, false]]);
+ const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+ assert.equal(saved.allowance.generation, undefined);
+ assert.deepEqual(saved.providerState.tasks, {});
+ assert.equal(saved.providerState.pending, undefined);
+ const photo = await fs.readFile(path.join(directory, j.id, 'photo.jpg'));
+
+ await jobs.close();
+ jobs = await open();
+ assert.equal(jobs.session(token).owner, owner);
+ const refunded = await jobs.quota(owner);
+ assert.equal(refunded.remaining, 1);
+ assert.equal(refunded.global.remaining, 2);
+ assert.equal(refunded.recognition.remaining, 4);
+ assert.equal(refunded.used, 0);
+ assert.equal((await jobs.create({photo: image, clientKey: j.clientKey}, owner)).id, j.id);
+ const [resumed, competing] = await Promise.allSettled([jobs.retry(j.id, owner), jobs.retry(j.id, owner)]);
+ assert.equal(resumed.value.id, j.id);
+ assert.equal(competing.reason.status, 409);
+ assert.equal((await jobs.quota(owner)).remaining, 0);
+ const done = await until(() => jobs.get(j.id, owner), job => job.status === 'succeeded' || job.status === 'failed');
+ assert.equal(done.status, 'succeeded');
+ assert.deepEqual(done.recognition, failed.recognition);
+ assert.deepEqual(await fs.readFile(path.join(directory, j.id, 'photo.jpg')), photo);
+ assert.deepEqual(g.creates, ['image', 'mesh']);
+ assert.equal(g.visionCalls(), 1);
+ assert.equal((await jobs.quota(owner)).used, 1);
+});
+
+test('an upload credential rejection refunds the slot without automatic retry', async t => {
+ const directory = await dir(), g = gateway();
+ let credentials = 0;
+ const request = (url, options) => url.endsWith('/asset/v1/token')
+  ? (credentials++, new Response('', {status: 403})) : g.fetch(url, options);
+ const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: request, pause: async () => {}}});
+ t.after(() => jobs.close());
+ const j = await jobs.create({photo: image, clientKey: 'upload-credential-test-001'});
+ assert.equal((await finish(jobs, j.id)).error.code, 'photo-upload');
+ assert.equal(credentials, 1);
+ assert.deepEqual(g.creates, []);
+ const quota = await jobs.quota();
+ assert.equal(quota.remaining, quota.limit);
 });
 
 // Include the fixed 5-second retake window before exercising shutdown.

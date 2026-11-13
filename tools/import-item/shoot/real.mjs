@@ -45,7 +45,23 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         try {
           const photo = await readPhoto(folder, jobId, now);
           const prompt = photoPrompt(recognition.name ?? recognition.category);
-          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
+          for (;;) {
+            try {
+              await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
+              break;
+            } catch (error) {
+              if (!error.uploadStep) throw error;
+              const retry = error.transient && !state.uploadRetried;
+              console.error('Shoot photo upload failed:', JSON.stringify({
+                time: now(), jobId, step: error.uploadStep, attempt: state.uploadRetried ? 2 : 1,
+                reason: error.reason ?? 'upstream-reply', status: error.status, retry: Boolean(retry)
+              }));
+              if (!retry) throw error;
+              // Share a durable retry allowance across both styled/model steps and restarts.
+              state.uploadRetried = true;
+              await save();
+            }
+          }
         } catch (error) {
           const hasTask = Object.keys(state.tasks).length > 0;
           if (error.code === 'busy' && state.pending) {
