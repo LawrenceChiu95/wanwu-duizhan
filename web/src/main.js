@@ -1399,16 +1399,18 @@ async function main() {
     const c = live.match.control(0), M = rules.manual;
     // 冲挡加重 (Elara 8723e99a, 9eb901cb): locked, not cooling, while the top is stunned (both buttons) or 冲 is held after
     // a block that caught nothing (Sol 4ef6dad5): the button goes grey and striped and a grey fill runs across it over the
-    // lock, no seconds. A stun on a button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps
-    // the cooldown's seconds and fill under the stripes. A tap shakes it as in cooling.
+    // lock, no seconds. A button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps the
+    // cooldown's seconds and fill under the stripes. The lock wins over a 冲 or 挡 already going (a shield up as a heavy
+    // lunge ends, a lunge charging as the shield runs out empty): that keeps going, but the button no longer lights as if
+    // a tap would count (Sol e0535c0d). A tap shakes it as in cooling.
     const stun = c.stunIn ?? 0, dashLock = Math.max(stun, c.dashLockIn ?? 0);
     for (const [btn, cool, total, on, lock] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield, stun]]) {
-      const locked = !on && lock > 0 && lock >= cool - rules.dt, left = locked ? lock : cool;
-      const state = on ? 'on' : locked ? 'locked' : left > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
-      if (locked && btn.dataset.state !== 'locked') btn.lockTotal = lock;
-      btn.style.setProperty('--p', on ? 0 : (1 - left / (locked ? btn.lockTotal : total)).toFixed(3));
+      const state = lock > 0 ? (lock >= cool - rules.dt ? 'locked' : 'cooling') : on ? 'on' : cool > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
+      const left = state === 'locked' ? lock : cool;
+      if (state === 'locked' && btn.dataset.state !== 'locked') btn.lockTotal = lock;
+      btn.style.setProperty('--p', state === 'on' ? 0 : (1 - left / (state === 'locked' ? btn.lockTotal : total)).toFixed(3));
       btn.classList.toggle('on', state === 'on');
-      btn.classList.toggle('locked', state === 'locked' || (!on && stun > 0));
+      btn.classList.toggle('locked', lock > 0);
       btn.classList.toggle('cooling', state === 'cooling');
       btn.classList.toggle('ready', state === 'ready');
       const wait = state === 'cooling' ? String(Math.ceil(left - 1e-6)) : '';
