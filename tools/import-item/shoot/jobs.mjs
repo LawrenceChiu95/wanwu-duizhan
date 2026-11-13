@@ -157,9 +157,15 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const context = record => ({jobId: record.job.id, now, checkFailedCredits: !record.autoRetried, state: record.providerState ??= {tasks: {}, timestamps: {}}, folder: path.join(directory, record.job.id), recognition: record.job.recognition, save: () => serial(save), allowCreate: !record.freeRetry, signal: abort.signal, mountRules});
   async function fail(record, code, details = {}) {
     if (!record.job.recognition && code !== 'photo-unclear' && record.recognitionAttempts?.length) record.recognitionAttempts.at(-1).refunded = true;
+    const paid = charged(record.job.id);
     if (!record.job.steps[0].startedAt || code === 'busy') delete record.allowance?.generation;
-    if (!record.job.steps[0].startedAt || (code === 'busy' && !charged(record.job.id))) delete record.budget;
-    record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: charged(record.job.id), ...details}; await save();
+    if (!record.job.steps[0].startedAt || (code === 'busy' && !paid)) delete record.budget;
+    if (provider.real && code === 'photo-upload' && !paid && !record.providerState?.photoUrl) {
+      delete record.allowance?.generation;
+      // Resume through the usual generation reservation even on the rollback backend.
+      record.job.steps[0].startedAt = null;
+    }
+    record.job.status = 'failed'; record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: paid, ...details}; await save();
     if (provider.real) console.error('Shoot job failed:', JSON.stringify({time: now(), jobId: record.job.id, code, charged: record.job.error.charged}));
   }
   // Never repeat a paid submission whose outcome is unknown.
@@ -269,8 +275,9 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     } catch (error) {
       // Received recognition failures are paid responses too: preserve their
       // classification during close, just as a successful recognition is saved.
+      // Interrupted photo uploads finish here so shutdown refunds the unused slot.
       const rejectedStage = error.creationRejected && error.creationRejected === record.providerState?.pending;
-      if ((!closed || !j.recognition || rejectedStage) && !storageError) await serial(async () => {
+      if ((!closed || !j.recognition || rejectedStage || error.uploadInterrupted) && !storageError) await serial(async () => {
         if (!j.recognition && record.providerState) delete record.providerState.recognitionPending;
         if (rejectedStage) delete record.providerState.pending;
         if (error.code === 'quota') { await fail(record, 'quota', {message: error.message, retry: 'none', kind: error.kind, scope: error.scope, resetsAt: error.resetsAt}); return; }
@@ -370,7 +377,16 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
         delete r.allowance?.recognition;
         reserve(r, 'generation'); reserve(r, 'recognition');
         if (budget) r.budget = {stage: budget.stage, credits: 13};
-      } else if (provider.real) r.freeRetry = true;
+      } else if (provider.real) {
+        if (r.job.error.code === 'photo-upload' && !charged(id)) {
+          if (!r.allowance?.generation) {
+            // Keep the existing spend-ceiling reservation usable on rollback.
+            reserve(r, 'generation');
+          }
+          delete r.providerState.uploadRetried;
+        }
+        r.freeRetry = true;
+      }
       r.queueOrder = ++store.sequence; r.job.error = null; r.job.status = recognition ? 'recognizing' : 'generating'; await save(); start(r); return publicJob(r);
     }),
     file: (id, name, owner) => serial(() => {

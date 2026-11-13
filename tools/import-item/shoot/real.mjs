@@ -45,7 +45,24 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         try {
           const photo = await readPhoto(folder, jobId, now);
           const prompt = photoPrompt(recognition.name ?? recognition.category);
-          await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
+          for (;;) {
+            try {
+              await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
+              break;
+            } catch (error) {
+              if (!error.uploadStep) throw error;
+              const retry = !signal?.aborted && error.uploadRetryable && !state.uploadRetried;
+              console.error('Shoot photo upload failed:', JSON.stringify({
+                time: now(), jobId, step: error.uploadStep, attempt: state.uploadRetried ? 2 : 1,
+                reason: signal?.aborted ? 'shutdown' : error.reason ?? 'invalid-reply', status: error.status, retry
+              }));
+              if (!retry) throw error;
+              // Share a durable retry allowance across both styled/model steps and restarts.
+              state.uploadRetried = true;
+              await save();
+              if (signal?.aborted) throw error;
+            }
+          }
         } catch (error) {
           const hasTask = Object.keys(state.tasks).length > 0;
           if (error.code === 'busy' && state.pending) {
@@ -54,7 +71,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
           if (state.pending) throw failure('unknown-submit');
           if (error.code === 'step-failed') throw Object.assign(error, {retryable: Boolean(error.retryTask)});
           if (error.code === 'busy') throw failure(hasTask ? 'download' : 'busy');
-          throw failure(hasTask ? 'download' : 'photo-upload');
+          throw Object.assign(failure(hasTask ? 'download' : 'photo-upload'), {uploadInterrupted: Boolean(error.uploadStep && signal?.aborted)});
         }
         return;
       }
