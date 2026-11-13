@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import {createV3Match, IMPACT_JUDGE_COMBAT_OPTIONS as rules, simulateV3} from '../../sim/v3.js';
 
@@ -16,6 +17,61 @@ const advanceTo = (game, step) => {
 };
 const rebound = (event, side) => event.velocityAfter[side].reduce((sum, v, axis) =>
  sum + v * event.normal[axis] * (side === 0 ? -1 : 1), 0);
+const chair = {parts: [
+ {item: 'fanshuo-chair', mount: 'e0', orient: 'out'},
+ {item: 'fanshuo-cushion', mount: 'e180', orient: 'hug'}
+]};
+
+const chairAgainstMang = async (t, seed, inputs, surfaceContact = true) => {
+ const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
+ const foe = foes.find(f => f.id === 'mang');
+ const build = judgeBuilds.position.mang;
+ const opponent = {parts: build.parts.map((part, i) => ({...part, mount: i ? build.spread : 'e0'}))};
+ const {impactDashContacts, ...previousRules} = rules.combatRules;
+ const game = await createV3Match({...rules, seed, fighters: [chair, opponent],
+  combatRules: {...(surfaceContact ? rules.combatRules : previousRules), ceramicShards: true},
+  manual: {sides: ['input', 'ai'], aiProfiles: [null, {...foe.ai, ...build.ai, ...build.impactAi}], inputs}});
+ t.after(() => game.free());
+ return game;
+};
+
+test('a wide chair can strike off the core axis when the dash closes on the contact surface', async t => {
+ const inputs = [input(1, 0, 'dash')];
+ const current = await chairAgainstMang(t, 111300, inputs);
+ const saved = await chairAgainstMang(t, 111300, inputs, false);
+ for (const game of [current, saved]) advanceTo(game, 32);
+ const landing = game => game.events.find(e => e.type === 'dash' && e.side === 0 && e.phase === 'end');
+ const damage = game => game.events.find(e => e.type === 'hit' && e.attacker === 0);
+ assert(landing(current).alignment < .9);
+ assert.equal(landing(saved).quality, 'glance');
+ assert.equal(landing(current).quality, 'full');
+ assert(damage(current).damage >= 2 * damage(saved).damage);
+ assert(rebound(current.events.find(e => e.type === 'recoil'), 1) > 2);
+});
+
+test('a glancing dash in the passive damage cooldown still deals ordinary damage', async t => {
+ const inputs = [input(1, 0, 'dash'), input(40, 0, 'block'), input(81, 0, 'dash'),
+  input(637, 0, 'dash'), input(1181, 0, 'block'), input(1203, 0, 'dash'), input(1849, 0, 'dash')];
+ const game = await chairAgainstMang(t, 111301, inputs);
+ advanceTo(game, 1881);
+ const glance = game.events.find(e => e.type === 'dash' && e.side === 0 && e.quality === 'glance');
+ const prior = game.events.findLast(e => e.t < glance.t && e.damage > 0);
+ const hit = game.events.find(e => e.t === glance.t && e.type === 'hit' && e.attacker === 0);
+ assert(glance.contactClosing > .75);
+ assert(glance.t - prior.t < 1);
+ assert.equal(hit.dashQuality, 'glance');
+ assert.equal(hit.dash, false);
+ assert(hit.damage > 0);
+});
+
+test('a head-on clash between two dashes plays a full hit on both sides', async t => {
+ const inputs = [input(1, 0, 'dash'), input(33, 0, 'block'), input(56, 0, 'dash'), input(637, 0, 'dash')];
+ const game = await chairAgainstMang(t, 111300, inputs);
+ advanceTo(game, 650);
+ const dash = game.events.find(e => e.type === 'dash' && e.side === 0 && e.pressStep === 637 && e.phase === 'end');
+ const hits = game.events.filter(e => e.t === dash.t && ['hit','weak'].includes(e.type) && e.dash && e.damage > 0);
+ assert.deepEqual(hits.map(e => e.attacker), [0, 1]);
+});
 
 test('player launches in 9 steps and a dash hits and rebounds harder than the same passive core contact', async t => {
  const passive = await match(t);
@@ -104,10 +160,6 @@ test('the durability multiplier increases both sides’ core and part HP without
 });
 
 test('a heavy assembly uses full dash reach and cannot block on the first missed-dash recovery step', async t => {
- const chair = {parts: [
-  {item: 'fanshuo-chair', mount: 'e0', orient: 'out'},
-  {item: 'fanshuo-cushion', mount: 'e180', orient: 'hug'}
- ]};
  const light = await createV3Match({...options, mode: 'A', seed: 111300, manual: {sides, inputs: [input(100, 0, 'dash')]}});
  t.after(() => light.free());
  const heavy = await createV3Match({...options, mode: 'A', seed: 111300, fighters: [chair, chair],
