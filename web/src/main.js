@@ -524,24 +524,27 @@ async function main() {
   // stays lit as long (凡朔 11-11, Pollux 52464265, Elara d021fab4). Only the player's own landed 冲 and 暴击, and a piece
   // broken on either side: three or four a match (Elara 8dbd9359). A line holds at least 1.2 s on screen (the picture's
   // clock, so slow motion and hit-stop count; Sol 7ff4ad44) before a newer one may replace it, a break its whole 1.4 s;
-  // a break in the same step (replay time) as the 冲 that did it takes that line over, counted once.
-  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4, HILITE_HOLD = 1.2;
+  // a break in the same step (replay time) as the 冲 that did it takes that line over, counted once. 「弹开！」 holds the line
+  // against nothing but takes it from anything but a break: it and 冲中, whichever comes later shows (Elara 1cdf161b).
+  const HILITE = q.get('call') === 'slot' ? 'slot' : 'line', HILITE_TIME = 1.4, HILITE_HOLD = 1.2, DEFLECT_LINE_TIME = 0.9;
   // `${side}:${part}` → the blow that took its last hp (hpAfter 0), a rebound's included (Sol f82fe05f); the last blow
   // that hurt it stands in for a replay recorded before hpAfter.
   const killer = new Map(), lastHurt = new Map();
   // 'break' events waiting for the batch of ceramic shards that caused them (Elara f08a6c36, 937d44f2).
   const heldBreaks = new BreakHolds();
-  let hilite = null; // {t, broke, age, node}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
+  let hilite = null; // {t, broke, age, node, deflect}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
   // `who`: words for the striker in place of its piece's name (a break no recorded blow explains).
   function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false, who = partName(part, item)) {
-    const same = hilite && Math.abs(t - hilite.t) < 1e-6;
+    const same = hilite && !hilite.deflect && Math.abs(t - hilite.t) < 1e-6;
     // A break always takes the line, even over another break: a broken piece never goes without its words, and none
     // follow the top (Elara 937d44f2). The 1.2 s hold is for the other lines, and ?call=slot keeps its own rules.
     const takes = broke && HILITE === 'line';
-    if (!takes && (same ? !broke || hilite.broke : hilite && hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
+    if (!takes && hilite && !hilite.deflect && (same ? !broke || hilite.broke : hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
     if (phase === 'play' && !same) test.highlights++;
     const was = hilite?.node;
+    // ?call=slot: a 「弹开！」 plate still up goes with the line it gave way to (Sol 9961be5a).
+    if (hilite?.deflect) overlay.dropHighlight();
     hilite = {t, broke, age: 0, node: null};
     if (HILITE === 'slot') {
       const a = strikerChip(side, part);
@@ -660,23 +663,33 @@ async function main() {
     if (heldParry && Math.abs(heldParry.e.t - lastDeflectT) > 1e-6) parryNow(heldParry.e, heldParry.point);
     heldParry = null;
   }
-  // 冲挡加重 (Elara fa18a1da): a block that bounced the other top away (Sol 661f75e1). The blocker's bubble flares and the
-  // bounced top is flung with streaks, the picture shakes, Playback slows 0.12 s (0.15 s for a perfect one, a lunge caught
-  // head-on), and over the player's own top one word: 「弹开！」, the perfect one bigger and brighter. The other top's
+  // 冲挡加重 (Elara fa18a1da): a block that bounced the other top away (Sol 661f75e1). A small ring and sparks at the contact,
+  // the bounced top flung with streaks, the picture shakes, Playback slows 0.12 s (0.15 s for a perfect one, a lunge caught
+  // head-on), and for the player's own block one word, 「弹开！」, in the line under the HUD (deflectLine). The other top's
   // block gets the picture only. It stands in for the parry of the same step.
   function deflect(e, point) {
     lastDeflectT = e.t;
     const perfect = !!e.perfect, at = point ?? stage.fighters[e.side]?.center;
     if (!at) return;
-    stage.parry(e.side, at, e.attacker);
-    if (perfect) stage.perfectBlock(e.side, at);
-    overlay.screenFlash(perfect ? 0.5 : 0.32);
+    // Light at the contact point only, so both tops read through the slow motion (Elara aa5b5c83); the screen flash is a
+    // hint, never a white-out (Elara 2065efad).
+    stage.deflect(e.side, at, e.attacker);
+    overlay.screenFlash(0.1);
     stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
     if (perfect) sfx.perfect();
     buzz(perfect ? [30, 40, 60] : [25, 40]);
-    verdict(e.side, '弹开！', perfect ? 'deflect perfect' : 'deflect');
+    if (e.side === 0) deflectLine(e.t);
+  }
+  // 「弹开！」: a small dark plate where 冲中 goes, not on the tops (Elara 2065efad), one look for every bounce (Elara 03075914).
+  // It takes the line from anything but a break, which a broken piece never goes without, and gives it up to anything.
+  function deflectLine(t) {
+    if (hilite?.broke && hilite.age < HILITE_TIME) return;
+    if (hilite?.node) dropFlash(hilite.node);
+    hilite = {t, broke: false, age: 0, node: null, deflect: true};
+    const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
+    overlay.plate('弹开！', 'deflect', top, DEFLECT_LINE_TIME);
   }
   function onEvent(e) {
     if (e.type === 'contact' || e.type === 'hit' || e.type === 'weak') stage.kitchen?.photo.noteCollision();
@@ -691,18 +704,26 @@ async function main() {
       // 冲挡加重: a glance (a lunge off its lane) is the smallest ordinary knock however it struck: no core-sized shake, no
       // 暴击 flash or line, so it never reads like a landed 冲; its damage and breaks show as usual (Elara 14f39c4f).
       const glance = !oldFx && e.dashQuality === 'glance', crit = e.type === 'weak' && !glance;
+      // A 冲 caught on a raised shield: the deflect in the same step is its picture, so the blow only nudges the struck
+      // piece, no white burst, ring or edge over the two tops (Elara aa5b5c83). ?feel=old keeps its full knock.
+      const caught = !oldFx && e.parry;
       const core = e.targetPart === 'core' && !glance, big = core || crit || e.tier >= 2 && !glance, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
-        // The moment of impact is as bright as the old 评委版 (Elara e6f14ad0); 凡朔's field and colours stay as they are.
-        stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
-        stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
+        // ?feel=old is as bright as the old 评委版 (Elara e6f14ad0). The new feel keeps the light at the contact, smaller and
+        // warmer, so the struck piece reads through the hit-stop (Elara aa5b5c83); 凡朔's field and colours stay as they are.
+        if (oldFx) stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
+        else stage.burst(point, [HOT, TEAM[e.attacker], SPARK, WHITE], 44, 3.6, 0.026, 0.5);
+        stage.impact(point, oldFx ? 1 : 0.7, [WHITE, HOT, TEAM[e.attacker]]);
         // The view lurches on along the lunge and pushes in (Elara fa18a1da); ?feel=old keeps the 评委版's small push-in.
         if (!oldFx) stage.lungePunch(point, lungeDir[e.attacker] ?? towardPoint(e.attacker, point), 16, 0.24);
-        stage.ring(point, WHITE, 0.05, 1.0, 0.3);
-        overlay.screenFlash(0.32);
+        stage.ring(point, WHITE, 0.05, oldFx ? 1.0 : 0.55, 0.3);
+        overlay.screenFlash(oldFx ? 0.32 : 0.14);
         sfx.dashHit();
         buzz(40);
+      } else if (caught) {
+        lastKnockT = e.t;
+        sfx.hit(0.5);
       } else {
         // An ordinary knock: the same, scaled down.
         lastKnockT = e.t;
@@ -714,18 +735,19 @@ async function main() {
       // Every blow shakes the picture, 凡朔's fixed camera included (photo-kitchen.js).
       stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
-      stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
+      if (!caught) stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
       // The striking piece gets a glowing edge in its colour, the struck one flashes too (a clash: both edged). It says which
       // piece hit now that no word plate does (凡朔 11-11, Elara 207a725b b2bd14f1); position combat edges every touch.
-      if (positionCombat(e) || e.damage > 0) stage.strike(e.attacker, e.part, point);
-      stage.flashPart(e.target, e.targetPart, core ? 1 : 0.75);
+      if (!caught && (positionCombat(e) || e.damage > 0)) stage.strike(e.attacker, e.part, point);
+      stage.flashPart(e.target, e.targetPart, caught ? 0.3 : (core ? 1 : 0.75) * (dash && !oldFx ? 0.6 : 1));
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
         if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
       }
-      if (core) overlay.screenFlash(0.18);
-      if (crit) { overlay.screenFlash(0.45); stage.ring(point, HOT, 0.05, 0.9, 0.45); }
+      if (core && !caught) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
+      // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
+      if (crit && !caught) { overlay.screenFlash(dash && !oldFx ? 0.06 : 0.45); stage.ring(point, HOT, 0.05, dash && !oldFx ? 0.6 : 0.9, 0.45); }
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
@@ -908,7 +930,8 @@ async function main() {
     if (id !== runId) return;
     el.busy.hidden = true;
     replay = r;
-    pb = new Playback(r);
+    // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
+    pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true});
     // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.
     pb.softGlance = Boolean(live) && !oldFx;
     liveSlowShown = false;
@@ -1420,8 +1443,8 @@ async function main() {
     if (!live || el.pad.hidden) return;
     const c = live.match.control(0), M = rules.manual;
     // 冲挡加重 (Elara 8723e99a, 9eb901cb): locked, not cooling, while the top is stunned (both buttons) or 冲 is held after
-    // a block that caught nothing (Sol 4ef6dad5): the button goes grey and striped and a grey fill runs across it over the
-    // lock, no seconds. A button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps the
+    // a block that caught nothing (Sol 4ef6dad5; gone from the rules since Elara 2065efad): the whole plate goes into
+    // shade, no seconds (terminal.css). A button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps the
     // cooldown's seconds and fill under the stripes. The lock wins over a 冲 or 挡 already going (a shield up as a heavy
     // lunge ends, a lunge charging as the shield runs out empty): that keeps going, but the button no longer lights as if
     // a tap would count (Sol e0535c0d). A tap shakes it as in cooling.

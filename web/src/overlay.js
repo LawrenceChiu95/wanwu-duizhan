@@ -121,6 +121,16 @@ export class Overlay {
     this.layer.append(el);
     this.hilite = {el, age: 0, dur};
   }
+  /** One word in the big-moment line (「弹开！」): the same spot, entrance and fade as a highlight, which it replaces. */
+  plate(text, cls, top, dur = 0.9) {
+    this.hilite?.el.remove();
+    const el = document.createElement('div');
+    el.className = `hilite ${cls}`;
+    el.textContent = text;
+    el.style.top = `${Math.round(top)}px`;
+    this.layer.append(el);
+    this.hilite = {el, age: 0, dur};
+  }
   /** Floating words of one kind (a class, e.g. 'broke') still up: let them fade out now, over about a third of a second. */
   hurry(cls) { for (const n of this.nums) if (n.el.classList.contains(cls)) n.age = Math.max(n.age, n.dur * 0.8); }
   screenFlash(amount) { this.flash = Math.max(this.flash, amount); }
