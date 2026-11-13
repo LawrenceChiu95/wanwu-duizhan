@@ -125,22 +125,42 @@ test('judge can disable the aggregate caps without bypassing the browser quota',
 });
 
 
-test('dedicated config uses 4331 and refuses to take the existing cookie backend port', async t => {
+test('dedicated config accepts 4331 and rejects the cookie backend port', async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'shoot-session-cli-'));
   const config = path.join(directory, 'config.json'), script = fileURLToPath(new URL('../shoot/server.mjs', import.meta.url));
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/proxy|api_key|gemini|aholo|google/i.test(key)));
-  const run = () => spawn(process.execPath, [script, '--config', config], {env, stdio: ['ignore', 'pipe', 'pipe']});
+  // Keep the CLI's config validation and let the OS pick a free socket in this child only.
+  const hook = 'data:text/javascript,' + encodeURIComponent(`
+    import {Server} from 'node:net';
+    const listen = Server.prototype.listen;
+    Server.prototype.listen = function(port, ...args) {
+      return listen.call(this, port === 4331 ? 0 : port, ...args);
+    };
+  `);
+  const run = () => spawn(process.execPath, ['--import', hook, script, '--config', config], {env, stdio: ['ignore', 'pipe', 'pipe']});
   // Only the CLI config contract: omit the function API's fakeOptions.
   const base = {port: 4331, directory, publicOrigin: origin, headerIdentity: true, budget: options.budget};
   await fs.writeFile(config, JSON.stringify({...base, port: 4330}));
-  const invalid = run(); invalid.stdout.resume(); invalid.stderr.resume(); assert.notEqual((await once(invalid, 'exit'))[0], 0);
+  const invalid = run(); let diagnostic = '';
+  invalid.stdout.resume();
+  invalid.stderr.on('data', data => { diagnostic += data; });
+  assert.notEqual((await once(invalid, 'close'))[0], 0);
+  assert.match(diagnostic, /Public config requires port 4330/);
+
   await fs.writeFile(config, JSON.stringify(base));
-  const child = run(); let output = ''; child.stdout.on('data', data => { output += data; }); child.stderr.resume();
+  const child = run(); let output = '', url;
+  child.stdout.on('data', data => { output += data; });
+  child.stderr.on('data', data => { output += data; });
   const exited = once(child, 'exit');
   t.after(async () => { if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM'); await exited; });
   const end = Date.now() + 5000;
-  while (!output.includes('127.0.0.1:4331') && child.exitCode === null && Date.now() < end) await pause(10);
-  assert.ok(output.includes('127.0.0.1:4331'), 'dedicated fake backend did not start');
-  const r = await fetch('http://127.0.0.1:4331/api/shoot/session', {method: 'POST', headers: {origin}});
+  while (child.exitCode === null && Date.now() < end) {
+    url = output.match(/Local fake shoot backend: (http:\/\/127\.0\.0\.1:\d+)\s/)?.[1];
+    if (url) break;
+    await pause(10);
+  }
+  assert.ok(url, 'dedicated fake backend did not start: ' + output);
+  assert.notEqual(new URL(url).port, '4331');
+  const r = await fetch(url + '/api/shoot/session', {method: 'POST', headers: {origin}});
   assert.equal(r.status, 200); assert.equal(r.headers.get('set-cookie'), null); await r.arrayBuffer();
 });
