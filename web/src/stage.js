@@ -1102,6 +1102,23 @@ export class Stage {
     const g = this.fighters[by];
     if (g) g.act.fling = 0.5;
   }
+  /**
+   * 冲挡加重: a lunge (by side `by`) bounced off this shield. Only the contact point lights, a small pale ring and a few
+   * sparks, and the bubble closes on a faint rim, so both tops stay readable through the slow motion (Elara aa5b5c83);
+   * the lunger is flung with streaks as with parry.
+   */
+  deflect(i, point, by) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.shield = 0;
+    f.act.parry = 0.14;
+    const pale = [new THREE.Color('#e6fbff'), new THREE.Color('#9fe6ff'), new THREE.Color('#ffd27a')];
+    this.ring(point, pale[0], 0.04, 0.42, 0.22);
+    this.burst(point, pale, 16, 2.4, 0.02, 0.3);
+    this.streaks.burst(point, 10, 5, 0.3, 0.025, 0.22, pale);
+    const g = this.fighters[by];
+    if (g) g.act.fling = 0.5;
+  }
   /** Spark lines and a camera punch at an impact. power: 0..1 (a landed lunge is 1). */
   impact(point, power, colors) {
     this.fieldUniforms.hitPoint.value.copy(point);
