@@ -94,6 +94,27 @@ test('live in the new feel a glance that strikes freezes as an ordinary knock, w
   close(p.hold, .15);
 });
 
+test('live refined feel stops only on a full dash or a real parry', () => {
+  const full = {t: .02, type: 'hit', role: 'attack', dash: true};
+  const ordinary = [{t: .01, type: 'hit', shield: true}, {t: .01, type: 'break'},
+    {t: .015, type: 'weak', role: 'attack', dashQuality: 'glance'}];
+  const p = new Playback(fixture([...ordinary, full]), {dashOnlyImpact: true});
+  p.slowEnabled = false;
+  p.advance(.03, 1, () => {});
+  close(p.t, .02);
+  close(p.hold, .07);
+  close(p.dilate, 0);
+
+  const feedback = [
+    {t: .01, type: 'parry'}, {t: .01, type: 'blockResult', deflected: true, perfect: true}
+  ];
+  const q = new Playback(fixture([...feedback]), {dashOnlyImpact: true});
+  q.slowEnabled = false;
+  q.advance(.02, 1, () => {});
+  close(q.hold, .08);
+  close(q.dilate, .15);
+});
+
 const options = {
   fighters: [
     {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'pillow', mount: 'e180', orient: 'hug'}]},

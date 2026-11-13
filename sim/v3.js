@@ -70,10 +70,10 @@ export const PLANAR_JUDGE_COMBAT_OPTIONS=Object.freeze({
 export const IMPACT_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...PLANAR_JUDGE_COMBAT_OPTIONS,
  feelRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.feelRules,thrust:1.5,recoilSpeed:.75}),
- combatRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.combatRules,impactControls:true,impactDashContacts:true,resolveMutualDashContact:true,hpScale:1.37})
+ combatRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.combatRules,impactControls:true,impactDashContacts:true,resolveMutualDashContact:true,refinedImpact:true,hpScale:1.37,mangHpScale:1.15})
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
- passiveSpeedLimit:1,launchSpeed:2.25,dashDamage:2.2,heavyTurnLoss:.55,
+ passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
  contactMinSpeed:.75,contactMinAlignment:.45};
 
 export async function loadV3Rules(){
@@ -350,6 +350,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const impact=combat==='position'&&combatRules?.impactControls===true;
  const impactDashContacts=impact&&combatRules.impactDashContacts===true;
  const resolveMutualDashContact=impactDashContacts&&combatRules.resolveMutualDashContact===true;
+ const refinedImpact=impactDashContacts&&combatRules.refinedImpact===true;
  if(impact)r.top.damageRamp=[];
  else if(definitions.some(d=>d.parts.some(p=>p.item.startsWith('fanshuo-'))))r.top.damageRamp=structuredClone(TRIAL_DAMAGE_RAMP);
  if(manual?.blockTime!==undefined){
@@ -361,7 +362,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
  const position=combat==='position'?structuredClone(combatRules):null;
  const hpScale=impact?position.hpScale??1:1;
- if(!Number.isFinite(hpScale)||hpScale<1)throw Error('Impact durability scale must be finite and at least 1');
+ const mangHpScale=refinedImpact?position.mangHpScale??1:1;
+ if([hpScale,mangHpScale].some(value=>!Number.isFinite(value)||value<1))throw Error('Impact durability scales must be finite and at least 1');
  if(combat==='position'&&(!position||!['radiusTolerance','recoilBase','recoilLength','outBonus','rangeAttack','rangeHp'].every(k=>Number.isFinite(position[k])&&position[k]>=0)||position.rangeAttack>=2||position.rangeHp>=2))throw Error('combatRules must specify finite non-negative position rules with range multipliers below 2');
  if(position?.capHp!==undefined&&(!Number.isFinite(position.capHp)||position.capHp<=0))throw Error('capHp must be positive and finite');
  if(position?.roleMode!==undefined&&!['radius','inward','reach'].includes(position.roleMode))throw Error('Unknown position role mode');
@@ -432,7 +434,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   }
  }
  try{
- buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale));
+ buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(aiProfiles[i]?.id==='mang'?mangHpScale:1)));
  extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
  initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)}));events=[{t:0,type:'start'}];frames=[];diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
@@ -456,7 +458,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const k=fs[i].ctl;
   if(k.blockResolved)return;
   k.blockResolved=true;
-  const emptyPlayerGuard=impact&&i===0&&outcome==='empty';
+  const emptyPlayerGuard=impact&&!refinedImpact&&i===0&&outcome==='empty';
   if(emptyPlayerGuard)k.dashLockedUntil=step+steps(IMPACT.emptyGuardDashLock);
   events.push({t,type:'blockResult',side:i,outcome,pressStep:k.blockPressStep,resolvedStep:step,...hit,
    ...(emptyPlayerGuard&&{dashLockedUntil:k.dashLockedUntil*r.dt})});
@@ -588,10 +590,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const onSurface=impactDashContacts&&M&&contactClosing>=IMPACT.contactMinSpeed
     ?fs.map((f,i)=>dashing(f)&&dot(f.ctl.lockedDir,contactApproach)*(i===0?1:-1)>=IMPACT.contactMinAlignment):null;
    const canDeflect=impact&&M&&impulse>=r.minimumImpulse&&(newEpisode||closes||onSurface?.some(Boolean));
-   const guards=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved):null;
+   const heldShield=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved):null;
+   // A regular bump can meet a shield without using up the window.
+   const guards=refinedImpact?heldShield?.map((held,i)=>held&&Boolean(onSurface?.[1-i])):heldShield;
    const hasDeflection=guards?.some(Boolean);
    const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasDeflection||onSurface?.[i])):[];
-   const shield=M?(impact?guards??[false,false]:fs.map(shielded)):null;
+   const shield=M?(impact?heldShield??[false,false]:fs.map(shielded)):null;
    const alignment=lunge.map(i=>{const a=fs[i].before,b=fs[1-i].before,n=flat(a.core,b.core);return {side:i,value:length(n)>0?dot(fs[i].ctl.lockedDir,n):null,closing:dot(sub(a.velocity,b.velocity),n)};});
    const fullLunge=alignment.filter(({side,value,closing})=>impactDashContacts
     ?onSurface?.[side]
@@ -687,12 +691,15 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     const centerNormal=impact?flat(fs[0].before.core,fs[1].before.core):null;
     const recoilNormal=centerNormal?.some(Boolean)?centerNormal:contactNormal;
     const before=fs.map(f=>arr(f.body.linvel()));
+    const launchSpeed=refinedImpact
+     ?Math.min(IMPACT.launchLimit,IMPACT.launchSpeed+IMPACT.launchGain*Math.max(0,contactClosing-IMPACT.contactMinSpeed))
+     :IMPACT.launchSpeed;
     fs.forEach((f,i)=>{
      const sign=i===0?-1:1,partScale=partRecoil?.[i]??1;
      if(impact){
       const away=scale(recoilNormal,sign),speed=dot(before[i],away);
       const launched=guards?.[1-i]||!shield?.[i]&&strikes.includes(1-i);
-      const outgoing=launched?IMPACT.launchSpeed
+      const outgoing=launched?launchSpeed
        :Math.min(IMPACT.passiveSpeedLimit,Math.max(0,speed)+recoilSpeed*(guards?.[i]?M.blockRecoil:1)*partScale);
       f.body.applyImpulse(vec(scale(away,f.mass*(outgoing-speed))),true);
      }else{

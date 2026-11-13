@@ -41,7 +41,7 @@ const tmpV = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
 
 /** Plays a v3 replay: interpolates the body frames, fires events once, owns slow motion and hit-stop. No physics. */
 export class Playback {
-  constructor(replay) {
+  constructor(replay, {dashOnlyImpact = false} = {}) {
     this.r = replay;
     this.end = replay.meta.duration;
     this.stopT = stopTime(replay);
@@ -51,6 +51,7 @@ export class Playback {
     this.slowAt = this.decisiveEvent ? this.decisiveEvent.t : null;
     this.slowEnabled = true;
     this.softGlance = false;
+    this.dashOnlyImpact = dashOnlyImpact;
     this.t = 0;
     this.cursor = 0;
     this.hold = 0;
@@ -115,10 +116,16 @@ export class Playback {
         const e = events[this.cursor++];
         onEvent(e);
         const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
-        if (e.type === 'parry') parried = true;
-        if (e.type === 'blockResult' && e.deflected) deflect = e.perfect || deflect === DEFLECT_PERFECT ? DEFLECT_PERFECT : DEFLECT;
-        const glance = this.softGlance && CONTACT.has(e.type) && e.dashQuality === 'glance';
-        base = Math.max(base, e.role === 'recoil' || e.type === 'parry' ? 0 : glance ? HIT_STOP.hit : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+        if (e.type === 'parry' && !this.dashOnlyImpact) parried = true;
+        if (e.type === 'blockResult' && e.deflected && (!this.dashOnlyImpact || e.perfect)) {
+          deflect = e.perfect || deflect === DEFLECT_PERFECT ? DEFLECT_PERFECT : DEFLECT;
+        }
+        if (this.dashOnlyImpact) {
+          if (dashHit) base = Math.max(base, DASH_STOP);
+        } else {
+          const glance = this.softGlance && CONTACT.has(e.type) && e.dashQuality === 'glance';
+          base = Math.max(base, e.role === 'recoil' || e.type === 'parry' ? 0 : glance ? HIT_STOP.hit : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+        }
         // A deflect in this step stands in for the parry's freeze, whichever came first.
         stop = Math.max(base, deflect ? deflect.stop : parried ? HIT_STOP.parry : 0);
         // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
