@@ -55,6 +55,28 @@ test('parry dilation starts after its unchanged .1 second freeze and seek clears
   close(p.dilate, 0);
 });
 
+test('a deflect in the same step stands in for the parry: its own shorter freeze and slow motion, once', () => {
+  for (const [events, stop, time] of [
+    [[{t: .01, type: 'parry'}, {t: .01, type: 'blockResult', deflected: true, perfect: true}], .09, .15],
+    [[{t: .01, type: 'blockResult', deflected: true, perfect: true}, {t: .01, type: 'parry'}], .09, .15],
+    [[{t: .01, type: 'blockResult', deflected: true}], .05, .12]
+  ]) {
+    const p = new Playback(fixture(events)), fired = [];
+    p.slowEnabled = false;
+    p.advance(.02, 1, e => fired.push(e));
+    assert.equal(fired.length, events.length);
+    close(p.t, .01);
+    close(p.hold, stop - .01);
+    close(p.dilate, time);
+  }
+  // Without `deflected` (?feel=old) a block result changes nothing.
+  const p = new Playback(fixture([{t: .01, type: 'blockResult', outcome: 'perfect'}]));
+  p.slowEnabled = false;
+  p.advance(.05, 1, () => {});
+  close(p.t, .05);
+  close(p.dilate, 0);
+});
+
 const options = {
   fighters: [
     {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'pillow', mount: 'e180', orient: 'hug'}]},

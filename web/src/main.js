@@ -228,6 +228,10 @@ async function main() {
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
   const stage = new Stage(el.canvas, {items, coreRadius: rules.core.radius, layout});
+  // 冲挡加重 (Elara fa18a1da): ?feel=old is the 评委版's hand feel (bada379) for side-by-side play, its picture included:
+  // the fixed camera without jolts, no 「弹开！」, breaks and blows as they were.
+  const oldFx = q.get('feel') === 'old';
+  stage.jolts = !oldFx;
   const turns = new LiveTurns(stage.renderer, stage.scene.environment);
   const overlay = new Overlay(stage, el);
   renderCredits(items, judge?.creditsMd);
@@ -309,6 +313,10 @@ async function main() {
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
   let lastParryT = -Infinity, lateNums = [];
+  // The latest lunge direction per side (its 'go'), for the push of a landed 冲; a bounce off a shield, held a step so a
+  // deflect in the same step can stand in for it (Sol 661f75e1: the two come together, said once).
+  const lungeDir = [null, null];
+  let heldParry = null, lastDeflectT = -Infinity;
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -548,7 +556,7 @@ async function main() {
   }
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
   function resetHighlights() {
-    hilite = null; killer.clear(); lastHurt.clear(); heldBreaks.clear();
+    hilite = null; killer.clear(); lastHurt.clear(); heldBreaks.clear(); heldParry = null; lungeDir.fill(null);
     for (const [node, f] of hudFlash) if (f.cls.startsWith('star')) dropFlash(node);
   }
   function updateHudFlash(dt) {
@@ -583,6 +591,11 @@ async function main() {
     const carry = reach !== undefined && a ? reach + a.sweep : rules.manual.dashSpeed * rules.manual.dashTime;
     // The head lands just past the target so it is not hidden under it, and the arrow is never shorter than ~0.9 m.
     return a && b ? Math.min(carry, Math.max(Math.hypot(b.center.x - a.center.x, b.center.z - a.center.z) + b.sweep + 0.4, a.sweep * 1.05 + 0.9)) : carry;
+  }
+  // A replay jumped into mid-lunge has no 'go' to say where it went: from the lunger's core to where it struck.
+  function towardPoint(side, point) {
+    const a = stage.fighters[side];
+    return a && point ? [point.x - a.center.x, 0, point.z - a.center.z] : null;
   }
   // Older replays have no locked direction on the wind-up: aim at the other core as it stands then.
   function towardFoe(side) {
@@ -624,9 +637,42 @@ async function main() {
     const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
     // Over the top only with ?call=slot; the line always takes a break (Elara 937d44f2).
     if (HILITE === 'slot') { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
-    // The camera never moves; only a piece or a core breaking jolts the picture a few px.
-    stage.shake(4);
+    // The camera never moves; only a piece or a core breaking jolts the picture: hard since 冲挡加重 (Elara fa18a1da).
+    if (oldFx) stage.shake(4); else stage.shake(10, 0.3);
     overlay.screenFlash(0.25);
+  }
+  // A lunge into a raised shield: it is bounced, and that should read at a glance (white flash, a clang, a
+  // short slow motion from Playback, the lunger flung away trailing streaks). The words come from blockResult /
+  // the lunge's end, and only for the player's own top.
+  function parryNow(e, point) {
+    stage.parry(e.target, point, e.attacker);
+    stage.punch(point, 7);
+    overlay.screenFlash(0.45);
+    sfx.clang();
+    buzz([25, 40, 45]);
+  }
+  // After each step: a parry no deflect stood in for still shows.
+  function flushParry() {
+    if (heldParry && Math.abs(heldParry.e.t - lastDeflectT) > 1e-6) parryNow(heldParry.e, heldParry.point);
+    heldParry = null;
+  }
+  // 冲挡加重 (Elara fa18a1da): a block that bounced the other top away (Sol 661f75e1). The blocker's bubble flares and the
+  // bounced top is flung with streaks, the picture shakes, Playback slows 0.12 s (0.15 s for a perfect one, a lunge caught
+  // head-on), and over the player's own top one word: 「弹开！」, the perfect one bigger and brighter. The other top's
+  // block gets the picture only. It stands in for the parry of the same step.
+  function deflect(e, point) {
+    lastDeflectT = e.t;
+    const perfect = !!e.perfect, at = point ?? stage.fighters[e.side]?.center;
+    if (!at) return;
+    stage.parry(e.side, at, e.attacker);
+    if (perfect) stage.perfectBlock(e.side, at);
+    overlay.screenFlash(perfect ? 0.5 : 0.32);
+    stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
+    stage.shakeV4(perfect ? 1 : 0.7);
+    sfx.clang();
+    if (perfect) sfx.perfect();
+    buzz(perfect ? [30, 40, 60] : [25, 40]);
+    verdict(e.side, '弹开！', perfect ? 'deflect perfect' : 'deflect');
   }
   function onEvent(e) {
     if (e.type === 'contact' || e.type === 'hit' || e.type === 'weak') stage.kitchen?.photo.noteCollision();
@@ -644,6 +690,8 @@ async function main() {
         // The moment of impact is as bright as the old 评委版 (Elara e6f14ad0); 凡朔's field and colours stay as they are.
         stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
         stage.impact(point, 1, [WHITE, HOT, TEAM[e.attacker]]);
+        // The view lurches on along the lunge and pushes in (Elara fa18a1da); ?feel=old keeps the 评委版's small push-in.
+        if (!oldFx) stage.lungePunch(point, lungeDir[e.attacker] ?? towardPoint(e.attacker, point), 16, 0.24);
         stage.ring(point, WHITE, 0.05, 1.0, 0.3);
         overlay.screenFlash(0.32);
         sfx.dashHit();
@@ -699,7 +747,7 @@ async function main() {
         // Only the player's own arrow greys out when the target leaves the full-lunge lane (Elara 80e885bc); the opponent's is unchanged.
         stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), e.side === 0 ? rules.manual.dashAlignment : null);
         sfx.charge(e.until - e.t);
-      } else if (e.phase === 'go') { stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
+      } else if (e.phase === 'go') { lungeDir[e.side] = e.dir; stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
       else {
         stage.endLunge(e.side);
         // How the lunge ended, as the sim judged it (full / glance / miss / blocked); the page never judges a hit itself.
@@ -715,7 +763,8 @@ async function main() {
       sfx.ting();
     } else if (e.type === 'blockResult') {
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
-      if (e.outcome === 'perfect' && e.damageApplied !== false) {
+      if (e.deflected) deflect(e, point);
+      else if (e.outcome === 'perfect' && e.damageApplied !== false) {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
         sfx.perfect();
@@ -730,14 +779,8 @@ async function main() {
       // A 「…碎了」 still up from an earlier break would read as this blow's result: clear it (Elara 80e885bc, Wren's 被挡 shot).
       lastParryT = e.t;
       overlay.hurry('broke');
-      // A lunge into a raised shield: it is bounced, and that should read at a glance (white flash, a clang, a
-      // short slow motion from Playback, the lunger flung away trailing streaks). The words come from blockResult /
-      // the lunge's end, and only for the player's own top.
-      stage.parry(e.target, point, e.attacker);
-      stage.punch(point, 7);
-      overlay.screenFlash(0.45);
-      sfx.clang();
-      buzz([25, 40, 45]);
+      // ?feel=old has no deflect: the parry shows at once. Otherwise it waits for the end of this step.
+      if (oldFx) parryNow(e, point); else heldParry = {e, point};
     } else if (e.type === 'ko') {
       // Every core that broke goes (both, when they break in the same instant).
       for (const i of e.targets ?? [e.target]) {
@@ -748,7 +791,7 @@ async function main() {
         stage.flashPart(i, 'core', 1);
         stage.scatter(i);
       }
-      stage.shake(6);
+      if (oldFx) stage.shake(6); else stage.shake(13, 0.4);
       overlay.screenFlash(0.5);
       sfx.ko();
       buzz(70);
@@ -1537,6 +1580,7 @@ async function main() {
         pb.sync(live.done);
       }
       simDt = pb.advance(dt, 1, onEvent);
+      flushParry();
       stage.pose(pb.state);
       stage.setLookahead(lookahead());
       stage.setPushV4(pb.pushAmount(pb.t));
