@@ -907,6 +907,8 @@ async function main() {
     el.busy.hidden = true;
     replay = r;
     pb = new Playback(r);
+    // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.
+    pb.softGlance = Boolean(live) && !oldFx;
     liveSlowShown = false;
     stage.setFighters(r.meta.initial.map(f => f.definition));
     stage.clearFx();

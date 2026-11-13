@@ -18,6 +18,8 @@ const DILATE_TIME = 0.4, DILATE_SCALE = 0.3;
 // motion when both come in the same step, so it is said once; replays without `deflected` (?feel=old) are unchanged.
 const DEFLECT = {stop: 0.05, time: 0.12, scale: 0.3}, DEFLECT_PERFECT = {stop: 0.09, time: 0.15, scale: 0.2};
 const CONTACT = new Set(['hit', 'weak']);
+// 冲挡加重 (Elara fc75c4cc): live in the new feel (`softGlance`), a glance that strikes (a lunge off its lane) freezes as an
+// ordinary knock does, never a 暴击's longer beat, so it never weighs more than one; ?feel=old and replays are unchanged.
 
 /** Time of the KO. Nothing should come after it; anything that does is ignored. */
 export function stopTime(replay) {
@@ -48,6 +50,7 @@ export class Playback {
     this.decisiveEvent = decisiveAnchor(replay);
     this.slowAt = this.decisiveEvent ? this.decisiveEvent.t : null;
     this.slowEnabled = true;
+    this.softGlance = false;
     this.t = 0;
     this.cursor = 0;
     this.hold = 0;
@@ -114,7 +117,8 @@ export class Playback {
         const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
         if (e.type === 'parry') parried = true;
         if (e.type === 'blockResult' && e.deflected) deflect = e.perfect || deflect === DEFLECT_PERFECT ? DEFLECT_PERFECT : DEFLECT;
-        base = Math.max(base, e.role === 'recoil' || e.type === 'parry' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+        const glance = this.softGlance && CONTACT.has(e.type) && e.dashQuality === 'glance';
+        base = Math.max(base, e.role === 'recoil' || e.type === 'parry' ? 0 : glance ? HIT_STOP.hit : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
         // A deflect in this step stands in for the parry's freeze, whichever came first.
         stop = Math.max(base, deflect ? deflect.stop : parried ? HIT_STOP.parry : 0);
         // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
