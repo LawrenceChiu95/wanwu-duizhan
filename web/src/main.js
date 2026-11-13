@@ -611,6 +611,9 @@ async function main() {
     perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied !== false && e.side === 0,
     held: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied === false && e.side === 0,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
+    // 冲挡: the player's block bounces the foe off (deflect), or the player's own lunge is bounced (stun).
+    deflect: e => e.type === 'blockResult' && e.deflected && e.side === 0,
+    stunned: e => e.type === 'blockResult' && e.deflected && e.attacker === 0,
     miss: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'miss' && e.side === 0,
     glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0,
     // Any end of the player's own lunge (aim-check.mjs compares the arrow's grey with the sim's verdict).
@@ -1339,7 +1342,8 @@ async function main() {
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action) {
     if (!live || live.done || phase !== 'play') { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
-    const c = live.match.control(0), left = action === 'dash' ? c.dashIn : c.blockIn;
+    // 冲挡加重: a top bounced off a block (or a heavy one after a lunge that met nothing) is stunned, both buttons with it.
+    const c = live.match.control(0), left = Math.max(action === 'dash' ? c.dashIn : c.blockIn, c.stunIn ?? 0);
     // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes and
     // 还没好 rises over it, so a tap that cannot count never looks like a dead button.
     if (left > rules.dt + 1e-9) {
@@ -1393,16 +1397,24 @@ async function main() {
   function updatePad() {
     if (!live || el.pad.hidden) return;
     const c = live.match.control(0), M = rules.manual;
-    for (const [btn, left, total, on] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield]]) {
-      const state = on ? 'on' : left > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
-      btn.style.setProperty('--p', on ? 0 : (1 - left / total).toFixed(3));
+    // 冲挡加重 (Elara 8723e99a, 9eb901cb): locked, not cooling, while the top is stunned (both buttons) or 冲 is held after
+    // a block that caught nothing (Sol 4ef6dad5): the button goes grey and striped and a grey fill runs across it over the
+    // lock, no seconds. A stun on a button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps
+    // the cooldown's seconds and fill under the stripes. A tap shakes it as in cooling.
+    const stun = c.stunIn ?? 0, dashLock = Math.max(stun, c.dashLockIn ?? 0);
+    for (const [btn, cool, total, on, lock] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield, stun]]) {
+      const locked = !on && lock > 0 && lock >= cool - rules.dt, left = locked ? lock : cool;
+      const state = on ? 'on' : locked ? 'locked' : left > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
+      if (locked && btn.dataset.state !== 'locked') btn.lockTotal = lock;
+      btn.style.setProperty('--p', on ? 0 : (1 - left / (locked ? btn.lockTotal : total)).toFixed(3));
       btn.classList.toggle('on', state === 'on');
+      btn.classList.toggle('locked', state === 'locked' || (!on && stun > 0));
       btn.classList.toggle('cooling', state === 'cooling');
       btn.classList.toggle('ready', state === 'ready');
       const wait = state === 'cooling' ? String(Math.ceil(left - 1e-6)) : '';
       if (btn.left.textContent !== wait) btn.left.textContent = wait;
       // Back from cooling: one pop so the thumb knows without looking twice.
-      if (state === 'ready' && btn.dataset.state === 'cooling') replay_(btn, 'pop');
+      if (state === 'ready' && (btn.dataset.state === 'cooling' || btn.dataset.state === 'locked')) replay_(btn, 'pop');
       btn.dataset.state = state;
     }
   }
