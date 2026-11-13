@@ -120,7 +120,26 @@ export class PhotoKitchen {
         sx = (Math.random() - 0.5) * amp; sy = (Math.random() - 0.5) * amp;
         c.shake4 *= Math.exp(-dt * 9);
       }
-    } else if (building) { c.push = null; c.shake4 = 0; }
+      // 冲挡加重 (Castor 1c01d17d, Elara fa18a1da): this camera had dropped the framing camera's jolts. With `jolts` on it
+      // plays them as stage.js does: the decisive shake (a break, a block that bounces) and the punch of a landed 冲 (it throws
+      // the view along the lunge). ?feel=old leaves them off, as on the 评委版.
+      if (this.stage.jolts) {
+        const time = c.shakeTime ?? 0.16;
+        if (c.shakeAge < time) {
+          c.shakeAge += dt;
+          const k = Math.max(0, 1 - c.shakeAge / time), ph = c.shakeAge * 2 * Math.PI * 14;
+          sx += Math.sin(ph) * c.shakeAmp * k;
+          sy += Math.cos(ph * 0.8) * c.shakeAmp * 0.6 * k;
+        }
+        if (c.punch) {
+          c.punch.age += dt;
+          const k = c.punch.age / (c.punch.time ?? 0.14);
+          if (k >= 1) c.punch = null;
+          // Only a landed 冲's punch moves this view; an ordinary knock stays as light as it was (平撞轻).
+          else if (c.punch.lunge) { const e = k < 0.25 ? Math.sin(k / 0.25 * Math.PI / 2) : (1 - (k - 0.25) / 0.75) ** 2; sx -= c.punch.dx * c.punch.px * e; sy -= c.punch.dy * c.punch.px * e; }
+        }
+      }
+    } else if (building) { c.push = null; c.shake4 = 0; c.punch = null; c.shakeAge = Infinity; }
     const desired = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
     camera.fov = desired;
     const ox = view.w / 2 - x, oy = view.h / 2 - y;

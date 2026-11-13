@@ -1115,7 +1115,21 @@ export class Stage {
   }
   clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0, fizzle: 0, aimDir: null}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
-  shake(px) { const c = this.cam; if (this.chase || (c.shakeAge < SHAKE_TIME && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; }
+  shake(px, time = SHAKE_TIME) { const c = this.cam; if (this.chase || (c.shakeAge < (c.shakeTime ?? SHAKE_TIME) && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; c.shakeTime = time; }
+  /**
+   * 冲挡加重 (Elara fa18a1da): a landed 冲 throws the view forward along the lunge, `px` of picture travel and a push-in
+   * of `amount`, back within `time`. The fixed camera (photo-kitchen.js) plays it with `jolts` on.
+   */
+  lungePunch(point, dir, px, amount, time = 0.24) {
+    const c = this.cam, at = {x: 0, y: 0}, ahead = {x: 0, y: 0};
+    if (this.chase || !point || !dir || !this.project(point, at) || !this.project(tmp.copy(point).add(tmp2.set(dir[0], 0, dir[2]).normalize()), ahead)) return;
+    let dx = ahead.x - at.x, dy = ahead.y - at.y;
+    const n = Math.hypot(dx, dy);
+    if (n < 1e-3) return;
+    // punch() moves the view by -d × px: the view goes the way the lunge went.
+    c.punch = {dx: -dx / n, dy: -dy / n, px, age: 0, time, lunge: true};
+    if (!c.push || c.push.amount < amount) c.push = {amount, age: 0};
+  }
   /** Camera punch: the picture jumps a few px toward the impact and settles back within PUNCH_TIME (translation only). */
   punch(point, px) {
     const c = this.cam, at = {x: 0, y: 0};
@@ -1125,7 +1139,7 @@ export class Stage {
     let dx = cx - at.x, dy = cy - at.y;
     const n = Math.hypot(dx, dy);
     if (n < 1) { dx = 0; dy = 1; } else { dx /= n; dy /= n; }
-    if (c.punch && c.punch.age < PUNCH_TIME && c.punch.px > px) return;
+    if (c.punch && c.punch.age < (c.punch.time ?? PUNCH_TIME) && c.punch.px > px) return;
     c.punch = {dx, dy, px, age: 0};
   }
 
@@ -1279,7 +1293,7 @@ export class Stage {
       f.flash = f.strike = 0; f.dim = f.dimTarget = 0; f.coreAlive = true;
       for (const p of f.parts) { p.flash = p.strike = 0; p.alive = true; p.held = false; p.owed = 0; p.holder.visible = p.fan.visible = true; }
     }
-    this.cam.shakeAge = SHAKE_TIME;
+    this.cam.shakeAge = Infinity;
     this.cam.punch = this.cam.push = null;
     this.cam.shake4 = 0;
     this.clearActs();
@@ -1301,7 +1315,7 @@ export class Stage {
     this.camera.updateProjectionMatrix();
     this.particles.mat.uniforms.uScale.value = this.view.h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)));
     // A switch is a clean cut: no jolt started under the other camera carries over (Sol 第 11 版 R1).
-    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0, shakeAge: SHAKE_TIME, shakeAmp: 0, punch: null, push: null});
+    Object.assign(this.cam, {ready: false, shake4: 0, push4: 0, shakeAge: Infinity, shakeAmp: 0, punch: null, push: null});
   }
   /** Chase camera only: camera-position shake on blows (0..1.2) and the decisive push (0..1), as v4 drove them. */
   /** Every blow's shake: the chase cameras and 凡朔's fixed camera (photo-kitchen.js) both play it out. */
@@ -1431,15 +1445,15 @@ export class Stage {
       // Per top: its core centre keeps `margin` of the width from every safe-area edge, its whole swept radius edgePx.
       // Shake and punch are worked out first: the hard floor leaves room for the few px they move the picture.
       let sx = 0, sy = 0;
-      if (c.shakeAge < SHAKE_TIME) {
+      if (c.shakeAge < (c.shakeTime ?? SHAKE_TIME)) {
         c.shakeAge += dt;
-        const k = Math.max(0, 1 - c.shakeAge / SHAKE_TIME), ph = c.shakeAge * 2 * Math.PI * 14;
+        const k = Math.max(0, 1 - c.shakeAge / (c.shakeTime ?? SHAKE_TIME)), ph = c.shakeAge * 2 * Math.PI * 14;
         sx = Math.sin(ph) * c.shakeAmp * k;
         sy = Math.cos(ph * 0.8) * c.shakeAmp * 0.6 * k;
       }
       if (c.punch) {
         c.punch.age += dt;
-        const k = c.punch.age / PUNCH_TIME;
+        const k = c.punch.age / (c.punch.time ?? PUNCH_TIME);
         if (k >= 1) c.punch = null;
         else { const e = k < 0.25 ? Math.sin(k / 0.25 * Math.PI / 2) : Math.pow(1 - (k - 0.25) / 0.75, 2); sx -= c.punch.dx * c.punch.px * e; sy -= c.punch.dy * c.punch.px * e; }
       }

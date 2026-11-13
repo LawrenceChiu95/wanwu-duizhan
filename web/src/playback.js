@@ -13,6 +13,10 @@ const DASH_STOP = 0.08;
 // Like hit-stop this is play time only: live (manual), the sim is held at its small lead over what is shown, so it
 // slows down with it and a press still lands on the next physics step; the replay is unchanged.
 const DILATE_TIME = 0.4, DILATE_SCALE = 0.3;
+// 冲挡加重 (Elara fa18a1da): a block that bounces the other top away (blockResult.deflected, Sol 661f75e1) freezes a beat
+// and runs 0.1–0.15 s slow, a perfect one (caught a lunge head-on) harder. It replaces the parry's own freeze and slow
+// motion when both come in the same step, so it is said once; replays without `deflected` (?feel=old) are unchanged.
+const DEFLECT = {stop: 0.05, time: 0.12, scale: 0.3}, DEFLECT_PERFECT = {stop: 0.09, time: 0.15, scale: 0.2};
 const CONTACT = new Set(['hit', 'weak']);
 
 /** Time of the KO. Nothing should come after it; anything that does is ignored. */
@@ -48,6 +52,8 @@ export class Playback {
     this.cursor = 0;
     this.hold = 0;
     this.dilate = 0;
+    this.dilateLen = DILATE_TIME;
+    this.dilateScale = DILATE_SCALE;
     this.state = {
       fighters: replay.frames[0].fighters.map(f => ({pos: v3(), quat: q4(), vel: v3(), angularVelocity: v3(), hp: f.hp, maxHp: f.maxHp, parts: f.parts.map(p => ({alive: true, hp: p.hp, maxHp: p.maxHp}))}))
     };
@@ -101,13 +107,16 @@ export class Playback {
       remaining -= held;
       if (remaining <= 0) break;
       const rate = speed * this.slowFactor(this.t) * this.dilateFactor();
-      let next = Math.min(this.end, this.t + remaining * rate), stop = 0, parried = false;
+      let next = Math.min(this.end, this.t + remaining * rate), stop = 0, base = 0, parried = false, deflect = null;
       while (this.cursor < events.length && events[this.cursor].t <= next) {
         const e = events[this.cursor++];
         onEvent(e);
         const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
-        stop = Math.max(stop, e.role === 'recoil' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
         if (e.type === 'parry') parried = true;
+        if (e.type === 'blockResult' && e.deflected) deflect = e.perfect || deflect === DEFLECT_PERFECT ? DEFLECT_PERFECT : DEFLECT;
+        base = Math.max(base, e.role === 'recoil' || e.type === 'parry' ? 0 : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+        // A deflect in this step stands in for the parry's freeze, whichever came first.
+        stop = Math.max(base, deflect ? deflect.stop : parried ? HIT_STOP.parry : 0);
         // Both sides of one contact share a timestamp: fire them together, then freeze on that frame.
         if (stop > 0 && (this.cursor >= events.length || events[this.cursor].t > e.t)) {
           next = e.t;
@@ -115,7 +124,9 @@ export class Playback {
         }
       }
       const moved = stop > 0 ? Math.max(0, (next - this.t) / rate) : remaining;
-      this.dilate = parried ? DILATE_TIME : Math.max(0, this.dilate - moved);
+      if (deflect) { this.dilate = this.dilateLen = deflect.time; this.dilateScale = deflect.scale; }
+      else if (parried) { this.dilate = this.dilateLen = DILATE_TIME; this.dilateScale = DILATE_SCALE; }
+      else this.dilate = Math.max(0, this.dilate - moved);
       this.t = next;
       // An impact may also happen halfway through a frame: spend its remainder on the freeze.
       remaining = stop > 0 ? Math.max(0, remaining - moved) : 0;
@@ -128,8 +139,8 @@ export class Playback {
   /** Play-time multiplier of the parry slow motion: DILATE_SCALE, easing back to 1 over its last 40 %. */
   dilateFactor() {
     if (this.dilate <= 0) return 1;
-    const k = Math.min(1, this.dilate / (DILATE_TIME * 0.4));
-    return DILATE_SCALE + (1 - DILATE_SCALE) * (1 - k * k * (3 - 2 * k));
+    const k = Math.min(1, this.dilate / (this.dilateLen * 0.4));
+    return this.dilateScale + (1 - this.dilateScale) * (1 - k * k * (3 - 2 * k));
   }
   get slowNow() { return this.dilate > 0; }
 
