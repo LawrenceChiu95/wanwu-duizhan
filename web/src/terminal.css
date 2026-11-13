@@ -389,7 +389,10 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #pad .pad.locked .cd { opacity:1;background:linear-gradient(90deg,#ffffff10,#ffffff55); }
 #pad .pad.locked .cd::after { background:#f2f2ea;box-shadow:0 0 8px 2px #f2f2ea88; }
 #pad .pad.locked svg { opacity:.45; }
-#pad .pad.locked .left { color:#f4f1e4;background:#0b0f0dcc; }
+/* The cooldown seconds, light on the dark chip on both pads: 挡's dark-green ink (cream plate) left its number almost
+   unreadable, and with an empty block now locking 冲 the player needs to see when 挡 is back (Elara 968a997a). */
+#pad .pad .left { color:#f4f1e4; }
+#pad .pad.locked .left { background:#0b0f0dcc; }
 /* 弹开！: the lit plate of a hit, in a cold white phosphor; a perfect block bigger, with a brass edge. */
 #fx .num.verdict.deflect {
   --signal:#c9f3ff;background:linear-gradient(170deg,#ffffff,var(--signal));color:#0c1513;
