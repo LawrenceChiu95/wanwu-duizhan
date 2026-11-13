@@ -73,6 +73,39 @@ test('a head-on clash between two dashes plays a full hit on both sides', async 
  assert.deepEqual(hits.map(e => e.attacker), [0, 1]);
 });
 
+test('a dash contact ends the receiving dash without a miss or recovery stun', async t => {
+ const plate = {parts: [
+  {item: 'fanshuo-plate', mount: 'e0', orient: 'out'},
+  {item: 'fanshuo-cushion', mount: 'e180', orient: 'hug'}
+ ]};
+ const manual = {sides, inputs: [
+  input(1, 0, 'dash'), input(1, 1, 'dash'), input(40, 0, 'block'),
+  input(81, 0, 'dash'), input(636, 1, 'dash'), input(664, 0, 'dash')
+ ]};
+ const {resolveMutualDashContact, ...previousRules} = rules.combatRules;
+ const setup = {...options, fighters: [chair, plate], seed: 111301, manual};
+ const previous = await createV3Match({...setup, combatRules: previousRules});
+ const current = await createV3Match(setup);
+ t.after(() => { previous.free(); current.free(); });
+ for (const game of [previous, current]) advanceTo(game, 673);
+ const end = (game, side) => game.events.find(e => e.type === 'dash' && e.phase === 'end'
+  && e.side === side && e.pressStep === (side === 0 ? 664 : 636));
+ const hit = end(previous, 0);
+ assert.equal(hit.quality, 'full');
+ assert.deepEqual(end(current, 0), hit);
+ const hurt = game => game.events.filter(e => e.t === hit.t && e.damage > 0);
+ assert.deepEqual(hurt(current), hurt(previous));
+ assert.equal(previous.control(1).dashing, true);
+ assert.equal(current.control(1).dashing, false);
+ assert.equal(end(current, 1).outcome, 'interrupted');
+ assert.equal(end(current, 1).t, hit.t);
+ for (const game of [previous, current]) advanceTo(game, 726);
+ assert.equal(end(previous, 1).outcome, 'miss');
+ assert(previous.control(1).stunIn > 0);
+ assert.equal(current.control(1).stunIn, 0);
+ assert.equal(current.events.filter(e => e.type === 'dash' && e.phase === 'end' && e.pressStep === 636).length, 1);
+});
+
 test('player launches in 9 steps and a dash hits and rebounds harder than the same passive core contact', async t => {
  const passive = await match(t);
  const active = await match(t, [input(1, 0, 'dash')]);
