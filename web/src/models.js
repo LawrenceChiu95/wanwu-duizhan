@@ -144,14 +144,16 @@ async function loadOne(item) {
   }
 }
 
-const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
+const RIM_HEAD = 'uniform vec3 uRim;\nuniform float uFlash;\nuniform float uWarm;\nuniform float uDanger;\nuniform float uDim;\nuniform float uStrike;\n';
 const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
   totalEmissiveRadiance += uRim * (rim * 1.1 + 0.015) * (1.0 - uDim * 0.7);
-  totalEmissiveRadiance += vec3(1.0) * uFlash * 1.6;
-  totalEmissiveRadiance += uRim * uStrike * rim * 1.6;
+  // uWarm (the new feel's short hit light, stage.js): the flash goes warm and dimmer instead of white, and the striker's
+  // gold edge is fainter (that feel builds no outline shell); unset it reads 0.
+  totalEmissiveRadiance += mix(vec3(1.6), vec3(1.0, 0.55, 0.24), uWarm) * uFlash;
+  totalEmissiveRadiance += uRim * uStrike * rim * mix(1.6, 0.9, uWarm);
   totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.25 + rim);
 }`;
 

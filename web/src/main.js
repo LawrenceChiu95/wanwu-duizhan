@@ -231,6 +231,8 @@ async function main() {
   // 冲挡加重 (Elara fa18a1da): ?feel=old is the 评委版's hand feel (bada379) for side-by-side play, its picture included:
   // the fixed camera without jolts, no 「弹开！」, breaks and blows as they were.
   const oldFx = q.get('feel') === 'old';
+  // The new feel's hit light: warm and short on the pieces, so they stay readable under the push-in (Elara c53fc626).
+  stage.shortHitLight = !oldFx;
   stage.jolts = !oldFx;
   const turns = new LiveTurns(stage.renderer, stage.scene.environment);
   const overlay = new Overlay(stage, el);
@@ -714,7 +716,7 @@ async function main() {
         // warmer, so the struck piece reads through the hit-stop (Elara aa5b5c83); 凡朔's field and colours stay as they are.
         if (oldFx) stage.burst(point, [WHITE, HOT, TEAM[e.attacker], WHITE, SPARK], 80, 3.8, 0.042, 0.75);
         else stage.burst(point, [HOT, TEAM[e.attacker], SPARK, WHITE], 44, 3.6, 0.026, 0.5);
-        stage.impact(point, oldFx ? 1 : 0.7, [WHITE, HOT, TEAM[e.attacker]]);
+        stage.impact(point, oldFx ? 1 : 0.7, oldFx ? [WHITE, HOT, TEAM[e.attacker]] : [HOT, SPARK, TEAM[e.attacker]]);
         // The view lurches on along the lunge and pushes in (Elara fa18a1da); ?feel=old keeps the 评委版's small push-in.
         if (!oldFx) stage.lungePunch(point, lungeDir[e.attacker] ?? towardPoint(e.attacker, point), 16, 0.24);
         stage.ring(point, WHITE, 0.05, oldFx ? 1.0 : 0.55, 0.3);
