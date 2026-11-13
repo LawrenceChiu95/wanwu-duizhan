@@ -753,7 +753,9 @@ async function main() {
         stage.charge(e.side, e.until - e.t);
         // 第 13 版: the direction is set at the press; show it through the wind-up so both sides can read the lunge.
         // Only the player's own arrow greys out when the target leaves the full-lunge lane (Elara 80e885bc); the opponent's is unchanged.
-        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), e.side === 0 ? rules.manual.dashAlignment : null);
+        // Where a lunge is judged on the surface it meets (#109), a wide piece can land one off that lane, so the arrow stays lit (Elara c4bcd7c1).
+        const lane = e.side === 0 && !combatOptions.combatRules?.impactDashContacts ? rules.manual.dashAlignment : null;
+        stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), lane);
         sfx.charge(e.until - e.t);
       } else if (e.phase === 'go') { lungeDir[e.side] = e.dir; stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
       else {
