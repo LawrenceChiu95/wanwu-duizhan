@@ -124,6 +124,29 @@ test('only two effective blocks suppress repeated block-timing advice and contin
   }
 });
 
+test('the result card counts 冲中 and 完美挡 as the match showed them (冲挡加重, Elara 61eededb)', () => {
+  const s = matchStats({events: [
+    // Lunges: only the one that landed full counts; a glance shows nothing in the match.
+    {type: 'dash', phase: 'end', side: 0, quality: 'full'},
+    {type: 'dash', phase: 'end', side: 0, quality: 'glance'},
+    {type: 'dash', phase: 'end', side: 0, quality: 'glance'},
+    {type: 'dash', phase: 'end', side: 1, quality: 'full'},
+    // Blocks that bounced: a perfect 「弹开！」 counts whether its damage went through or not; an ordinary one never.
+    {type: 'blockResult', side: 0, outcome: 'perfect', deflected: true, perfect: true, damageApplied: false},
+    {type: 'blockResult', side: 0, outcome: 'perfect', deflected: true, perfect: true, damageApplied: true},
+    {type: 'blockResult', side: 0, outcome: 'perfect', deflected: true, perfect: false, damageApplied: true},
+    {type: 'blockResult', side: 1, outcome: 'perfect', deflected: true, perfect: true},
+    // ?feel=old and older replays: 「完美」 only with its damage through.
+    {type: 'blockResult', side: 0, outcome: 'perfect', damageApplied: true},
+    {type: 'blockResult', side: 0, outcome: 'perfect', damageApplied: false},
+    {type: 'blockResult', side: 0, outcome: 'empty'}
+  ]}, [{parts: []}, {parts: []}]);
+  assert.equal(s.presses, 3);
+  assert.equal(s.landed, 1);
+  assert.equal(s.perfect, 3);
+  assert.equal(s.blocks, 6);
+});
+
 test('effective blocks do not suppress explicit defensive orientation advice or winning advice', () => {
   const s = stats('pillow');
   s.perfect = 2;

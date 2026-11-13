@@ -65,12 +65,15 @@ export function matchStats(replay, defs, shot = () => false) {
     if (e.type === 'dash' && e.phase === 'end' && e.side === 0) {
       s.presses++;
       const q = e.quality ?? (e.outcome === 'hit' ? 'full' : e.outcome);
-      if (q === 'full' || q === 'glance') s.landed++;
+      // 冲中 counts the lunges the match showed as landed; a glance shows none of that, so it is not one (Elara 61eededb).
+      if (q === 'full') s.landed++;
       else if (q === 'blocked') s.blocked++;
       else if (q === 'miss') s.missed++;
     } else if (e.type === 'blockResult' && e.side === 0) {
       s.blocks++;
-      if (e.outcome === 'perfect' && e.damageApplied !== false) s.perfect++;
+      // 完美挡 counts what the match showed as one: since 冲挡加重 a perfect 「弹开！」 (a lunge caught head-on, damage or not);
+      // a block that did not bounce anything (older replays, ?feel=old), 「完美」, shown only when its damage went through.
+      if (e.deflected ? e.perfect : e.outcome === 'perfect' && e.damageApplied !== false) s.perfect++;
     } else if (e.type === 'break' && !s.firstBroken[e.target]) {
       const k = Number(String(e.targetPart).split('-')[1]);
       s.firstBroken[e.target] = {item: e.item, orient: defs[e.target]?.parts[k]?.orient ?? null};

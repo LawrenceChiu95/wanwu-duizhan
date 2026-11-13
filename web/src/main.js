@@ -312,7 +312,8 @@ async function main() {
   let fought = null, outcome = null;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
-  let lastParryT = -Infinity, lateNums = [];
+  // lastKnockT: the step of the latest ordinary knock shown, so a glance in the same step does not knock twice.
+  let lastParryT = -Infinity, lastKnockT = -Infinity, lateNums = [];
   // The latest lunge direction per side (its 'go'), for the push of a landed 冲; a bounce off a shield, held a step so a
   // deflect in the same step can stand in for it (Sol 661f75e1: the two come together, said once).
   const lungeDir = [null, null];
@@ -701,6 +702,7 @@ async function main() {
         buzz(40);
       } else {
         // An ordinary knock: the same, scaled down.
+        lastKnockT = e.t;
         stage.burst(point, [WHITE, SPARK, TEAM[e.attacker], WHITE], big ? 40 : 22, big ? 2.8 : 2.0, big ? 0.03 : 0.022, big ? 0.6 : 0.45);
         stage.impact(point, e.shield ? 0.18 : big ? 0.65 : 0.32, [WHITE, SPARK, TEAM[e.attacker]]);
         overlay.screenFlash(big ? 0.05 : 0.025);
@@ -757,6 +759,19 @@ async function main() {
         const q = quality(e);
         // 冲空, 擦边 and 被挡 say no word (凡朔 11-11, Elara d021fab4); a miss still shows and sounds its whiff.
         if (q === 'miss') { stage.whiff(e.side); sfx.whiff(); }
+        // 冲挡加重: a glance (off the lunge's lane) still knocks like an ordinary collision, its spark, sound and small shake,
+        // when the step showed none (a hit inside the shared damage cooldown sends no hit); never the 冲中 treatment, no
+        // word (Elara 61eededb). ?feel=old keeps the 评委版's silence.
+        else if (q === 'glance' && !oldFx && e.t !== lastKnockT) {
+          const at = point ?? stage.fighters[e.side]?.center;
+          if (at) {
+            stage.burst(at, [WHITE, SPARK, TEAM[e.side], WHITE], 22, 2.0, 0.022, 0.45);
+            stage.impact(at, 0.32, [WHITE, SPARK, TEAM[e.side]]);
+          }
+          overlay.screenFlash(0.025);
+          sfx.hit(0.6);
+          stage.shakeV4(0.3);
+        }
       }
     } else if (e.type === 'dashAim') {
       // The lunge follows the target until just before it goes (Sol, 同平面 PR #103): the arrow turns and resizes with it.
@@ -905,7 +920,7 @@ async function main() {
     el.pad.hidden = !live;
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
-    lastParryT = -Infinity;
+    lastParryT = lastKnockT = -Infinity;
     test.highlights = 0;
     layout_();
     stage.pose(pb.state);
