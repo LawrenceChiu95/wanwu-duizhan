@@ -94,3 +94,53 @@ test('the enemy telegraph, seeded cooldown and guard options reproduce from repl
  assert(new Set(readies.map((e,i) => Math.round((e.t-charge[i].t)/meta.rules.dt))).size > 1);
  assert.equal(JSON.stringify(await simulateV3({...setup, combatRules: meta.combatRules, manual: meta.manual})), JSON.stringify(first));
 });
+
+test('an outward cushion catches a glancing enemy dash at the original guard thresholds', async t => {
+ const {foes,judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
+ const {parts,spread,ai,impactAi} = judgeBuilds.position.chang;
+ const player = {parts: [
+  {item:'fanshuo-pot',orient:'hug',mount:'e0'},
+  {item:'fanshuo-cushion',orient:'out',mount:'e180'}
+ ]};
+ const opponent = {parts: parts.map((part,i) => ({...part,mount:i?spread:'e0'}))};
+ const dashContactStep = 2419;
+ const {catchDashContact, ...savedGuardTiming} = rules.combatRules.guardTiming;
+ const savedRules = {...rules.combatRules,guardTiming:savedGuardTiming};
+ for (const [lead, combatRules, outcome] of [
+  [7,savedRules,'empty'], [21,rules.combatRules,'perfect'], [22,rules.combatRules,'tight']
+ ]) {
+  const game = await createV3Match({
+   ...rules, seed:3075, fighters:[player,opponent], combatRules:{...combatRules,ceramicShards:true},
+   manual:{sides:['input','ai'],aiProfiles:[null,{...foes.find(f => f.id==='chang').ai,...ai,...impactAi}],
+    inputs:[input(336,0,'block'),input(352,0,'dash'),input(1237,0,'block'),input(1248,0,'dash'),
+     input(dashContactStep-lead,0,'block')]}
+  });
+  t.after(() => game.free());
+  advanceTo(game,dashContactStep-1);
+  assert.equal(game.control(0).shield,true);
+  assert.equal(game.control(1).dashing,true);
+  game.advance();
+  const landing = game.events.find(e => e.t===game.t&&e.type==='dash'&&e.side===1&&e.phase==='end');
+  assert(landing.contactClosing>0&&landing.contactClosing<.75);
+  const hit = game.events.find(e => e.t===game.t&&e.attacker===1&&e.targetItem==='fanshuo-cushion'&&e.damage);
+  assert.equal(hit?.dashQuality,'glance');
+  assert.equal(hit.shield,true);
+  assert.equal(hit.dash,false);
+  if(outcome==='empty'){
+   assert.equal(landing.quality,'glance');
+   assert.equal(game.control(0).shield,true);
+   advanceTo(game,dashContactStep+60);
+  }else{
+   assert.equal(landing.outcome,'blocked');
+   assert.equal(game.control(1).stunIn,outcome==='perfect'?.5:0);
+   assert.equal(game.control(0).blockIn,(outcome==='perfect'?1:420-lead)*game.rules.dt);
+  }
+  const results=game.events.filter(e => e.type==='blockResult'&&e.side===0&&e.pressStep===dashContactStep-lead);
+  assert.deepEqual(results.map(e => e.outcome),[outcome]);
+  if(outcome!=='empty'){
+   assert.equal(results[0].resolvedStep,dashContactStep);
+   game.advance();
+   assert.equal(game.control(0).shield,false);
+  }
+ }
+});

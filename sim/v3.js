@@ -81,7 +81,7 @@ export const GUARD_TIMING_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...OPENING_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules,
   opening:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules.opening,minAiDashTime:1.5}),
-  guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.85,changBlockLead:.12})})
+  guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.85,changBlockLead:.12,catchDashContact:true})})
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
@@ -371,11 +371,13 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const refinedImpact=impactDashContacts&&combatRules.refinedImpact===true;
  const position=combat==='position'?structuredClone(combatRules):null;
  const guardTiming=refinedImpact?position.guardTiming:undefined;
+ const catchDashContact=guardTiming?.catchDashContact===true;
  if(guardTiming!==undefined&&(!guardTiming||
   !['aiCharge','aiDashJitter','blockTime','blockCooldown','perfectTime','wenBlockLead','changBlockLead'].every(key=>Number.isFinite(guardTiming[key])&&guardTiming[key]>=0)||
   guardTiming.aiCharge<r.manual.chargeTime||guardTiming.perfectTime<=0||
   guardTiming.perfectTime>=guardTiming.blockTime||guardTiming.blockTime>=guardTiming.aiCharge||
-  guardTiming.blockCooldown<=guardTiming.blockTime))throw Error('Invalid guard timing');
+  guardTiming.blockCooldown<=guardTiming.blockTime||
+  (guardTiming.catchDashContact!==undefined&&typeof guardTiming.catchDashContact!=='boolean')))throw Error('Invalid guard timing');
  if(impact)r.top.damageRamp=[];
  else if(definitions.some(d=>d.parts.some(p=>p.item.startsWith('fanshuo-'))))r.top.damageRamp=structuredClone(TRIAL_DAMAGE_RAMP);
  if(manual?.blockTime!==undefined){
@@ -648,7 +650,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   if(hit){
    const {left,right,point,rightPoint,normal,impulse}=hit;
    // Manual: a lunge that lands is its own blow (no damage or recoil cooldown); a shield takes most of it.
-   const closes=impact&&M&&dot(sub(fs[0].before.velocity,fs[1].before.velocity),flat(fs[0].before.core,fs[1].before.core))>r.minimumClosingSpeed;
+   const centerApproach=impact&&M?flat(fs[0].before.core,fs[1].before.core):null;
+   const closes=centerApproach&&dot(sub(fs[0].before.velocity,fs[1].before.velocity),centerApproach)>r.minimumClosingSpeed;
    // A wide spinning attachment can hit before the core is lined up. The
    // manifold normal measures the dash approach into that actual surface.
    const contactApproach=impactDashContacts?horizontalUnit(normal):null;
@@ -658,7 +661,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const canDeflect=impact&&M&&impulse>=r.minimumImpulse&&(newEpisode||closes||onSurface?.some(Boolean));
    const heldShield=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved):null;
    // A regular bump can meet a shield without using up the window.
-   const guards=refinedImpact?heldShield?.map((held,i)=>held&&Boolean(onSurface?.[1-i])):heldShield;
+   const guards=refinedImpact?heldShield?.map((held,i)=>{
+    if(!held)return false;
+    if(onSurface?.[1-i])return true;
+    // An outward part can catch a real dash at an angle that only deals ordinary damage.
+    // During continuous contact, require the same surface closing speed as a full hit.
+    if(!catchDashContact||!closes||contactClosing<(newEpisode?r.minimumClosingSpeed:IMPACT.contactMinSpeed))return false;
+    const attacker=fs[1-i],towardShield=i===0?scale(centerApproach,-1):centerApproach;
+    return dashing(attacker)&&dot(attacker.ctl.lockedDir,towardShield)>=IMPACT.contactMinAlignment&&
+     dot(attacker.before.velocity,towardShield)>=IMPACT.contactMinSpeed;
+   }):heldShield;
    const tightGuards=guardTiming&&guards?.map((held,i)=>held&&step-fs[i].ctl.blockPressStep>perfectGuardSteps);
    const deflections=tightGuards?guards.map((held,i)=>held&&!tightGuards[i]):guards;
    const hasGuardContact=guards?.some(Boolean),hasDeflection=deflections?.some(Boolean);
@@ -755,14 +767,14 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    // A correctly timed guard is contact feedback, independent of the shared damage cooldown.
    if(hasGuardContact)for(let i=0;i<2;i++){
     const shieldPoint=i===0?point:rightPoint;
-    if(deflections[i])deflect(i,shieldPoint,fullLunge.includes(1-i),shieldDamageApplied[i]);
+    if(deflections[i])deflect(i,shieldPoint,catchDashContact||fullLunge.includes(1-i),shieldDamageApplied[i]);
     if(tightGuards?.[i]){
      fs[i].ctl.shieldUntil=step;
      blockResult(i,'tight',{point:shieldPoint,attacker:1-i,damageApplied:shieldDamageApplied[i]});
     }
    }
    if(!impact&&M&&newEpisode&&(roles.attacker!==null||roles.clash))for(let i=0;i<2;i++)if(shield[i]&&(roles.clash||i!==roles.attacker))blockResult(i,'perfect',{point:i===0?point:rightPoint,attacker:1-i,clash:roles.clash,damageApplied:shieldDamageApplied[i]});
-   if((hasDeflection||t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
+   if((hasDeflection||catchDashContact&&hasGuardContact||t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
     // Manual recoil scales: a shield barely moves; a lunge into a shield bounces hard; a landed lunge knocks the other back.
     const k=M?[0,1].map(i=>fullLunge.includes(i)?(shield[1-i]?M.bounceRecoil:1):shield[i]?M.blockRecoil:fullLunge.includes(1-i)?M.dashRecoil:1):null;
     const recoilSpeed=bounce&&(impact||!lunge.length&&!shield?.some(Boolean))?bounce.recoilSpeed:r.recoilSpeed;
