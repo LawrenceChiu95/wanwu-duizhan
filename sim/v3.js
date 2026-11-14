@@ -88,9 +88,9 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  combatRules:Object.freeze({...GUARD_TIMING_JUDGE_COMBAT_OPTIONS.combatRules,
   round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
-   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.43,guardStun:.78,guardBrake:24,
-   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.23,wenHp:1.22,changHp:1.16,
-   aiDamage:2.55,aiCooldown:4.25,wenIdleDashAfter:3.75,maxDuration:75})
+   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:.78,guardBrake:24,
+   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:.9,changHp:.75,
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,maxDuration:75})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -588,8 +588,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const windup=winding?(k.chargeUntil+1-step)*r.dt:0;
   const gap=dot(delta,n)-.78*(sweepRadius(f,r)+sweepRadius(opponent,r));
   const travelSpeed=winding?M.dashSpeed:Math.max(M.dashSpeed*.8,dot(arr(f.body.linvel()),n));
-  const opponentSpeed=dot(arr(opponent.body.linvel()),n);
-  const flight=Math.max(0,gap+opponentSpeed*windup)/Math.max(M.dashSpeed*.65,travelSpeed-opponentSpeed);
+  const approach=-dot(arr(opponent.body.linvel()),n);
+  // Fitted on 939 cued lunges over three foes (Iris 11-15): the lunge speeds up past its launch speed and the
+  // player keeps closing, so contact comes at about launch + 2 m/s + twice the player's approach.
+  const flight=Math.max(0,gap)/Math.max(M.dashSpeed*.65,travelSpeed+2+2*approach);
   if(windup+flight<=round.cueLead){
    k.cued=true;
    events.push({t,type:'dashCue',side:i,pressStep:k.dashPressStep});
@@ -822,6 +824,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
      if(ordinaryImpact)d.damage*=round.passiveDamage;
+     // No single blow decides a round match: a strong counter into a core once took it whole in 3 s (Iris 11-15).
+     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp);
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
