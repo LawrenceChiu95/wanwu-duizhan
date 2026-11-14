@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, OPENING_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, GUARD_TIMING_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
@@ -177,7 +177,7 @@ async function main() {
   const feel = feelArg === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : OPENING_JUDGE_COMBAT_OPTIONS)
+  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : GUARD_TIMING_JUDGE_COMBAT_OPTIONS)
     : combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
@@ -322,6 +322,8 @@ async function main() {
   // deflect in the same step can stand in for it (Sol 661f75e1: the two come together, said once).
   const lungeDir = [null, null];
   let heldParry = null, lastDeflectT = -Infinity;
+  // 挡分两档 (Elara 896cf31c): the match plays guardTiming, so a block is 完美, 勉强 or 空, said where it struck (set per match).
+  let tiered = false;
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -538,13 +540,14 @@ async function main() {
   const heldBreaks = new BreakHolds();
   let hilite = null; // {t, broke, age, node, deflect}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
-  // `who`: words for the striker in place of its piece's name (a break no recorded blow explains).
-  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false, who = partName(part, item)) {
+  // `who`: words for the striker in place of its piece's name (a break no recorded blow explains); `at`: where it happened.
+  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false, who = partName(part, item), at = null) {
     const same = hilite && !hilite.deflect && Math.abs(t - hilite.t) < 1e-6;
     // A break always takes the line, even over another break: a broken piece never goes without its words, and none
     // follow the top (Elara 937d44f2). The 1.2 s hold is for the other lines, and ?call=slot keeps its own rules.
     const takes = broke && HILITE === 'line';
-    if (!takes && hilite && !hilite.deflect && (same ? !broke || hilite.broke : hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
+    // 挡分两档 puts the line over the contact, where the newest word always takes the place of the one up (Elara 4efa6f73).
+    if (!takes && hilite && !hilite.deflect && (same ? !broke || hilite.broke : !tiered && hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
     if (phase === 'play' && !same) test.highlights++;
     const was = hilite?.node;
     // ?call=slot: a 「弹开！」 plate still up goes with the line it gave way to (Sol 9961be5a).
@@ -558,8 +561,16 @@ async function main() {
       hilite.node = a;
       return true;
     }
+    const whom = targetPart ? partName(targetPart, targetItem) : '';
+    const spot = at ?? stage.fighters[target]?.center;
+    if (tiered && spot) {
+      // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」.
+      const short = broke ? whom && {who: whom, verb: '碎了', whom: '', side: target, whomSide: target} : {who, verb, whom: '', side, whomSide: target};
+      overlay.stampLine(spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME);
+      return true;
+    }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
-    overlay.highlight({who, verb, whom: targetPart ? partName(targetPart, targetItem) : '', side, whomSide: target}, top, HILITE_TIME);
+    overlay.highlight({who, verb, whom, side, whomSide: target}, top, HILITE_TIME);
     return true;
   }
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
@@ -619,6 +630,8 @@ async function main() {
     perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied !== false && e.side === 0,
     held: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied === false && e.side === 0,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
+    tight: e => e.type === 'blockResult' && e.outcome === 'tight' && e.side === 0,
+    'go-foe': e => e.type === 'dash' && e.phase === 'go' && e.side === 1 && e.t > 1,
     // 冲挡: the player's block bounces the foe off (deflect), or the player's own lunge is bounced (stun).
     deflect: e => e.type === 'blockResult' && e.deflected && e.side === 0,
     stunned: e => e.type === 'blockResult' && e.deflected && e.attacker === 0,
@@ -626,7 +639,9 @@ async function main() {
     glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0,
     // Any end of the player's own lunge (aim-check.mjs compares the arrow's grey with the sim's verdict).
     'end-mine': e => e.type === 'dash' && e.phase === 'end' && e.side === 0,
-    shards: e => e.type === 'archetype' && e.archetype === 'brittle'
+    shards: e => e.type === 'archetype' && e.archetype === 'brittle',
+    // The player's 冲 landing (「冲中」).
+    'hit-mine': e => e.type === 'hit' && e.attacker === 0 && e.dash && !e.parry && e.damage > 0
   };
 
   // ---------- events → effects ----------
@@ -638,10 +653,10 @@ async function main() {
     const k = `${e.target}:${e.targetPart}`, by = killer.get(k) ?? lastHurt.get(k);
     // A break always takes the line (Elara 8dbd9359, 937d44f2); with no recorded blow it still says what broke:
     // 「盘子 碎了！」 (Elara cd8eb72d).
-    if (by) highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true);
-    else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '');
-    coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     const at = stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
+    if (by) highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true, undefined, at);
+    else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '', at);
+    coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     // New feel: the picture holds as the replay's does, and the piece's slot under the HUD shakes, cracks and goes dark
     // (凡朔's 对象 lost the break among the knocks; Elara 2621157e). ?feel=old as it was.
     if (pb?.dashOnlyImpact) pb.freezeFor(BREAK_STOP);
@@ -687,9 +702,10 @@ async function main() {
     stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
-    if (perfect) sfx.perfect();
+    if (perfect || tiered) sfx.perfect();
     buzz(perfect ? [30, 40, 60] : [25, 40]);
-    if (e.side === 0) deflectLine(e.t);
+    // 挡分两档: 「完美！」 over the contact, clear of both tops, in place of the 「弹开！」 line under the HUD (Elara 896cf31c).
+    if (e.side === 0) { if (tiered) overlay.stamp(at, '完美！', 'perfect'); else deflectLine(e.t); }
   }
   // 「弹开！」: a small dark plate where 冲中 goes, not on the tops (Elara 2065efad), one look for every bounce (Elara 03075914).
   // It takes the line from anything but a break, which a broken piece never goes without, and gives it up to anything.
@@ -752,7 +768,7 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
+        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
       }
       if (core && !caught) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
       // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
@@ -788,7 +804,13 @@ async function main() {
         const lane = e.side === 0 && !combatOptions.combatRules?.impactDashContacts ? rules.manual.dashAlignment : null;
         stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), lane);
         sfx.charge(e.until - e.t);
-      } else if (e.phase === 'go') { lungeDir[e.side] = e.dir; stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
+      } else if (e.phase === 'go') {
+        lungeDir[e.side] = e.dir;
+        stage.lunge(e.side, e.dir, rules.manual.dashTime);
+        // 挡分两档: the other top's launch flashes magenta from 凡朔's arcs, apart from the warm hit light (Elara 896cf31c).
+        if (tiered && e.side === 1) stage.launchFlash(e.side);
+        sfx.whoosh();
+      }
       else {
         stage.endLunge(e.side);
         // How the lunge ended, as the sim judged it (full / glance / miss / blocked); the page never judges a hit itself.
@@ -818,7 +840,14 @@ async function main() {
     } else if (e.type === 'blockResult') {
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
       if (e.deflected) deflect(e, point);
-      else if (e.outcome === 'perfect' && e.damageApplied !== false) {
+      else if (e.outcome === 'tight') {
+        // 勉强: caught, but pressed early. Half a flare, a dull knock, a small faded word; no slow motion (Elara 896cf31c).
+        stage.tightBlock(e.side, point);
+        sfx.thud();
+        buzz(20);
+        const at = point ?? stage.fighters[e.side]?.center;
+        if (e.side === 0 && at) overlay.stamp(at, '勉强', 'tight');
+      } else if (e.outcome === 'perfect' && e.damageApplied !== false) {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
         sfx.perfect();
@@ -859,6 +888,8 @@ async function main() {
   // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
   // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
   const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件只挡一边，核心随时会挨撞', at: 'mid'}];
+  // 挡分两档: line 2 teaches the timing, since pressing as the wind-up starts now blocks nothing (Elara 896cf31c).
+  const COACH_TIERED = '看它冲过来，快撞上时按挡';
   // Line 3 says what the broken piece took with it (Elara 11-02 a788037f): only its own side; the core can be hit any
   // time and still fights with what is left (task #31, Sol's 2891 / 9099 diagnosis).
   const BROKE_LINE = {out: '伸出的件碎了，还有另一件和核心能撞', hug: '贴着的件碎了，核心这一边没了遮挡'};
@@ -884,7 +915,7 @@ async function main() {
     // other piece broke too, and then only the general line is still true (task #33).
     const f = broke && stage.fighters[broke.side], orient = f?.def.parts[broke.k]?.orient;
     const brokeLine = orient === 'out' && !f.parts.some((p, m) => m !== broke.k && p.alive) ? null : BROKE_LINE[orient];
-    el.coachText.textContent = n === 2 && brokeLine ? brokeLine : COACH[n].text;
+    el.coachText.textContent = n === 2 && brokeLine ? brokeLine : n === 1 && tiered ? COACH_TIERED : COACH[n].text;
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
     for (const n of [el.dashNope, el.blockNope]) if (n.classList.contains('show')) seatNope(n);
@@ -939,6 +970,7 @@ async function main() {
     if (id !== runId) return;
     el.busy.hidden = true;
     replay = r;
+    tiered = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.guardTiming);
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
     pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true});
     // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.

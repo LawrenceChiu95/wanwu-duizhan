@@ -136,6 +136,12 @@ const SOUNDS = {
     for (const [f, peak, dur] of [[2490, 0.09, 0.6], [3730, 0.06, 0.45], [4980, 0.035, 0.3]]) v.tone(t, dur, peak, 'sine', f * 0.94, f, 0.04, 0.001);
     v.noise(t, 0.03, 0.12, 'highpass', 6000);
   },
+  // 勉强 (挡分两档): caught, but early. A dull knock, low and muffled, short, no ring: the opposite of 完美's bright bell.
+  thud(v) {
+    const t = v.t;
+    v.tone(t, 0.16, 0.22, 'sine', 170, 95, 0.14, 0.003);
+    v.noise(t, 0.09, 0.22, 'lowpass', 700, 260, 0.9, 0.002);
+  },
   // Empty block: the bubble going out, a short muffled puff falling in pitch, no ring.
   fizzle(v) {
     const t = v.t;
@@ -263,7 +269,7 @@ export const sfx = {
     }
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
-  clang: live('clang'), perfect: live('perfect'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  clang: live('clang'), perfect: live('perfect'), thud: live('thud'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {

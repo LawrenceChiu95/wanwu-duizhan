@@ -834,6 +834,12 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   #foeParts span { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .go::after, .actions .primary::after { animation: none; } }
+/* 挡分两档: 「完美！」 / 「勉强」 over the contact point (overlay.stamp); the 评委版 skin is in terminal.css. */
+.stamp { position: absolute; left: 0; top: 0; z-index: 4; white-space: nowrap; pointer-events: none; will-change: transform, opacity; font-family: var(--display); }
+.stamp.perfect { font-size: 26px; letter-spacing: 0.1em; color: #e7b354; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 0, 0, 0.6); }
+.stamp.tight { font-size: 14px; letter-spacing: 0.08em; color: #a9b6a7; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6); }
+/* 挡分两档 puts the big-moment line there too (overlay.stampLine; Elara 4efa6f73): main.js moves it, not the HUD's top. */
+.hilite.at { left: 0; transform: none; }
 /* 第 13 版: the one-word verdict on the player's own 冲 / 挡, small and quick (over its own top only). */
 .num.verdict { transform-origin: 0 50%; font-size: 17px; letter-spacing: 0.12em; padding: 1px 8px 0; clip-path: var(--slant); text-shadow: none; }
 .num.verdict.perfect { font-size: 20px; color: #071018; background: linear-gradient(90deg, #ffffff, #c9f4ff); }

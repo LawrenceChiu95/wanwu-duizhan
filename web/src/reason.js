@@ -62,6 +62,7 @@ export function matchStats(replay, defs, shot = () => false, {oldFeel = false} =
     // Advice follows this item's scores, rather than its category or overall grade.
     hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null,
     outmatched: outmatched(defs[0]?.parts.map(p => p.item).filter(shot) ?? [], defs[1]?.parts.map(p => p.item) ?? [])};
+  const tiered = Boolean(replay.meta?.combatRules?.guardTiming);
   for (const e of replay.events) {
     if (e.type === 'dash' && e.phase === 'end' && e.side === 0) {
       s.presses++;
@@ -74,7 +75,8 @@ export function matchStats(replay, defs, shot = () => false, {oldFeel = false} =
       s.blocks++;
       // 完美挡 counts what the match showed as one: since 冲挡加重 a perfect 「弹开！」 (a lunge caught head-on, damage or not);
       // a block that did not bounce anything (older replays, ?feel=old), 「完美」, shown only when its damage went through.
-      if (e.deflected ? e.perfect : e.outcome === 'perfect' && e.damageApplied !== false) s.perfect++;
+      // 挡分两档 (guardTiming): every 完美 the match said 「完美！」 for; 勉强 is a block, not a perfect one.
+      if (e.deflected ? e.perfect || tiered : e.outcome === 'perfect' && e.damageApplied !== false) s.perfect++;
     } else if (e.type === 'break' && !s.firstBroken[e.target]) {
       const k = Number(String(e.targetPart).split('-')[1]);
       s.firstBroken[e.target] = {item: e.item, orient: defs[e.target]?.parts[k]?.orient ?? null};

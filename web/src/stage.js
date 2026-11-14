@@ -31,6 +31,8 @@ const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 export const CORE_TRAVEL = v3Rules.arenaRadius - v3Rules.core.radius, ARENA_RIM = v3Rules.arenaRadius, CORE_RISE = 1.1;
 const FIZZLE_TIME = 0.32, AIM_FADE = 0.22;
 const GREY = new THREE.Color('#9aa3ad'), GREY_DARK = new THREE.Color('#5d646d');
+// 挡分两档: the other top's launch, in the magenta of 凡朔's arcs, so it never reads as a hit (warm) or a block (pale cyan).
+const LAUNCH = new THREE.Color('#ff5fd8'), TIGHT = new THREE.Color('#8ea6b4');
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
 // v4 chase camera: how fast it may turn after the line between the tops (rad/s); 'slow' turns at SLOW_TURN of that
 // (远夏 10-28 e3a68f0a: yesterday's camera, turning about 30 % slower) and also follows and zooms slower (2735f129):
@@ -1037,6 +1039,14 @@ export class Stage {
       this.streaks.add(at, f.act.dir, f.act.dir.clone().multiplyScalar(-2.5 - Math.random() * 2), 0.55 + Math.random() * 0.5, 0.035, 0.28 + Math.random() * 0.12, k % 3 ? TEAM[i] : WHITE);
     }
   }
+  /** 挡分两档 (Elara 896cf31c): the launch of a lunge, a magenta flash on the top's core and a ring snapping out from it. */
+  launchFlash(i) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.go = 1;
+    this.ring(f.center, LAUNCH, 0.2, 1.25, 0.24);
+    this.burst(f.center, [LAUNCH, WHITE, LAUNCH], 18, 1.6, 0.03, 0.3);
+  }
   endLunge(i) { const f = this.fighters[i]; if (f) { f.act.dash = 0; f.act.aimOut = Math.max(f.act.aimOut ?? 0, 0.001); } }
   /**
    * The lunge's locked direction as an arrow on the floor, from the edge of the top's sweep where it stood at the press:
@@ -1075,6 +1085,18 @@ export class Stage {
     f.act.parry = Math.max(f.act.parry, 0.3 * size);
     this.ring(f.center, new THREE.Color('#ffffff'), 0.25, 0.25 + 1.25 * size, 0.32);
     if (point && size >= 1) this.ring(point, new THREE.Color('#e6fbff'), 0.08, 0.9, 0.3);
+  }
+  /**
+   * 挡分两档: 勉强, a block pressed early that still caught the blow. The bubble gives a short dull flare, a grey ring
+   * barely leaves the core and a few flakes chip off where it struck: no sparks, streaks or slow motion, those are 完美's.
+   */
+  tightBlock(i, point) {
+    const f = this.fighters[i];
+    if (!f) return;
+    f.act.shield = 0;
+    f.act.parry = Math.max(f.act.parry, 0.12);
+    this.ring(f.center, TIGHT, 0.25, 0.62, 0.22);
+    if (point) this.shards.burst(point, 4, 0.6, [GREY, GREY_DARK]);
   }
   /** A block whose window ran out with nothing caught: the bubble goes grey, cracks and drops away in a few dull flakes. */
   fizzle(i) {
@@ -1598,8 +1620,11 @@ export class Stage {
       f.core.visible = f.dim < 0.98;
       // Halo behind the core: makes the core readable from far away; it fades once the core is gone.
       f.halo.position.copy(f.center).addScaledVector(tmp.subVectors(f.center, this.camera.position).normalize(), this.coreRadius * 1.2);
-      f.halo.scale.setScalar(this.coreRadius * 6.5 * 0.7 * TOP_DISPLAY_SCALE);
-      f.halo.material.opacity = 0.25 * (1 - f.dim);
+      // A launch flash (launchFlash) swells the halo in magenta and lets it go in about a quarter of a second.
+      const go = f.go = (f.go ?? 0) * Math.exp(-realDt * 9);
+      f.halo.scale.setScalar(this.coreRadius * 6.5 * 0.7 * TOP_DISPLAY_SCALE * (1 + 0.7 * go));
+      f.halo.material.opacity = (0.25 + 0.75 * go) * (1 - f.dim);
+      f.halo.material.color.copy(TEAM[this.fighters.indexOf(f)]).lerp(LAUNCH, Math.min(1, go * 1.5));
       const span = Math.min(2.1, Math.abs(f.spin) * 0.16) * Math.sign(f.spin || 1);
       const [fan0, fan1] = SPIN_FAN_OPENING ?? [], fanLeft = fan0 === undefined || this.matchT === undefined ? 1 : 1 - THREE.MathUtils.smoothstep(this.matchT, fan0, fan1);
       for (const p of f.parts) {
