@@ -822,17 +822,20 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       d.damageCap=Math.min(d.damageCap*bareCoreReceive,damageReferenceHp*.8);
       d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
      }
-     let flags=null;
+     let flags=null,guardShare=1;
      if(M){
       const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
       const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round[`${aiProfiles[attacker]?.id}AiDamage`]??round.aiDamage:round.dashDamage):
        impact?IMPACT.dashDamage:M.dashDamage):1;
-      d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
+      // 一合一分: a tight guard keeps its share of the blow as it would land unguarded, cap included. Cut before the cap, a heavy
+      // foe's lunge (长臂猿 10x) still met the cap and hurt more than no guard (Wren f9021b46, Elara 2c1c8453).
+      if(round&&shieldUp&&tightGuards?.[target]){d.damage*=dashMultiplier;guardShare=M.blockDamage;}
+      else d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
      if(ordinaryImpact)d.damage*=round.passiveDamage;
      // No single blow decides a round match: a strong counter into a core once took it whole in 3 s (Iris 11-15).
-     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp);
+     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp)*guardShare;
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
