@@ -7,7 +7,7 @@ import {BenchKitchen} from './bench-kitchen.js';
 
 export const TEAM = [new THREE.Color('#ff8a3d'), new THREE.Color('#3db4ff')];
 const TOP_DISPLAY_SCALE = 1.05 * 1.10 * 1.10;
-const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmp3 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
+const tmp = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmp3 = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
 const UP = new THREE.Vector3(0, 1, 0), WHITE = new THREE.Color('#ffffff');
 
 // Framing fight camera (feel pass, 10-28; replaces the fixed overview of f682a58, which made the tops ~60 px on a phone).
@@ -1845,6 +1845,22 @@ export class Stage {
     out.x = (tmp.x * 0.5 + 0.5) * this.view.w;
     out.y = (-tmp.y * 0.5 + 0.5) * this.view.h;
     return out;
+  }
+  /**
+   * Where a spinning top can be on screen: the circles its core and live pieces sweep about the spin axis, at their
+   * lowest and highest, projected (CSS px). Sets out.top / out.left / out.right; false when it is off camera.
+   */
+  screenSpan(f, out) {
+    out.top = Infinity; out.left = Infinity; out.right = -Infinity;
+    const rings = [[this.coreRadius, -this.coreRadius, this.coreRadius]];
+    for (const p of f.parts) if (p.alive) rings.push([p.reach, p.y0, p.y1]);
+    const q = {x: 0, y: 0};
+    for (const [r, y0, y1] of rings) for (const y of [y0, y1]) for (let k = 0; k < 16; k++) {
+      const a = k * Math.PI / 8;
+      if (!this.project(f.root.localToWorld(tmpS.set(r * Math.cos(a), y, r * Math.sin(a))), q)) return false;
+      out.top = Math.min(out.top, q.y); out.left = Math.min(out.left, q.x); out.right = Math.max(out.right, q.x);
+    }
+    return true;
   }
   /** On-screen radius (CSS px) of a sphere of the given world radius at a point. */
   screenRadius(p, r) {

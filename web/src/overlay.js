@@ -144,13 +144,13 @@ export class Overlay {
   place(el, point, dur) {
     for (const s of this.stamps) s.el.remove();
     if (!el.isConnected) this.layer.append(el);
-    const {stage} = this, at = new THREE.Vector3().copy(point), p = stage.project(at, {x: 0, y: 0}), q = {x: 0, y: 0};
+    const {stage} = this, at = new THREE.Vector3().copy(point), p = stage.project(at, {x: 0, y: 0}), span = {};
     const w = el.offsetWidth, h = el.offsetHeight;
     let lift = 10;
+    // Above everything either top can sweep under it while it is up, a big piece's (抱枕, 椅子) included (Castor 27158a5f).
     if (p) for (const f of stage.fighters) {
-      if (!f?.core.visible || !stage.project(f.center, q)) continue;
-      const r = Math.min(85, stage.screenRadius(f.center, stage.reachOf(f) + 0.05));
-      if (Math.abs(q.x - p.x) < r + w / 2) lift = Math.max(lift, p.y - (q.y - r) + 6);
+      if (!f?.core.visible || !stage.screenSpan(f, span)) continue;
+      if (span.left < p.x + w / 2 && span.right > p.x - w / 2) lift = Math.max(lift, p.y - span.top + 6);
     }
     this.stamps = [{el, at, age: 0, dur, w, h, lift}];
   }
@@ -292,7 +292,7 @@ export class Overlay {
         if (Math.abs(cx - x) < c.w / 2 + mw && cy > y - mh && cy - c.h < y + 6) { under = true; break; }
       }
       // A block's word steps 「你」 aside while it is up, with room to spare, so the two never read as a pair of tags.
-      for (const s of this.stamps) if (s.x !== undefined && Math.abs(s.x - x) < s.w / 2 + mw + 24 && s.y > y - mh - 16 && s.y - s.h < y + 22) under = true;
+      for (const s of this.stamps) if (s.x !== undefined && Math.abs(s.x - x) < s.w / 2 + mw + 24 && s.y > y - mh - 48 && s.y - s.h < y + 22) under = true;
       // Out of the way at once; back in over a few frames.
       this.meCovered = under ? 1 : (this.meCovered ?? 0) * Math.exp(-dt * 16);
       this.me.style.opacity = (this.meShown * (1 - this.meCovered)).toFixed(3);
