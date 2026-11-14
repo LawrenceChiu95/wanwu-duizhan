@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, IMPACT_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, OPENING_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
@@ -177,7 +177,7 @@ async function main() {
   const feel = feelArg === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : IMPACT_JUDGE_COMBAT_OPTIONS)
+  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : OPENING_JUDGE_COMBAT_OPTIONS)
     : combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
@@ -403,7 +403,7 @@ async function main() {
 
   // ---------- build preview: both tops spin slowly where the match will start ----------
   const previewState = () => {
-    const defs = [toDef(mine), toDef(FOE)], d = sweepOf(defs[0]) + sweepOf(defs[1]) + rules.initialGap;
+    const defs = [toDef(mine), toDef(FOE)], d = openingDistance(defs.map(sweepOf), rules, combatOptions.combatRules?.opening);
     return {fighters: defs.map((def, i) => {
       const quat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), spinAngle * (i ? 1 : 1) + (i ? 1.3 : 0));
       return {pos: new THREE.Vector3(i === 0 ? -d / 2 : d / 2, 0, 0), quat, angularVelocity: new THREE.Vector3(0, PREVIEW_SPIN, 0), hp: 1, maxHp: 1, parts: def.parts.map(() => ({alive: true, hp: 1, maxHp: 1}))};
