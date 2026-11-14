@@ -115,6 +115,25 @@ test('live refined feel stops only on a full dash or a real parry', () => {
   close(q.dilate, .15);
 });
 
+test('a freeze the page asks for holds the event that asked, or the next frame (new-feel breaks, Elara 2621157e)', () => {
+  // During the break's own event: the picture stops on that event, as a replay's break does.
+  const p = new Playback(fixture([{t: .01, type: 'break'}]), {dashOnlyImpact: true});
+  p.slowEnabled = false;
+  p.advance(.05, 1, e => { if (e.type === 'break') p.freezeFor(.14); });
+  close(p.t, .01);
+  close(p.hold, .14 - .04);
+  // Between frames (a break that waited for ceramic shards): the next frame holds from its start.
+  const q = new Playback(fixture([]), {dashOnlyImpact: true});
+  q.slowEnabled = false;
+  q.advance(.1, 1, () => {});
+  q.freezeFor(.14);
+  q.advance(.1, 1, () => {});
+  close(q.t, .1);
+  close(q.hold, .04);
+  q.advance(.1, 1, () => {});
+  close(q.t, .16);
+});
+
 const options = {
   fighters: [
     {parts: [{item: 'pan-lux3d', mount: 'e0', orient: 'out'}, {item: 'pillow', mount: 'e180', orient: 'hug'}]},

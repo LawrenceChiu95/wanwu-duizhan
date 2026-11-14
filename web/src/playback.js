@@ -5,7 +5,9 @@ const SLOW = 0.25;
 // the hit last ~1 s on screen and the 0.35 s after it ~1.4 s, plus ramps. The camera push starts
 // earlier so it is already on the contact point when the hit lands.
 export const SLOW_BEFORE = 0.25, SLOW_AFTER = 0.35, RAMP = 0.1, PUSH_LEAD = 0.45;
-const HIT_STOP = {hit: 0.045, weak: 0.16, break: 0.14, ko: 0.24, parry: 0.1};
+// A piece breaking: the replay's and ?feel=old's beat, which the new feel's live match takes too (Elara 2621157e).
+export const BREAK_STOP = 0.14;
+const HIT_STOP = {hit: 0.045, weak: 0.16, break: BREAK_STOP, ko: 0.24, parry: 0.1};
 const DECISIVE_STOP = 0.3;
 // A landed lunge freezes the picture a beat longer than an ordinary knock.
 const DASH_STOP = 0.08;
@@ -55,6 +57,7 @@ export class Playback {
     this.t = 0;
     this.cursor = 0;
     this.hold = 0;
+    this.owed = 0;
     this.dilate = 0;
     this.dilateLen = DILATE_TIME;
     this.dilateScale = DILATE_SCALE;
@@ -95,15 +98,22 @@ export class Playback {
     this.t = Math.max(0, Math.min(t, this.end));
     this.cursor = this.events.findIndex(e => e.t > this.t);
     if (this.cursor < 0) this.cursor = this.events.length;
-    this.hold = this.dilate = 0;
+    this.hold = this.owed = this.dilate = 0;
     this.sample(this.t);
   }
+
+  /**
+   * A freeze the page asks for, on the picture it shows (凡朔's 对象: a break in the new feel never paused, Elara 2621157e).
+   * During an event it holds that event's frame; otherwise (a break that waited for ceramic shards) the next frame.
+   */
+  freezeFor(s) { this.owed = Math.max(this.owed, s); }
 
   /** Advances by real seconds at the given base speed; fires crossed events in order. Returns replay seconds advanced. */
   advance(realDt, speed, onEvent) {
     const start = this.t;
     const events = this.events;
     let remaining = realDt;
+    if (this.owed) { this.hold = Math.max(this.hold, this.owed); this.owed = 0; }
     while (remaining > 0) {
       // A freeze may end halfway through this frame; keep the rest for motion.
       const held = Math.min(this.hold, remaining);
@@ -115,6 +125,7 @@ export class Playback {
       while (this.cursor < events.length && events[this.cursor].t <= next) {
         const e = events[this.cursor++];
         onEvent(e);
+        if (this.owed) { base = Math.max(base, this.owed); this.owed = 0; }
         const dashHit = CONTACT.has(e.type) && e.role === 'attack' && e.dash && !e.parry;
         if (e.type === 'parry' && !this.dashOnlyImpact) parried = true;
         if (e.type === 'blockResult' && e.deflected && (!this.dashOnlyImpact || e.perfect)) {

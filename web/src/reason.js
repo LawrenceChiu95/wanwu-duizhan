@@ -111,12 +111,16 @@ export function pickStats(s, winner) {
 // Not won against a ladder opponent whose stage only asks for more tries: the tip encourages without pointing a way, since
 // no build is shown to beat it (Elara 803193e6; Sol 2b411bc5: 长臂猿 is only harder than 老龟).
 const FOE_TIP = {chang: '长臂猿是最后也是最难的一关，多打几局试试'};
+// Lost to a ladder opponent whose build makes it read tougher than its hp: say why and how to get through, ahead of any
+// other tip (凡朔's 对象 took 老龟 for having more hp: both its pieces hug and it blocks a lot; Elara b9d6e779, 2621157e).
+const FOE_WHY = {wen: '老龟两件都贴着、又爱挡，别迎头冲，等它挡完再冲'};
 
 /** One tip, by fixed rules, for the next match. `foe`: the ladder opponent's id, when it was one. */
 export function tipLine(s, winner, foe = null) {
   const mine = s.firstBroken[0];
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
+  if (winner === 1 && FOE_WHY[foe]) return FOE_WHY[foe];
   // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
   const o = winner === 1 && s.outmatched;
   if (o) {
