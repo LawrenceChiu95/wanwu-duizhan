@@ -87,8 +87,8 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...GUARD_TIMING_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...GUARD_TIMING_JUDGE_COMBAT_OPTIONS.combatRules,
   round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
-   dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
-   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:.78,guardBrake:24,
+   dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:1.6,guardLaunch:3.6,
+   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
    aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,maxDuration:75})
  })
@@ -520,6 +520,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
    k.dashPressStep=step;
    if(round)k.cued=false;
+   if(round&&countering(i)){const foe=fs[1-i].ctl;foe.guardBrakesFrom=Math.min(foe.guardBrakesFrom,Math.max(step,foe.guardBrakeEarliest));}
    k.chargeUntil=step+steps(windup)-1;
    k.dashReady=step+steps(source==='ai'&&round?round[`${aiProfiles[i]?.id}AiCooldown`]??round.aiCooldown:M.dashCooldown)+jitter;
    k.aimUntil=t+windup;
@@ -648,7 +649,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const stunUntil=t+stun;
   other.stunUntil=step+steps(stun)-1;
   if(round){
-   other.guardBrakesFrom=step+steps(round.guardBrakeDelay);
+   // Flung free: it flies the whole stun unless the guard counters, which brakes it so the counter lands (Castor 72baf2c8,
+   // Elara ad7297c3: a perfect guard must throw it farther than a bump).
+   other.guardBrakesFrom=Infinity;
+   other.guardBrakeEarliest=step+steps(round.guardBrakeDelay);
    guard.counterUntilRound=step+steps(stun);
   }
   other.pendingAi=null;
@@ -822,17 +826,21 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       d.damageCap=Math.min(d.damageCap*bareCoreReceive,damageReferenceHp*.8);
       d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
      }
-     let flags=null;
+     let flags=null,guardShare=1;
      if(M){
       const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
       const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round[`${aiProfiles[attacker]?.id}AiDamage`]??round.aiDamage:round.dashDamage):
        impact?IMPACT.dashDamage:M.dashDamage):1;
-      d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
+      // 一合一分: a tight guard keeps its share of the blow as it would land unguarded, cap included. Cut before the cap, a heavy
+      // foe's lunge (长臂猿 10x) still met the cap and hurt more than no guard (Wren f9021b46, Elara 2c1c8453).
+      // Unguarded a glance is an ordinary bump (passiveDamage), so the tight guard starts from that too (Sol c08fcff4).
+      if(round&&shieldUp&&tightGuards?.[target]){d.damage*=strikes.length?dashMultiplier:round.passiveDamage;guardShare=M.blockDamage;}
+      else d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
      if(ordinaryImpact)d.damage*=round.passiveDamage;
      // No single blow decides a round match: a strong counter into a core once took it whole in 3 s (Iris 11-15).
-     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp);
+     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp)*guardShare;
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }

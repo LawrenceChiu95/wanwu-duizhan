@@ -267,7 +267,7 @@ test('lost stage 1 on time without a 冲 says so; anyone who lunged, other stage
   ]}, [{parts: []}, {parts: []}], () => false, {oldFeel});
   assert.equal(tipLine(read('timeout', 0, 12), 1, 'mang'), turtle);
   assert.equal(tipLine(read('timeout', 0, 1), 1, 'mang'), turtle);
-  assert.notEqual(tipLine(read('timeout', 1, 12), 1, 'mang'), turtle, 'one 冲 is not 没出手');
+  assert.equal(tipLine(read('timeout', 1, 12), 1, 'mang'), '时间到：出手太少。挡住后点冲，才打得掉它的血', 'one 冲 is not 没出手, but still too few');
   assert.notEqual(tipLine(read('timeout', 0, 12), 1, 'wen'), turtle, 'stage 1 only');
   assert.notEqual(tipLine(read('timeout', 0, 12), 1), turtle, 'not off the ladder');
   assert.notEqual(tipLine(read('timeout', 0, 12, true), 1, 'mang'), turtle, 'not ?feel=old');
