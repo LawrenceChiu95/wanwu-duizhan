@@ -88,9 +88,9 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  combatRules:Object.freeze({...GUARD_TIMING_JUDGE_COMBAT_OPTIONS.combatRules,
   round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
-   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.43,guardStun:.78,guardBrake:24,
-   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.23,wenHp:1.22,changHp:1.16,
-   aiDamage:2.55,aiCooldown:4.25,wenIdleDashAfter:3.75,maxDuration:75})
+   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:.78,guardBrake:24,
+   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,maxDuration:75})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -449,6 +449,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const round=position?.round;
  if(round!==undefined&&(!round||!catchDashContact||!planar||!M||
   !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>Number.isFinite(round[key])&&round[key]>0)||
+  ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
   round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5))throw Error('Invalid round separation rules');
  if(round)r.maxDuration=round.maxDuration;
  const ceramicShards=position?.ceramicShards===true;
@@ -520,7 +521,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    k.dashPressStep=step;
    if(round)k.cued=false;
    k.chargeUntil=step+steps(windup)-1;
-   k.dashReady=step+steps(source==='ai'&&round?round.aiCooldown:M.dashCooldown)+jitter;
+   k.dashReady=step+steps(source==='ai'&&round?round[`${aiProfiles[i]?.id}AiCooldown`]??round.aiCooldown:M.dashCooldown)+jitter;
    k.aimUntil=t+windup;
    k.aimReach=dashReach===undefined?undefined:dashReach*dashScale(f);
    events.push(press,{t,type:'dash',phase:'charge',side:i,until:k.aimUntil,pressStep:step,lockedDir:k.lockedDir,
@@ -588,8 +589,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const windup=winding?(k.chargeUntil+1-step)*r.dt:0;
   const gap=dot(delta,n)-.78*(sweepRadius(f,r)+sweepRadius(opponent,r));
   const travelSpeed=winding?M.dashSpeed:Math.max(M.dashSpeed*.8,dot(arr(f.body.linvel()),n));
-  const opponentSpeed=dot(arr(opponent.body.linvel()),n);
-  const flight=Math.max(0,gap+opponentSpeed*windup)/Math.max(M.dashSpeed*.65,travelSpeed-opponentSpeed);
+  const approach=-dot(arr(opponent.body.linvel()),n);
+  // Fitted on 939 cued lunges over three foes (Iris 11-15): the lunge speeds up past its launch speed and the
+  // player keeps closing, so contact comes at about launch + 2 m/s + twice the player's approach.
+  const flight=Math.max(0,gap)/Math.max(M.dashSpeed*.65,travelSpeed+2+2*approach);
   if(windup+flight<=round.cueLead){
    k.cued=true;
    events.push({t,type:'dashCue',side:i,pressStep:k.dashPressStep});
@@ -625,6 +628,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      k.aimReach=reach;
      events.push({t,type:'dashAim',side:i,lockedDir:k.lockedDir,reach,until:k.aimUntil,pressStep:k.dashPressStep});
     }
+   }
+   // A counter homes on the stunned foe, whom the launch can carry sideways off the line we pressed on (Iris 11-15).
+   if(round&&dashing(f)&&countering(i)){
+    k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
+    const v=arr(f.body.linvel());f.body.setLinvel(vec([k.lockedDir[0]*Math.hypot(v[0],v[2]),v[1],k.lockedDir[2]*Math.hypot(v[0],v[2])]),true);
    }
    if(k.chargeUntil===step-1){const dir=k.lockedDir,v=arr(f.body.linvel());
     const speed=M.dashSpeed*dashScale(f);
@@ -744,7 +752,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const tightGuards=guardTiming&&guards?.map((held,i)=>held&&step-fs[i].ctl.blockPressStep>perfectGuardSteps);
    const deflections=tightGuards?guards.map((held,i)=>held&&!tightGuards[i]):guards;
    const hasGuardContact=guards?.some(Boolean),hasDeflection=deflections?.some(Boolean);
-   const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasGuardContact||onSurface?.[i])):[];
+   // A counter can start while the stunned foe is still grazing us; that touch is not a new episode, but the counter must still land (Iris 11-15).
+   const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasGuardContact||onSurface?.[i]||countering(i))):[];
    const shield=M?(impact?heldShield??[false,false]:fs.map(shielded)):null;
    const alignment=lunge.map(i=>{const a=fs[i].before,b=fs[1-i].before,n=flat(a.core,b.core);return {side:i,value:length(n)>0?dot(fs[i].ctl.lockedDir,n):null,closing:dot(sub(a.velocity,b.velocity),n)};});
    const fullLunge=alignment.filter(({side,value,closing})=>impactDashContacts
@@ -816,12 +825,14 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      let flags=null;
      if(M){
       const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
-      const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round.aiDamage:round.dashDamage):
+      const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round[`${aiProfiles[attacker]?.id}AiDamage`]??round.aiDamage:round.dashDamage):
        impact?IMPACT.dashDamage:M.dashDamage):1;
       d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
      if(ordinaryImpact)d.damage*=round.passiveDamage;
+     // No single blow decides a round match: a strong counter into a core once took it whole in 3 s (Iris 11-15).
+     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp);
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
