@@ -573,9 +573,15 @@ async function main() {
     overlay.highlight({who, verb, whom, side, whomSide: target}, top, HILITE_TIME);
     return true;
   }
+  // 挡分两档: the foe's 「now」. Its top flashes magenta from 凡朔's arcs with a short tick CUE_LEAD before it launches:
+  // seen, plus about a quarter second to react, the press lands in the 完美 window (Elara b3365358). The wind-up's squash
+  // and glow still say 「it's coming」. `cueAt`: replay time of the one due, null with none.
+  const CUE_LEAD = 0.3;
+  let cueAt = null;
+  function cue() { cueAt = null; stage.launchFlash(1); sfx.cue(); }
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
   function resetHighlights() {
-    hilite = null; killer.clear(); lastHurt.clear(); heldBreaks.clear(); heldParry = null; lungeDir.fill(null);
+    cueAt = null; hilite = null; killer.clear(); lastHurt.clear(); heldBreaks.clear(); heldParry = null; lungeDir.fill(null);
     for (const [node, f] of hudFlash) if (f.cls.startsWith('star')) dropFlash(node);
   }
   function updateHudFlash(dt) {
@@ -804,14 +810,15 @@ async function main() {
         const lane = e.side === 0 && !combatOptions.combatRules?.impactDashContacts ? rules.manual.dashAlignment : null;
         stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), lane);
         sfx.charge(e.until - e.t);
+        if (tiered && e.side === 1) cueAt = Math.max(e.t, e.until - CUE_LEAD);
       } else if (e.phase === 'go') {
         lungeDir[e.side] = e.dir;
         stage.lunge(e.side, e.dir, rules.manual.dashTime);
-        // 挡分两档: the other top's launch flashes magenta from 凡朔's arcs, apart from the warm hit light (Elara 896cf31c).
-        if (tiered && e.side === 1) stage.launchFlash(e.side);
+        if (e.side === 1 && cueAt !== null) cue();
         sfx.whoosh();
       }
       else {
+        if (e.side === 1) cueAt = null;
         stage.endLunge(e.side);
         // How the lunge ended, as the sim judged it (full / glance / miss / blocked); the page never judges a hit itself.
         const q = quality(e);
@@ -889,7 +896,7 @@ async function main() {
   // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
   const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件只挡一边，核心随时会挨撞', at: 'mid'}];
   // 挡分两档: line 2 teaches the timing, since pressing as the wind-up starts now blocks nothing (Elara 896cf31c).
-  const COACH_TIERED = '看它冲过来，快撞上时按挡';
+  const COACH_TIERED = '它一闪光就按挡';
   // Line 3 says what the broken piece took with it (Elara 11-02 a788037f): only its own side; the core can be hit any
   // time and still fights with what is left (task #31, Sol's 2891 / 9099 diagnosis).
   const BROKE_LINE = {out: '伸出的件碎了，还有另一件和核心能撞', hug: '贴着的件碎了，核心这一边没了遮挡'};
@@ -1685,6 +1692,7 @@ async function main() {
         pb.sync(live.done);
       }
       simDt = pb.advance(dt, 1, onEvent);
+      if (cueAt !== null && pb.t >= cueAt - 1e-9) cue();
       flushParry();
       stage.pose(pb.state);
       stage.setLookahead(lookahead());

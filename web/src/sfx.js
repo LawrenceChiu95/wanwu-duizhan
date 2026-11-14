@@ -136,6 +136,13 @@ const SOUNDS = {
     for (const [f, peak, dur] of [[2490, 0.09, 0.6], [3730, 0.06, 0.45], [4980, 0.035, 0.3]]) v.tone(t, dur, peak, 'sine', f * 0.94, f, 0.04, 0.001);
     v.noise(t, 0.03, 0.12, 'highpass', 6000);
   },
+  // 挡分两档's 「press now」 with the foe's flash: one short bright tick, two quick high notes, over before its launch.
+  cue(v) {
+    const t = v.t;
+    v.tone(t, 0.06, 0.1, 'triangle', 1760, 1760, 0.05, 0.002);
+    v.tone(t + 0.07, 0.07, 0.12, 'triangle', 2350, 2350, 0.06, 0.002);
+    v.noise(t, 0.02, 0.08, 'highpass', 5000);
+  },
   // 勉强 (挡分两档): caught, but early. A dull knock, low and muffled, short, no ring: the opposite of 完美's bright bell.
   thud(v) {
     const t = v.t;
@@ -269,7 +276,7 @@ export const sfx = {
     }
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
-  clang: live('clang'), perfect: live('perfect'), thud: live('thud'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  clang: live('clang'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {
