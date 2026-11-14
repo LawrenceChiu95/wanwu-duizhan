@@ -405,12 +405,14 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
   box-shadow:inset 0 0 0 1px #e7b35440,0 1px 3px #000a; }
 
 /* 挡分两档 (Elara 896cf31c): the block's word over the contact point, in place of 弹开！ under the HUD. 「完美！」 is that
-   plate's brass on its dark enamel, larger; 「勉强」 is small and faded, so the two read apart at a glance. */
+   plate's brass on its dark enamel, larger; 「勉强」 is bare faded words in the same spot, smaller, no plate, so it never reads as
+   another name tag (Elara 1e0497ef). */
 #fx .stamp { background:linear-gradient(170deg,#1d302d,#0c1918);border:1px solid #637870;border-radius:2px;
   font:700 13px/1.2 var(--display);padding:3px 7px;text-shadow:none;box-shadow:0 1px 3px #000a; }
 #fx .stamp.perfect { color:#e7b354;border-color:#b8913f;border-left:3px solid #e7b354;font-size:25px;padding:4px 13px;letter-spacing:.12em;
   box-shadow:inset 0 0 0 1px #e7b35440,0 0 14px #e7b35455,0 1px 3px #000a; }
-#fx .stamp.tight { color:#a3af98;border-color:#405843;font-size:13px;letter-spacing:.08em;background:#0c1918cc; }
+#fx .stamp.tight { background:none;border:0;box-shadow:none;padding:0 2px;color:#c5d1bbb0;font-size:15px;letter-spacing:.14em;
+  text-shadow:0 1px 2px #000c,0 0 6px #0009; }
 
 /* New feel: a broken piece's slot shakes, cracks and goes dark the moment it breaks (Elara 2621157e); ?feel=old as it was. */
 #hud.newfeel .pc.gone { background:#08110d;color:#6c776a;box-shadow:inset 0 0 0 1px #26332a; }

@@ -269,7 +269,8 @@ export class Overlay {
         const cx = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, q.x)), cy = q.y - c.base - c.lift;
         if (Math.abs(cx - x) < c.w / 2 + mw && cy > y - mh && cy - c.h < y + 6) { under = true; break; }
       }
-      for (const s of this.stamps) if (s.x !== undefined && Math.abs(s.x - x) < s.w / 2 + mw && s.y > y - mh && s.y - s.h < y + 6) under = true;
+      // A block's word steps 「你」 aside while it is up, with room to spare, so the two never read as a pair of tags.
+      for (const s of this.stamps) if (s.x !== undefined && Math.abs(s.x - x) < s.w / 2 + mw + 24 && s.y > y - mh - 16 && s.y - s.h < y + 22) under = true;
       // Out of the way at once; back in over a few frames.
       this.meCovered = under ? 1 : (this.meCovered ?? 0) * Math.exp(-dt * 16);
       this.me.style.opacity = (this.meShown * (1 - this.meCovered)).toFixed(3);
