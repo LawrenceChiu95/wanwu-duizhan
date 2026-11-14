@@ -32,7 +32,7 @@ export const CORE_TRAVEL = v3Rules.arenaRadius - v3Rules.core.radius, ARENA_RIM 
 const FIZZLE_TIME = 0.32, AIM_FADE = 0.22;
 const GREY = new THREE.Color('#9aa3ad'), GREY_DARK = new THREE.Color('#5d646d');
 // 挡分两档: the other top's launch, in the magenta of 凡朔's arcs, so it never reads as a hit (warm) or a block (pale cyan).
-const LAUNCH = new THREE.Color('#ff5fd8'), TIGHT = new THREE.Color('#8ea6b4');
+const METAL = new THREE.Color('#dfe8f0'), LAUNCH = new THREE.Color('#ff5fd8'), TIGHT = new THREE.Color('#8ea6b4');
 const CAM_PITCH = THREE.MathUtils.degToRad(72), CAM_YAW = Math.PI / 2, CAM_FOV = 24, SHAKE_TIME = 0.16, PUNCH_TIME = 0.14, V4_FOV = 58;
 // v4 chase camera: how fast it may turn after the line between the tops (rad/s); 'slow' turns at SLOW_TURN of that
 // (远夏 10-28 e3a68f0a: yesterday's camera, turning about 30 % slower) and also follows and zooms slower (2735f129):
@@ -674,7 +674,7 @@ class ShardFlight {
 // cracks, then it bursts and the shards fly. Hit-stop holds the whole thing, so it never adds a freeze of its own.
 const CRACK = new THREE.Color('#ffc65a'), CERAMIC_WAIT = 0.1, CERAMIC_CRACK = 0.1, CERAMIC_FLY = 0.45, CERAMIC_HOLD = 0.25;
 
-const TRAIL_N = 28;
+const TRAIL_N = 28, RECOIL_TIME = 0.4;
 class Trail {
   constructor(scene, color) {
     const g = new THREE.BufferGeometry(), k = [], s = [], index = [];
@@ -1144,6 +1144,18 @@ export class Stage {
     const g = this.fighters[by];
     if (g) g.act.fling = 0.5;
   }
+  /**
+   * 一合一分 (Elara 41cd88d6): a plain bump, lighter than any 冲 or 挡: a small tuft of metal sparks at the contact, no
+   * light on the field and no camera punch (the caller adds a light shake).
+   */
+  bump(point) {
+    const metal = [WHITE, METAL, CRACK];
+    this.burst(point, metal, 18, 2.4, 0.022, 0.26);
+    this.streaks.burst(point, 9, 4.4, 0.26, 0.024, 0.18, metal);
+    this.ring(point, METAL, 0.03, 0.32, 0.16);
+  }
+  /** Every exchange knocks both tops apart: each leaves a short trail while it slides off (RECOIL_TIME), none as it circles. */
+  recoil(i) { const f = this.fighters[i]; if (f) f.act.recoil = RECOIL_TIME; }
   /** Spark lines and a camera punch at an impact. power: 0..1 (a landed lunge is 1). */
   impact(point, power, colors) {
     this.fieldUniforms.hitPoint.value.copy(point);
@@ -1155,7 +1167,7 @@ export class Stage {
     const amount = 0.1 * power;
     if (!this.cam.push || this.cam.push.amount < amount) this.cam.push = {amount, age: 0};
   }
-  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, pop: 0, fizzle: 0, aimDir: null}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; }
+  clearActs() { for (const f of this.fighters) { Object.assign(f.act, {charge: 0, dash: 0, shield: 0, parry: 0, fling: 0, recoil: 0, pop: 0, fizzle: 0, aimDir: null}); f.shield.visible = false; f.root.scale.setScalar(1); } for (const m of this.aims) m.visible = false; }
   /** A short jolt for a decisive blow (a piece or a core breaking): a few px of picture translation, no turn. */
   shake(px, time = SHAKE_TIME) { const c = this.cam; if (this.chase || (c.shakeAge < (c.shakeTime ?? SHAKE_TIME) && c.shakeAmp > px)) return; c.shakeAge = 0; c.shakeAmp = px; c.shakeTime = time; }
   /**
@@ -1732,9 +1744,11 @@ export class Stage {
         }
       } else aim.visible = false;
       // Motion trail: always on for the player's top (orange), only while lunging or flung for the opponent.
-      const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe;
-      const op = f.dim > 0.5 ? 0 : hot ? 1 : mine ? 0.6 : 0;
-      this.trails[i].update(f.center, this.simClock, hot ? 0.42 : 0.28, hot ? 0.3 : 0.14, op);
+      // A top knocked off an exchange trails it as hot, fading out over the last of RECOIL_TIME.
+      if (a.recoil > 0) a.recoil = Math.max(0, a.recoil - simDt);
+      const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe, recoil = Math.min(1, (a.recoil ?? 0) / 0.15);
+      const op = f.dim > 0.5 ? 0 : hot ? 1 : Math.max(recoil * 0.85, mine ? 0.6 : 0);
+      this.trails[i].update(f.center, this.simClock, hot ? 0.42 : recoil > 0 ? 0.32 : 0.28, hot ? 0.3 : 0.14 + 0.1 * recoil, op);
       // The wall lights up in a top's colour where that top is close to it.
       const rr = Math.hypot(f.center.x, f.center.z) + this.reachOf(f) * 0.6, near = Math.min(1, Math.max(0, (rr - (ARENA_RIM - 1.0)) / 0.8)) * (1 - f.dim);
       this.wall.material.uniforms[i ? 'uB' : 'uA'].value.set(f.center.x, f.center.z);
