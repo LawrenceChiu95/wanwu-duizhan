@@ -830,6 +830,8 @@ export class Stage {
     });
     this.scene.add(this.meRing);
     this.showMe = false;
+    // The player's own trail is always on (orange); 一合一分 keeps it to a lunge or a knock, never while circling.
+    this.trailAlways = true;
     this.camStyle = 'new';
     this.chase = false;
     this.turnScale = 1;
@@ -1746,7 +1748,7 @@ export class Stage {
       // Motion trail: always on for the player's top (orange), only while lunging or flung for the opponent.
       // A top knocked off an exchange trails it as hot, fading out over the last of RECOIL_TIME.
       if (a.recoil > 0) a.recoil = Math.max(0, a.recoil - simDt);
-      const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe, recoil = Math.min(1, (a.recoil ?? 0) / 0.15);
+      const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe && this.trailAlways, recoil = Math.min(1, (a.recoil ?? 0) / 0.15);
       const op = f.dim > 0.5 ? 0 : hot ? 1 : Math.max(recoil * 0.85, mine ? 0.6 : 0);
       this.trails[i].update(f.center, this.simClock, hot ? 0.42 : recoil > 0 ? 0.32 : 0.28, hot ? 0.3 : 0.14 + 0.1 * recoil, op);
       // The wall lights up in a top's colour where that top is close to it.
