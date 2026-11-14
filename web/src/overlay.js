@@ -15,6 +15,7 @@ export class Overlay {
     this.nums = [];
     this.calls = [];
     this.verdicts = [];
+    this.stamps = [];
     this.hilite = null;
     this.flash = 0;
     this.banner = {age: 0, dur: 0};
@@ -103,6 +104,27 @@ export class Overlay {
     this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight}];
   }
   /**
+   * 挡分两档 (Elara 896cf31c): the block's word where it struck, 「完美！」 or 「勉强」. It stands above the contact point,
+   * lifted over whichever top is under it so it covers neither, comes in with a small punch and is gone within `dur`
+   * (real) seconds. A newer one replaces it.
+   */
+  stamp(point, text, cls, dur = 0.6) {
+    for (const s of this.stamps) s.el.remove();
+    const el = document.createElement('div');
+    el.className = `stamp ${cls}`;
+    el.textContent = text;
+    this.layer.append(el);
+    const {stage} = this, at = new THREE.Vector3().copy(point), p = stage.project(at, {x: 0, y: 0}), q = {x: 0, y: 0};
+    const w = el.offsetWidth, h = el.offsetHeight;
+    let lift = 10;
+    if (p) for (const f of stage.fighters) {
+      if (!f?.core.visible || !stage.project(f.center, q)) continue;
+      const r = Math.min(64, stage.screenRadius(f.center, stage.reachOf(f) + 0.05));
+      if (Math.abs(q.x - p.x) < r + w / 2) lift = Math.max(lift, p.y - (q.y - r) + 6);
+    }
+    this.stamps = [{el, at, age: 0, dur, w, h, lift}];
+  }
+  /**
    * A big moment, said once at a fixed spot (`top` px from the top of the layer) instead of over the tops: 「拖鞋 撞碎了
    * 马克杯！」, the striker in its side's colour, the struck piece in its own. Held `dur` s; a newer one replaces it.
    */
@@ -142,7 +164,8 @@ export class Overlay {
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
   dropHighlight() { this.hilite?.el.remove(); this.hilite = null; }
   clear() {
-    for (const n of [...this.nums, ...this.calls, ...this.verdicts]) { n.el.remove(); n.pin?.remove(); }
+    for (const n of [...this.nums, ...this.calls, ...this.verdicts, ...this.stamps]) { n.el.remove(); n.pin?.remove(); }
+    this.stamps = [];
     this.hilite?.el.remove();
     this.hilite = null;
     this.verdicts = [];
@@ -193,6 +216,16 @@ export class Overlay {
       v.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
       v.el.style.transform = `translate(${x}px, ${y}px) scale(${t < 0.1 ? 0.7 + 3 * t : 1})`;
     }
+    for (let k = this.stamps.length - 1; k >= 0; k--) {
+      const s = this.stamps[k];
+      s.age += dt;
+      const t = s.age / s.dur;
+      if (t >= 1 || !stage.project(s.at, p)) { s.el.remove(); this.stamps.splice(k, 1); continue; }
+      s.x = Math.min(W - 6 - s.w / 2, Math.max(6 + s.w / 2, p.x));
+      s.y = Math.max(stage.view.top + s.h + 6, p.y - s.lift) - ease(Math.min(1, t * 1.5)) * 8;
+      s.el.style.opacity = t > 0.6 ? (1 - t) / 0.4 : 1;
+      s.el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%) scale(${t < 0.12 ? 1.35 - 0.35 * ease(t / 0.12) : 1})`;
+    }
     if (this.hilite) {
       const h = this.hilite, t = (h.age += dt) / h.dur;
       if (t >= 1) { h.el.remove(); this.hilite = null; }
@@ -236,6 +269,7 @@ export class Overlay {
         const cx = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, q.x)), cy = q.y - c.base - c.lift;
         if (Math.abs(cx - x) < c.w / 2 + mw && cy > y - mh && cy - c.h < y + 6) { under = true; break; }
       }
+      for (const s of this.stamps) if (s.x !== undefined && Math.abs(s.x - x) < s.w / 2 + mw && s.y > y - mh && s.y - s.h < y + 6) under = true;
       // Out of the way at once; back in over a few frames.
       this.meCovered = under ? 1 : (this.meCovered ?? 0) * Math.exp(-dt * 16);
       this.me.style.opacity = (this.meShown * (1 - this.meCovered)).toFixed(3);

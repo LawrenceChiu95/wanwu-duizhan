@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, OPENING_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, GUARD_TIMING_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
@@ -177,7 +177,7 @@ async function main() {
   const feel = feelArg === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : OPENING_JUDGE_COMBAT_OPTIONS)
+  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : GUARD_TIMING_JUDGE_COMBAT_OPTIONS)
     : combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
@@ -322,6 +322,8 @@ async function main() {
   // deflect in the same step can stand in for it (Sol 661f75e1: the two come together, said once).
   const lungeDir = [null, null];
   let heldParry = null, lastDeflectT = -Infinity;
+  // 挡分两档 (Elara 896cf31c): the match plays guardTiming, so a block is 完美, 勉强 or 空, said where it struck (set per match).
+  let tiered = false;
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -619,6 +621,8 @@ async function main() {
     perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied !== false && e.side === 0,
     held: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied === false && e.side === 0,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
+    tight: e => e.type === 'blockResult' && e.outcome === 'tight' && e.side === 0,
+    'go-foe': e => e.type === 'dash' && e.phase === 'go' && e.side === 1 && e.t > 1,
     // 冲挡: the player's block bounces the foe off (deflect), or the player's own lunge is bounced (stun).
     deflect: e => e.type === 'blockResult' && e.deflected && e.side === 0,
     stunned: e => e.type === 'blockResult' && e.deflected && e.attacker === 0,
@@ -687,9 +691,10 @@ async function main() {
     stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
-    if (perfect) sfx.perfect();
+    if (perfect || tiered) sfx.perfect();
     buzz(perfect ? [30, 40, 60] : [25, 40]);
-    if (e.side === 0) deflectLine(e.t);
+    // 挡分两档: 「完美！」 over the contact, clear of both tops, in place of the 「弹开！」 line under the HUD (Elara 896cf31c).
+    if (e.side === 0) { if (tiered) overlay.stamp(at, '完美！', 'perfect'); else deflectLine(e.t); }
   }
   // 「弹开！」: a small dark plate where 冲中 goes, not on the tops (Elara 2065efad), one look for every bounce (Elara 03075914).
   // It takes the line from anything but a break, which a broken piece never goes without, and gives it up to anything.
@@ -788,7 +793,13 @@ async function main() {
         const lane = e.side === 0 && !combatOptions.combatRules?.impactDashContacts ? rules.manual.dashAlignment : null;
         stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), lane);
         sfx.charge(e.until - e.t);
-      } else if (e.phase === 'go') { lungeDir[e.side] = e.dir; stage.lunge(e.side, e.dir, rules.manual.dashTime); sfx.whoosh(); }
+      } else if (e.phase === 'go') {
+        lungeDir[e.side] = e.dir;
+        stage.lunge(e.side, e.dir, rules.manual.dashTime);
+        // 挡分两档: the other top's launch flashes magenta from 凡朔's arcs, apart from the warm hit light (Elara 896cf31c).
+        if (tiered && e.side === 1) stage.launchFlash(e.side);
+        sfx.whoosh();
+      }
       else {
         stage.endLunge(e.side);
         // How the lunge ended, as the sim judged it (full / glance / miss / blocked); the page never judges a hit itself.
@@ -818,7 +829,14 @@ async function main() {
     } else if (e.type === 'blockResult') {
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
       if (e.deflected) deflect(e, point);
-      else if (e.outcome === 'perfect' && e.damageApplied !== false) {
+      else if (e.outcome === 'tight') {
+        // 勉强: caught, but pressed early. Half a flare, a dull knock, a small faded word; no slow motion (Elara 896cf31c).
+        stage.tightBlock(e.side, point);
+        sfx.thud();
+        buzz(20);
+        const at = point ?? stage.fighters[e.side]?.center;
+        if (e.side === 0 && at) overlay.stamp(at, '勉强', 'tight');
+      } else if (e.outcome === 'perfect' && e.damageApplied !== false) {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
         sfx.perfect();
@@ -859,6 +877,8 @@ async function main() {
   // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
   // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
   const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件只挡一边，核心随时会挨撞', at: 'mid'}];
+  // 挡分两档: line 2 teaches the timing, since pressing as the wind-up starts now blocks nothing (Elara 896cf31c).
+  const COACH_TIERED = '看它冲过来，快撞上时按挡';
   // Line 3 says what the broken piece took with it (Elara 11-02 a788037f): only its own side; the core can be hit any
   // time and still fights with what is left (task #31, Sol's 2891 / 9099 diagnosis).
   const BROKE_LINE = {out: '伸出的件碎了，还有另一件和核心能撞', hug: '贴着的件碎了，核心这一边没了遮挡'};
@@ -884,7 +904,7 @@ async function main() {
     // other piece broke too, and then only the general line is still true (task #33).
     const f = broke && stage.fighters[broke.side], orient = f?.def.parts[broke.k]?.orient;
     const brokeLine = orient === 'out' && !f.parts.some((p, m) => m !== broke.k && p.alive) ? null : BROKE_LINE[orient];
-    el.coachText.textContent = n === 2 && brokeLine ? brokeLine : COACH[n].text;
+    el.coachText.textContent = n === 2 && brokeLine ? brokeLine : n === 1 && tiered ? COACH_TIERED : COACH[n].text;
     el.coach.dataset.at = COACH[n].at;
     el.coach.hidden = false;
     for (const n of [el.dashNope, el.blockNope]) if (n.classList.contains('show')) seatNope(n);
@@ -939,6 +959,7 @@ async function main() {
     if (id !== runId) return;
     el.busy.hidden = true;
     replay = r;
+    tiered = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.guardTiming);
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
     pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true});
     // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.
