@@ -7,7 +7,7 @@ import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumb
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
-import {Playback} from './playback.js';
+import {Playback, BREAK_STOP} from './playback.js';
 import {BreakHolds} from './break-holds.js';
 import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
@@ -233,6 +233,8 @@ async function main() {
   const oldFx = q.get('feel') === 'old';
   // The new feel's hit light: warm and short on the pieces, so they stay readable under the push-in (Elara c53fc626).
   stage.shortHitLight = !oldFx;
+  // A broken piece's slot goes dark with a crack across it (terminal.css .newfeel); ?feel=old keeps its red 碎 slot.
+  el.hud.classList.toggle('newfeel', !oldFx);
   stage.jolts = !oldFx;
   const turns = new LiveTurns(stage.renderer, stage.scene.environment);
   const overlay = new Overlay(stage, el);
@@ -640,6 +642,11 @@ async function main() {
     else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '');
     coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     const at = stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
+    // New feel: the picture holds as the replay's does, and the piece's slot under the HUD shakes, cracks and goes dark
+    // (凡朔's 对象 lost the break among the knocks; Elara 2621157e). ?feel=old as it was.
+    if (pb?.dashOnlyImpact) pb.freezeFor(BREAK_STOP);
+    const chip = !oldFx && hudChip(e.target, e.targetPart);
+    if (chip) { dropFlash(chip); setFlash(chip, 'crack', 0.6); }
     sfx.crunch();
     buzz(25);
     stage.shakeV4(0.8);
