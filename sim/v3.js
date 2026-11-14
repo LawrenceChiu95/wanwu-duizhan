@@ -520,7 +520,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    k.dashPressStep=step;
    if(round)k.cued=false;
    k.chargeUntil=step+steps(windup)-1;
-   k.dashReady=step+steps(source==='ai'&&round?round.aiCooldown:M.dashCooldown)+jitter;
+   k.dashReady=step+steps(source==='ai'&&round?round[`${aiProfiles[i]?.id}AiCooldown`]??round.aiCooldown:M.dashCooldown)+jitter;
    k.aimUntil=t+windup;
    k.aimReach=dashReach===undefined?undefined:dashReach*dashScale(f);
    events.push(press,{t,type:'dash',phase:'charge',side:i,until:k.aimUntil,pressStep:step,lockedDir:k.lockedDir,
@@ -746,7 +746,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const tightGuards=guardTiming&&guards?.map((held,i)=>held&&step-fs[i].ctl.blockPressStep>perfectGuardSteps);
    const deflections=tightGuards?guards.map((held,i)=>held&&!tightGuards[i]):guards;
    const hasGuardContact=guards?.some(Boolean),hasDeflection=deflections?.some(Boolean);
-   const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasGuardContact||onSurface?.[i])):[];
+   // A counter can start while the stunned foe is still grazing us; that touch is not a new episode, but the counter must still land (Iris 11-15).
+   const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasGuardContact||onSurface?.[i]||countering(i))):[];
    const shield=M?(impact?heldShield??[false,false]:fs.map(shielded)):null;
    const alignment=lunge.map(i=>{const a=fs[i].before,b=fs[1-i].before,n=flat(a.core,b.core);return {side:i,value:length(n)>0?dot(fs[i].ctl.lockedDir,n):null,closing:dot(sub(a.velocity,b.velocity),n)};});
    const fullLunge=alignment.filter(({side,value,closing})=>impactDashContacts
@@ -818,7 +819,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      let flags=null;
      if(M){
       const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
-      const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round.aiDamage:round.dashDamage):
+      const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round[`${aiProfiles[attacker]?.id}AiDamage`]??round.aiDamage:round.dashDamage):
        impact?IMPACT.dashDamage:M.dashDamage):1;
       d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
