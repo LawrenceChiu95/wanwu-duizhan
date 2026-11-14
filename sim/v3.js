@@ -88,8 +88,9 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  combatRules:Object.freeze({...GUARD_TIMING_JUDGE_COMBAT_OPTIONS.combatRules,
   round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
-   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.46,guardStun:.78,guardBrake:24,
-   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:4.2,mangHp:1.35,aiDamage:2.55,aiCooldown:4.25,wenIdleDashAfter:3.75,maxDuration:75})
+   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.43,guardStun:.78,guardBrake:24,
+   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.23,wenHp:1.22,changHp:1.16,
+   aiDamage:2.55,aiCooldown:4.25,wenIdleDashAfter:3.75,maxDuration:75})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -447,8 +448,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
  const round=position?.round;
  if(round!==undefined&&(!round||!catchDashContact||!planar||!M||
-  !['recovery','centerPull','orbit','passiveDamage','bumpSpeed','dashRecoil','dashLaunch','clashSpeed','guardRecoil','guardLaunch','aiChargeBrake','aiMinApproach','cueLead','guardStun','guardBrake','guardBrakeDelay','dashDamage','counterDamage','mangHp','aiDamage','aiCooldown','wenIdleDashAfter','maxDuration']
-   .every(key=>Number.isFinite(round[key])&&round[key]>0)||
+  !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>Number.isFinite(round[key])&&round[key]>0)||
   round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5))throw Error('Invalid round separation rules');
  if(round)r.maxDuration=round.maxDuration;
  const ceramicShards=position?.ceramicShards===true;
@@ -482,7 +482,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   }
  }
  try{
- buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(aiProfiles[i]?.id==='mang'?mangHpScale*(round?.mangHp??1):1)));
+ buildArena(world,r);critRoll=random(seed^0x9e3779b9);
+ fs=definitions.map((d,i)=>{
+  const id=aiProfiles[i]?.id;
+  const previousScale=id==='mang'?mangHpScale:1;
+  return buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(previousScale*(round?.[`${id}Hp`]??1)));
+ });
  extents=fs.map(f=>sweepRadius(f,r));const distance=openingDistance(extents,r,opening);
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
  initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)}));events=[{t:0,type:'start'}];frames=[];diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
@@ -506,6 +511,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     const dist=length(delta);
     // Check at the actual press, after the AI's visible reaction delay.
     if(dist<round.aiMinApproach||t-lastRecoil<round.recovery*.45)return;
+    if(aiProfiles[i]?.id==='mang'&&dist>(aiProfiles[i]?.dashRange[1]??M.ai.dashRange[1]))return;
    }
    const windup=chargeTime(i);
    const jitter=guardTiming&&source==='ai'&&aiProfiles[i]?.id!=='wen'
@@ -635,10 +641,6 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   other.stunUntil=step+steps(stun)-1;
   if(round){
    other.guardBrakesFrom=step+steps(round.guardBrakeDelay);
-   if(shielded(fs[attacker])){
-    other.shieldUntil=step-1;
-    blockResult(attacker,'empty');
-   }
    guard.counterUntilRound=step+steps(stun);
   }
   other.pendingAi=null;
@@ -704,8 +706,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const hit=pairs[0];
   // Solver impulses can recur while the same surfaces are still rubbing. Count
   // these continuous runs separately, never as a new attack after a quiet step.
-  let touching=pairs.some(p=>p.impulse>=r.minimumImpulse);
-  if(!touching)for(const p of active(fs[0]))for(const q of active(fs[1])){const geometry=p.collider.contactCollider(q.collider,.002);if(geometry&&geometry.distance<=.002)touching=true;}
+  let touching=pairs.some(p=>p.impulse>=r.minimumImpulse),touchNormal=hit?.normal;
+  if(!touching)for(const p of active(fs[0]))for(const q of active(fs[1])){
+   const geometry=p.collider.contactCollider(q.collider,.002);
+   if(geometry&&geometry.distance<=.002){touching=true;touchNormal=arr(geometry.normal1);}
+  }
   if(touching){if(contactRunSteps===0)contactRunStart=t-r.dt;contactRunSteps++;}else closeContactRun();
   if(round&&touching){
    contactSteps++;
@@ -727,7 +732,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const heldShield=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved&&(!round||!stunned(f))):null;
    // A regular bump can meet a shield without using up the window.
    const guards=refinedImpact?heldShield?.map((held,i)=>{
-    if(!held)return false;
+    if(!held||round&&!dashing(fs[1-i]))return false;
     if(onSurface?.[1-i])return true;
     // An outward part can catch a real dash at an angle that only deals ordinary damage.
     // During continuous contact, require the same surface closing speed as a full hit.
@@ -900,6 +905,17 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     events.push({t,type:'dash',phase:'end',side:i,outcome,quality,alignment:alignment.find(x=>x.side===i)?.value??null,...(impactDashContacts&&{contactClosing}),pressStep:f.ctl.dashPressStep,point:targetPoint});
     if(blocked&&(!impact||full)&&!tightGuards?.[1-i])events.push({t,type:'parry',attacker:i,target:1-i,point:targetPoint});
    }
+  }
+  // A long attachment can catch again while it turns away. Push along the
+  // touching surface before it can wedge, without a second scored exchange.
+  if(round&&contactRunSteps>=steps(.12)&&touchNormal&&t-lastRecoil>=.09){
+   const axis=planeNormal(touchNormal,fs);
+   fs.forEach((f,i)=>{
+    if(stunned(f)||dashing(f))return;
+    const away=scale(axis,i===0?-1:1),velocity=arr(f.body.linvel());
+    const push=Math.max(0,round.bumpSpeed-dot(velocity,away));
+    f.body.setLinvel(vec(add(velocity,scale(away,push))),true);
+   });
   }
   if(ceramicHit){
    // Release once per attachment, including when no opposing attachment is in range.
