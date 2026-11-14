@@ -258,3 +258,16 @@ test('loss advice compares current catalog grades after photo ratings change', (
   assert.equal(mouse.outmatched, null);
   assert.equal(tipLine(mouse, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
 });
+
+test('lost on time by only blocking says so, ahead of the 老龟 line (Elara af9e8542)', () => {
+  const turtle = '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血';
+  const read = (reason, presses, blocks) => matchStats({meta: {reason}, events: [
+    ...Array.from({length: presses}, () => ({type: 'dash', phase: 'end', side: 0, quality: 'blocked'})),
+    ...Array.from({length: blocks}, () => ({type: 'blockResult', side: 0, outcome: 'tight', deflected: true}))
+  ]}, [{parts: []}, {parts: []}]);
+  assert.equal(tipLine(read('timeout', 0, 12), 1, 'mang'), turtle);
+  assert.equal(tipLine(read('timeout', 2, 12), 1, 'wen'), turtle);
+  assert.notEqual(tipLine(read('timeout', 6, 10), 1), turtle, 'a player who kept dashing did not only block');
+  assert.notEqual(tipLine(read('ko', 0, 12), 1), turtle, 'only a loss on time');
+  assert.notEqual(tipLine(read('timeout', 0, 12), null), turtle, 'not a draw');
+});
