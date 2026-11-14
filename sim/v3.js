@@ -72,6 +72,11 @@ export const IMPACT_JUDGE_COMBAT_OPTIONS=Object.freeze({
  feelRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.feelRules,thrust:1.5,recoilSpeed:.75}),
  combatRules:Object.freeze({...PLANAR_JUDGE_COMBAT_OPTIONS.combatRules,impactControls:true,impactDashContacts:true,resolveMutualDashContact:true,refinedImpact:true,hpScale:1.37,mangHpScale:1.15})
 });
+export const OPENING_JUDGE_COMBAT_OPTIONS=Object.freeze({
+ ...IMPACT_JUDGE_COMBAT_OPTIONS,
+ combatRules:Object.freeze({...IMPACT_JUDGE_COMBAT_OPTIONS.combatRules,
+  opening:Object.freeze({gap:.95,rampSeconds:.7,aiDashAfter:.4})})
+});
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
  contactMinSpeed:.75,contactMinAlignment:.45};
@@ -81,6 +86,13 @@ export async function loadV3Rules(){
  return structuredClone(await rulesPromise);
 }
 export {loadCatalog} from './index.js';
+export function openingDistance(extents,r,opening){
+ const combined=extents[0]+extents[1];
+ if(!opening)return combined+r.initialGap;
+ // Widen only as far as the larger top's sweep fits between its spawn and the wall.
+ const available=2*(r.arenaRadius-.02-Math.max(...extents))-combined;
+ return combined+Math.min(opening.gap,Math.max(r.initialGap,available));
+}
 function validate(def,c,r){
  if(!def||!Array.isArray(def.parts)||def.parts.length>2)throw Error('v3 requires a core sphere with zero, one or two attachments');
  const used=new Set(),items=new Set();
@@ -358,9 +370,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   r.manual.blockTime=manual.blockTime;
  }
  if(impact)r.manual.blockTime=IMPACT.blockTime;
- // Automatic play has the same symmetric opening, but carries no manual rules or actions.
+ // Automatic play uses the same symmetric spawn, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
  const position=combat==='position'?structuredClone(combatRules):null;
+ const opening=refinedImpact?position.opening:undefined;
+ if(opening!==undefined&&(!opening||!Number.isFinite(opening.gap)||opening.gap<r.initialGap||
+  ![opening.rampSeconds,opening.aiDashAfter].every(value=>Number.isFinite(value)&&value>=0)))throw Error('Invalid opening approach');
  const hpScale=impact?position.hpScale??1:1;
  const mangHpScale=refinedImpact?position.mangHpScale??1:1;
  if([hpScale,mangHpScale].some(value=>!Number.isFinite(value)||value<1))throw Error('Impact durability scales must be finite and at least 1');
@@ -435,7 +450,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  }
  try{
  buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(aiProfiles[i]?.id==='mang'?mangHpScale:1)));
- extents=fs.map(f=>sweepRadius(f,r));const distance=extents[0]+extents[1]+r.initialGap;
+ extents=fs.map(f=>sweepRadius(f,r));const distance=openingDistance(extents,r,opening);
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
  initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)}));events=[{t:0,type:'start'}];frames=[];diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
  scrapeEpisodes=[];
@@ -483,7 +498,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    for(let n=k.observedEvents??0;n<events.length;n++){const e=events[n];if(e.type==='dash'&&e.phase==='end'&&e.side===1-i)k.counterUntil=Math.max(k.counterUntil,e.t+2.4);if(e.type==='blockResult'&&e.side===i&&e.outcome==='perfect')k.counterUntil=Math.max(k.counterUntil,e.t+.8);}
    k.observedEvents=events.length;
   }
-  if(k.pendingAi===null&&(step-1)%steps(tuning.think)===0){const action=think(i);if(action)k.pendingAi={action,decisionStep:step,at:step+steps(profile?.reactionDelay??0)+Math.floor(aiRoll[i]()*(steps(tuning.reactionJitter)+1))};}
+  if(k.pendingAi===null&&(step-1)%steps(tuning.think)===0){
+   const action=think(i);
+   // Let the tops approach before the first AI charge. Player input is available on the first step.
+   const earlyDash=action==='dash'&&lastSeen===-Infinity&&t<(opening?.aiDashAfter??0);
+   if(action&&!earlyDash)k.pendingAi={action,decisionStep:step,at:step+steps(profile?.reactionDelay??0)+Math.floor(aiRoll[i]()*(steps(tuning.reactionJitter)+1))};
+  }
   if(k.pendingAi&&k.pendingAi.at<=step){const action=k.pendingAi;k.pendingAi=null;if(profile?.id!=='wen'||action.action!=='dash'||wenCanDash(i))return [action];}
   return [];
  }
@@ -542,6 +562,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   step++;t=step*r.dt;
   if(M)manualStep();
   const motion=bounce&&(impact||lastRecoil!==-Infinity)?bounce:r;
+  const openingScale=opening?.rampSeconds&&lastSeen===-Infinity
+   ?Math.min(1,t/opening.rampSeconds):1;
   fs.forEach((f,i)=>{
    const p=arr(planar?f.body.translation():f.body.worldCom()),delta=sub(arr(planar?fs[1-i].body.translation():fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],isStunned=M&&stunned(f),pursuit=isStunned||t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
@@ -555,6 +577,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     ?(1-load)*Math.min(1,(t-lastRecoil)/r.recoilPause)*weightFeel.recenterBoost:0;
    const attraction=motion.attraction*(1-load*(weightFeel?.recenterLoss??0)+agile);
    let acceleration=add(scale(p,-attraction),scale(n,motion.thrust*pursuit*turn));
+   if(openingScale<1)acceleration=scale(acceleration,openingScale);
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit*turn));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
