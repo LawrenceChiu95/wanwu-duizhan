@@ -71,12 +71,17 @@ test('the enemy telegraph, seeded cooldown and guard options reproduce from repl
  const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
  const {parts, spread} = judgeBuilds.position.mang;
  const opponent = {parts: parts.map((p,i) => ({...p, mount: i ? spread : 'e0'}))};
- const setup = {...bare, fighters: [core, opponent], seed: 111300,
+ const player = {parts: [
+  {item: 'fanshuo-pot', orient: 'out', mount: 'e0'},
+  {item: 'fanshuo-cushion', orient: 'hug', mount: 'e180'},
+ ]};
+ const setup = {...bare, fighters: [player, opponent], seed: 111300,
   manual: {sides: ['input', 'ai'], aiProfiles: [null, foes[0].ai], inputs: [input(32, 0, 'block')]}};
  const first = await simulateV3(setup);
  const {meta, events} = first;
  const charge = events.filter(e => e.type === 'dash' && e.side === 1 && e.phase === 'charge');
- assert(charge[0].t >= .4 && charge.length >= 2);
+ assert(charge[0].t >= 1.5 && charge.length >= 2);
+ assert(events.find(e => e.type === 'contact').t < 1.5);
  for (const cue of charge) {
   assert(Math.abs(cue.until - cue.t - .55) < 1e-9);
   const go = events.find(e => e.type === 'dash' && e.phase === 'go' && e.side === 1 && e.pressStep === cue.pressStep);

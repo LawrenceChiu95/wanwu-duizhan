@@ -80,6 +80,7 @@ export const OPENING_JUDGE_COMBAT_OPTIONS=Object.freeze({
 export const GUARD_TIMING_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...OPENING_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules,
+  opening:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules.opening,minAiDashTime:1.5}),
   guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.85,changBlockLead:.12})})
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -387,7 +388,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
  const opening=refinedImpact?position.opening:undefined;
  if(opening!==undefined&&(!opening||!Number.isFinite(opening.gap)||opening.gap<r.initialGap||
-  ![opening.rampSeconds,opening.aiDashAfter].every(value=>Number.isFinite(value)&&value>=0)))throw Error('Invalid opening approach');
+  ![opening.rampSeconds,opening.aiDashAfter,opening.minAiDashTime??0].every(value=>Number.isFinite(value)&&value>=0)))throw Error('Invalid opening approach');
  const hpScale=impact?position.hpScale??1:1;
  const mangHpScale=refinedImpact?position.mangHpScale??1:1;
  if([hpScale,mangHpScale].some(value=>!Number.isFinite(value)||value<1))throw Error('Impact durability scales must be finite and at least 1');
@@ -538,8 +539,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   }
   if(k.pendingAi===null&&(step-1)%steps(tuning.think)===0){
    const action=think(i);
-   // Let the tops approach before the first AI charge. Player input is available on the first step.
-   const earlyDash=action==='dash'&&lastSeen===-Infinity&&t<(opening?.aiDashAfter??0);
+   // Give the player time to try the controls, even after an early contact.
+   const earlyDash=action==='dash'&&(t<(opening?.minAiDashTime??0)||
+    (lastSeen===-Infinity&&t<(opening?.aiDashAfter??0)));
    if(action&&!earlyDash)k.pendingAi={action,decisionStep:step,at:step+steps(profile?.reactionDelay??0)+Math.floor(aiRoll[i]()*(steps(tuning.reactionJitter)+1))};
   }
   if(k.pendingAi&&k.pendingAi.at<=step){const action=k.pendingAi;k.pendingAi=null;if(profile?.id!=='wen'||action.action!=='dash'||wenCanDash(i))return [action];}
