@@ -149,7 +149,7 @@ export class Overlay {
     let lift = 10;
     if (p) for (const f of stage.fighters) {
       if (!f?.core.visible || !stage.project(f.center, q)) continue;
-      const r = Math.min(64, stage.screenRadius(f.center, stage.reachOf(f) + 0.05));
+      const r = Math.min(85, stage.screenRadius(f.center, stage.reachOf(f) + 0.05));
       if (Math.abs(q.x - p.x) < r + w / 2) lift = Math.max(lift, p.y - (q.y - r) + 6);
     }
     this.stamps = [{el, at, age: 0, dur, w, h, lift}];
