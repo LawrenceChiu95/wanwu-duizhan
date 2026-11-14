@@ -95,26 +95,32 @@ test('the enemy telegraph, seeded cooldown and guard options reproduce from repl
  assert.equal(JSON.stringify(await simulateV3({...setup, combatRules: meta.combatRules, manual: meta.manual})), JSON.stringify(first));
 });
 
-test('an outward cushion catches a glancing enemy dash at the original guard thresholds', async t => {
+async function cushionAgainstChang(seed, combatRules, inputs, potOrientation = 'hug') {
  const {foes,judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
  const {parts,spread,ai,impactAi} = judgeBuilds.position.chang;
  const player = {parts: [
-  {item:'fanshuo-pot',orient:'hug',mount:'e0'},
+  {item:'fanshuo-pot',orient:potOrientation,mount:'e0'},
   {item:'fanshuo-cushion',orient:'out',mount:'e180'}
  ]};
  const opponent = {parts: parts.map((part,i) => ({...part,mount:i?spread:'e0'}))};
+ return createV3Match({
+  ...rules, seed, fighters:[player,opponent], combatRules:{...combatRules,ceramicShards:true},
+  manual:{sides:['input','ai'],aiProfiles:[null,{...foes.find(f => f.id==='chang').ai,...ai,...impactAi}], inputs}
+ });
+}
+
+const {catchDashContact, ...savedGuardTiming} = rules.combatRules.guardTiming;
+const savedGuardRules = {...rules.combatRules,guardTiming:savedGuardTiming};
+
+test('an outward cushion catches a glancing enemy dash at the original guard thresholds', async t => {
  const dashContactStep = 2419;
- const {catchDashContact, ...savedGuardTiming} = rules.combatRules.guardTiming;
- const savedRules = {...rules.combatRules,guardTiming:savedGuardTiming};
  for (const [lead, combatRules, outcome] of [
-  [7,savedRules,'empty'], [21,rules.combatRules,'perfect'], [22,rules.combatRules,'tight']
+  [7,savedGuardRules,'empty'], [21,rules.combatRules,'perfect'], [22,rules.combatRules,'tight']
  ]) {
-  const game = await createV3Match({
-   ...rules, seed:3075, fighters:[player,opponent], combatRules:{...combatRules,ceramicShards:true},
-   manual:{sides:['input','ai'],aiProfiles:[null,{...foes.find(f => f.id==='chang').ai,...ai,...impactAi}],
-    inputs:[input(336,0,'block'),input(352,0,'dash'),input(1237,0,'block'),input(1248,0,'dash'),
-     input(dashContactStep-lead,0,'block')]}
-  });
+  const game = await cushionAgainstChang(3075,combatRules,[
+   input(336,0,'block'),input(352,0,'dash'),input(1237,0,'block'),input(1248,0,'dash'),
+   input(dashContactStep-lead,0,'block')
+  ]);
   t.after(() => game.free());
   advanceTo(game,dashContactStep-1);
   assert.equal(game.control(0).shield,true);
@@ -143,4 +149,27 @@ test('an outward cushion catches a glancing enemy dash at the original guard thr
    assert.equal(game.control(0).shield,false);
   }
  }
+});
+
+
+test('a dash after recent contact is caught without a new collision episode', async t => {
+ const inputs = [input(1,0,'block'),input(145,0,'dash'),input(422,0,'block'),input(698,0,'dash'),input(843,0,'block')];
+ const saved = await cushionAgainstChang(111335,savedGuardRules,inputs,'out');
+ const current = await cushionAgainstChang(111335,rules.combatRules,inputs,'out');
+ for (const game of [saved,current]) {
+  t.after(() => game.free());
+  advanceTo(game,865);
+  assert.equal(game.control(0).shield,true);
+  assert.equal(game.control(1).dashing,true);
+  game.advance();
+  assert(!game.events.some(e => e.t===game.t&&e.type==='contact'));
+ }
+ const atContact = (game,type) => game.events.find(e => e.t===game.t&&type(e));
+ assert.equal(atContact(saved,e => e.type==='blockResult'),undefined);
+ const result = atContact(current,e => e.type==='blockResult'&&e.side===0);
+ assert.equal(result.outcome,'tight');
+ const landing = atContact(current,e => e.type==='dash'&&e.phase==='end'&&e.side===1);
+ assert.equal(landing.outcome,'blocked');
+ assert.equal(current.control(1).stunIn,0);
+ assert.equal(current.control(0).blockIn,(420-(866-843))*current.rules.dt);
 });
