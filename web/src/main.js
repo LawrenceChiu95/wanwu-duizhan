@@ -960,7 +960,9 @@ async function main() {
     stage.updateCamera(0, true);
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
-    setTimeout(() => coach(0), 400);
+    // The new opening delays the foe's charge, which used to bring up the first lesson early.
+    if (combatOptions.combatRules?.opening) coach(0);
+    else setTimeout(() => coach(0), 400);
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
