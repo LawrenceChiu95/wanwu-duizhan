@@ -89,8 +89,8 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
   round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
    aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:.78,guardBrake:24,
-   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:.9,changHp:.75,
-   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,maxDuration:75})
+   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,maxDuration:75})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -449,6 +449,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const round=position?.round;
  if(round!==undefined&&(!round||!catchDashContact||!planar||!M||
   !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>Number.isFinite(round[key])&&round[key]>0)||
+  ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
   round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5))throw Error('Invalid round separation rules');
  if(round)r.maxDuration=round.maxDuration;
  const ceramicShards=position?.ceramicShards===true;
@@ -627,6 +628,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      k.aimReach=reach;
      events.push({t,type:'dashAim',side:i,lockedDir:k.lockedDir,reach,until:k.aimUntil,pressStep:k.dashPressStep});
     }
+   }
+   // A counter homes on the stunned foe, whom the launch can carry sideways off the line we pressed on (Iris 11-15).
+   if(round&&dashing(f)&&countering(i)){
+    k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
+    const v=arr(f.body.linvel());f.body.setLinvel(vec([k.lockedDir[0]*Math.hypot(v[0],v[2]),v[1],k.lockedDir[2]*Math.hypot(v[0],v[2])]),true);
    }
    if(k.chargeUntil===step-1){const dir=k.lockedDir,v=arr(f.body.linvel());
     const speed=M.dashSpeed*dashScale(f);

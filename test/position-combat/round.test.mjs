@@ -15,11 +15,21 @@ test('a counter launched while the stunned foe still grazes us lands in full', a
  const inputs = [[1, 'dash'], [348, 'block'], [542, 'dash'], [883, 'block'], [1083, 'dash'], [1449, 'block'], [1474, 'dash']]
   .map(([step, action]) => input(step, 0, action));
  const game = await createV3Match({...rules, seed: 111323, fighters: [mine, build(tuned.parts, tuned.spread)],
-  combatRules: {...rules.combatRules, ceramicShards: true},
+  // Pinned to the stage-2 numbers this match was recorded under, so later balancing does not move it.
+  combatRules: {...rules.combatRules, ceramicShards: true, round: {...rules.combatRules.round, wenHp: .9, wenAiDamage: 2.55}},
   manual: {sides: ['input', 'ai'], aiProfiles: [null, {...foe.ai, ...tuned.ai, ...tuned.impactAi}], inputs}});
  while (!game.done && !game.events.some(e => e.type === 'dash' && e.phase === 'end' && e.side === 0 && e.pressStep === 1474)) game.advance();
  assert.ok(game.events.some(e => e.type === 'blockResult' && e.side === 0 && e.deflected && e.pressStep === 1449));
  const counter = game.events.find(e => e.type === 'dash' && e.phase === 'end' && e.side === 0 && e.pressStep === 1474);
  assert.equal(counter?.outcome, 'hit');
  assert.equal(counter?.quality, 'full');
+});
+
+test('per-foe dash damage and cooldown must be finite and positive when given', async () => {
+ const core = {parts: []};
+ const setup = round => ({...rules, seed: 1, fighters: [core, core], manual: {sides: ['input', 'input']},
+  combatRules: {...rules.combatRules, round: {...rules.combatRules.round, ...round}}});
+ await createV3Match(setup({mangAiDamage: 3}));
+ for (const bad of [{mangAiDamage: 0}, {wenAiCooldown: -1}, {changAiDamage: Infinity}])
+  await assert.rejects(createV3Match(setup(bad)), /Invalid round separation rules/);
 });
