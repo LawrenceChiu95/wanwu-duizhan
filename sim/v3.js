@@ -829,7 +829,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
        impact?IMPACT.dashDamage:M.dashDamage):1;
       // 一合一分: a tight guard keeps its share of the blow as it would land unguarded, cap included. Cut before the cap, a heavy
       // foe's lunge (长臂猿 10x) still met the cap and hurt more than no guard (Wren f9021b46, Elara 2c1c8453).
-      if(round&&shieldUp&&tightGuards?.[target]){d.damage*=dashMultiplier;guardShare=M.blockDamage;}
+      // Unguarded a glance is an ordinary bump (passiveDamage), so the tight guard starts from that too (Sol c08fcff4).
+      if(round&&shieldUp&&tightGuards?.[target]){d.damage*=strikes.length?dashMultiplier:round.passiveDamage;guardShare=M.blockDamage;}
       else d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
