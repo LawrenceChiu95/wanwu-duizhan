@@ -83,6 +83,15 @@ export const GUARD_TIMING_JUDGE_COMBAT_OPTIONS=Object.freeze({
   opening:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules.opening,minAiDashTime:1.5}),
   guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.85,changBlockLead:.12,catchDashContact:true})})
 });
+export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
+ ...GUARD_TIMING_JUDGE_COMBAT_OPTIONS,
+ combatRules:Object.freeze({...GUARD_TIMING_JUDGE_COMBAT_OPTIONS.combatRules,
+  round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
+   dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
+   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.46,guardStun:.78,guardBrake:24,
+   guardBrakeDelay:.09,dashDamage:1.9,counterDamage:4.2,mangHp:1.35,aiDamage:2.55,aiCooldown:4.25,wenIdleDashAfter:3.75,maxDuration:75})
+ })
+});
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
  contactMinSpeed:.75,contactMinAlignment:.45};
@@ -436,6 +445,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   throw Error('planeOverlapCorrectionCap must be positive and requires lockCorePlane');
  if(aimLock!==undefined&&(!Number.isFinite(aimLock)||aimLock<=0||aimLock>=manualRules.chargeTime))throw Error('dashAimLockTime must be within the charge');
  if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
+ const round=position?.round;
+ if(round!==undefined&&(!round||!catchDashContact||!planar||!M||
+  !['recovery','centerPull','orbit','passiveDamage','bumpSpeed','dashRecoil','dashLaunch','clashSpeed','guardRecoil','guardLaunch','aiChargeBrake','aiMinApproach','cueLead','guardStun','guardBrake','guardBrakeDelay','dashDamage','counterDamage','mangHp','aiDamage','aiCooldown','wenIdleDashAfter','maxDuration']
+   .every(key=>Number.isFinite(round[key])&&round[key]>0)||
+  round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5))throw Error('Invalid round separation rules');
+ if(round)r.maxDuration=round.maxDuration;
  const ceramicShards=position?.ceramicShards===true;
  if(ceramicShards&&(!planar||!M))throw Error('Ceramic shards require planar combat with manual controls');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
@@ -447,6 +462,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const perfectGuardSteps=guardTiming&&Math.floor(guardTiming.perfectTime/r.dt+1e-8);
  const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
+ let contactSteps=0,maxContactSteps=0;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
  // Legacy matches use the original opening even if the first contact comes from a dash.
  const weightLoad=f=>weightFeel&&(impact||lastRecoil!==-Infinity)
@@ -466,7 +482,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   }
  }
  try{
- buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(aiProfiles[i]?.id==='mang'?mangHpScale:1)));
+ buildArena(world,r);critRoll=random(seed^0x9e3779b9);fs=definitions.map((d,i)=>buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(aiProfiles[i]?.id==='mang'?mangHpScale*(round?.mangHp??1):1)));
  extents=fs.map(f=>sweepRadius(f,r));const distance=openingDistance(extents,r,opening);
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();
  initial=fs.map(f=>({definition:f.definition,sweepRadius:sweepRadius(f,r),...fighterFrame(f)}));events=[{t:0,type:'start'}];frames=[];diagnostics={maxResidualPenetration:0,maxGeometricPenetration:0,maxPositionCorrection:0,correctionSteps:0,zoneDamage:0,skippedSlowContacts:0};
@@ -478,20 +494,27 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const queued=[[],[]],inputs=[],scripted=new Map();
  if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null,pendingAi:null,stunUntil:-1,dashLockedUntil:0};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
  const charging=f=>f.ctl.chargeUntil>=step,dashing=f=>f.ctl.dashUntil>=step,shielded=f=>f.ctl.shieldUntil>=step;
- const wenCanDash=i=>{const k=fs[i].ctl;return t<=k.counterUntil||step-(k.dashPressStep??0)>=steps(aiProfiles[i].idleDashAfter);};
+ const wenCanDash=i=>{const k=fs[i].ctl;return t<=k.counterUntil||step-(k.dashPressStep??0)>=steps(round?.wenIdleDashAfter??aiProfiles[i].idleDashAfter);};
  function tryPress(i,action,source,decisionStep){
   const f=fs[i],k=f.ctl;
   if(stunned(f))return;
   const press={t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})};
   if(action==='dash'){
    if(step<Math.max(k.dashReady,k.dashLockedUntil)||charging(f)||dashing(f))return;
+   if(round&&source==='ai'){
+    const delta=sub(arr(fs[1-i].body.translation()),arr(f.body.translation()));
+    const dist=length(delta);
+    // Check at the actual press, after the AI's visible reaction delay.
+    if(dist<round.aiMinApproach||t-lastRecoil<round.recovery*.45)return;
+   }
    const windup=chargeTime(i);
    const jitter=guardTiming&&source==='ai'&&aiProfiles[i]?.id!=='wen'
     ?Math.floor(dashCooldownRoll[i]()*(steps(guardTiming.aiDashJitter)+1)):0;
    k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
    k.dashPressStep=step;
+   if(round)k.cued=false;
    k.chargeUntil=step+steps(windup)-1;
-   k.dashReady=step+steps(M.dashCooldown)+jitter;
+   k.dashReady=step+steps(source==='ai'&&round?round.aiCooldown:M.dashCooldown)+jitter;
    k.aimUntil=t+windup;
    k.aimReach=dashReach===undefined?undefined:dashReach*dashScale(f);
    events.push(press,{t,type:'dash',phase:'charge',side:i,until:k.aimUntil,pressStep:step,lockedDir:k.lockedDir,
@@ -521,7 +544,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const me=fs[i],foe=fs[1-i],a=arr(me.body.translation()),b=arr(foe.body.translation()),n=flat(a,b),dist=hyp(b[0]-a[0],b[2]-a[2]),gap=dist-sweepRadius(me,r)-sweepRadius(foe,r),va=arr(me.body.linvel()),vb=arr(foe.body.linvel());
   if(stunned(me))return null;
   const profile=aiProfiles[i],tuning=profile??M.ai;
-  if(profile?.id==='mang')return step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=tuning.dashRange[0]&&dist<=tuning.dashRange[1]?'dash':null;
+  const canStartDash=step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&
+   dist>=Math.max(tuning.dashRange[0],round?.aiMinApproach??0)&&dist<=tuning.dashRange[1];
+  if(profile?.id==='mang')return canStartDash?'dash':null;
   const closing=dot(sub(va,vb),n),eta=closing>0?Math.max(0,gap)/closing:Infinity;
   const blockLead=guardTiming&&profile?.id==='wen'?guardTiming.wenBlockLead:
    guardTiming&&profile?.id==='chang'?guardTiming.changBlockLead:tuning.blockLead;
@@ -529,7 +554,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   if(profile?.id==='wen'&&!wenCanDash(i))return null;
   // Keep the AI's pursuit decision; the longer cue only changes when it launches.
   const windup=guardTiming&&i===1?M.chargeTime:chargeTime(i),future=sub(add(b,scale(vb,windup)),add(a,scale(va,windup))),futureN=flat([0,0,0],future);
-  if(step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=tuning.dashRange[0]&&dist<=tuning.dashRange[1]&&gap>0&&eta>windup*.7&&dot(n,futureN)>=M.dashAlignment&&t-lastRecoil>=r.recoilPause)return 'dash';
+  if(canStartDash&&gap>0&&eta>windup*.7&&dot(n,futureN)>=M.dashAlignment&&t-lastRecoil>=r.recoilPause)return 'dash';
   return null;
  }
  function aiActions(i){
@@ -549,10 +574,28 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   if(k.pendingAi&&k.pendingAi.at<=step){const action=k.pendingAi;k.pendingAi=null;if(profile?.id!=='wen'||action.action!=='dash'||wenCanDash(i))return [action];}
   return [];
  }
+ function cueDash(i){
+  const f=fs[i],k=f.ctl;
+  if(!round||manual.sides[i]!=='ai'||k.cued||!(charging(f)||dashing(f)))return;
+  const opponent=fs[1-i],a=arr(f.body.translation()),b=arr(opponent.body.translation());
+  const delta=sub(b,a),n=horizontalUnit(delta),winding=charging(f);
+  const windup=winding?(k.chargeUntil+1-step)*r.dt:0;
+  const gap=dot(delta,n)-.78*(sweepRadius(f,r)+sweepRadius(opponent,r));
+  const travelSpeed=winding?M.dashSpeed:Math.max(M.dashSpeed*.8,dot(arr(f.body.linvel()),n));
+  const opponentSpeed=dot(arr(opponent.body.linvel()),n);
+  const flight=Math.max(0,gap+opponentSpeed*windup)/Math.max(M.dashSpeed*.65,travelSpeed-opponentSpeed);
+  if(windup+flight<=round.cueLead){
+   k.cued=true;
+   events.push({t,type:'dashCue',side:i,pressStep:k.dashPressStep});
+  }
+ }
  function manualStep(){
   for(let i=0;i<2;i++){
    const f=fs[i],k=f.ctl;
-   if(impact&&k.dashUntil===step-1)k.stunUntil=Math.max(k.stunUntil,step+steps(IMPACT.heavyMissStun*weightLoad(f))-1);
+   if(impact&&k.dashUntil===step-1){
+    if(round&&!stunned(f))k.guardBrakesFrom=Infinity;
+    k.stunUntil=Math.max(k.stunUntil,step+steps(IMPACT.heavyMissStun*weightLoad(f))-1);
+   }
    if(impact&&k.shieldUntil<step)blockResult(i,'empty');
    if(Math.max(k.dashReady,k.dashLockedUntil)===step)events.push({t,type:'ready',side:i,action:'dash'});
    if(k.blockReady===step)events.push({t,type:'ready',side:i,action:'block'});
@@ -581,12 +624,23 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     const speed=M.dashSpeed*dashScale(f);
     f.ctl.dashUntil=step+steps(M.dashTime)-1;f.body.setLinvel(vec([dir[0]*speed,v[1],dir[2]*speed]),true);events.push({t,type:'dash',phase:'go',side:i,dir,lockedDir:dir,pressStep:f.ctl.dashPressStep});}
    else if(k.dashUntil===step-1)events.push({t,type:'dash',phase:'end',side:i,outcome:'miss',quality:'miss',alignment:null,pressStep:k.dashPressStep});
+   if(round)cueDash(i);
   });
  }
+ const countering=(i)=>round&&step<=fs[i].ctl.counterUntilRound&&stunned(fs[1-i]);
  function deflect(defender,point,perfect,damageApplied){
   const attacker=1-defender,guard=fs[defender].ctl,other=fs[attacker].ctl;
-  const stunUntil=t+IMPACT.stun;
-  other.stunUntil=step+steps(IMPACT.stun)-1;
+  const stun=round?.guardStun??IMPACT.stun;
+  const stunUntil=t+stun;
+  other.stunUntil=step+steps(stun)-1;
+  if(round){
+   other.guardBrakesFrom=step+steps(round.guardBrakeDelay);
+   if(shielded(fs[attacker])){
+    other.shieldUntil=step-1;
+    blockResult(attacker,'empty');
+   }
+   guard.counterUntilRound=step+steps(stun);
+  }
   other.pendingAi=null;
   for(const side of [defender,attacker]){
    const top=fs[side];
@@ -607,8 +661,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const motion=bounce&&(impact||lastRecoil!==-Infinity)?bounce:r;
   const openingScale=opening?.rampSeconds&&lastSeen===-Infinity
    ?Math.min(1,t/opening.rampSeconds):1;
+  const recovering=round&&t-lastRecoil<round.recovery;
   fs.forEach((f,i)=>{
-   const p=arr(planar?f.body.translation():f.body.worldCom()),delta=sub(arr(planar?fs[1-i].body.translation():fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],isStunned=M&&stunned(f),pursuit=isStunned||t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
+   const p=arr(planar?f.body.translation():f.body.worldCom()),delta=sub(arr(planar?fs[1-i].body.translation():fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],isStunned=M&&stunned(f),pursuit=isStunned||recovering||t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
    // bleed off velocity across the line between them so the pair cannot orbit without touching.
    const across=sub(v,scale(n,dot(v,n)));
@@ -620,15 +675,21 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     ?(1-load)*Math.min(1,(t-lastRecoil)/r.recoilPause)*weightFeel.recenterBoost:0;
    const attraction=motion.attraction*(1-load*(weightFeel?.recenterLoss??0)+agile);
    let acceleration=add(scale(p,-attraction),scale(n,motion.thrust*pursuit*turn));
+   if(recovering){
+    const radial=horizontalUnit(p);
+    acceleration=add(scale(acceleration,round.centerPull),scale([-radial[2],0,radial[0]],round.orbit));
+   }
    if(openingScale<1)acceleration=scale(acceleration,openingScale);
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit*turn));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
    // During the added part of the cue, continue approaching before the original wind-up brake.
+   const aiBraking=round&&charging(f)&&manual.sides[i]==='ai';
    const braking=M&&charging(f)&&(!guardTiming||manual.sides[i]!=='ai'||f.ctl.chargeUntil-step<steps(M.chargeTime));
-   if(braking)acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
+   if(aiBraking)acceleration=scale(v,-round.aiChargeBrake);
+   else if(braking)acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust*dashSpeedScale),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
-   if(isStunned)acceleration=[0,0,0];
+   if(isStunned)acceleration=round&&step>=f.ctl.guardBrakesFrom?scale(v,-round.guardBrake):[0,0,0];
    f.body.resetForces(true);f.body.addForce(vec(scale(acceleration,f.mass)),true);f.body.resetTorques(true);
    driveSpin(f,r);
    const limit=M&&dashing(f)?M.dashSpeedLimit*dashSpeedScale:r.speedLimit,velocity=arr(f.body.linvel()),speed=length(velocity);if(speed>limit)f.body.setLinvel(vec(scale(velocity,limit/speed)),true);
@@ -646,6 +707,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   let touching=pairs.some(p=>p.impulse>=r.minimumImpulse);
   if(!touching)for(const p of active(fs[0]))for(const q of active(fs[1])){const geometry=p.collider.contactCollider(q.collider,.002);if(geometry&&geometry.distance<=.002)touching=true;}
   if(touching){if(contactRunSteps===0)contactRunStart=t-r.dt;contactRunSteps++;}else closeContactRun();
+  if(round&&touching){
+   contactSteps++;
+   maxContactSteps=Math.max(maxContactSteps,contactRunSteps);
+  }
   const newEpisode=Boolean(hit&&hit.impulse>=r.minimumImpulse&&t-lastSeen>r.episodeSeparation&&contactRunSteps*r.dt<=.1+1e-8);
   if(hit){
    const {left,right,point,rightPoint,normal,impulse}=hit;
@@ -659,7 +724,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const onSurface=impactDashContacts&&M&&contactClosing>=IMPACT.contactMinSpeed
     ?fs.map((f,i)=>dashing(f)&&dot(f.ctl.lockedDir,contactApproach)*(i===0?1:-1)>=IMPACT.contactMinAlignment):null;
    const canDeflect=impact&&M&&impulse>=r.minimumImpulse&&(newEpisode||closes||onSurface?.some(Boolean));
-   const heldShield=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved):null;
+   const heldShield=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved&&(!round||!stunned(f))):null;
    // A regular bump can meet a shield without using up the window.
    const guards=refinedImpact?heldShield?.map((held,i)=>{
     if(!held)return false;
@@ -678,10 +743,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const shield=M?(impact?heldShield??[false,false]:fs.map(shielded)):null;
    const alignment=lunge.map(i=>{const a=fs[i].before,b=fs[1-i].before,n=flat(a.core,b.core);return {side:i,value:length(n)>0?dot(fs[i].ctl.lockedDir,n):null,closing:dot(sub(a.velocity,b.velocity),n)};});
    const fullLunge=alignment.filter(({side,value,closing})=>impactDashContacts
-    ?onSurface?.[side]
+    ?onSurface?.[side]||countering(side)&&value>=IMPACT.contactMinAlignment&&closing>=IMPACT.contactMinSpeed
     :value!==null&&value>=M.dashAlignment&&closing>0).map(x=>x.side);
    const strikes=hasGuardContact?fullLunge.filter(i=>!guards[i]):fullLunge;
    const dashContact=impactDashContacts&&lunge.length>0;
+   const ordinaryImpact=round&&!(hasGuardContact||strikes.length);
    const dashBlows=dashContact&&strikes.length===0?lunge.filter(i=>!guards?.[i]):strikes;
    const matchupMultipliers=[[left,right],[right,left]].map(([a,b])=>(c.matchups[a.item.tag]?.[b.item.tag]??1)>1?r.counterSpeedMultiplier:1);
    const pointVelocities=[contactVelocity(fs[0],point),contactVelocity(fs[1],rightPoint)],closingSpeed=dot(sub(pointVelocities[0],pointVelocities[1]),normal);
@@ -745,10 +811,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      let flags=null;
      if(M){
       const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
-      const dashMultiplier=dash?(impact?IMPACT.dashDamage:M.dashDamage):1;
+      const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round.aiDamage:round.dashDamage):
+       impact?IMPACT.dashDamage:M.dashDamage):1;
       d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
+     if(ordinaryImpact)d.damage*=round.passiveDamage;
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
@@ -774,7 +842,25 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     }
    }
    if(!impact&&M&&newEpisode&&(roles.attacker!==null||roles.clash))for(let i=0;i<2;i++)if(shield[i]&&(roles.clash||i!==roles.attacker))blockResult(i,'perfect',{point:i===0?point:rightPoint,attacker:1-i,clash:roles.clash,damageApplied:shieldDamageApplied[i]});
-   if((hasDeflection||catchDashContact&&hasGuardContact||t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
+   if(round&&(hasGuardContact||strikes.length||newEpisode||contactRunSteps===1)&&impulse>=r.minimumImpulse){
+    const contactNormal=planeNormal(normal,fs);
+    const axis=centerApproach?.some(Boolean)?centerApproach:contactNormal;
+    const kind=hasDeflection?'perfect':hasGuardContact?'tight':strikes.length===2?'clash':strikes.length===1?'dash':'bump';
+    const before=fs.map(f=>arr(f.body.linvel()));
+    const speeds=fs.map((f,i)=>kind==='perfect'?(deflections[1-i]?round.guardLaunch:round.guardRecoil):
+     kind==='clash'?round.clashSpeed:kind==='dash'?(strikes[0]===i?round.dashRecoil:round.dashLaunch):round.bumpSpeed);
+    fs.forEach((f,i)=>{
+     const transverse=sub(before[i],scale(axis,dot(before[i],axis)));
+     // A symmetric bump (including a tight guard) has at most 2.9 m/s
+     // of relative speed even when measured along an angled contact normal.
+     const tangent=kind==='bump'||kind==='tight'?[0,0,0]:scale(transverse,.25);
+     f.body.setLinvel(vec(add(tangent,scale(axis,(i===0?-1:1)*speeds[i]))),true);
+    });
+    const velocityAfter=fs.map(f=>arr(f.body.linvel()));
+    events.push({t,type:'recoil',normal:axis,contactNormal,impulse,velocityBefore:before,velocityAfter,recoilSpeed:round.bumpSpeed,kind});
+    events.push({t,type:'exchange',point,normal:axis,kind});
+    lastRecoil=t;
+   }else if(!round&&(hasDeflection||catchDashContact&&hasGuardContact||t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
     // Manual recoil scales: a shield barely moves; a lunge into a shield bounces hard; a landed lunge knocks the other back.
     const k=M?[0,1].map(i=>fullLunge.includes(i)?(shield[1-i]?M.bounceRecoil:1):shield[i]?M.blockRecoil:fullLunge.includes(1-i)?M.dashRecoil:1):null;
     const recoilSpeed=bounce&&(impact||!lunge.length&&!shield?.some(Boolean))?bounce.recoilSpeed:r.recoilSpeed;
@@ -849,6 +935,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   try{
  if(M)for(let i=0;i<2;i++)blockResult(i,'empty');
  closeContactRun();diagnostics.scrapeEpisodes=scrapeEpisodes;diagnostics.scrapeCount=scrapeEpisodes.length;diagnostics.scrapeDuration=scrapeEpisodes.reduce((n,e)=>n+e.duration,0);diagnostics.maxScrapeDuration=Math.max(0,...scrapeEpisodes.map(e=>e.duration));
+ if(round){
+  diagnostics.contactDuration=contactSteps*r.dt;
+  diagnostics.maxContactDuration=maxContactSteps*r.dt;
+ }
  if(frames.at(-1).t!==t)record();
  // Timeout facts are independent of hit history; no invented decisive blow or positional tie-break.
  const timeout=reason==='timeout'?timeoutVerdict(fs):null;if(timeout)winner=timeout.winner;
