@@ -109,11 +109,41 @@ export class Overlay {
    * (real) seconds. A newer one replaces it.
    */
   stamp(point, text, cls, dur = 0.6) {
-    for (const s of this.stamps) s.el.remove();
     const el = document.createElement('div');
     el.className = `stamp ${cls}`;
     el.textContent = text;
+    this.place(el, point, dur);
+  }
+  /**
+   * The big-moment line (「锅 冲中 金属杯！」) in the same spot as a block's word, its plate and colours as under the HUD
+   * (Elara 4efa6f73). Too wide for the screen, it says the `short` words instead (「锅 冲中！」, 「马克杯 碎了！」).
+   */
+  stampLine(point, words, short, dur = 1.2) {
+    let el = this.lineEl(words);
+    el.classList.add('at');
+    el.style.maxWidth = 'none';
     this.layer.append(el);
+    const wide = el.offsetWidth > this.layer.clientWidth - 16;
+    el.style.maxWidth = '';
+    if (short && wide) { el.remove(); el = this.lineEl(short); el.classList.add('at'); }
+    this.place(el, point, dur);
+  }
+  lineEl({who, verb, whom, side, whomSide}) {
+    const el = document.createElement('div'), b = document.createElement('b'), v = document.createElement('span'), u = document.createElement('u');
+    el.className = `hilite t${side}`;
+    b.textContent = who;
+    v.className = 'verb';
+    v.textContent = verb;
+    u.className = `t${whomSide}`;
+    u.textContent = `${whom}！`;
+    // No one to name on the receiving end (「盘子 碎了！」): the 「！」 ends the verb.
+    if (whom) el.append(b, v, u); else { v.textContent += '！'; el.append(b, v); }
+    return el;
+  }
+  // Puts a word (or line) over the contact point, clear of the tops, in place of the one up now.
+  place(el, point, dur) {
+    for (const s of this.stamps) s.el.remove();
+    if (!el.isConnected) this.layer.append(el);
     const {stage} = this, at = new THREE.Vector3().copy(point), p = stage.project(at, {x: 0, y: 0}), q = {x: 0, y: 0};
     const w = el.offsetWidth, h = el.offsetHeight;
     let lift = 10;
@@ -128,17 +158,9 @@ export class Overlay {
    * A big moment, said once at a fixed spot (`top` px from the top of the layer) instead of over the tops: 「拖鞋 撞碎了
    * 马克杯！」, the striker in its side's colour, the struck piece in its own. Held `dur` s; a newer one replaces it.
    */
-  highlight({who, verb, whom, side, whomSide}, top, dur = 1.4) {
+  highlight(words, top, dur = 1.4) {
     this.hilite?.el.remove();
-    const el = document.createElement('div'), b = document.createElement('b'), v = document.createElement('span'), u = document.createElement('u');
-    el.className = `hilite t${side}`;
-    b.textContent = who;
-    v.className = 'verb';
-    v.textContent = verb;
-    u.className = `t${whomSide}`;
-    u.textContent = `${whom}！`;
-    // No one to name on the receiving end (「盘子 碎了！」): the 「！」 ends the verb.
-    if (whom) el.append(b, v, u); else { v.textContent += '！'; el.append(b, v); }
+    const el = this.lineEl(words);
     el.style.top = `${Math.round(top)}px`;
     this.layer.append(el);
     this.hilite = {el, age: 0, dur};

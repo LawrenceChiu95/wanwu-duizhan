@@ -540,13 +540,14 @@ async function main() {
   const heldBreaks = new BreakHolds();
   let hilite = null; // {t, broke, age, node, deflect}: the line now up, `age` its seconds on screen, `node` its slot with ?call=slot
   const partName = (part, item) => part === 'core' ? '核心' : NAMES[item] ?? '';
-  // `who`: words for the striker in place of its piece's name (a break no recorded blow explains).
-  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false, who = partName(part, item)) {
+  // `who`: words for the striker in place of its piece's name (a break no recorded blow explains); `at`: where it happened.
+  function highlight(t, side, part, item, verb, target, targetPart, targetItem, broke = false, who = partName(part, item), at = null) {
     const same = hilite && !hilite.deflect && Math.abs(t - hilite.t) < 1e-6;
     // A break always takes the line, even over another break: a broken piece never goes without its words, and none
     // follow the top (Elara 937d44f2). The 1.2 s hold is for the other lines, and ?call=slot keeps its own rules.
     const takes = broke && HILITE === 'line';
-    if (!takes && hilite && !hilite.deflect && (same ? !broke || hilite.broke : hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
+    // 挡分两档 puts the line over the contact, where the newest word always takes the place of the one up (Elara 4efa6f73).
+    if (!takes && hilite && !hilite.deflect && (same ? !broke || hilite.broke : !tiered && hilite.age < (hilite.broke ? HILITE_TIME : HILITE_HOLD))) return false;
     if (phase === 'play' && !same) test.highlights++;
     const was = hilite?.node;
     // ?call=slot: a 「弹开！」 plate still up goes with the line it gave way to (Sol 9961be5a).
@@ -560,8 +561,16 @@ async function main() {
       hilite.node = a;
       return true;
     }
+    const whom = targetPart ? partName(targetPart, targetItem) : '';
+    const spot = at ?? stage.fighters[target]?.center;
+    if (tiered && spot) {
+      // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」.
+      const short = broke ? whom && {who: whom, verb: '碎了', whom: '', side: target, whomSide: target} : {who, verb, whom: '', side, whomSide: target};
+      overlay.stampLine(spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME);
+      return true;
+    }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
-    overlay.highlight({who, verb, whom: targetPart ? partName(targetPart, targetItem) : '', side, whomSide: target}, top, HILITE_TIME);
+    overlay.highlight({who, verb, whom, side, whomSide: target}, top, HILITE_TIME);
     return true;
   }
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
@@ -630,7 +639,9 @@ async function main() {
     glance: e => e.type === 'dash' && e.phase === 'end' && quality(e) === 'glance' && e.side === 0,
     // Any end of the player's own lunge (aim-check.mjs compares the arrow's grey with the sim's verdict).
     'end-mine': e => e.type === 'dash' && e.phase === 'end' && e.side === 0,
-    shards: e => e.type === 'archetype' && e.archetype === 'brittle'
+    shards: e => e.type === 'archetype' && e.archetype === 'brittle',
+    // The player's 冲 landing (「冲中」).
+    'hit-mine': e => e.type === 'hit' && e.attacker === 0 && e.dash && !e.parry && e.damage > 0
   };
 
   // ---------- events → effects ----------
@@ -642,10 +653,10 @@ async function main() {
     const k = `${e.target}:${e.targetPart}`, by = killer.get(k) ?? lastHurt.get(k);
     // A break always takes the line (Elara 8dbd9359, 937d44f2); with no recorded blow it still says what broke:
     // 「盘子 碎了！」 (Elara cd8eb72d).
-    if (by) highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true);
-    else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '');
-    coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     const at = stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
+    if (by) highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true, undefined, at);
+    else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '', at);
+    coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     // New feel: the picture holds as the replay's does, and the piece's slot under the HUD shakes, cracks and goes dark
     // (凡朔's 对象 lost the break among the knocks; Elara 2621157e). ?feel=old as it was.
     if (pb?.dashOnlyImpact) pb.freezeFor(BREAK_STOP);
@@ -757,7 +768,7 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem);
+        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
       }
       if (core && !caught) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
       // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
