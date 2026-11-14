@@ -866,7 +866,7 @@ async function main() {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
     } else if (e.type === 'blockResult') {
-      if (nudge && e.side === 0 && e.outcome !== 'empty') nudge.caught++;
+      if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held = true; }
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
       if (e.deflected) deflect(e, point);
       else if (e.outcome === 'tight') {
@@ -972,7 +972,8 @@ async function main() {
     if (nudge.shown >= NUDGE_MAX || t - nudge.since < NUDGE_IDLE && nudge.caught < NUDGE_BLOCKS) return;
     Object.assign(nudge, {on: true, since: t, caught: 0, shown: nudge.shown + 1});
     el.dashBtn.classList.add('nudge');
-    overlay.nudge('挡住了，点冲反打', 'deflect nudge', NUDGE_TIME);
+    // It says only what happened: 「挡住了」 once a block has caught one (Castor 72baf2c8, Elara ad7297c3).
+    overlay.nudge(nudge.held ? '挡住了，点冲反打' : '点冲，朝它撞过去', 'deflect nudge', NUDGE_TIME);
   }
   // Out of the match (time up, a core broken, back to the build): nothing of the hint stays (Elara 27b4d4c3).
   function endNudge() { nudge = null; el.dashBtn.classList.remove('nudge'); overlay.dropNudge(); }
@@ -1028,7 +1029,7 @@ async function main() {
     round = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.round);
     stage.trailAlways = !round;
     el.dashBtn.classList.remove('nudge');
-    nudge = live && round && fought !== null && LADDER[fought].id === 'mang' ? {on: false, shown: 0, since: 0, caught: 0} : null;
+    nudge = live && round && fought !== null && LADDER[fought].id === 'mang' ? {on: false, shown: 0, since: 0, caught: 0, held: false} : null;
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
     // 一合一分: an ordinary bump never stops a replay either (quietBumps).
     pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true, quietBumps: round});

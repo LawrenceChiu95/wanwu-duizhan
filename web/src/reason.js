@@ -124,7 +124,8 @@ export function tipLine(s, winner, foe = null) {
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
   // Lost stage 1 on time without a single 冲 (Sol a8851e63: its turtle runs out the clock 99 times in 100): say so plainly.
   // Only there, new feel, never pressed: telling a player who did lunge 「没出手」 is worse than saying nothing (Elara 27b4d4c3).
-  if (winner === 1 && foe === 'mang' && s.timeout && !s.oldFeel && s.presses === 0) return '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血';
+  // Anyone else losing stage 1 on time hears they lunged too little, never the 莽牛 line on blocking (Castor 72baf2c8, Elara ad7297c3).
+  if (winner === 1 && foe === 'mang' && s.timeout && !s.oldFeel) return s.presses === 0 ? '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血' : '时间到：出手太少。挡住后点冲，才打得掉它的血';
   if (winner === 1 && FOE_WHY[foe]) return FOE_WHY[foe];
   // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
   const o = winner === 1 && s.outmatched;
