@@ -129,6 +129,16 @@ const SOUNDS = {
     v.noise(v.t, 0.05, 0.4, 'highpass', 2500);
     v.noise(v.t, 0.08, 0.2, 'bandpass', 1100, 700, 2);
   },
+  // 一合一分 (Elara 41cd88d6): a plain bump knocking the tops apart, a short bright 「锵」. Struck metal like the parry's clang
+  // but higher, cut short and well under it, so a 冲 or a 挡 still sounds like the bigger thing.
+  clank(v) {
+    const t = v.t;
+    for (const [f, peak, dur] of [[1180, 0.09, 0.2], [3260, 0.06, 0.14], [5070, 0.035, 0.09]]) {
+      for (const detune of [1, 1.006]) v.tone(t, dur, peak, 'sine', f * detune, f * detune, dur, 0.001);
+    }
+    v.noise(t, 0.03, 0.26, 'highpass', 3200);
+    v.noise(t, 0.05, 0.12, 'bandpass', 1500, 900, 2);
+  },
   // Perfect block (第 13 版): the shield bell struck harder and a fifth up, with a quick bright rise. Sits under the
   // clang when the caught blow was a lunge.
   perfect(v) {
@@ -276,7 +286,7 @@ export const sfx = {
     }
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
-  clang: live('clang'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  clang: live('clang'), clank: live('clank'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {

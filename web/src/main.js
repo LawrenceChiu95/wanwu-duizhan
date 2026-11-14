@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, GUARD_TIMING_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, ROUND_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
@@ -177,7 +177,7 @@ async function main() {
   const feel = feelArg === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : GUARD_TIMING_JUDGE_COMBAT_OPTIONS)
+  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : ROUND_JUDGE_COMBAT_OPTIONS)
     : combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
@@ -324,6 +324,8 @@ async function main() {
   let heldParry = null, lastDeflectT = -Infinity;
   // 挡分两档 (Elara 896cf31c): the match plays guardTiming, so a block is 完美, 勉强 or 空, said where it struck (set per match).
   let tiered = false;
+  // 一合一分 (Elara 41cd88d6): the sim reports each exchange and the foe's flash itself (exchange, dashCue).
+  let round = false;
   let pb = null, replay = null, finaleAge = 0, finaleSim = 0, replayEnd = 0, captionHold = 0, spinAngle = 0, liveSlowShown = false;
   const hpView = [0, 1].map(() => ({core: 1, chip: 1, since: 9}));
 
@@ -738,6 +740,8 @@ async function main() {
       // A 冲 caught on a raised shield: the deflect in the same step is its picture, so the blow only nudges the struck
       // piece, no white burst, ring or edge over the two tops (Elara aa5b5c83). ?feel=old keeps its full knock.
       const caught = !oldFx && e.parry;
+      // 一合一分: a plain bump's picture and sound come once from its exchange; its damage still counts (HUD, breaks).
+      const plain = round && !(e.dash && !e.parry) && !caught;
       const core = e.targetPart === 'core' && !glance, big = core || crit || e.tier >= 2 && !glance, dash = e.dash && !e.parry;
       if (dash) {
         // A landed lunge: the full treatment (hit-stop is in Playback): spark lines, a camera punch, a heavy thump.
@@ -755,6 +759,9 @@ async function main() {
       } else if (caught) {
         lastKnockT = e.t;
         sfx.hit(0.5);
+      } else if (round) {
+        // 一合一分: a plain bump's spark, 锵 and shake come once from its exchange (below), not from each piece it touched.
+        lastKnockT = e.t;
       } else {
         // An ordinary knock: the same, scaled down.
         lastKnockT = e.t;
@@ -764,21 +771,34 @@ async function main() {
         sfx.hit(glance ? 0.6 : Math.min(1, 0.35 + (e.closingSpeed ?? 3) / 12 + (big ? 0.2 : 0)), {core, crit});
       }
       // Every blow shakes the picture, 凡朔's fixed camera included (photo-kitchen.js).
-      stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
+      if (!plain) stage.shakeV4(core ? 0.75 : big ? 0.5 : 0.3);
       // Core hit: a ring in the victim's colour; a hugging piece taking it: a pale "blocked" ring.
-      if (!caught) stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
+      if (!caught && !plain) stage.ring(point, core ? TEAM[e.target] : e.targetOrient === 'hug' ? BLOCK : WHITE, 0.04, big ? 0.75 : 0.5, big ? 0.4 : 0.3);
       // The striking piece gets a glowing edge in its colour, the struck one flashes too (a clash: both edged). It says which
       // piece hit now that no word plate does (凡朔 11-11, Elara 207a725b b2bd14f1); position combat edges every touch.
-      if (!caught && (positionCombat(e) || e.damage > 0)) stage.strike(e.attacker, e.part, point);
-      stage.flashPart(e.target, e.targetPart, caught ? 0.3 : (core ? 1 : 0.75) * (dash && !oldFx ? 0.6 : 1));
+      if (!caught && !plain && (positionCombat(e) || e.damage > 0)) stage.strike(e.attacker, e.part, point);
+      if (!plain) stage.flashPart(e.target, e.targetPart, caught ? 0.3 : (core ? 1 : 0.75) * (dash && !oldFx ? 0.6 : 1));
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if (e.attacker === 0 && (crit || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
+        if (e.attacker === 0 && (crit && !plain || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
       }
-      if (core && !caught) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
+      if (core && !caught && !plain) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
       // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
-      if (crit && !caught) { overlay.screenFlash(dash && !oldFx ? 0.06 : 0.45); stage.ring(point, HOT, 0.05, dash && !oldFx ? 0.6 : 0.9, 0.45); }
+      if (crit && !caught && !plain) { overlay.screenFlash(dash && !oldFx ? 0.06 : 0.45); stage.ring(point, HOT, 0.05, dash && !oldFx ? 0.6 : 0.9, 0.45); }
+    } else if (e.type === 'exchange') {
+      // 一合一分 (Elara 41cd88d6): every exchange knocks both tops apart and each slide shows as a short trail. A plain bump
+      // is a light spark, a short 锵 and a light shake, no freeze and no word; a 冲 or 挡 keeps its own picture (hit, blockResult).
+      stage.recoil(0);
+      stage.recoil(1);
+      if (e.kind === 'bump') {
+        stage.bump(point);
+        stage.shakeV4(0.2);
+        sfx.clank();
+      }
+    } else if (e.type === 'dashCue') {
+      // The foe's flash, timed by the sim from where its lunge will meet (it can come after the launch).
+      if (e.side === 1) cue();
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
@@ -810,7 +830,7 @@ async function main() {
         const lane = e.side === 0 && !combatOptions.combatRules?.impactDashContacts ? rules.manual.dashAlignment : null;
         stage.aim(e.side, e.lockedDir ?? towardFoe(e.side), e.until - e.t, aimReach(e.side, e.reach), lane);
         sfx.charge(e.until - e.t);
-        if (tiered && e.side === 1) cueAt = Math.max(e.t, e.until - CUE_LEAD);
+        if (tiered && !round && e.side === 1) cueAt = Math.max(e.t, e.until - CUE_LEAD);
       } else if (e.phase === 'go') {
         lungeDir[e.side] = e.dir;
         stage.lunge(e.side, e.dir, rules.manual.dashTime);
@@ -978,8 +998,11 @@ async function main() {
     el.busy.hidden = true;
     replay = r;
     tiered = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.guardTiming);
+    round = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.round);
+    stage.trailAlways = !round;
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
-    pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true});
+    // 一合一分: an ordinary bump never stops a replay either (quietBumps).
+    pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true, quietBumps: round});
     // A glance in a live match freezes no longer than an ordinary knock (Elara fc75c4cc); the result's replay is unchanged.
     pb.softGlance = Boolean(live) && !oldFx;
     liveSlowShown = false;
@@ -1090,7 +1113,7 @@ async function main() {
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
-    if (live && !pb.full) { pb = new Playback(replay); pb.full = true; }
+    if (live && !pb.full) { pb = new Playback(replay, {quietBumps: round}); pb.full = true; }
     if (!pb || pb.slowAt === null) return;
     el.result.hidden = true;
     el.pad.hidden = true;

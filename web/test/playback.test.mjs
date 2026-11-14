@@ -115,6 +115,13 @@ test('live refined feel stops only on a full dash or a real parry', () => {
   close(q.dilate, .15);
 });
 
+test('一合一分 replays hold no ordinary bump, still a landed lunge and a break (Sol 34d7f74e)', () => {
+  const p = new Playback(fixture(impacts), {quietBumps: true});
+  p.slowEnabled = false;
+  for (let wall = 0; wall < 2; wall += .05) p.advance(.05, 1, () => {});
+  close(p.t, 2 - .14 - .08);
+});
+
 test('a freeze the page asks for holds the event that asked, or the next frame (new-feel breaks, Elara 2621157e)', () => {
   // During the break's own event: the picture stops on that event, as a replay's break does.
   const p = new Playback(fixture([{t: .01, type: 'break'}]), {dashOnlyImpact: true});

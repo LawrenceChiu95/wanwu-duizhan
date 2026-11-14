@@ -43,7 +43,7 @@ const tmpV = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
 
 /** Plays a v3 replay: interpolates the body frames, fires events once, owns slow motion and hit-stop. No physics. */
 export class Playback {
-  constructor(replay, {dashOnlyImpact = false} = {}) {
+  constructor(replay, {dashOnlyImpact = false, quietBumps = false} = {}) {
     this.r = replay;
     this.end = replay.meta.duration;
     this.stopT = stopTime(replay);
@@ -54,6 +54,8 @@ export class Playback {
     this.slowEnabled = true;
     this.softGlance = false;
     this.dashOnlyImpact = dashOnlyImpact;
+    // 一合一分: a contact that is not a landed lunge holds nothing (the exchange is its picture); 冲, 挡 and the decisive blow do.
+    this.quietBumps = quietBumps;
     this.t = 0;
     this.cursor = 0;
     this.hold = 0;
@@ -135,7 +137,8 @@ export class Playback {
           if (dashHit) base = Math.max(base, DASH_STOP);
         } else {
           const glance = this.softGlance && CONTACT.has(e.type) && e.dashQuality === 'glance';
-          base = Math.max(base, e.role === 'recoil' || e.type === 'parry' ? 0 : glance ? HIT_STOP.hit : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
+          const quiet = this.quietBumps && CONTACT.has(e.type) && !dashHit;
+          base = Math.max(base, e.role === 'recoil' || e.type === 'parry' || quiet ? 0 : glance ? HIT_STOP.hit : HIT_STOP[e.type] ?? 0, dashHit ? DASH_STOP : 0, e === this.decisiveEvent && this.slowEnabled ? DECISIVE_STOP : 0);
         }
         // A deflect in this step stands in for the parry's freeze, whichever came first.
         stop = Math.max(base, deflect ? deflect.stop : parried ? HIT_STOP.parry : 0);
