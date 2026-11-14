@@ -77,6 +77,11 @@ export const OPENING_JUDGE_COMBAT_OPTIONS=Object.freeze({
  combatRules:Object.freeze({...IMPACT_JUDGE_COMBAT_OPTIONS.combatRules,
   opening:Object.freeze({gap:.95,rampSeconds:.7,aiDashAfter:.4})})
 });
+export const GUARD_TIMING_JUDGE_COMBAT_OPTIONS=Object.freeze({
+ ...OPENING_JUDGE_COMBAT_OPTIONS,
+ combatRules:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules,
+  guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.85,changBlockLead:.12})})
+});
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
  contactMinSpeed:.75,contactMinAlignment:.45};
@@ -363,16 +368,23 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const impactDashContacts=impact&&combatRules.impactDashContacts===true;
  const resolveMutualDashContact=impactDashContacts&&combatRules.resolveMutualDashContact===true;
  const refinedImpact=impactDashContacts&&combatRules.refinedImpact===true;
+ const position=combat==='position'?structuredClone(combatRules):null;
+ const guardTiming=refinedImpact?position.guardTiming:undefined;
+ if(guardTiming!==undefined&&(!guardTiming||
+  !['aiCharge','aiDashJitter','blockTime','blockCooldown','perfectTime','wenBlockLead','changBlockLead'].every(key=>Number.isFinite(guardTiming[key])&&guardTiming[key]>=0)||
+  guardTiming.aiCharge<r.manual.chargeTime||guardTiming.perfectTime<=0||
+  guardTiming.perfectTime>=guardTiming.blockTime||guardTiming.blockTime>=guardTiming.aiCharge||
+  guardTiming.blockCooldown<=guardTiming.blockTime))throw Error('Invalid guard timing');
  if(impact)r.top.damageRamp=[];
  else if(definitions.some(d=>d.parts.some(p=>p.item.startsWith('fanshuo-'))))r.top.damageRamp=structuredClone(TRIAL_DAMAGE_RAMP);
  if(manual?.blockTime!==undefined){
-  if(![.2,.25,.3].includes(manual.blockTime)&&!(impact&&manual.blockTime===IMPACT.blockTime))throw Error('manual.blockTime must be 0.2, 0.25 or 0.3');
+  if(![.2,.25,.3].includes(manual.blockTime)&&!(impact&&manual.blockTime===IMPACT.blockTime)&&manual.blockTime!==guardTiming?.blockTime)throw Error('Invalid manual.blockTime');
   r.manual.blockTime=manual.blockTime;
  }
- if(impact)r.manual.blockTime=IMPACT.blockTime;
+ if(impact)r.manual.blockTime=guardTiming?.blockTime??IMPACT.blockTime;
+ if(guardTiming)r.manual.blockCooldown=guardTiming.blockCooldown;
  // Automatic play uses the same symmetric spawn, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
- const position=combat==='position'?structuredClone(combatRules):null;
  const opening=refinedImpact?position.opening:undefined;
  if(opening!==undefined&&(!opening||!Number.isFinite(opening.gap)||opening.gap<r.initialGap||
   ![opening.rampSeconds,opening.aiDashAfter].every(value=>Number.isFinite(value)&&value>=0)))throw Error('Invalid opening approach');
@@ -428,6 +440,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
  const openingHalfTurn=random(seed^0xd1b54a35)()>=.5;
  const aiSeeds=manual?.aiSeeds??[(seed^0x243f6a88)>>>0,(seed^0xb7e15162)>>>0],aiRoll=aiSeeds.map(random);
+ const dashCooldownRoll=guardTiming&&aiSeeds.map(s=>random(s^0x85ebca6b));
+ const perfectGuardSteps=guardTiming&&Math.floor(guardTiming.perfectTime/r.dt+1e-8);
  const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
@@ -435,7 +449,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const weightLoad=f=>weightFeel&&(impact||lastRecoil!==-Infinity)
   ?Math.max(0,Math.min(1,(f.mass-weightFeel.lightMass)/(weightFeel.heavyMass-weightFeel.lightMass))):0;
  const dashScale=f=>impact?1:1-weightLoad(f)*(weightFeel?.dashLoss??0);
- const chargeTime=i=>impact&&i===0?IMPACT.playerCharge:M.chargeTime;
+ const chargeTime=i=>impact&&i===0?IMPACT.playerCharge:guardTiming&&manual.sides[i]==='ai'?guardTiming.aiCharge:M.chargeTime;
  const stunned=f=>impact&&f.ctl.stunUntil>=step;
  // A free straight lunge uses the same per-tick cap, acceleration and
  // damping as Rapier. Contact can end it earlier.
@@ -465,8 +479,29 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  function tryPress(i,action,source,decisionStep){
   const f=fs[i],k=f.ctl;
   if(stunned(f))return;
-  if(action==='dash'){if(step<Math.max(k.dashReady,k.dashLockedUntil)||charging(f)||dashing(f))return;const windup=chargeTime(i);k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));k.dashPressStep=step;k.chargeUntil=step+steps(windup)-1;k.dashReady=step+steps(M.dashCooldown);k.aimUntil=t+windup;k.aimReach=dashReach===undefined?undefined:dashReach*dashScale(f);events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'dash',phase:'charge',side:i,until:k.aimUntil,pressStep:step,lockedDir:k.lockedDir,...(k.aimReach!==undefined&&{reach:k.aimReach})});}
-  else{if(step<k.blockReady)return;k.shieldUntil=step+steps(M.blockTime)-1;k.blockReady=step+steps(M.blockCooldown);k.blockPressStep=step;k.blockResolved=false;events.push({t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})});events.push({t,type:'block',side:i,until:t+M.blockTime,pressStep:step,windowSteps:steps(M.blockTime)});}
+  const press={t,type:'press',side:i,action,source,...(source==='ai'&&{decisionStep,reactionSteps:step-decisionStep})};
+  if(action==='dash'){
+   if(step<Math.max(k.dashReady,k.dashLockedUntil)||charging(f)||dashing(f))return;
+   const windup=chargeTime(i);
+   const jitter=guardTiming&&source==='ai'&&aiProfiles[i]?.id!=='wen'
+    ?Math.floor(dashCooldownRoll[i]()*(steps(guardTiming.aiDashJitter)+1)):0;
+   k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
+   k.dashPressStep=step;
+   k.chargeUntil=step+steps(windup)-1;
+   k.dashReady=step+steps(M.dashCooldown)+jitter;
+   k.aimUntil=t+windup;
+   k.aimReach=dashReach===undefined?undefined:dashReach*dashScale(f);
+   events.push(press,{t,type:'dash',phase:'charge',side:i,until:k.aimUntil,pressStep:step,lockedDir:k.lockedDir,
+    ...(k.aimReach!==undefined&&{reach:k.aimReach}),
+    ...(guardTiming&&i===1&&source==='ai'&&{blockReadyIn:Math.max(0,fs[0].ctl.blockReady-step)*r.dt})});
+  }else{
+   if(step<k.blockReady)return;
+   k.shieldUntil=step+steps(M.blockTime)-1;
+   k.blockReady=step+steps(M.blockCooldown);
+   k.blockPressStep=step;
+   k.blockResolved=false;
+   events.push(press,{t,type:'block',side:i,until:t+M.blockTime,pressStep:step,windowSteps:steps(M.blockTime)});
+  }
   if(manual.sides[i]==='input')inputs.push({step,side:i,action});
  }
  function blockResult(i,outcome,hit={}){
@@ -485,9 +520,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const profile=aiProfiles[i],tuning=profile??M.ai;
   if(profile?.id==='mang')return step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=tuning.dashRange[0]&&dist<=tuning.dashRange[1]?'dash':null;
   const closing=dot(sub(va,vb),n),eta=closing>0?Math.max(0,gap)/closing:Infinity;
-  if(step>=me.ctl.blockReady&&closing>0&&eta<=tuning.blockLead&&t-lastSeen>r.episodeSeparation)return 'block';
+  const blockLead=guardTiming&&profile?.id==='wen'?guardTiming.wenBlockLead:
+   guardTiming&&profile?.id==='chang'?guardTiming.changBlockLead:tuning.blockLead;
+  if(step>=me.ctl.blockReady&&closing>0&&eta<=blockLead&&t-lastSeen>r.episodeSeparation)return 'block';
   if(profile?.id==='wen'&&!wenCanDash(i))return null;
-  const windup=chargeTime(i),future=sub(add(b,scale(vb,windup)),add(a,scale(va,windup))),futureN=flat([0,0,0],future);
+  // Keep the AI's pursuit decision; the longer cue only changes when it launches.
+  const windup=guardTiming&&i===1?M.chargeTime:chargeTime(i),future=sub(add(b,scale(vb,windup)),add(a,scale(va,windup))),futureN=flat([0,0,0],future);
   if(step>=me.ctl.dashReady&&!charging(me)&&!dashing(me)&&dist>=tuning.dashRange[0]&&dist<=tuning.dashRange[1]&&gap>0&&eta>windup*.7&&dot(n,futureN)>=M.dashAlignment&&t-lastRecoil>=r.recoilPause)return 'dash';
   return null;
  }
@@ -555,6 +593,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   guard.shieldUntil=step;
   guard.dashLockedUntil=0;
   guard.dashReady=Math.min(guard.dashReady,step+1);
+  if(guardTiming)guard.blockReady=step+1;
   blockResult(defender,'perfect',{point,attacker,damageApplied,deflected:true,perfect,stunUntil});
  }
  function advance(){
@@ -581,7 +620,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit*turn));
    // Manual: winding up holds still (brakes, no pursuit); the lunge flies at the other core, unpulled by the centre.
-   if(M&&charging(f))acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
+   // During the added part of the cue, continue approaching before the original wind-up brake.
+   const braking=M&&charging(f)&&(!guardTiming||manual.sides[i]!=='ai'||f.ctl.chargeUntil-step<steps(M.chargeTime));
+   if(braking)acceleration=add(add(scale(p,-r.attraction),scale(v,-M.chargeBrake)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    else if(M&&dashing(f)){const dir=f.ctl.lockedDir,sideways=sub(v,scale(dir,dot(v,dir)));acceleration=add(add(scale(dir,M.dashThrust*dashSpeedScale),scale(sideways,-r.top.tangentialDamping)),[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);}
    if(isStunned)acceleration=[0,0,0];
    f.body.resetForces(true);f.body.addForce(vec(scale(acceleration,f.mass)),true);f.body.resetTorques(true);
@@ -616,14 +657,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const heldShield=canDeflect?fs.map(f=>shielded(f)&&!f.ctl.blockResolved):null;
    // A regular bump can meet a shield without using up the window.
    const guards=refinedImpact?heldShield?.map((held,i)=>held&&Boolean(onSurface?.[1-i])):heldShield;
-   const hasDeflection=guards?.some(Boolean);
-   const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasDeflection||onSurface?.[i])):[];
+   const tightGuards=guardTiming&&guards?.map((held,i)=>held&&step-fs[i].ctl.blockPressStep>perfectGuardSteps);
+   const deflections=tightGuards?guards.map((held,i)=>held&&!tightGuards[i]):guards;
+   const hasGuardContact=guards?.some(Boolean),hasDeflection=deflections?.some(Boolean);
+   const lunge=M&&impulse>=r.minimumImpulse?[0,1].filter(i=>dashing(fs[i])&&(newEpisode||hasGuardContact||onSurface?.[i])):[];
    const shield=M?(impact?heldShield??[false,false]:fs.map(shielded)):null;
    const alignment=lunge.map(i=>{const a=fs[i].before,b=fs[1-i].before,n=flat(a.core,b.core);return {side:i,value:length(n)>0?dot(fs[i].ctl.lockedDir,n):null,closing:dot(sub(a.velocity,b.velocity),n)};});
    const fullLunge=alignment.filter(({side,value,closing})=>impactDashContacts
     ?onSurface?.[side]
     :value!==null&&value>=M.dashAlignment&&closing>0).map(x=>x.side);
-   const strikes=hasDeflection?fullLunge.filter(i=>!guards[i]):fullLunge;
+   const strikes=hasGuardContact?fullLunge.filter(i=>!guards[i]):fullLunge;
    const dashContact=impactDashContacts&&lunge.length>0;
    const dashBlows=dashContact&&strikes.length===0?lunge.filter(i=>!guards?.[i]):strikes;
    const matchupMultipliers=[[left,right],[right,left]].map(([a,b])=>(c.matchups[a.item.tag]?.[b.item.tag]??1)>1?r.counterSpeedMultiplier:1);
@@ -686,7 +729,12 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
      }
      let flags=null;
-     if(M){const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);d.damage*=(shieldUp?M.blockDamage:dash?(impact?IMPACT.dashDamage:M.dashDamage):1);flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};}
+     if(M){
+      const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
+      const dashMultiplier=dash?(impact?IMPACT.dashDamage:M.dashDamage):1;
+      d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
+      flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
+     }
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
@@ -703,7 +751,14 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     lastDamage=t;
    }else if(newEpisode&&roles.attacker===null&&!roles.clash)diagnostics.skippedSlowContacts++;
    // A correctly timed guard is contact feedback, independent of the shared damage cooldown.
-   if(hasDeflection)for(let i=0;i<2;i++)if(guards[i])deflect(i,i===0?point:rightPoint,fullLunge.includes(1-i),shieldDamageApplied[i]);
+   if(hasGuardContact)for(let i=0;i<2;i++){
+    const shieldPoint=i===0?point:rightPoint;
+    if(deflections[i])deflect(i,shieldPoint,fullLunge.includes(1-i),shieldDamageApplied[i]);
+    if(tightGuards?.[i]){
+     fs[i].ctl.shieldUntil=step;
+     blockResult(i,'tight',{point:shieldPoint,attacker:1-i,damageApplied:shieldDamageApplied[i]});
+    }
+   }
    if(!impact&&M&&newEpisode&&(roles.attacker!==null||roles.clash))for(let i=0;i<2;i++)if(shield[i]&&(roles.clash||i!==roles.attacker))blockResult(i,'perfect',{point:i===0?point:rightPoint,attacker:1-i,clash:roles.clash,damageApplied:shieldDamageApplied[i]});
    if((hasDeflection||t-lastRecoil>=r.contactCooldown||M&&fullLunge.length>0)&&impulse>=r.minimumImpulse){
     // Manual recoil scales: a shield barely moves; a lunge into a shield bounces hard; a landed lunge knocks the other back.
@@ -721,9 +776,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      const sign=i===0?-1:1,partScale=partRecoil?.[i]??1;
      if(impact){
       const away=scale(recoilNormal,sign),speed=dot(before[i],away);
-      const launched=guards?.[1-i]||!shield?.[i]&&strikes.includes(1-i);
+      const launched=deflections?.[1-i]||!shield?.[i]&&strikes.includes(1-i);
       const outgoing=launched?launchSpeed
-       :Math.min(IMPACT.passiveSpeedLimit,Math.max(0,speed)+recoilSpeed*(guards?.[i]?M.blockRecoil:1)*partScale);
+       :Math.min(IMPACT.passiveSpeedLimit,Math.max(0,speed)+recoilSpeed*(deflections?.[i]?M.blockRecoil:1)*partScale);
       f.body.applyImpulse(vec(scale(away,f.mass*(outgoing-speed))),true);
      }else{
       const magnitude=M?sign*f.mass*recoilSpeed*k[i]*partScale:sign*f.mass*recoilSpeed*partScale;
@@ -743,7 +798,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     const targetPoint=i===0?rightPoint:point;
     f.ctl.dashUntil=-1;
     events.push({t,type:'dash',phase:'end',side:i,outcome,quality,alignment:alignment.find(x=>x.side===i)?.value??null,...(impactDashContacts&&{contactClosing}),pressStep:f.ctl.dashPressStep,point:targetPoint});
-    if(blocked&&(!impact||full))events.push({t,type:'parry',attacker:i,target:1-i,point:targetPoint});
+    if(blocked&&(!impact||full)&&!tightGuards?.[1-i])events.push({t,type:'parry',attacker:i,target:1-i,point:targetPoint});
    }
   }
   if(ceramicHit){
