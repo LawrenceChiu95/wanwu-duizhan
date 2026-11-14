@@ -58,7 +58,7 @@ export function endLine(replay) {
 /** `shot(id)`: whether the player photographed this item (拍一件), for `outmatched`. `oldFeel`: ?feel=old, counted exactly as
  * the 评委版 counts (a glance is a 冲中 there, Elara 14f39c4f). */
 export function matchStats(replay, defs, shot = () => false, {oldFeel = false} = {}) {
-  const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null], timeout: replay.meta?.reason === 'timeout',
+  const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null], timeout: replay.meta?.reason === 'timeout', oldFeel,
     // Advice follows this item's scores, rather than its category or overall grade.
     hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null,
     outmatched: outmatched(defs[0]?.parts.map(p => p.item).filter(shot) ?? [], defs[1]?.parts.map(p => p.item) ?? [])};
@@ -122,9 +122,9 @@ export function tipLine(s, winner, foe = null) {
   const mine = s.firstBroken[0];
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
-  // Lost on time by only blocking (Sol a8851e63: stage 1's turtle runs out the clock 99 times in 100): say so plainly, in
-  // the 老龟 line's place and ahead of it (Elara af9e8542).
-  if (winner === 1 && s.timeout && s.blocks >= 3 && s.presses * 2 < s.blocks) return '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血';
+  // Lost stage 1 on time without a single 冲 (Sol a8851e63: its turtle runs out the clock 99 times in 100): say so plainly.
+  // Only there, new feel, never pressed: telling a player who did lunge 「没出手」 is worse than saying nothing (Elara 27b4d4c3).
+  if (winner === 1 && foe === 'mang' && s.timeout && !s.oldFeel && s.presses === 0) return '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血';
   if (winner === 1 && FOE_WHY[foe]) return FOE_WHY[foe];
   // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
   const o = winner === 1 && s.outmatched;

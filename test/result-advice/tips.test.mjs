@@ -259,15 +259,18 @@ test('loss advice compares current catalog grades after photo ratings change', (
   assert.equal(tipLine(mouse, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
 });
 
-test('lost on time by only blocking says so, ahead of the 老龟 line (Elara af9e8542)', () => {
+test('lost stage 1 on time without a 冲 says so; anyone who lunged, other stages and ?feel=old do not (Elara 27b4d4c3)', () => {
   const turtle = '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血';
-  const read = (reason, presses, blocks) => matchStats({meta: {reason}, events: [
+  const read = (reason, presses, blocks, oldFeel = false) => matchStats({meta: {reason}, events: [
     ...Array.from({length: presses}, () => ({type: 'dash', phase: 'end', side: 0, quality: 'blocked'})),
     ...Array.from({length: blocks}, () => ({type: 'blockResult', side: 0, outcome: 'tight', deflected: true}))
-  ]}, [{parts: []}, {parts: []}]);
+  ]}, [{parts: []}, {parts: []}], () => false, {oldFeel});
   assert.equal(tipLine(read('timeout', 0, 12), 1, 'mang'), turtle);
-  assert.equal(tipLine(read('timeout', 2, 12), 1, 'wen'), turtle);
-  assert.notEqual(tipLine(read('timeout', 6, 10), 1), turtle, 'a player who kept dashing did not only block');
-  assert.notEqual(tipLine(read('ko', 0, 12), 1), turtle, 'only a loss on time');
-  assert.notEqual(tipLine(read('timeout', 0, 12), null), turtle, 'not a draw');
+  assert.equal(tipLine(read('timeout', 0, 1), 1, 'mang'), turtle);
+  assert.notEqual(tipLine(read('timeout', 1, 12), 1, 'mang'), turtle, 'one 冲 is not 没出手');
+  assert.notEqual(tipLine(read('timeout', 0, 12), 1, 'wen'), turtle, 'stage 1 only');
+  assert.notEqual(tipLine(read('timeout', 0, 12), 1), turtle, 'not off the ladder');
+  assert.notEqual(tipLine(read('timeout', 0, 12, true), 1, 'mang'), turtle, 'not ?feel=old');
+  assert.notEqual(tipLine(read('ko', 0, 12), 1, 'mang'), turtle, 'only a loss on time');
+  assert.notEqual(tipLine(read('timeout', 0, 12), null, 'mang'), turtle, 'not a draw');
 });

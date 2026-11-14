@@ -453,8 +453,7 @@ async function main() {
     live = null;
     el.pad.hidden = true;
     hideCoach();
-    nudgeOff(0);
-    nudge = null;
+    endNudge();
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
     overlay.clear(); lateNums = []; resetHighlights();
@@ -975,6 +974,8 @@ async function main() {
     el.dashBtn.classList.add('nudge');
     overlay.nudge('挡住了，点冲反打', 'deflect nudge', NUDGE_TIME);
   }
+  // Out of the match (time up, a core broken, back to the build): nothing of the hint stays (Elara 27b4d4c3).
+  function endNudge() { nudge = null; el.dashBtn.classList.remove('nudge'); overlay.dropNudge(); }
   function nudgeOff(t) {
     if (!nudge) return;
     Object.assign(nudge, {since: t, caught: 0});
@@ -1069,6 +1070,7 @@ async function main() {
   function showResult() {
     el.pad.hidden = true;
     hideCoach();
+    endNudge();
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
       overlay.clear(); lateNums = []; resetHighlights();
@@ -1761,6 +1763,7 @@ async function main() {
         if (phase === 'play' && replay.meta.reason === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
         phase = 'finale';
         finaleAge = finaleSim = 0;
+        endNudge();
       }
     } else if (phase === 'finale' || phase === 'result') {
       // Coast after the last frame; the loser's core is gone, the winner keeps spinning.
