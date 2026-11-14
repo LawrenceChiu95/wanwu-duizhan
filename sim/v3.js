@@ -87,8 +87,8 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...GUARD_TIMING_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...GUARD_TIMING_JUDGE_COMBAT_OPTIONS.combatRules,
   round:Object.freeze({recovery:1,centerPull:.1,orbit:1,passiveDamage:.08,bumpSpeed:1.45,
-   dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:.6,guardLaunch:3.25,
-   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:.78,guardBrake:24,
+   dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:1.6,guardLaunch:3.6,
+   aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
    aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,maxDuration:75})
  })
@@ -520,6 +520,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
    k.dashPressStep=step;
    if(round)k.cued=false;
+   if(round&&countering(i)){const foe=fs[1-i].ctl;foe.guardBrakesFrom=Math.min(foe.guardBrakesFrom,Math.max(step,foe.guardBrakeEarliest));}
    k.chargeUntil=step+steps(windup)-1;
    k.dashReady=step+steps(source==='ai'&&round?round[`${aiProfiles[i]?.id}AiCooldown`]??round.aiCooldown:M.dashCooldown)+jitter;
    k.aimUntil=t+windup;
@@ -648,7 +649,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const stunUntil=t+stun;
   other.stunUntil=step+steps(stun)-1;
   if(round){
-   other.guardBrakesFrom=step+steps(round.guardBrakeDelay);
+   // Flung free: it flies the whole stun unless the guard counters, which brakes it so the counter lands (Castor 72baf2c8,
+   // Elara ad7297c3: a perfect guard must throw it farther than a bump).
+   other.guardBrakesFrom=Infinity;
+   other.guardBrakeEarliest=step+steps(round.guardBrakeDelay);
    guard.counterUntilRound=step+steps(stun);
   }
   other.pendingAi=null;

@@ -3,26 +3,41 @@ import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import {createV3Match, ROUND_JUDGE_COMBAT_OPTIONS as rules} from '../../sim/v3.js';
 
-const input = (step, side, action) => ({step, side, action});
 const build = (parts, spread = 'e180') => ({parts: parts.map((p, i) => ({...p, mount: i ? spread : 'e0'}))});
 const mine = build([{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}]);
 
-test('a counter launched while the stunned foe still grazes us lands in full', async () => {
- // 老龟 111323 (Sol 11-15): right after a perfect guard the two tops kept touching, so the counter
- // at step 1474 met the foe mid-episode and was zeroed as a plain bump.
+// A perfect guard flings the foe free and brakes it only once we counter (Elara ad7297c3); the counter must still land
+// every time, the grazing case of 老龟 111323 (Sol 11-15) included. A player who guards on the flash and counters at once.
+test('every counter after a perfect guard lands in full', async () => {
  const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
- const foe = foes.find(f => f.id === 'wen'), tuned = judgeBuilds.position.wen;
- const inputs = [[1, 'dash'], [348, 'block'], [542, 'dash'], [883, 'block'], [1083, 'dash'], [1449, 'block'], [1474, 'dash']]
-  .map(([step, action]) => input(step, 0, action));
- const game = await createV3Match({...rules, seed: 111323, fighters: [mine, build(tuned.parts, tuned.spread)],
-  // Pinned to the stage-2 numbers this match was recorded under, so later balancing does not move it.
-  combatRules: {...rules.combatRules, ceramicShards: true, round: {...rules.combatRules.round, wenHp: .9, wenAiDamage: 2.55}},
-  manual: {sides: ['input', 'ai'], aiProfiles: [null, {...foe.ai, ...tuned.ai, ...tuned.impactAi}], inputs}});
- while (!game.done && !game.events.some(e => e.type === 'dash' && e.phase === 'end' && e.side === 0 && e.pressStep === 1474)) game.advance();
- assert.ok(game.events.some(e => e.type === 'blockResult' && e.side === 0 && e.deflected && e.pressStep === 1449));
- const counter = game.events.find(e => e.type === 'dash' && e.phase === 'end' && e.side === 0 && e.pressStep === 1474);
- assert.equal(counter?.outcome, 'hit');
- assert.equal(counter?.quality, 'full');
+ let counters = 0;
+ for (const [id, seed] of [['wen', 111323], ['wen', 111306], ['chang', 111307], ['chang', 111308]]) {
+  const foe = foes.find(f => f.id === id), tuned = judgeBuilds.position[id];
+  const game = await createV3Match({...rules, seed, fighters: [mine, build(tuned.parts, tuned.spread)],
+   combatRules: {...rules.combatRules, ceramicShards: true},
+   manual: {sides: ['input', 'ai'], aiProfiles: [null, {...foe.ai, ...tuned.ai, ...tuned.impactAi}]}});
+  let seen = 0, blockAt = Infinity, dashAt = Infinity;
+  const pressed = new Set();
+  try {
+   while (!game.done) {
+    for (; seen < game.events.length; seen++) {
+     const e = game.events[seen];
+     if (e.type === 'dashCue' && e.side === 1) blockAt = e.t + .25;
+     if (e.type === 'blockResult' && e.side === 0 && e.deflected) dashAt = e.t + .05;
+     if (e.type === 'dash' && e.phase === 'charge' && e.side === 0 && e.t >= dashAt - 1e-9) { pressed.add(e.pressStep); dashAt = Infinity; }
+    }
+    const {blockIn, dashIn, stunIn} = game.control(0);
+    if (game.t >= blockAt - 1e-9 && !blockIn && !stunIn) { game.press(0, 'block'); blockAt = Infinity; }
+    if (game.t >= dashAt - 1e-9 && !dashIn && !stunIn) game.press(0, 'dash');
+    game.advance();
+   }
+   for (const e of game.events) if (e.type === 'dash' && e.phase === 'end' && e.side === 0 && pressed.has(e.pressStep)) {
+    counters++;
+    assert.deepEqual([e.outcome, e.quality], ['hit', 'full'], `${id} ${seed} counter pressed at step ${e.pressStep}`);
+   }
+  } finally { game.free(); }
+ }
+ assert.ok(counters >= 20, `only ${counters} counters`);
 });
 
 test('per-foe dash damage and cooldown must be finite and positive when given', async () => {
