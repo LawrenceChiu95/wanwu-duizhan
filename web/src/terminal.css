@@ -403,6 +403,12 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
    (Castor, Elara b3384dcb). */
 #fx .hilite.deflect { --signal:#e7b354;color:var(--signal);border-color:#b8913f;font-size:19px;padding:4px 12px;letter-spacing:.12em;
   box-shadow:inset 0 0 0 1px #e7b35440,0 1px 3px #000a; }
+/* 提示出手 (Elara af9e8542): the same plate, under the player's top and riding with it, a size down for its longer words;
+   冲 beats in its own brass while it is up. */
+#fx .hilite.nudge { left:0;font-size:16px;letter-spacing:.06em;padding:4px 10px; }
+#pad .pad.dash.nudge:not(.deny):not(.pop):not(.down) { animation:padNudge .8s ease-in-out infinite; }
+@keyframes padNudge { 0%,100% { transform:scale(1);filter:brightness(1); }
+  45% { transform:scale(1.07);filter:brightness(1.3) drop-shadow(0 0 12px #e7b354cc); } }
 
 /* 挡分两档 (Elara 896cf31c): the block's word over the contact point, in place of 弹开！ under the HUD. 「完美！」 is that
    plate's brass on its dark enamel, larger; 「勉强」 is bare faded words in the same spot, smaller, no plate, so it never reads as

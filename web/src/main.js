@@ -453,6 +453,7 @@ async function main() {
     live = null;
     el.pad.hidden = true;
     hideCoach();
+    endNudge();
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
     overlay.clear(); lateNums = []; resetHighlights();
@@ -865,6 +866,7 @@ async function main() {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
     } else if (e.type === 'blockResult') {
+      if (nudge && e.side === 0 && e.outcome !== 'empty') nudge.caught++;
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
       if (e.deflected) deflect(e, point);
       else if (e.outcome === 'tight') {
@@ -958,6 +960,31 @@ async function main() {
   }
   function hideCoach() { clearTimeout(coachTimer); coachFirstUp = false; el.coach.hidden = true; }
 
+  // ---------- 提示出手 ----------
+  // Stage 1 only (Elara af9e8542): a player who only blocks runs out the clock and loses (Sol a8851e63). After NUDGE_IDLE s
+  // without a 冲, or NUDGE_BLOCKS blocks that caught a lunge with no 冲 between, 冲 beats and a plate under the player's top
+  // says why, for NUDGE_TIME s; twice a match at most, gone at the next 冲. Match seconds.
+  const NUDGE_IDLE = 12, NUDGE_BLOCKS = 3, NUDGE_MAX = 2, NUDGE_TIME = 5;
+  let nudge = null;
+  function nudgeTick(t) {
+    if (!nudge || phase !== 'play' || live?.done) return;
+    if (nudge.on) { if (t - nudge.since >= NUDGE_TIME) nudgeOff(t); return; }
+    if (nudge.shown >= NUDGE_MAX || t - nudge.since < NUDGE_IDLE && nudge.caught < NUDGE_BLOCKS) return;
+    Object.assign(nudge, {on: true, since: t, caught: 0, shown: nudge.shown + 1});
+    el.dashBtn.classList.add('nudge');
+    overlay.nudge('挡住了，点冲反打', 'deflect nudge', NUDGE_TIME);
+  }
+  // Out of the match (time up, a core broken, back to the build): nothing of the hint stays (Elara 27b4d4c3).
+  function endNudge() { nudge = null; el.dashBtn.classList.remove('nudge'); overlay.dropNudge(); }
+  function nudgeOff(t) {
+    if (!nudge) return;
+    Object.assign(nudge, {since: t, caught: 0});
+    if (!nudge.on) return;
+    nudge.on = false;
+    el.dashBtn.classList.remove('nudge');
+    overlay.dropNudge();
+  }
+
   // ---------- match ----------
   let runId = 0;
   async function start() {
@@ -1000,6 +1027,8 @@ async function main() {
     tiered = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.guardTiming);
     round = Boolean((live ? combatOptions.combatRules : r.meta.combatRules)?.round);
     stage.trailAlways = !round;
+    el.dashBtn.classList.remove('nudge');
+    nudge = live && round && fought !== null && LADDER[fought].id === 'mang' ? {on: false, shown: 0, since: 0, caught: 0} : null;
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
     // 一合一分: an ordinary bump never stops a replay either (quietBumps).
     pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true, quietBumps: round});
@@ -1041,6 +1070,7 @@ async function main() {
   function showResult() {
     el.pad.hidden = true;
     hideCoach();
+    endNudge();
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
       overlay.clear(); lateNums = []; resetHighlights();
@@ -1463,6 +1493,8 @@ async function main() {
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action) {
     if (!live || live.done || phase !== 'play') { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
+    // A 冲 tap, taken or not, is what the hint asks for.
+    if (action === 'dash') nudgeOff(pb.t);
     // 冲挡加重: a top bounced off a block (or a heavy one after a lunge that met nothing) is stunned, both buttons with it.
     const c = live.match.control(0), left = Math.max(action === 'dash' ? c.dashIn : c.blockIn, c.stunIn ?? 0);
     // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes and
@@ -1731,6 +1763,7 @@ async function main() {
         if (phase === 'play' && replay.meta.reason === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
         phase = 'finale';
         finaleAge = finaleSim = 0;
+        endNudge();
       }
     } else if (phase === 'finale' || phase === 'result') {
       // Coast after the last frame; the loser's core is gone, the winner keeps spinning.
@@ -1801,6 +1834,7 @@ async function main() {
     if (shoot && tagKey !== lastTagKey) { lastTagKey = tagKey; shoot.paintTag(); }
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }
+    if (nudge) nudgeTick(pb.t);
   }
   showBuild();
   requestAnimationFrame(frame);
