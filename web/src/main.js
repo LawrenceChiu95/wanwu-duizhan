@@ -1034,7 +1034,10 @@ async function main() {
     if (o.clear) {
       el.winnerLine.textContent = '三个都赢了';
       $('clearTrio').innerHTML = LADDER.map((f, i) => `<span><span class="tw">${markHtml(i)}<i>${SVG.check}</i></span>${esc(f.name)}</span>`).join('');
-      el.tipLine.textContent = '现在三个随便挑，换个装法再打一轮';
+      // All three beaten: point at 拍一件 too, in plain words (Elara 2621157e, bd72b574); a tap opens it when the page has it.
+      el.tipLine.innerHTML = shoot ? '现在三个随便挑。<br>也可以<button type="button" class="tipshoot">拍一件</button>你身边的东西，装上再打'
+        : '现在三个随便挑，换个装法再打一轮';
+      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link'));
     }
     const card = $('unlockCard');
     card.hidden = o.unlocked == null;

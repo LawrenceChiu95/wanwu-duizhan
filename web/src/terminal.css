@@ -421,3 +421,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
   100% { transform:none;filter:none; }
 }
 @keyframes pcCrackLine { 0% { opacity:1;clip-path:inset(0 100% 0 0); } 18% { opacity:1;clip-path:inset(0 0 0 0); } 60% { opacity:.9; } 100% { opacity:.5; } }
+
+/* 三个都赢了: 拍一件 inside the tip, a word you can tap (Elara 2621157e). */
+.tip .tipshoot { all:unset;cursor:pointer;margin:0 2px;padding:0 1px;color:inherit;font-weight:800;
+  border-bottom:1.5px solid currentColor; }
+.tip .tipshoot:focus-visible { outline:2px solid var(--c1);outline-offset:2px; }
