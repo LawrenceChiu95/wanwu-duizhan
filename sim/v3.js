@@ -90,7 +90,7 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:1.6,guardLaunch:3.6,
    aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
-   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,maxDuration:75})
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.3,changPace:1.6,changGuard:.4,maxDuration:75})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -448,10 +448,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
  const round=position?.round;
  if(round!==undefined&&(!round||!catchDashContact||!planar||!M||
-  !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>Number.isFinite(round[key])&&round[key]>0)||
-  ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
-  round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5))throw Error('Invalid round separation rules');
+  !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>/Pace$|Guard$/.test(key)||Number.isFinite(round[key])&&round[key]>0)||
+  ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`,`${id}Pace`,`${id}Guard`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
+  round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5||['mang','wen','chang'].some(id=>round[`${id}Guard`]>.5)))throw Error('Invalid round separation rules');
  if(round)r.maxDuration=round.maxDuration;
+ const stage=aiProfiles.find(Boolean)?.id,stagePace=round?.[`${stage}Pace`]??1,stageGuard=round?.[`${stage}Guard`]??M?.blockDamage;
  const ceramicShards=position?.ceramicShards===true;
  if(ceramicShards&&(!planar||!M))throw Error('Ceramic shards require planar combat with manual controls');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
@@ -826,21 +827,25 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       d.damageCap=Math.min(d.damageCap*bareCoreReceive,damageReferenceHp*.8);
       d.damage=Math.min(d.damage*bareCoreReceive,d.damageCap);
      }
-     let flags=null,guardShare=1;
+     let flags=null,guardShare=1,pace=stagePace;
      if(M){
       const dash=role==='attack'&&strikes.includes(attacker),shieldUp=shield[target],attempt=lunge.includes(attacker);
+      // Counters already end these stages in time; the pace is for whoever strikes without one (Elara 837532f5).
+      if(round&&dash&&countering(attacker))pace=1;
       const dashMultiplier=dash?(round?(countering(attacker)?round.counterDamage:manual.sides[attacker]==='ai'?round[`${aiProfiles[attacker]?.id}AiDamage`]??round.aiDamage:round.dashDamage):
        impact?IMPACT.dashDamage:M.dashDamage):1;
       // 一合一分: a tight guard keeps its share of the blow as it would land unguarded, cap included. Cut before the cap, a heavy
       // foe's lunge (长臂猿 10x) still met the cap and hurt more than no guard (Wren f9021b46, Elara 2c1c8453).
       // Unguarded a glance is an ordinary bump (passiveDamage), so the tight guard starts from that too (Sol c08fcff4).
-      if(round&&shieldUp&&tightGuards?.[target]){d.damage*=strikes.length?dashMultiplier:round.passiveDamage;guardShare=M.blockDamage;}
+      if(round&&shieldUp&&tightGuards?.[target]){d.damage*=strikes.length?dashMultiplier:round.passiveDamage;guardShare=stageGuard;}
       else d.damage*=shieldUp?M.blockDamage*(tightGuards?.[target]?dashMultiplier:1):dashMultiplier;
       flags={dash,shield:shieldUp,parry:dash&&shieldUp,dashAttempt:attempt,dashQuality:attempt?(fullLunge.includes(attacker)?'full':'glance'):null,alignment:alignment.find(x=>x.side===attacker)?.value??null};
      }
      if(ordinaryImpact)d.damage*=round.passiveDamage;
      // No single blow decides a round match: a strong counter into a core once took it whole in 3 s (Iris 11-15).
-     if(round)d.damage=Math.min(d.damage,round.hitCap*tp.maxHp)*guardShare;
+     // Stages 2 and 3 ground on to the clock (Wren e031daaa): there every blow both ways counts for more, and on 长臂猿 a tight
+     // guard lets more through (still under half), so the faster ending doesn't tip the match to the player (Elara 2720a2dc).
+     if(round)d.damage=Math.min(d.damage*pace,round.hitCap*tp.maxHp)*guardShare;
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
