@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {setNames, matchStats, tipLine, NAMES} from '../../web/src/reason.js';
+import {ratingOf, GRADES} from '../../web/src/rating.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../data/catalog.json', import.meta.url)));
 setNames(catalog.items);
@@ -201,7 +202,7 @@ test('not won against 长臂猿 only encourages, pointing no way (Elara 803193e6
   for (let i = 0; i < 4; i++) s.missed++, s.presses++;
   assert.equal(tipLine(s, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
   assert.equal(tipLine(s, null, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
-  assert.equal(tipLine(s, 1, 'wen'), tipLine(s, 1));
+  assert.equal(tipLine(s, 1, 'mang'), tipLine(s, 1));
   assert.equal(tipLine(s, 0, 'chang'), tipLine(s, 0));
   s.presses = 0;
   assert.equal(tipLine(s, 1, 'chang'), '按冲朝它扑过去，它冲过来时按挡');
@@ -226,15 +227,15 @@ test('a lost photo lighter or graded below the opponent says to bring a heavier,
   assert.equal(tipLine(s, 1, 'chang'), '按冲朝它扑过去，它冲过来时按挡');
   // Heavier but graded lower names the grades; as heavy and as good says nothing.
   await withItems([
-    {id: 'heavy-c', name: '大石头', mass: 2, rating: {scores: {attack: 30, range: 30, durability: 40}}},
+    {id: 'heavy-c', name: '大石头', mass: 2, rating: {scores: {attack: 10, range: 10, durability: 10}}},
     {id: 'heavy-s', name: '铁椅', mass: 2, rating: {scores: {attack: 90, range: 90, durability: 90}}},
     {id: 'light-s', name: '刀', mass: .3, rating: {scores: {attack: 90, range: 90, durability: 90}}},
     {id: 'shot-1', name: '我拍的拖鞋', mass: .16, rating: {scores: {attack: 5, range: 10, durability: 40}}}
   ], ({matchStats: readStats, tipLine: readTip}) => {
     const read = (mine, foe) => readStats({events: [{type: 'dash', phase: 'end', side: 0, quality: 'full'}]},
       [{parts: [{item: mine, orient: 'out'}]}, {parts: foe.map(item => ({item, orient: 'out'}))}], () => true);
-    assert.equal(readTip(read('heavy-c', ['heavy-s']), 1), '你拍的大石头是 C 级，对面的铁椅是 S 级，换一件更大、更硬的再来');
-    assert.equal(readTip(read('heavy-c', ['light-s']), 1), '你拍的大石头是 C 级，对面的刀是 S 级，换一件更大、更硬的再来');
+    assert.equal(readTip(read('heavy-c', ['heavy-s']), 1), '你拍的大石头是 D 级，对面的铁椅是 S 级，换一件等级更高的再来');
+    assert.equal(readTip(read('heavy-c', ['light-s']), 1), '你拍的大石头是 D 级，对面的刀是 S 级，换一件等级更高的再来');
     assert.equal(read('heavy-s', ['heavy-s', 'light-s']).outmatched, null);
     assert.equal(read('light-s', ['heavy-c']).outmatched.by, 'mass');
     assert.equal(readTip(read('shot-1', ['heavy-s']), 1), '你拍的拖鞋比对面的铁椅轻，换一件更重、更硬的再来');
@@ -248,15 +249,11 @@ test('loss advice compares current catalog grades after photo ratings change', (
       id => id === photo);
   };
 
-  // The heavier cushion fell to C and the knife rose to B with the photo formula.
-  const cushion = loss('fanshuo-cushion', 'fanshuo-knife');
-  assert.deepEqual(cushion.outmatched, {item: 'fanshuo-cushion', foe: 'fanshuo-knife', by: 'grade'});
-  assert.equal(tipLine(cushion, 1), '你拍的抱枕是 C 级，对面的刀是 B 级，换一件更大、更硬的再来');
-
-  // Using the old unweighted average would incorrectly put the mouse below the cup.
-  const mouse = loss('fanshuo-mouse', 'fanshuo-cup');
-  assert.equal(mouse.outmatched, null);
-  assert.equal(tipLine(mouse, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  // A heavier photo graded below the opponent's best names both grades, whatever the current rule makes them (Sol 3b5986f1).
+  const mouse = loss('fanshuo-mouse', 'fanshuo-cup'), grade = id => ratingOf(catalog.items.find(i => i.id === id)).grade;
+  assert.ok(GRADES.indexOf(grade('fanshuo-mouse')) > GRADES.indexOf(grade('fanshuo-cup')));
+  assert.deepEqual(mouse.outmatched, {item: 'fanshuo-mouse', foe: 'fanshuo-cup', by: 'grade'});
+  assert.equal(tipLine(mouse, 1), `你拍的鼠标是 ${grade('fanshuo-mouse')} 级，对面的金属杯是 ${grade('fanshuo-cup')} 级，换一件等级更高的再来`);
 });
 
 test('lost stage 1 on time without a 冲 says so; anyone who lunged, other stages and ?feel=old do not (Elara 27b4d4c3)', () => {

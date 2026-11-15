@@ -133,7 +133,8 @@ export function tipLine(s, winner, foe = null) {
     // An item still named for what it was taken as (「我拍的拖鞋」) loses the 我拍的: the line says 你拍的 already.
     const mine = (NAMES[o.item] ?? '那件').replace(/^我拍的/, ''), foe = NAMES[o.foe] ?? '那件';
     return o.by === 'mass' ? `你拍的${mine}比对面的${foe}轻，换一件更重、更硬的再来`
-      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${GRADE[o.foe]} 级，换一件更大、更硬的再来`;
+      // A grade can come from attack as much as durability, so a lower one says nothing about which is harder (Elara 07c3c82a).
+      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${GRADE[o.foe]} 级，换一件等级更高的再来`;
   }
   if (FOE_TIP[foe]) return FOE_TIP[foe];
   if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;
