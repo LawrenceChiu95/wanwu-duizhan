@@ -252,8 +252,25 @@ test('loss advice compares current catalog grades after photo ratings change', (
   // A heavier photo graded below the opponent's best names both grades, whatever the current rule makes them (Sol 3b5986f1).
   const mouse = loss('fanshuo-mouse', 'fanshuo-cup'), grade = id => ratingOf(catalog.items.find(i => i.id === id)).grade;
   assert.ok(GRADES.indexOf(grade('fanshuo-mouse')) > GRADES.indexOf(grade('fanshuo-cup')));
-  assert.deepEqual(mouse.outmatched, {item: 'fanshuo-mouse', foe: 'fanshuo-cup', by: 'grade'});
+  assert.deepEqual(mouse.outmatched, {item: 'fanshuo-mouse', foe: 'fanshuo-cup', by: 'grade', foeGrade: grade('fanshuo-cup')});
   assert.equal(tipLine(mouse, 1), `你拍的鼠标是 ${grade('fanshuo-mouse')} 级，对面的金属杯是 ${grade('fanshuo-cup')} 级，换一件等级更高的再来`);
+});
+
+test('photo loss advice uses the opponent grades shown for that match', async () => {
+  const cup = catalog.items.find(i => i.id === 'fanshuo-cup');
+  const roller = catalog.items.find(i => i.id === 'fanshuo-roller');
+  const photo = {id: 'shot-b', name: '我拍的水瓶', mass: .5, rating: {scores: {attack: 55, range: 40, durability: 55}}};
+  await withItems([cup, roller, photo], ({matchStats: readStats, tipLine: readTip}) => {
+    const loss = (...foe) => {
+      const replay = {events: [{type: 'dash', phase: 'end', side: 0, quality: 'full'}]};
+      return readStats(replay, [{parts: [{item: photo.id, orient: 'out'}]}, {parts: foe.map(item => ({item: item.id, orient: 'out'}))}],
+        id => id === photo.id, {foeGrades: foe.map(item => ratingOf({rating: item.rating}).grade)});
+    };
+    assert.deepEqual([ratingOf(cup).grade, ratingOf(roller).grade], ['A', 'B']);
+    assert.equal(loss(cup).outmatched, null);
+    assert.deepEqual(loss(cup, roller).outmatched, {item: photo.id, foe: roller.id, by: 'grade', foeGrade: 'A'});
+    assert.equal(readTip(loss(cup, roller), 1), `你拍的水瓶是 B 级，对面的${roller.name}是 A 级，换一件等级更高的再来`);
+  });
 });
 
 test('lost stage 1 on time without a 冲 says so; anyone who lunged, other stages and ?feel=old do not (Elara 27b4d4c3)', () => {
