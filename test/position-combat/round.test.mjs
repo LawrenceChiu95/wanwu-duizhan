@@ -48,3 +48,16 @@ test('per-foe dash damage and cooldown must be finite and positive when given', 
  for (const bad of [{mangAiDamage: 0}, {wenAiCooldown: -1}, {changAiDamage: Infinity}])
   await assert.rejects(createV3Match(setup(bad)), /Invalid round separation rules/);
 });
+
+// Stages 2 and 3 got a pace and 长臂猿 a guard share (Elara 2720a2dc). Rules saved before then still replay, and no stage's
+// tight guard may let through more than half of the blow.
+test('round rules without a stage pace still play; a guard share over half is refused', async () => {
+ const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
+ const foe = foes.find(f => f.id === 'chang'), tuned = judgeBuilds.position.chang;
+ const setup = round => ({...rules, seed: 1, fighters: [mine, build(tuned.parts, tuned.spread)],
+  combatRules: {...rules.combatRules, round},
+  manual: {sides: ['input', 'ai'], aiProfiles: [null, {...foe.ai, ...tuned.ai, ...tuned.impactAi}]}});
+ const {wenPace, changPace, changGuard, ...older} = rules.combatRules.round;
+ (await createV3Match(setup(older))).free();
+ await assert.rejects(createV3Match(setup({...rules.combatRules.round, changGuard: .6})), /Invalid round separation rules/);
+});
