@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores, itemHardness} from './index.js';
+import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores, itemHardness, CURRENT_RATING_VERSION, currentItemRating} from './index.js';
 import {add,sub,scale,vec,arr,quat,qarr,rotate,inverseRotate,random} from './math.js';
 // Portable math only: replays must be byte-identical across JS engines. Chrome 156 and Node 18/25 disagree in the
 // last bit of Math.exp (and earlier Math.pow) for some inputs, so this file uses + - * / and Math.sqrt (IEEE exact)
@@ -91,6 +91,12 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
    aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
    aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:75})
+ })
+});
+export const MATERIAL_JUDGE_COMBAT_OPTIONS=Object.freeze({
+ ...ROUND_JUDGE_COMBAT_OPTIONS,
+ combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,
+  itemRatings:Object.freeze({version:CURRENT_RATING_VERSION})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -203,7 +209,25 @@ function coreLoadoutStats(parts,{mainShare,attackGain,durabilityGain}){
  return {attackScore,attack:Math.max(.15,1+(attackScore-15)/50*attackGain),
   defense:Math.max(.35,1+(score('durability')-62)/50*durabilityGain)};
 }
-function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules,hpScale){
+function snapshotRatings(rule,definitions,catalog,aiProfiles){
+ const {version,parts:saved}=rule??{};
+ if(!['rating-v3','rating-letters-v3'].includes(version)||saved===undefined&&version!==CURRENT_RATING_VERSION||
+  saved!==undefined&&(!Array.isArray(saved)||saved.length!==2))throw Error('Invalid match rating version or snapshot');
+ return definitions.map((def,side)=>{
+  const ratings=saved?.[side];
+  if(saved&&(!Array.isArray(ratings)||ratings.length!==def.parts.length))throw Error('Invalid match rating loadout');
+  return def.parts.map((part,index)=>{
+   const item=catalog.items.find(i=>i.id===part.item);
+   const rating=ratings ? ratings[index] : aiProfiles[side] ? item.rating : currentItemRating(item);
+   const scores=ratingScores({rating});
+   if(!scores||typeof rating.version!=='string'||
+    ratings&&(rating.item!==part.item||rating.mount!==part.mount))throw Error(`Invalid rating for ${part.item} in ${part.mount}`);
+   const {attack,range,durability}=scores;
+   return {item:part.item,mount:part.mount,version:rating.version,scores:{attack,range,durability}};
+  });
+ });
+}
+function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules,hpScale,ratings){
  const spin=r.top.spinRate*r.top.spinDirections[index];
  const desc=RAPIER.RigidBodyDesc.dynamic().setCcdEnabled(true).setCanSleep(false).setLinearDamping(r.linearDamping).setAngularDamping(r.angularDamping);
  if(positionRules?.lockCorePlane)desc.enabledTranslations(true,false,true);
@@ -213,7 +237,9 @@ function buildFighter(world,def,index,c,r,openingHalfTurn,positionRules,hpScale)
  const coreHp=r.core.hp*hpScale;
  const core={id:'core',item,mount:'core',orient:'core',collider,baseHp:r.core.hp,maxHp:coreHp,hp:coreHp,alive:true};
  const parts=def.parts.map((p,i)=>{
-  const item=c.items.find(x=>x.id===p.item),{offset,quat:q}=mountTransform(item,p.mount,p.orient,r),d=RAPIER.ColliderDesc.convexHull(new Float32Array(item.hull.flat()));if(!d)throw Error(`Invalid hull ${item.id}`);
+  const catalogItem=c.items.find(x=>x.id===p.item);
+  const item=ratings?{...catalogItem,rating:ratings[i]}:catalogItem;
+  const {offset,quat:q}=mountTransform(item,p.mount,p.orient,r),d=RAPIER.ColliderDesc.convexHull(new Float32Array(item.hull.flat()));if(!d)throw Error(`Invalid hull ${item.id}`);
   const collider=world.createCollider(d.setMass(item.mass).setTranslation(...offset).setRotation(quat(q)).setRestitution(c.materials[item.material].restitution).setFriction(.12),body);
   const baseHp=itemCombat(item,r,positionRules).hp,hp=baseHp*hpScale;
   const resistWeakHits=positionRules?.broadHeavyResistance&&item.mass>=1.5&&!isSlender(item,positionRules.weightFeel);
@@ -374,12 +400,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const aiProfiles=manual?.aiProfiles===undefined?[null,null]:Array.from(manual.aiProfiles,aiProfile);
  if(aiProfiles.some((p,i)=>p&&manual.sides[i]!=='ai'))throw Error('An ai profile requires an ai side');
  for(const x of manual?.inputs??[])if(!Number.isInteger(x.step)||x.step<1||![0,1].includes(x.side)||manual.sides[x.side]!=='input'||!ACTIONS.includes(x.action))throw Error(`Bad manual input ${JSON.stringify(x)}`);
- const c=await loadCatalogRules(),r=await loadV3Rules();definitions.forEach(d=>validate(d,c,r));await ready();
+ const c=await loadCatalogRules(),r=await loadV3Rules();
+ definitions.forEach(d=>validate(d,c,r));await ready();
  const impact=combat==='position'&&combatRules?.impactControls===true;
  const impactDashContacts=impact&&combatRules.impactDashContacts===true;
  const resolveMutualDashContact=impactDashContacts&&combatRules.resolveMutualDashContact===true;
  const refinedImpact=impactDashContacts&&combatRules.refinedImpact===true;
  const position=combat==='position'?structuredClone(combatRules):null;
+ if(position?.itemRatings!==undefined){
+  position.itemRatings={version:position.itemRatings?.version,parts:snapshotRatings(position.itemRatings,definitions,c,aiProfiles)};
+ }
  const guardTiming=refinedImpact?position.guardTiming:undefined;
  const catchDashContact=guardTiming?.catchDashContact===true;
  if(guardTiming!==undefined&&(!guardTiming||
@@ -488,7 +518,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  fs=definitions.map((d,i)=>{
   const id=aiProfiles[i]?.id;
   const previousScale=id==='mang'?mangHpScale:1;
-  return buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(previousScale*(round?.[`${id}Hp`]??1)));
+  return buildFighter(world,d,i,c,r,openingHalfTurn,position,hpScale*(previousScale*(round?.[`${id}Hp`]??1)), position?.itemRatings?.parts[i]);
  });
  extents=fs.map(f=>sweepRadius(f,r));const distance=openingDistance(extents,r,opening);
  fs.forEach((f,i)=>f.body.setTranslation({x:(i===0?-1:1)*(openingHalfTurn?-1:1)*distance/2,y:0,z:0},true));world.propagateModifiedBodyPositionsToColliders();

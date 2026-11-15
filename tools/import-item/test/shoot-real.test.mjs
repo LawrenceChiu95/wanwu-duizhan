@@ -14,7 +14,7 @@ import {realGenerator, parseRecognition, recognitionPrompt, recognitionSchema} f
 import {startShootServer, browserFetch as fetch} from './http-client.mjs';
 import {openJobs, REPO} from '../shoot/jobs.mjs';
 import {readJson} from '../state.mjs';
-import {rateItem, photoMassLimit} from '../../../sim/item-rating.js';
+import {rateItem, photoMassLimit, currentItemRating} from '../../../sim/item-rating.js';
 import {validateRuntimeItem} from '../../../sim/runtime-items.js';
 import {sha256} from '../mesh.mjs';
 import {recognizePhoto} from '../shoot/recognition.mjs';
@@ -167,6 +167,29 @@ for (const [lengthCm,massKg,expectedMass] of [[300,100,2],[1,.001,.001]]) test(`
  const [item]=await jobs.items(); assert.equal(item.mass,expectedMass); validateRuntimeItem(item,catalog);
  assert.ok(Math.abs(Math.max(...item.bounds.max.map((v,i)=>v-item.bounds.min[i]))-Math.min(.8,lengthCm/100))<1e-6);
  assert.deepEqual(item.rating,rateItem(item,catalog.materials));
+});
+
+test('a pre-contact photo keeps its stored rating across a restart and gets a separate current rating', async t => {
+ const initial=await open(t);
+ const job=await initial.jobs.create({photo:image,clientKey:'rating-upgrade-fixture'});
+ assert.equal((await finish(initial.jobs,job.id)).status,'succeeded');
+ await initial.close();
+ const file=path.join(initial.directory,'state.json'), old=await readJson(file);
+ const [item]=old.items;
+ item.photoPhysics={hardness:item.photoPhysics.hardness};
+ item.rating=rateItem(item,catalog.materials);
+ assert.match(item.rating.version,/^rating-v1:/);
+ await fs.writeFile(file,JSON.stringify(old));
+
+ const upgraded=await open(t,{directory:initial.directory});
+ const [loaded]=await upgraded.jobs.items();
+ const {currentRating,...stored}=loaded;
+ assert.deepEqual(stored,item);
+ assert.deepEqual(currentRating,currentItemRating(item));
+ assert.notEqual(currentRating.scores.durability,item.rating.scores.durability);
+ validateRuntimeItem(loaded,catalog);
+ await upgraded.close();
+ assert.deepEqual((await readJson(file)).items,old.items);
 });
 
 test('recognition-only entry point accepts any object without Aholo configuration or requests', async () => {

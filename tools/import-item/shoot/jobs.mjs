@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {setTimeout as pause} from 'node:timers/promises';
 import {readJson, saveJson} from '../state.mjs';
 import {keepPicture} from '../origin.mjs';
-import {rateItem} from '../../../sim/item-rating.js';
+import {rateItem, withCurrentRating} from '../../../sim/item-rating.js';
 import {fakeGenerator} from './fake.mjs';
 import {realGenerator} from './real.mjs';
 
@@ -348,7 +348,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     waitingForPaidId: () => Boolean(provider.real && provider.waitingForPaidId?.()),
     create,
     get: (id, owner) => serial(() => publicJob(get(id, owner))),
-    items: owner => serial(() => copy(store.items.filter(i => owner === undefined || Object.values(store.jobs).some(r => r.owner === owner && r.job.itemId === i.id)))),
+    items: owner => serial(() => copy(store.items.filter(i => owner === undefined || Object.values(store.jobs).some(r => r.owner === owner && r.job.itemId === i.id)).map(withCurrentRating))),
     quota: owner => serial(() => {
       const day = dayAt(clock()), count = (kind, who, browser = false) => usage(kind, day, who, browser);
       const creditBudget = publicBudget(), globalGeneration = limits.global.generation;

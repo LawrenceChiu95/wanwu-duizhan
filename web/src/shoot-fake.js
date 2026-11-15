@@ -326,6 +326,7 @@ export async function fakeApi(q) {
         if (x.label) it.category = x.label;
         if (x.matName) it.materialName = x.matName;
         delete it.comparisonBase;
+        delete it.currentRating;
         it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
         return it;
       });

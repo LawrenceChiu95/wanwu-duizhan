@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {ratingScores} from '../../sim/item-rating.js';
+import {CURRENT_RATING_VERSION, currentItemRating, ratingScores} from '../../sim/item-rating.js';
 import {itemCombat, loadV3Rules} from '../../sim/v3.js';
 import {ratingOf, byGrade} from '../../web/src/rating.js';
 import {setNames, matchStats, tipLine} from '../../web/src/reason.js';
@@ -34,7 +34,7 @@ test('valid stored scores are unchanged on screen and in combat, including zero 
     const item = {...broom, rating: {...broom.rating, scores: {attack: value, range: value, durability: value}}};
     assert.equal(ratingScores(item), item.rating.scores);
     const shown = ratingOf(item), letter = value === 0 ? 'D' : 'S';
-    assert.equal(shown.scores, item.rating.scores);
+    assert.deepEqual(shown.scores, item.rating.scores);
     assert.deepEqual(shown.letters, {attack: letter, range: letter, durability: letter});
     assert.equal(shown.grade, letter);
     const combat = itemCombat(item, rules), k = rules.top.itemStats;
@@ -45,12 +45,13 @@ test('valid stored scores are unchanged on screen and in combat, including zero 
 });
 test('display corrects stale letters and grades from scores without mutating the item', () => {
   const cases = [
-    [75, 75, 75, ['S', 'S', 'S'], 'S'],
+    [75, 75, 75, ['S', 'A', 'A'], 'A'],
     [60, 60, 60, ['A', 'A', 'A'], 'A'],
-    [45, 45, 45, ['B', 'B', 'B'], 'B'],
-    [30, 30, 30, ['C', 'C', 'C'], 'C'],
-    [29, 29, 29, ['D', 'D', 'D'], 'D'],
-    [99, 75, 50, ['S', 'S', 'B'], 'A']
+    [54, 50, 52, ['A', 'B', 'B'], 'B'],
+    [45, 45, 45, ['B', 'C', 'C'], 'D'],
+    [30, 30, 30, ['C', 'C', 'D'], 'D'],
+    [29, 29, 29, ['C', 'D', 'D'], 'D'],
+    [99, 75, 50, ['S', 'A', 'C'], 'S']
   ];
   for (const [attack, range, durability, letters, grade] of cases) {
     for (const stored of [{}, {letters: {attack: 'D', range: 'D', durability: 'D'}, grade: 'S'}]) {
@@ -58,8 +59,8 @@ test('display corrects stale letters and grades from scores without mutating the
       const original = structuredClone(item), shown = ratingOf(item);
       assert.deepEqual(shown.letters, {attack: letters[0], range: letters[1], durability: letters[2]});
       assert.equal(shown.grade, grade);
-      assert.equal(shown.version, 'fixture');
-      assert.equal(shown.scores, item.rating.scores);
+      assert.equal(shown.version, [CURRENT_RATING_VERSION, [attack, range, durability].join('-')].join(':'));
+      assert.deepEqual(shown.scores, item.rating.scores);
       assert.deepEqual(item, original);
     }
   }
@@ -98,4 +99,47 @@ test('an unselected bad entry does not block a valid selection', async () => {
   const {createV3Match} = await withCatalog(items);
   const m = await createV3Match({fighters: [{parts: [{item: 'pillow', mount: 'e0', orient: 'hug'}]}, {parts: []}], seed: 1});
   try {assert.ok(m.initial[0].parts[0].maxHp > 0);} finally {m.free();}
+});
+
+test('material matches snapshot the three starting scores, including the original opponent rating', async () => {
+  const {simulateV3, MATERIAL_JUDGE_COMBAT_OPTIONS, ROUND_JUDGE_COMBAT_OPTIONS} = await import('../../sim/v3.js');
+  const item = catalog.items.find(i => i.id === 'fanshuo-cushion');
+  const fighters = [0, 1].map(() => ({parts: [{item: item.id, mount: 'e0', orient: 'hug'}]}));
+  const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url), 'utf8'));
+  const tuned = judgeBuilds.position.mang;
+  const manual = {sides: ['input', 'ai'], aiProfiles: [null, {...foes.find(f => f.id === 'mang').ai, ...tuned.ai, ...tuned.impactAi}]};
+  const options = {...MATERIAL_JUDGE_COMBAT_OPTIONS, seed: 10, fighters, manual};
+  const replay = await simulateV3(options);
+  const snapshots = replay.meta.combatRules.itemRatings.parts;
+  const snapshot = ({version, scores}) => [{item: item.id, mount: 'e0', version, scores}];
+  assert.deepEqual(snapshots, [snapshot(currentItemRating(item)), snapshot(item.rating)]);
+  assert.notEqual(snapshots[0][0].scores.durability, snapshots[1][0].scores.durability);
+
+  const revised = {...item, rating: {...item.rating, scores: {attack: 99, range: 88, durability: 77}}};
+  const changed = await withCatalog(catalog.items.map(i => i.id === item.id ? revised : i));
+  const reconstructed = await changed.simulateV3({...options, combatRules: replay.meta.combatRules});
+  assert.equal(JSON.stringify(reconstructed), JSON.stringify(replay));
+  const live = await changed.simulateV3(options);
+  assert.notDeepEqual(live.meta.combatRules.itemRatings.parts, snapshots);
+
+  const mismatched = structuredClone(replay.meta.combatRules);
+  mismatched.itemRatings.parts[0][0].mount = 'e180';
+  await assert.rejects(changed.simulateV3({...options, combatRules: mismatched}), /Invalid rating/);
+  const originalOptions = {...options, combatRules: ROUND_JUDGE_COMBAT_OPTIONS.combatRules};
+  assert.equal((await simulateV3(originalOptions)).meta.combatRules.itemRatings, undefined);
+});
+
+test('the displayed catalog rates player items without rewriting the original scores', () => {
+  const defaults = catalog.items.filter(i => i.id.startsWith('fanshuo-'));
+  assert.equal(defaults.length, 12);
+  const ratings = defaults.map(currentItemRating);
+  assert.ok(ratings.filter(r => r.grade === 'A').length >= 2);
+  assert.ok(ratings.every(r => Object.values(r.letters).some(letter => ['S','A','B'].includes(letter))));
+  const cushion = defaults.find(i => i.id === 'fanshuo-cushion');
+  const paper = catalog.items.find(i => i.photoPhysics && i.materialName?.includes('纸'));
+  const hypothetical = (material, materialName) => currentItemRating({...cushion, material, materialName}).scores.durability;
+  assert.ok(hypothetical('metal', '钢') > hypothetical('plastic', '硬塑料'));
+  assert.ok(hypothetical('plastic', '硬塑料') > hypothetical('plastic', '玻璃'));
+  assert.ok(hypothetical('cloth', '布') > hypothetical('cloth', '纸'));
+  if (paper) assert.equal(currentItemRating(paper).letters.durability, 'D');
 });
