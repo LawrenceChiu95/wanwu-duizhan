@@ -90,7 +90,7 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:1.6,guardLaunch:3.6,
    aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
-   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenIdleDashAfter:3.75,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.3,changPace:1.6,changGuard:.4,maxDuration:75})
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:75})
  })
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
@@ -448,8 +448,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(!Number.isFinite(weakHitFloor)||weakHitFloor<0||weakHitFloor>1)throw Error('weakHitFloor must be in [0, 1]');
  const round=position?.round;
  if(round!==undefined&&(!round||!catchDashContact||!planar||!M||
-  !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>/Pace$|Guard$/.test(key)||Number.isFinite(round[key])&&round[key]>0)||
-  ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`,`${id}Pace`,`${id}Guard`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
+  !Object.keys(ROUND_JUDGE_COMBAT_OPTIONS.combatRules.round).every(key=>/Pace$|Guard$|AiCooldown$|DashJitter$|BlockWait$/.test(key)||Number.isFinite(round[key])&&round[key]>0)||
+  ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`,`${id}Pace`,`${id}Guard`,`${id}DashJitter`,`${id}BlockWait`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
   round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5||['mang','wen','chang'].some(id=>round[`${id}Guard`]>.5)))throw Error('Invalid round separation rules');
  if(round)r.maxDuration=round.maxDuration;
  const stage=aiProfiles.find(Boolean)?.id,stagePace=round?.[`${stage}Pace`]??1,stageGuard=round?.[`${stage}Guard`]??M?.blockDamage;
@@ -501,7 +501,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const queued=[[],[]],inputs=[],scripted=new Map();
  if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null,pendingAi:null,stunUntil:-1,dashLockedUntil:0};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
  const charging=f=>f.ctl.chargeUntil>=step,dashing=f=>f.ctl.dashUntil>=step,shielded=f=>f.ctl.shieldUntil>=step;
- const wenCanDash=i=>{const k=fs[i].ctl;return t<=k.counterUntil||step-(k.dashPressStep??0)>=steps(round?.wenIdleDashAfter??aiProfiles[i].idleDashAfter);};
+ const wenCanDash=i=>{const k=fs[i].ctl;return t<=k.counterUntil||step-(k.dashPressStep??0)>=steps(round?.wenIdleDashAfter??aiProfiles[i].idleDashAfter)+(k.idleJitter??0);};
  function tryPress(i,action,source,decisionStep){
   const f=fs[i],k=f.ctl;
   if(stunned(f))return;
@@ -514,10 +514,16 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     // Check at the actual press, after the AI's visible reaction delay.
     if(dist<round.aiMinApproach||t-lastRecoil<round.recovery*.45)return;
     if(aiProfiles[i]?.id==='mang'&&dist>(aiProfiles[i]?.dashRange[1]??M.ai.dashRange[1]))return;
+    // 老龟 and 长臂猿 don't wind up while the player's 挡 has more than <id>BlockWait left to cool down (Elara 29b5b9b2).
+    const blockWait=round[`${aiProfiles[i]?.id}BlockWait`];
+    if(blockWait!==undefined&&fs[1-i].ctl.blockReady-step>steps(blockWait))return;
    }
    const windup=chargeTime(i);
-   const jitter=guardTiming&&source==='ai'&&aiProfiles[i]?.id!=='wen'
-    ?Math.floor(dashCooldownRoll[i]()*(steps(guardTiming.aiDashJitter)+1)):0;
+   // 老龟 had no jitter, so it came on a fixed beat (远夏 11-14); under 一合一分 its cooldown and its wait between
+   // unprovoked lunges both take one.
+   const jitterTime=!guardTiming||source!=='ai'?0:aiProfiles[i]?.id!=='wen'?guardTiming.aiDashJitter:round?.wenDashJitter??0;
+   const jitter=jitterTime?Math.floor(dashCooldownRoll[i]()*(steps(jitterTime)+1)):0;
+   if(source==='ai'&&aiProfiles[i]?.id==='wen')k.idleJitter=jitter;
    k.lockedDir=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
    k.dashPressStep=step;
    if(round)k.cued=false;

@@ -866,7 +866,8 @@ async function main() {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
     } else if (e.type === 'blockResult') {
-      if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held = true; }
+      // 「挡住了，点冲反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
+      if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held ||= e.outcome === 'perfect'; }
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
       if (e.deflected) deflect(e, point);
       else if (e.outcome === 'tight') {

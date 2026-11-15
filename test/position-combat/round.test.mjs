@@ -61,3 +61,34 @@ test('round rules without a stage pace still play; a guard share over half is re
  (await createV3Match(setup(older))).free();
  await assert.rejects(createV3Match(setup({...rules.combatRules.round, changGuard: .6})), /Invalid round separation rules/);
 });
+
+// 老龟 came on a fixed beat (远夏 11-14, Elara 29b5b9b2): its lunges now come unevenly, never while the player's 挡 has more
+// than wenBlockWait to cool down. A player who guards on the flash and lunges whenever 冲 is ready.
+test('老龟 lunges on an uneven beat and waits for the player\'s guard', async () => {
+ const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
+ const foe = foes.find(f => f.id === 'wen'), tuned = judgeBuilds.position.wen;
+ const play = async (round, seed) => {
+  const game = await createV3Match({...rules, seed, fighters: [mine, build(tuned.parts, tuned.spread)],
+   combatRules: {...rules.combatRules, round, ceramicShards: true},
+   manual: {sides: ['input', 'ai'], aiProfiles: [null, {...foe.ai, ...tuned.ai, ...tuned.impactAi}]}});
+  let seen = 0, blockAt = Infinity;
+  try {
+   while (!game.done && game.t < 40) {
+    for (; seen < game.events.length; seen++) if (game.events[seen].type === 'dashCue' && game.events[seen].side === 1) blockAt = game.events[seen].t + .25;
+    const {blockIn, dashIn, stunIn} = game.control(0);
+    if (game.t >= blockAt - 1e-9 && !blockIn && !stunIn) { game.press(0, 'block'); blockAt = Infinity; }
+    else if (!dashIn && !stunIn && blockAt === Infinity) game.press(0, 'dash');
+    game.advance();
+   }
+   return game.events.filter(e => e.type === 'dash' && e.side === 1 && e.phase === 'charge');
+  } finally { game.free(); }
+ };
+ const spread = charges => { const gaps = charges.slice(1).map((e, i) => e.t - charges[i].t); return Math.max(...gaps) - Math.min(...gaps); };
+ const {wenAiCooldown, wenDashJitter, wenBlockWait, ...older} = {...rules.combatRules.round, wenIdleDashAfter: 3.75, wenPace: 1.3};
+ for (const seed of [111300, 111301]) {
+  const now = await play(rules.combatRules.round, seed);
+  assert.ok(spread(now) > .6, `seed ${seed}: beat spread ${spread(now).toFixed(2)} s`);
+  for (const e of now) assert.ok(e.blockReadyIn <= rules.combatRules.round.wenBlockWait + 1e-9, `seed ${seed}: wound up at ${e.t.toFixed(2)} with 挡 ${e.blockReadyIn.toFixed(2)} s off`);
+  assert.ok(spread(await play(older, seed)) > 0, 'rules saved before still play');
+ }
+});
