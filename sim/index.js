@@ -1,6 +1,5 @@
 import {itemSignature, validateRuntimeItem} from './runtime-items.js';
-export {ratingScores,itemHardness,CURRENT_RATING_VERSION,currentItemRating} from './item-rating.js';
-import {withCurrentRating} from './item-rating.js';
+export {ratingScores,itemHardness} from './item-rating.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import {add,sub,scale,length,vec,arr,quat,qarr,euler,rotate,inverseRotate,random} from './math.js';
 let initialized;
@@ -15,7 +14,7 @@ async function readCatalog(){
  const response=await fetch(url);if(!response.ok)throw Error(`Catalog HTTP ${response.status}`);return response.json();
 }
 /** Catalog entries. GLBs are already centered, in meters; scale=1. */
-export async function loadCatalog(){return (await loadRules()).items.map(withCurrentRating);}
+export async function loadCatalog(){return (await loadRules()).items;}
 export async function loadRules(){const c=await (catalogPromise??=readCatalog());return structuredClone({...c,items:[...c.items,...runtimeItems.values()]});}
 /** Backend items must be registered before they are displayed, equipped or replayed. */
 export async function registerItems(items){

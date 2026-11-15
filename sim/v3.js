@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores, itemHardness, CURRENT_RATING_VERSION, currentItemRating} from './index.js';
+import {loadRules as loadCatalogRules, strikeRoles, weakCritical, ratingScores, itemHardness} from './index.js';
+import {CURRENT_RATING_VERSION, currentItemRating} from './item-rating.js';
 import {add,sub,scale,vec,arr,quat,qarr,rotate,inverseRotate,random} from './math.js';
 // Portable math only: replays must be byte-identical across JS engines. Chrome 156 and Node 18/25 disagree in the
 // last bit of Math.exp (and earlier Math.pow) for some inputs, so this file uses + - * / and Math.sqrt (IEEE exact)

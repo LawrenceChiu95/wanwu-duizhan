@@ -25,9 +25,8 @@ test('unrestricted photo identity registers, fights, and validates its individua
  }
  await registerItems([item]);
  const loaded=(await loadCatalog()).find(i=>i.id===item.id);
- assert.deepEqual(loaded.rating,item.rating);
- assert.deepEqual(loaded.currentRating,currentItemRating(item));
- await registerItems([loaded]);
+ assert.deepEqual(loaded,item);
+ await registerItems([{...loaded,currentRating:currentItemRating(item)}]);
  const replay=await simulateV3({mode:'A',seed:41671,fighters:[{parts:[{item:item.id,mount:'e0',orient:'out'}]},{parts:[{item:'broom',mount:'e0',orient:'out'}]}]});
  assert.ok(replay.frames.length>10); assert.equal(replay.frames[0].fighters[0].parts[0].item,item.id);
 });
