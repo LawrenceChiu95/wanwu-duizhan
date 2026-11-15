@@ -45,12 +45,14 @@ test('valid stored scores are unchanged on screen and in combat, including zero 
 });
 test('display corrects stale letters and grades from scores without mutating the item', () => {
   const cases = [
-    [75, 75, 75, ['S', 'A', 'A'], 'A'],
-    [60, 60, 60, ['A', 'A', 'A'], 'A'],
-    [54, 50, 52, ['A', 'B', 'B'], 'B'],
-    [45, 45, 45, ['B', 'C', 'C'], 'D'],
-    [30, 30, 30, ['C', 'C', 'D'], 'D'],
-    [29, 29, 29, ['C', 'D', 'D'], 'D'],
+    [75, 75, 75, ['S', 'A', 'A'], 'S'],
+    [60, 60, 60, ['A', 'A', 'B'], 'A'],
+    [54, 50, 52, ['B', 'B', 'B'], 'B'],
+    [45, 45, 45, ['B', 'C', 'C'], 'B'],
+    [30, 30, 30, ['C', 'C', 'D'], 'C'],
+    [29, 29, 29, ['C', 'D', 'D'], 'C'],
+    [24, 15, 62, ['C', 'D', 'A'], 'A'],
+    [2, 100, 41, ['D', 'S', 'D'], 'D'],
     [99, 75, 50, ['S', 'A', 'C'], 'S']
   ];
   for (const [attack, range, durability, letters, grade] of cases) {
@@ -77,7 +79,7 @@ test('grade sorting uses the displayed score-derived grade, with unscored entrie
 async function withCatalog(items) {
   let source = await readFile(new URL('../../sim/v3.js', import.meta.url), 'utf8');
   source = source.replaceAll("'@dimforge/rapier3d-compat'", JSON.stringify(new URL('../../sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs', import.meta.url).href));
-  for (const file of ['index.js', 'item-rating.js', 'math.js']) source = source.replaceAll(`'./${file}'`, JSON.stringify(new URL(`../../sim/${file}`, import.meta.url).href));
+  for (const file of ['index.js', 'math.js']) source = source.replaceAll(`'./${file}'`, JSON.stringify(new URL(`../../sim/${file}`, import.meta.url).href));
   source = source.replace("new URL('./v3-rules.json',import.meta.url)", `new URL(${JSON.stringify(new URL('../../sim/v3-rules.json', import.meta.url).href)})`);
   const target = 'const c=await loadCatalogRules(),r=await loadV3Rules();';
   assert.equal(source.split(target).length, 2);
@@ -142,4 +144,11 @@ test('the displayed catalog rates player items without rewriting the original sc
   assert.ok(hypothetical('plastic', '硬塑料') > hypothetical('plastic', '玻璃'));
   assert.ok(hypothetical('cloth', '布') > hypothetical('cloth', '纸'));
   if (paper) assert.equal(currentItemRating(paper).letters.durability, 'D');
+});
+
+test('unusable durability inputs keep the original rating available', () => {
+  const item = catalog.items.find(i => i.id === 'fanshuo-cushion');
+  for(const invalid of [{mass:NaN, materialName:'玻璃'}, {mass:0}, {material:'unknown'}, {materialName:{}}]) {
+    assert.equal(currentItemRating({...item, ...invalid}), item.rating);
+  }
 });

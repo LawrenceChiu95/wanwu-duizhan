@@ -75,16 +75,17 @@ export const MATERIAL_DURABILITY = Object.freeze({metal:1.12,wood:1.04,plastic:.
 const materialEnabled = Object.values(MATERIAL_DURABILITY).some(value => value !== 1);
 export const CURRENT_RATING_VERSION = materialEnabled ? 'rating-v3' : 'rating-letters-v3';
 const gradeLetters = Object.keys(GRADE_FLOORS);
-const attackFloors = [75,52,38,20,0], rangeFloors = [80,60,50,30,0];
-const durabilityFloors = materialEnabled ? [80,57,52,44,0] : [82,64,52,44,0];
-const totalFloors = materialEnabled ? [84,62,54,46,0] : [84,67,56,51,0];
+const attackFloors = [75,60,38,20,0], rangeFloors = [80,60,50,30,0];
+const durabilityFloors = materialEnabled ? [80,62,52,44,0] : [82,64,52,51,0];
 const gradeAt = (value, floors) => gradeLetters[floors.findIndex(floor => value >= floor)];
 
 function materialDurability(item) {
  const name = item.materialName ?? '';
+ if(typeof name!=='string'||!Number.isFinite(item.mass)||item.mass<=0)return null;
  const kind = /陶瓷|瓷器|瓷质|玻璃/.test(name) ? 'fragile'
   : /纸/.test(name) ? 'paper' : /泡沫|海绵/.test(name) ? 'foam' : item.material;
- const wear = ({worn:.98,damaged:.5})[item.condition] ?? 1;
+ if(typeof kind!=='string'||!Object.hasOwn(MATERIAL_DURABILITY, kind))return null;
+ const wear = item.condition === 'worn' ? .98 : item.condition === 'damaged' ? .5 : 1;
  const base = 78 * Math.min(1, item.mass / 2)**.14 * wear;
  const weighted = score(base * MATERIAL_DURABILITY[kind]);
  const durability = kind === 'fragile'
@@ -97,17 +98,21 @@ function materialDurability(item) {
 export function currentItemRating(item) {
  const original = ratingScores(item);
  if(!original)return null;
- const {attack, range, durability} = materialEnabled && item.photoPhysics
-  ? {...original, durability:materialDurability(item)} : original;
- if(!Number.isFinite(durability))throw Error(`Invalid material durability: ${item.id}`);
- const second = Math.min(attack, durability), reach = Math.max(0, range - 40) / 15;
- const bonus = materialEnabled ? Math.min(3, Math.max(0, second - 40) / 10) + .75 * reach
-  : Math.min(3, Math.max(0, second - 20) / 4) + reach;
+ const derivedDurability = materialEnabled && item.photoPhysics ? materialDurability(item) : original.durability;
+ if(derivedDurability === null)return item.rating;
+ const {attack, range} = original, durability = derivedDurability;
+ const letters = {
+  attack:gradeAt(attack,attackFloors),
+  range:gradeAt(range,rangeFloors),
+  durability:gradeAt(durability,durabilityFloors)
+ };
+ // Range has its own letter and does not determine the overall grade.
+ const grade = gradeLetters.find(letter => letter === letters.attack || letter === letters.durability);
  return {
   version:`${CURRENT_RATING_VERSION}:${attack}-${range}-${durability}`,
   scores:{attack,range,durability},
-  letters:{attack:gradeAt(attack,attackFloors),range:gradeAt(range,rangeFloors),durability:gradeAt(durability,durabilityFloors)},
-  grade:gradeAt(Math.max(attack,durability) + bonus,totalFloors)
+  letters,
+  grade
  };
 }
 
