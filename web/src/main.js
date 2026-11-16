@@ -12,6 +12,7 @@ import {BreakHolds} from './break-holds.js';
 import {Overlay} from './overlay.js';
 import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
 import {sfx} from './sfx.js';
+import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
 import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
 
@@ -101,6 +102,7 @@ function showError(err) {
 addEventListener('error', e => showError(e.error ?? e.message));
 addEventListener('unhandledrejection', e => showError(e.reason));
 // Sound starts on the first touch or key (browsers only allow audio after a user gesture).
+sfx.music(bgmUrl);
 for (const type of ['pointerdown', 'touchend', 'keydown', 'click']) addEventListener(type, () => sfx.unlock(), {capture: true, passive: true});
 // Short buzzes on the big moments where the phone supports it (iOS ignores this).
 const buzz = pattern => { try { if (!sfx.muted) navigator.vibrate?.(pattern); } catch { /* not allowed */ } };
@@ -680,7 +682,11 @@ async function main() {
   // and glow still say 「it's coming」. `cueAt`: replay time of the one due, null with none.
   const CUE_LEAD = 0.3;
   let cueAt = null;
-  function cue(side = 1) { cueAt = null; stage.launchFlash(side); sfx.cue(); }
+  function cue(side = 1) { cueAt = null; stage.launchFlash(side); sfx.cue(); dip(0.55); }
+  // BGM down for a moment (第二轮补, Elara 16120707): a perfect block, a piece breaking, the charge's 「press now」, which
+  // the other side must hear to block; the decisive slow motion holds it down in the loop. Wall-clock seconds.
+  let dipUntil = 0;
+  const dip = secs => { dipUntil = Math.max(dipUntil, performance.now() + secs * 1000); };
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
   function resetHighlights() {
     cueAt = null; hilite = null; killer.clear(); lastHurt.clear(); heldBreaks.clear(); heldParry = null; lungeDir.fill(null);
@@ -769,6 +775,7 @@ async function main() {
     // New feel: the picture holds as the replay's does, and the piece's slot under the HUD shakes, cracks and goes dark
     // (凡朔's 对象 lost the break among the knocks; Elara 2621157e). ?feel=old as it was.
     if (pb?.dashOnlyImpact) pb.freezeFor(BREAK_STOP);
+    dip(0.5);
     const chip = !oldFx && hudChip(e.target, e.targetPart);
     if (chip) { dropFlash(chip); setFlash(chip, 'crack', 0.6); }
     sfx.crunch();
@@ -811,7 +818,7 @@ async function main() {
     stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
-    if (perfect || tiered) sfx.perfect();
+    if (perfect || tiered) { sfx.perfect(); dip(0.5); }
     buzz(perfect ? [30, 40, 60] : [25, 40]);
     // 挡分两档: 「完美！」 over the contact, clear of both tops, in place of the 「弹开！」 line under the HUD (Elara 896cf31c).
     if (e.side === 0 || pvp) { if (tiered) overlay.stamp(at, '完美！', 'perfect', undefined, faces2P(e.side)); else deflectLine(e.t); }
@@ -981,6 +988,7 @@ async function main() {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
         sfx.perfect();
+        dip(0.5);
         verdict(e.side, '完美', 'perfect');
       } else if (e.outcome === 'perfect') {
         // Caught a real new contact while the shared damage cooldown let nothing through (damageApplied false, Elara
@@ -1920,6 +1928,7 @@ async function main() {
     // Framing camera parameters (tuning runs only).
     cam: CAM,
     start,
+    music: () => sfx._music(),
     events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage})) ?? []
   };
 
@@ -2009,6 +2018,8 @@ async function main() {
         if (phase === 'finale') showResult();
       }
     }
+    const slowNow = pb && (phase === 'play' || phase === 'replay' ? pb.slowFactor(pb.t) < 0.99 : phase === 'finale' && pb.slowFactor(pb.end + finaleSim) < 0.99);
+    sfx.duck(Boolean(slowNow) || performance.now() < dipUntil);
     stage.updateCamera(dt, false);
     if (test.safe && dt > 0 && phase !== 'build' && phase !== 'computing') {
       const o = stage.safeOverflow(), cur = test.safe[phase];

@@ -254,6 +254,39 @@ function play(r, name, args) {
 
 let R = null;
 let muted = false;
+// 凡朔's BGM (一机双人 第二轮 ④, both modes): fetched and decoded only once the page has been touched, so it never holds up
+// the first screen. It plays once from the start, then loops the groove: MUSIC_LOOP runs from a bar where the drums are
+// in to the bar before the fade (bgm.mp3 is cut there, its seam cross-faded in the file, so the jump is sample-exact and
+// inaudible), and it carries on across matches. Into the master under the hits, so 静音 silences it too.
+const MUSIC_LEVEL = 0.3, MUSIC_LOOP = [19.753, 176.83];
+// A freeze, a slow-motion blow, the charge's 「press now」: the music drops to DUCK of itself, back over DUCK_BACK s.
+const DUCK = 0.5, DUCK_BACK = 0.35;
+const music = {url: null, started: false, gain: null, ducked: false};
+// A page out of sight (another app, the screen off) goes quiet, music too, and picks up where it was when it is back.
+globalThis.document?.addEventListener('visibilitychange', () => {
+  try { if (R) Promise.resolve(document.hidden ? R.ctx.suspend() : R.ctx.resume()).catch(() => {}); } catch { /* nothing to do */ }
+});
+async function startMusic() {
+  if (music.started || !music.url || !R) return;
+  music.started = true;
+  try {
+    const {ctx} = R, data = await (await fetch(music.url)).arrayBuffer();
+    const buf = await new Promise((res, rej) => ctx.decodeAudioData(data, res, rej));
+    const src = ctx.createBufferSource(), gain = ctx.createGain();
+    src.buffer = buf;
+    src.loop = true;
+    src.loopStart = MUSIC_LOOP[0];
+    src.loopEnd = Math.min(MUSIC_LOOP[1], buf.duration);
+    gain.gain.value = MUSIC_LEVEL;
+    src.connect(gain);
+    gain.connect(R.master);
+    src.start();
+    music.gain = gain;
+    music.src = src;
+  } catch (err) {
+    console.warn('music', err);
+  }
+}
 try { muted = globalThis.localStorage.getItem(KEY) === '1'; } catch { /* sandboxed iframe: no storage */ }
 const live = name => (...args) => { if (R && !muted && R.ctx.state === 'running') play(R, name, args); };
 const tested = new WeakMap();
@@ -277,11 +310,27 @@ export const sfx = {
         s.start(0);
         R.fresh = false;
       }
+      startMusic();
     } catch (err) {
       console.warn('sfx unlock', err);
     }
   },
   get muted() { return muted; },
+  /** The BGM's file; it starts with the first touch that unlocks sound. */
+  music(url) { music.url = url; if (R?.ctx.state === 'running') startMusic(); },
+  /** Hold the music down (DUCK) while `on`; let go and it comes back over DUCK_BACK s. Called every frame. */
+  duck(on) {
+    if (!music.gain || on === music.ducked) return;
+    music.ducked = on;
+    try {
+      const g = music.gain.gain, now = R.ctx.currentTime;
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(g.value, now);
+      g.linearRampToValueAtTime(MUSIC_LEVEL * (on ? DUCK : 1), now + (on ? 0.04 : DUCK_BACK));
+    } catch (err) {
+      console.warn('music duck', err);
+    }
+  },
   setMuted(on) {
     muted = Boolean(on);
     try { globalThis.localStorage.setItem(KEY, muted ? '1' : '0'); } catch { /* sandboxed iframe: no storage */ }
@@ -297,6 +346,8 @@ export const sfx = {
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
   clang: live('clang'), clank: live('clank'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'), go: live('go'),
+  /** Test hook: the BGM as it stands (null until it plays). */
+  _music() { return music.gain && {level: music.gain.gain.value, ducked: music.ducked, loop: [music.src.loopStart, music.src.loopEnd], length: music.src.buffer.duration, ctx: R.ctx.state, master: R.master.gain.value}; },
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {
     if (!tested.has(ctx)) tested.set(ctx, rig(ctx, LEVEL));
