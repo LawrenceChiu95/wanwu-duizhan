@@ -46,6 +46,9 @@
   <canvas id="view"></canvas>
   <div id="fx" aria-hidden="true"></div>
   <div id="flash" aria-hidden="true"></div>
+  <!-- 一机双人's glow round the edge (凡朔): 1P's colour at the foot, 2P's at the head, the winner's all round at the end.
+       Early in the page, so the buttons, bars and cards all sit over it. -->
+  <div id="pvpGlow" hidden aria-hidden="true"></div>
 
   <header id="hud" hidden>
     <div class="side s0">
@@ -129,14 +132,17 @@
   </div>
   <!-- 一机双人's first match: one line, said to each end of the phone. -->
   <div id="pvpTip" hidden aria-live="polite"><b class="t0">上下各两个键，面对面按</b><b class="t1">上下各两个键，面对面按</b></div>
+  <!-- 一机双人's start: 准备 then 开打！, one plate to each end of the phone; the buttons count from 开打！ on. -->
+  <div id="pvpReady" hidden aria-live="polite"><b class="t0"></b><b class="t1"></b></div>
   <!-- Diagnostics: five quick taps on the clock (or ?diag=1) open it; the same again closes it. -->
   <pre id="diag" hidden></pre>
 
   <!-- 一机双人's result for 2P: who won, in the top half, turned to the head of the phone. -->
-  <div id="pvpWin" hidden><b></b></div>
+  <div id="pvpWin" hidden><b></b><span class="score"></span></div>
   <section id="result" hidden>
     <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
+    <div class="score" id="pvpScore" hidden></div>
     <div class="rbuild" id="resultBuild"></div>
     <div class="trio" id="clearTrio" hidden></div>
     <p class="why" id="whyLine"></p>

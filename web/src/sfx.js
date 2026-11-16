@@ -195,6 +195,15 @@ const SOUNDS = {
     crackle(v, t + 0.02);
     v.tone(t + 0.08, 1.05, 0.08, 'triangle', 760, 110, 0.95, 0.02);
   },
+  // 一机双人's 开打！: one struck plate, a bright bell over the parry's metal, a little brighter than either.
+  go(v) {
+    const t = v.t;
+    for (const [ratio, peak, dur] of [[1, 0.13, 0.9], [2.76, 0.08, 0.6], [5.4, 0.04, 0.36]]) {
+      for (const detune of [1, 1.004]) v.tone(t, dur, peak, 'sine', 784 * ratio * detune, 784 * ratio * detune, dur, 0.001);
+    }
+    v.tone(t, 0.5, 0.06, 'sine', 1568 * 0.94, 1568, 0.05, 0.002);
+    v.noise(t, 0.05, 0.32, 'highpass', 3000);
+  },
   click(v) {
     v.tone(v.t, 0.03, 0.1, 'triangle', 2200, 1500, 0.02, 0.001);
     v.noise(v.t, 0.012, 0.07, 'highpass', 5000);
@@ -287,7 +296,7 @@ export const sfx = {
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
   clang: live('clang'), clank: live('clank'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
-  flip: live('flip'), reveal: live('reveal'),
+  flip: live('flip'), reveal: live('reveal'), go: live('go'),
   /** Test hook: schedule a sound now on another context (e.g. an OfflineAudioContext) through its own master chain. */
   _render(ctx, name, ...args) {
     if (!tested.has(ctx)) tested.set(ctx, rig(ctx, LEVEL));

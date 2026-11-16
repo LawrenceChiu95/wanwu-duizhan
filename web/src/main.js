@@ -32,10 +32,12 @@ const el = {
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
-  pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin')
+  pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin'), pvpReady: $('pvpReady'), pvpGlow: $('pvpGlow'), pvpScore: $('pvpScore')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
+// 一机双人's start (第二轮 ①): 准备 for READY_GO s, then 开打！ until READY; the sim starts after it, so its numbers are untouched.
+const READY = 1.5, READY_GO = 0.9;
 // The trial page (远夏 77df1bda, Elara 910599fc) offers 凡朔's twelve (Sol's rated items, in his order), then the player's
 // own photos, not the drafts a comparisonBase replaces. The earlier items stay in the catalog only for the three
 // opponents, until theirs are made of his things.
@@ -324,13 +326,16 @@ async function main() {
   if (stage.bench) prefetched.finally(() => stage.bench.want());
 
   // ---------- state ----------
-  let phase = 'loading'; // loading | build | computing | play | finale | result | replay
+  let phase = 'loading'; // loading | build | computing | ready (一机双人's 准备 → 开打！) | play | finale | result | replay
   // Which of the three the match on screen is against (null with a build in ?foe=), and what its result did to the ladder
   // (worked out once: the result shows again after 重看).
   let fought = null, outcome = null;
   // 一机双人 (Elara 1e2c813c): `pvp`, two people at this phone; `pick`, whose build the bench is showing (0 the foot's 1P,
   // 1 the head's 2P, who is FOE meanwhile). The single-player opponent waits in soloFoe.
   let pvp = false, pick = 0, soloFoe = null;
+  // The run of matches the two have played (原样再战 and 重选装备 carry it on, 回单人 and 回首页 start it again), and the
+  // match last counted, so the result coming back after 重看 counts nothing. readyAge: how far into 准备 → 开打！.
+  let score = [0, 0], scored = 0, readyAge = 0;
   const cur = () => pick ? FOE : mine;
   // Who a side is, in the words of the mode being played.
   const sideName = i => pvp ? (i ? '蓝方' : '橙方') : i ? '对手' : '你';
@@ -490,6 +495,7 @@ async function main() {
   // In or out of 一机双人, onto the bench at 1P's turn (首页's 和人打 / 和电脑打, ?pvp=1, 回单人).
   async function setPvp(two) {
     const req = ++pvpReq;
+    score = [0, 0];
     foeReq++; // a 换个对手 still loading is let go
     if (two !== pvp) {
       if (two) { soloFoe = FOE; FOE = keptP2(); } else { FOE = soloFoe ?? FOE; soloFoe = null; }
@@ -533,7 +539,7 @@ async function main() {
     renderPick();
   }
   // 回首页: the opening page's two choices again; a page without one (not the 评委版) goes straight back to single-player.
-  function goHome() { if (!judge?.showIntro()) setPvp(false); }
+  function goHome() { score = [0, 0]; if (!judge?.showIntro()) setPvp(false); }
   $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
     phase = 'build';
@@ -553,7 +559,7 @@ async function main() {
     stage.topDown = null;
     stage.pose(previewState());
     el.hud.hidden = true;
-    el.result.hidden = el.pvpWin.hidden = true;
+    el.result.hidden = el.pvpWin.hidden = el.pvpReady.hidden = el.pvpGlow.hidden = true;
     el.build.hidden = false;
     el.foe.hidden = false;
     setCaption(false);
@@ -1158,11 +1164,11 @@ async function main() {
     stage.pose(pb.state);
     stage.setLookahead(lookahead());
     stage.updateCamera(0, true);
-    phase = 'play';
+    phase = pvp ? 'ready' : 'play';
     // Back the right way for the fight; 重选装备 afterwards starts again from 1P.
     if (pvp) { pick = 0; el.app.style.transition = 'none'; el.app.classList.remove('turned'); void el.app.offsetWidth; el.app.style.transition = ''; }
-    overlay.showBanner('开转', '#ffffff', 0.8);
-    if (pvp) pvpTip();
+    // 一机双人 (第二轮 ①): both ends get 准备 then 开打！ before anything counts, so a hand still on its way is not behind.
+    if (pvp) getReady(); else overlay.showBanner('开转', '#ffffff', 0.8);
     // The new opening delays the foe's charge, which used to bring up the first lesson early.
     if (combatOptions.combatRules?.opening) coach(0);
     else setTimeout(() => coach(0), 400);
@@ -1197,12 +1203,20 @@ async function main() {
     stage.setCameraMode('result');
     stage.showMe = false;
     stage.setLookahead(null);
-    el.winnerLine.textContent = m.winner === null ? '平局' : pvp ? `${sideName(m.winner)}胜` : m.winner === 0 ? '你赢了' : '你输了';
-    el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : pvp ? 'blue' : 'lose';
+    // 一机双人 (第二轮 ②): each end is told about itself, 你赢了 / 你输了, not by a colour or a number to remember. The card
+    // is 1P's (你 / 对面); 2P's own line is the plate turned to the head of the phone.
+    const said = side => m.winner === null ? '平局' : m.winner === side ? '你赢了' : '你输了';
+    el.winnerLine.textContent = said(0);
+    el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
     el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
-    el.whyLine.innerHTML = reasonHtml(reasonLine(replay, [sideName(0), sideName(1)]));
+    const who = pvp ? ['你', '对面'] : [sideName(0), sideName(1)];
+    el.whyLine.innerHTML = reasonHtml(reasonLine(replay, who));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
-    el.resultBuild.innerHTML = `<span class="rw">${sideName(0)}</span>${builds[0]}<span class="rw vs">${pvp || fought === null ? sideName(1) : esc(LADDER[fought].name)}</span>${builds[1]}`;
+    el.resultBuild.innerHTML = `<span class="rw">${who[0]}</span>${builds[0]}<span class="rw vs">${pvp || fought === null ? who[1] : esc(LADDER[fought].name)}</span>${builds[1]}`;
+    // 第二轮 ⑤: the run so far, each end from its own side.
+    if (pvp && scored !== runId) { scored = runId; if (m.winner !== null) score[m.winner]++; }
+    el.pvpScore.hidden = !pvp;
+    el.pvpScore.textContent = `你 ${score[0]} : ${score[1]} 对面`;
     // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows.
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx});
     el.statsList.innerHTML = pvp ? '' : pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
@@ -1217,8 +1231,11 @@ async function main() {
     // half, turned to them, so nobody has to lean over the card (Elara 1d222196).
     if (pvp) { el.hud.hidden = true; overlay.dropWords(); }
     el.pvpWin.hidden = !pvp;
-    el.pvpWin.className = el.result.className;
-    el.pvpWin.firstChild.textContent = el.winnerLine.textContent;
+    el.pvpWin.className = m.winner === null ? 'draw' : m.winner === 1 ? 'blue' : 'lose';
+    el.pvpWin.firstChild.textContent = said(1);
+    el.pvpWin.lastChild.textContent = `你 ${score[1]} : ${score[0]} 对面`;
+    // The winner's colour all round the edge (凡朔's 「箭头指向谁赢」); a draw keeps both.
+    if (pvp) glow(m.winner === null ? 'draw' : `won${m.winner}`);
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
@@ -1266,6 +1283,7 @@ async function main() {
     if (!pb || pb.slowAt === null) return;
     el.result.hidden = el.pvpWin.hidden = true;
     el.hud.hidden = false;
+    if (pvp) glow('');
     showPads(false);
     stage.clearFx();
     overlay.clear(); lateNums = []; resetHighlights();
@@ -1670,7 +1688,7 @@ async function main() {
   addEventListener('keyup', ev => keyOf(ev)?.btn.classList.remove('down'));
   // 一机双人: two people's thumbs on one glass. No pinch or double-tap zoom, no page dragged, no text picked up, while a
   // match is on (touch-action and user-select in terminal.css do the rest; iOS Safari needs its gesture events stopped too).
-  const fighting = () => pvp && ['play', 'finale', 'replay'].includes(phase);
+  const fighting = () => pvp && ['ready', 'play', 'finale', 'replay'].includes(phase);
   for (const type of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(type, ev => { if (pvp) ev.preventDefault(); }, {passive: false});
   document.addEventListener('touchmove', ev => { if (fighting()) ev.preventDefault(); }, {passive: false});
   document.addEventListener('dblclick', ev => { if (fighting()) ev.preventDefault(); }, {passive: false});
@@ -1681,6 +1699,29 @@ async function main() {
     el.pvpTip.hidden = false; // shown, its lines' fade (terminal.css) plays from the start
   }
   el.pvpTip.addEventListener('animationend', () => { el.pvpTip.hidden = true; });
+  // 准备 → 开打！ (第二轮 ①): the plates and the glow; the loop counts readyAge on and lets the fight go at READY.
+  function getReady() {
+    readyAge = 0;
+    for (const b of el.pvpReady.children) b.textContent = '准备';
+    el.pvpReady.className = '';
+    el.pvpReady.hidden = false;
+    glow('ready');
+  }
+  function readyStep(dt) {
+    const was = readyAge;
+    readyAge += dt;
+    if (was < READY_GO && readyAge >= READY_GO) {
+      for (const b of el.pvpReady.children) b.textContent = '开打！';
+      el.pvpReady.className = 'fight';
+      glow('go');
+      sfx.go();
+      buzz(30);
+    }
+    // The first match's line about the buttons comes once the plates are gone, where they stood.
+    if (readyAge >= READY) { el.pvpReady.hidden = true; glow(''); phase = 'play'; pvpTip(); }
+  }
+  // The edge's glow: '' through the fight, 'ready' breathing, 'go' one bright pulse, 'won0' / 'won1' / 'draw' on the result.
+  function glow(state) { el.pvpGlow.hidden = false; el.pvpGlow.className = state; }
   // Sound on / off (remembered where the page may store it).
   const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
   el.mute.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
@@ -1902,6 +1943,9 @@ async function main() {
     if (phase === 'build' || phase === 'computing') {
       spinAngle += dt * PREVIEW_SPIN;
       stage.pose(previewState());
+    } else if (phase === 'ready') {
+      readyStep(dt);
+      stage.pose(pb.state);
     } else if (phase === 'play' || phase === 'replay') {
       if (phase === 'play' && live && !live.done) {
         // Keep the live sim just ahead of the picture; once it is over, the replay is complete.
