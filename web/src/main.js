@@ -460,8 +460,8 @@ async function main() {
     if (pvp && !((late.p2 || held.p2) && sameBuild(FOE, DEFAULT_P2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
   }
   // The player changed the side being picked: what it chose is kept from now on, even the default again, and a held or
-  // late build for that side is let go (Sol d6d88569).
-  const changed = () => { const k = pick ? 'p2' : 'mine'; delete held[k]; delete late[k]; };
+  // late build for that side is let go (Sol d6d88569). A tap on what is already there changes nothing (Sol 5a3aa4e6).
+  const changed = (was, now) => { if (was === now) return; const k = pick ? 'p2' : 'mine'; delete held[k]; delete late[k]; };
   // One count per side: a newer change to that side lets its older one go, and 1P's and 2P's never cancel each other
   // (both restored at once when the photo list comes in, Sol c0b3e440).
   const buildReq = [0, 0];
@@ -1326,8 +1326,8 @@ async function main() {
       const id = card.dataset.item;
       card.querySelector('.pick').onclick = () => {
         if (cur().parts[1 - libSlot].item === id) return;
+        changed(cur().parts[libSlot].item, id);
         cur().parts[libSlot].item = id;
-        changed();
         closeLibrary();
         rebuild();
       };
@@ -1513,8 +1513,8 @@ async function main() {
   // Into the slot the 角色库 was last opened for, from wherever the player is (a 拍一件 tag can be tapped on the result).
   async function equip(id) {
     if (cur().parts[1 - libSlot].item === id) return;
+    changed(cur().parts[libSlot].item, id);
     cur().parts[libSlot].item = id;
-    changed();
     shoot?.close();
     closeLibrary();
     if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuild();
@@ -1605,9 +1605,9 @@ async function main() {
   }).catch(showError);
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
-    b.onclick = () => { if (phase !== 'build') return; cur().parts[Number(slot.dataset.slot)].orient = b.dataset.orient; changed(); rebuild(); };
+    b.onclick = () => { if (phase !== 'build') return; const part = cur().parts[Number(slot.dataset.slot)]; changed(part.orient, b.dataset.orient); part.orient = b.dataset.orient; rebuild(); };
   }));
-  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; cur().spread = b.dataset.spread; changed(); rebuild(); }; });
+  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; changed(cur().spread, b.dataset.spread); cur().spread = b.dataset.spread; rebuild(); }; });
   // Each side's 冲 / 挡 (一机双人: 2P's pair is #pad2 at the head of the phone).
   const pads = [{box: el.pad, dash: el.dashBtn, block: el.blockBtn, dashNope: el.dashNope, blockNope: el.blockNope},
     {box: el.pad2, dash: $('dashBtn2'), block: $('blockBtn2'), dashNope: $('dashNope2'), blockNope: $('blockNope2')}];
@@ -1860,7 +1860,7 @@ async function main() {
       const s = [...m.scale].sort((a, b) => a - b), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
       return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), sweptMinMarginLrPx: +m.sweptLr.toFixed(1), sweptMinMarginSafePx: +m.sweptSafe.toFixed(1), core15PctExact: +(100 * m.core15 / m.frames).toFixed(2), outSecs: +m.out.toFixed(2), outRunMaxSecs: +m.outRunMax.toFixed(2), offLrSecs: +m.offLr.toFixed(2), offLrAt: m.offLrAt ?? [], pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
     },
-    setBuild(b) { Object.assign(cur(), structuredClone(b)); changed(); rebuild(); },
+    setBuild(b) { changed(buildArg(cur()), buildArg({...cur(), ...b})); Object.assign(cur(), structuredClone(b)); rebuild(); },
     setPvp,
     setPick,
     stage,
