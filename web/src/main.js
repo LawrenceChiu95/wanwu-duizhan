@@ -242,16 +242,18 @@ async function main() {
     const p = text.split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
     const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
-    if (shape && b.parts.every(x => usable(x.item))) return b;
-    // An old build or link naming the retired 拖鞋演示 (Sol 7adde033): its other piece stays, the default's takes the
-    // retired one's place, how both stick out and the spread as they were; held like the above.
-    if (shape && b.parts.some(x => RETIRED.has(x.item)) && b.parts.every(x => usable(x.item) || RETIRED.has(x.item))) {
-      const kept = b.parts.find(x => usable(x.item))?.item, fill = fillOf(key).parts.map(x => x.item).filter(id => id !== kept);
+    // An old build or link naming the retired 拖鞋演示 (Sol 7adde033, f60f5af3): its other piece stays, a photo item one
+    // too once it comes in; the default's takes the retired one's place, how both stick out and the spread as they were.
+    // Held like the above, so the kept record stays until the player changes that side (Elara cc489dd2).
+    const retired = shape && b.parts.some(x => RETIRED.has(x.item));
+    if (retired) {
+      const kept = b.parts.find(x => !RETIRED.has(x.item))?.item, fill = fillOf(key).parts.map(x => x.item).filter(id => id !== kept);
       let i = 0;
-      return held[key] = {parts: b.parts.map(x => usable(x.item) ? x : {item: fill[i++], orient: x.orient}), spread: b.spread};
+      b.parts = b.parts.map(x => RETIRED.has(x.item) ? {item: fill[i++], orient: x.orient} : x);
     }
+    if (shape && b.parts.every(x => usable(x.item))) { if (retired) held[key] = b; return b; }
     if (shape && b.parts.every(x => usable(x.item) || !byId.has(x.item))) {
-      if (shot || photoLater) { late[key] = b; return null; }
+      if (shot || photoLater) { late[key] = b; if (retired) held[key] = b; return null; }
       held[key] = fillOf(key);
     }
   };
