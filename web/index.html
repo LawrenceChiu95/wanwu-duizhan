@@ -74,6 +74,7 @@
     <div class="foe-readout">
     <span class="vs">VS</span><span class="ft" id="foeMark" hidden></span><span class="label" id="foeLabel">对手</span><span id="foeParts"></span>
     <button type="button" class="swap" id="foeBtn" aria-label="换个对手"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5" /><path d="M20 16H6l3.5 3.5" /></svg><span>换个对手</span></button>
+    <button type="button" class="swap" id="pvpBack" hidden><svg viewBox="0 0 24 24"><path d="M19 12H6" /><path d="M11 6l-6 6 6 6" /></svg><span>回首页</span></button>
     </div>
   </header>
 
@@ -120,6 +121,14 @@
     <button type="button" class="pad block" id="blockBtn" aria-label="挡"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.3-7.5 10-4.4-1.7-7.5-5.4-7.5-10V5.8z" /><path d="M12 7v9" /></svg><b class="left" aria-hidden="true"></b><span>挡</span></button>
     <b class="nope dash" id="dashNope" aria-hidden="true">还没好</b><b class="nope block" id="blockNope" aria-hidden="true">还没好</b>
   </div>
+  <!-- 一机双人: 2P's pair at the top of the phone, turned to face them (the same plate, shown only for two players). -->
+  <div id="pad2" hidden>
+    <button type="button" class="pad dash" id="dashBtn2" aria-label="上方冲"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M2.5 8h5M1.5 12h7M2.5 16h5" /><path d="M11 5l7 7-7 7" /><path d="M16 5l7 7-7 7" /></svg><b class="left" aria-hidden="true"></b><span>冲</span></button>
+    <button type="button" class="pad block" id="blockBtn2" aria-label="上方挡"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.3-7.5 10-4.4-1.7-7.5-5.4-7.5-10V5.8z" /><path d="M12 7v9" /></svg><b class="left" aria-hidden="true"></b><span>挡</span></button>
+    <b class="nope dash" id="dashNope2" aria-hidden="true">还没好</b><b class="nope block" id="blockNope2" aria-hidden="true">还没好</b>
+  </div>
+  <!-- 一机双人's first match: one line, said to each end of the phone. -->
+  <div id="pvpTip" hidden aria-live="polite"><b class="t0">上下各两个键，面对面按</b><b class="t1">上下各两个键，面对面按</b></div>
   <!-- Diagnostics: five quick taps on the clock (or ?diag=1) open it; the same again closes it. -->
   <pre id="diag" hidden></pre>
 
@@ -136,6 +145,7 @@
     <div class="actions">
       <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
       <button type="button" id="sameBtn" class="ghost">原样再来</button>
+      <button type="button" id="soloBtn" class="ghost" hidden>回单人</button>
       <button type="button" id="againBtn" class="primary"><span>换个装法再打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
   </section>

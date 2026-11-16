@@ -94,10 +94,11 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  })
 });
 // 一机双人 (Elara 1e2c813c): two people, one phone. Both sides are input and every side-0 privilege is shared: the same
-// wind-up, the same dash cue, the same aim lock, ceramic shards either way. charge and pace are Iris's to tune.
+// wind-up, the same dash cue, the same aim lock, ceramic shards either way. charge and pace are Iris's to tune: pace 1.5 puts
+// two scripted players (a 0.25–0.55 s block after the cue) at a 41–46 s median match, 1.25 at 45–51 s (target 30–45 s).
 export const PVP_COMBAT_OPTIONS=Object.freeze({
  ...ROUND_JUDGE_COMBAT_OPTIONS,
- combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,pvp:Object.freeze({charge:.22,pace:1.25})})
+ combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,pvp:Object.freeze({charge:.22,pace:1.5})})
 });
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,

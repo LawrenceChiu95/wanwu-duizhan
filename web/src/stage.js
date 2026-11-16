@@ -829,7 +829,16 @@ export class Stage {
       return m;
     });
     this.scene.add(this.meRing);
+    // 一机双人 (showBoth): 2P's top gets the same thin line in its own colour.
+    this.foeRing = new THREE.Mesh(this.meRing.geometry, new THREE.ShaderMaterial({...meRingShader, uniforms: {uColor: {value: TEAM[1].clone()}, uOpacity: {value: ME_RING_OPACITY}}, transparent: true, depthWrite: false}));
+    this.foeRing.rotation.x = -Math.PI / 2;
+    this.foeRing.renderOrder = 9;
+    this.foeRing.visible = false;
+    this.scene.add(this.foeRing);
     this.showMe = false;
+    this.showBoth = false;
+    // 一机双人's camera (photo-kitchen.js): straight down, this world direction up the screen; null for the usual one.
+    this.topDown = null;
     // The player's own trail is always on (orange); 一合一分 keeps it to a lunge or a knock, never while circling.
     this.trailAlways = true;
     this.camStyle = 'new';
@@ -1757,13 +1766,14 @@ export class Stage {
       this.wall.material.uniforms[i ? 'uCB' : 'uCA'].value.copy(TEAM[i]).multiplyScalar(near * 0.9);
     });
     // The player's ring: a fixed thin line just outside its core (the core hides the far side of it); nothing drives it.
-    const me = this.fighters[0];
-    this.meRing.visible = Boolean(this.showMe && me && me.dim < 0.6);
-    if (this.meRing.visible) {
-      this.meRing.position.set(me.center.x, me.center.y - 0.04, me.center.z);
-      this.meRing.scale.setScalar(this.coreRadius * ME_RING_R / 0.9);
-      this.meRing.material.uniforms.uOpacity.value = ME_RING_OPACITY * (1 - me.dim);
-    }
+    [this.meRing, this.foeRing].forEach((ring, i) => {
+      const me = this.fighters[i];
+      ring.visible = Boolean(this.showMe && (i === 0 || this.showBoth) && me && me.dim < 0.6);
+      if (!ring.visible) return;
+      ring.position.set(me.center.x, me.center.y - 0.04, me.center.z);
+      ring.scale.setScalar(this.coreRadius * ME_RING_R / 0.9);
+      ring.material.uniforms.uOpacity.value = ME_RING_OPACITY * (1 - me.dim);
+    });
     for (const g of this.ghosts) {
       if (!g.s.visible) continue;
       g.age += simDt;
@@ -1785,7 +1795,7 @@ export class Stage {
     // Test aid (camera-motion.mjs HIDE=1): draw only the floor, wall and backdrop, to measure the camera without the tops.
     if (this.debugHide) {
       for (const f of this.fighters) f.root.visible = f.halo.visible = false;
-      for (const o of [this.particles.points, this.streaks.mesh, this.shards.mesh, ...(this.flight ? [this.flight.mesh] : []), this.meRing, ...this.trails.map(t => t.mesh), ...this.ghosts.map(g => g.s), ...this.rings.pool.map(r => r.s), ...this.debris.map(d => d.piece)]) o.visible = false;
+      for (const o of [this.particles.points, this.streaks.mesh, this.shards.mesh, ...(this.flight ? [this.flight.mesh] : []), this.meRing, this.foeRing, ...this.trails.map(t => t.mesh), ...this.ghosts.map(g => g.s), ...this.rings.pool.map(r => r.s), ...this.debris.map(d => d.piece)]) o.visible = false;
     }
     this.particles.update(simDt);
     this.streaks.update(simDt);

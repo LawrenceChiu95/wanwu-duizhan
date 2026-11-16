@@ -269,7 +269,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #coach[data-at="dash"] { margin-left: 0; } #coach[data-at="dash"]::after { left: 24%; }
 #coach[data-at="block"] { margin-right: 0; } #coach[data-at="block"]::after { left: auto; right: 24%; }
 #coach[data-at="mid"]::after { display: none; } /* 3/3 is about the match, not a button: no pointer between the two */
-#pad { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 18px); display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+#pad, #pad2 { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 18px); display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   z-index: 4; /* over the coach bubble; 还没好 also rises clear of a line that is up (seatNope), so neither hides the other */ touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .pad { position: relative; height: 76px; display: flex; align-items: center; justify-content: center; gap: 10px; overflow: hidden; touch-action: none;
   font-family: var(--display); font-size: 36px; line-height: 1; letter-spacing: 0.04em; transition: filter 0.2s, transform 0.08s; }
@@ -371,7 +371,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
 .link { position: absolute; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 5px); font-size: 10px; color: var(--mute); opacity: 0.7; padding: 2px 0; }
-#pad:not([hidden]) ~ .link { display: none; }
+:is(#pad,#pad2):not([hidden]) ~ .link { display: none; }
 /* The 决胜 caption runs along the bottom; the credits link steps aside while it is up (Elara 11-02 a788037f).
    visibility, not opacity, so it can't be tabbed to or opened from the keyboard while unseen (PR #18 S1). */
 #caption.on ~ .link { visibility: hidden; }

@@ -93,7 +93,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .clock { font:700 23px/1 Consolas,monospace;color:var(--ink);background:none;clip-path:none;text-shadow:0 0 6px #4fc8bd22; }
 .mute { border:1px solid #4c5c46;background:#0d2119;border-radius:2px;height:23px;clip-path:none;color:#acbba7; }
 .slowtag { font-size:10px;background:#3b4230;color:var(--c0l); }
-#pad { gap:10px; }
+:is(#pad,#pad2) { gap:10px; }
 .pad { border-radius:4px;font-size:29px;font-weight:800;height:73px;letter-spacing:6px; }
 .pad.dash { color:#252819;background:linear-gradient(#d2ad51,#b38a35);clip-path:none;filter:none;border:1px solid #9b7e3c;
   box-shadow:inset 0 0 0 3px #9f843d,inset 0 1px #ead18a,inset 0 -5px #765a28,0 4px #080e09; }
@@ -383,21 +383,21 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* ---------- 冲挡加重 (Elara fa18a1da; reworked to the plates after his 「丑」, Elara 2065efad, Castor 11968242) ---------- */
 /* Cooling: the part of the plate not yet back is in shade, the whole face top to bottom out to the frame's rim, shrinking
    to the right as the button recovers; no bar, no light edge. Multiply keeps the plate's wear showing through. */
-#pad .pad { overflow:visible; }
-#pad .pad .cd { left:calc(var(--p,0) * (100% + 8px) - 4px);right:-4px;top:-4px;bottom:-4px;width:auto;
+:is(#pad,#pad2) .pad { overflow:visible; }
+:is(#pad,#pad2) .pad .cd { left:calc(var(--p,0) * (100% + 8px) - 4px);right:-4px;top:-4px;bottom:-4px;width:auto;
   background:#76807a;mix-blend-mode:multiply;transition:none; }
-#pad .pad .cd::after { content:none; }
-#pad .pad.cooling { background:none;color:inherit; }
-#pad .pad.dash.cooling { color:#252819; }
-#pad .pad.block.cooling { color:#253c2d; }
-#pad .pad.cooling span { text-shadow:none; }
+:is(#pad,#pad2) .pad .cd::after { content:none; }
+:is(#pad,#pad2) .pad.cooling { background:none;color:inherit; }
+:is(#pad,#pad2) .pad.dash.cooling { color:#252819; }
+:is(#pad,#pad2) .pad.block.cooling { color:#253c2d; }
+:is(#pad,#pad2) .pad.cooling span { text-shadow:none; }
 /* The seconds left, stamped on the plate in the same face and ink as 冲 / 挡. */
-#pad .pad .left { background:none;box-shadow:none;border-radius:0;min-width:0;color:inherit;
+:is(#pad,#pad2) .pad .left { background:none;box-shadow:none;border-radius:0;min-width:0;color:inherit;
   font:inherit;line-height:1;letter-spacing:0;font-variant-numeric:tabular-nums; }
 /* Locked (stunned): the whole face in the same shade, the icon dimmed; nothing else. */
-#pad .pad.locked { filter:none; }
-#pad .pad.locked .cd { opacity:1;left:-4px; }
-#pad .pad.locked svg { opacity:.5; }
+:is(#pad,#pad2) .pad.locked { filter:none; }
+:is(#pad,#pad2) .pad.locked .cd { opacity:1;left:-4px; }
+:is(#pad,#pad2) .pad.locked svg { opacity:.5; }
 /* 弹开！: a small plate in the line under the HUD where 冲中 goes, the HUD's dark enamel with a brass edge; one look, since
    every block that bounces a top now caught a 冲 (Elara 03075914). Its words are brass, as the piece names in 冲中 are
    (Castor, Elara b3384dcb). */
@@ -406,7 +406,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 提示出手 (Elara af9e8542): the same plate, under the player's top and riding with it, a size down for its longer words;
    冲 beats in its own brass while it is up. */
 #fx .hilite.nudge { left:0;font-size:16px;letter-spacing:.06em;padding:4px 10px; }
-#pad .pad.dash.nudge:not(.deny):not(.pop):not(.down) { animation:padNudge .8s ease-in-out infinite; }
+:is(#pad,#pad2) .pad.dash.nudge:not(.deny):not(.pop):not(.down) { animation:padNudge .8s ease-in-out infinite; }
 @keyframes padNudge { 0%,100% { transform:scale(1);filter:brightness(1); }
   45% { transform:scale(1.07);filter:brightness(1.3) drop-shadow(0 0 12px #e7b354cc); } }
 
@@ -443,3 +443,40 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .tip .tipshoot { all:unset;cursor:pointer;margin:0 2px;padding:0 1px;color:inherit;font-weight:800;
   border-bottom:1.5px solid currentColor; }
 .tip .tipshoot:focus-visible { outline:2px solid var(--c1);outline-offset:2px; }
+
+/* ---------- 一机双人 (Elara 1e2c813c): one phone flat between two people, 1P at the foot, 2P at the head ----------
+   2P's buttons and bars are 1P's turned 180°, so each reads them the right way up: 冲 left, 挡 right. The bars sit just
+   inside each pair of buttons; the clock and mute keep to the left edge, clear of the arena. */
+#app.pvp { --pvp-pad:calc(18px + 73px + 8px); -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+#app.pvp :is(input,textarea) { -webkit-user-select:text; user-select:text; }
+#pad2 { top:calc(env(safe-area-inset-top) + 18px); bottom:auto; transform:rotate(180deg); }
+#app.pvp #hud:not([hidden]) { display:contents; }
+#app.pvp #hud .side { position:absolute; left:10px; right:10px; z-index:3; display:grid; grid-template-columns:auto minmax(0,1fr) minmax(0,46%);
+  align-items:center; gap:7px; border:10px solid transparent; border-image:var(--hardware) 70 stretch; padding:0 3px;
+  background:repeating-linear-gradient(0deg,#92c7ac06 0 1px,transparent 1px 4px),#10221b; background-clip:padding-box; box-shadow:0 5px 12px #0009; pointer-events:none; }
+#app.pvp #hud .s0 { bottom:calc(env(safe-area-inset-bottom) + var(--pvp-pad)); }
+#app.pvp #hud .s1 { top:calc(env(safe-area-inset-top) + var(--pvp-pad)); transform:rotate(180deg); }
+#app.pvp #hud .who, #app.pvp #hud .parts { margin:0; }
+#app.pvp #hud .s1 .who, #app.pvp #hud .s1 .parts { justify-content:flex-start; }
+#app.pvp #hud .s1 .core { flex-direction:row-reverse; }
+#app.pvp #hud .s1 .bar i { left:0; right:auto; transform-origin:left center; }
+#app.pvp #hud .mid { position:absolute; left:4px; top:50%; z-index:3; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:7px 4px; background:#10221bd9; box-shadow:inset 0 0 0 1px #4b5942,0 4px 10px #0009; }
+#app.pvp #hud .mid .clock { font-size:19px; }
+#app.pvp #hud .mid .slowtag { writing-mode:vertical-rl; }
+#app.pvp #camSeg, #app.pvp #caption, #app.pvp #fx .me, #app.pvp #coach { display:none; }
+#pvpTip { position:absolute; inset:0; z-index:5; pointer-events:none; }
+#pvpTip b { position:absolute; left:50%; padding:7px 14px 8px 16px; white-space:nowrap; font-size:16px; font-weight:800; color:#ece9d7;
+  background:linear-gradient(170deg,#1d302d,#0c1918); box-shadow:inset 0 0 0 1px #637870,inset 3px 0 #83e1d7,0 4px 10px #000a; animation:pvpTip 3.4s ease-out both; }
+#pvpTip .t0 { bottom:calc(env(safe-area-inset-bottom) + var(--pvp-pad) + 62px); transform:translateX(-50%); }
+#pvpTip .t1 { top:calc(env(safe-area-inset-top) + var(--pvp-pad) + 62px); transform:translateX(-50%) rotate(180deg); }
+@keyframes pvpTip { 0% { opacity:0; } 8%,82% { opacity:1; } 100% { opacity:0; } }
+/* The build screen's top plate says whose turn it is: that side's tag lit in its colour, the other dimmed. */
+#app.pvp #foe .terminal-id { transition:opacity .2s; }
+#app.pvp #foe .terminal-id:not(.on) { opacity:.4; }
+#app.pvp #foe .terminal-id.on.p0 { box-shadow:inset 0 0 0 2px var(--c0l); } #app.pvp #foe .terminal-id.on.p0 span { color:var(--c0l); }
+#app.pvp #foe .terminal-id.on.p1 { box-shadow:inset 0 0 0 2px var(--c1l); } #app.pvp #foe .terminal-id.on.p1 span { color:var(--c1l); }
+#app.pvp #foe .label { font-size:15px; font-weight:800; letter-spacing:1px; }
+#app.pvp #foe.p0 .label { color:var(--c0l); } #app.pvp #foe.p1 .label { color:var(--c1l); }
+#result.blue { --edge:linear-gradient(90deg,var(--c1d),var(--c1l)); }
+#result.blue .winner { color:var(--c1l); background:none; filter:none; }

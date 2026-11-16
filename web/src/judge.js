@@ -89,6 +89,12 @@ export function readyIntro(onPick) {
   }).catch(() => { hint.textContent = '3D 未载入 · 显示改装参考图'; });
 }
 
+/** ?pvp=1 goes straight into 一机双人: the opening page is not shown (its pot's 3D is let go as it arrives). */
+export function skipIntro() {
+  const intro = document.getElementById('intro');
+  if (intro) intro.hidden = true;
+}
+
 /** Back to the opening page (双人 → 首页). The pot's 3D was let go when the page closed, so its picture stands in. */
 export function showIntro() {
   const intro = document.getElementById('intro');

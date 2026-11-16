@@ -20,17 +20,18 @@ export function setNames(items) {
 /** Whole seconds shown for a match time: the fight clock and the result card use this one rounding. */
 export const wholeSeconds = t => Math.floor(t + 1e-6);
 
-export function reasonLine(replay) {
+/** `who`: the two sides' words (一机双人: 橙方 and 蓝方). */
+export function reasonLine(replay, who = ['你', '对手']) {
   const {reason} = replay.meta, why = replay.decisive.why;
   if (reason === 'double-ko' && replay.meta.winner === null) return '两边核心同时碎了';
   if (reason === 'timeout') {
     // 时间到 is judged too (Sol 1da0b823): core HP left first, then the pieces still standing; equal on both is a draw.
-    const W = replay.meta.winner === 0 ? '你' : '对手';
+    const W = who[replay.meta.winner === 0 ? 0 : 1];
     if (why?.kind !== 'timeout' || replay.meta.winner === null) return why?.kind === 'timeout' ? '时间到，两边剩的血一样多' : '时间到，两颗核心都还在';
     return why.criterion === 'part-hp' ? `时间到，核心一样，${W}的件剩血多` : `时间到，${W}的核心剩血多`;
   }
   if (!why) return '核心先被打空的一方输了';
-  const W = why.attacker === 0 ? '你' : '对手', L = why.target === 0 ? '你' : '对手';
+  const W = who[why.attacker === 0 ? 0 : 1], L = who[why.target === 0 ? 0 : 1];
   // Both broke in the same instant; the decided loser is the one hit harder past zero.
   if (reason === 'double-ko') return `两颗核心同时碎，${L}伤得更重`;
   const att = why.attackerItem ? NAMES[why.attackerItem] ?? '道具' : '核心';
@@ -42,7 +43,7 @@ export function reasonLine(replay) {
   const main = role === 'recoil' ? `${L}的核心撞上${W}的${att}，${L}的核心先碎了` : `${W}的${att}撞碎了${L}的核心`;
   const winner = replay.meta.winner;
   if (partsLeft && ratios && (winner === 0 || winner === 1) && partsLeft[winner] < partsLeft[1 - winner]) {
-    const name = winner === 0 ? '你' : '对手', ratio = ratios[winner];
+    const name = who[winner], ratio = ratios[winner];
     return `${main}\n${name}的核心还剩${ratio < .01 ? '不足1' : Math.min(ratio < 1 ? 99 : 100, Math.round(ratio * 100))}%血`;
   }
   return main;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, ROUND_JUDGE_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, ROUND_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS} from '../../sim/v3.js';
 import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
@@ -31,7 +31,8 @@ const el = {
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
-  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg')
+  pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
+  pad2: $('pad2'), pvpTip: $('pvpTip')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
@@ -77,6 +78,8 @@ const SVG = {
 };
 // Sol bccac3b7: 锅 out, 抱枕 hugging.
 const DEFAULT = {parts: [{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}], spread: 'e180'};
+// 一机双人's 2P before they pick (Elara 1e2c813c: no lopsided start): 40 scripted matches against DEFAULT went 20 : 20.
+const DEFAULT_P2 = {parts: [{item: 'fanshuo-plate', orient: 'out'}, {item: 'fanshuo-roller', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
 const RESULT_SPIN = 1.2;
 const HEX = TEAM.map(c => '#' + c.getHexString());
@@ -177,8 +180,10 @@ async function main() {
   const feel = feelArg === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const combatOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : ROUND_JUDGE_COMBAT_OPTIONS)
+  const soloOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : ROUND_JUDGE_COMBAT_OPTIONS)
     : combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
+  // 一机双人 plays its own rules (sim/v3.js PVP_COMBAT_OPTIONS), whatever the page's single-player ones are.
+  let combatOptions = soloOptions;
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
@@ -317,6 +322,12 @@ async function main() {
   // Which of the three the match on screen is against (null with a build in ?foe=), and what its result did to the ladder
   // (worked out once: the result shows again after 重看).
   let fought = null, outcome = null;
+  // 一机双人 (Elara 1e2c813c): `pvp`, two people at this phone; `pick`, whose build the bench is showing (0 the foot's 1P,
+  // 1 the head's 2P, who is FOE meanwhile). The single-player opponent waits in soloFoe.
+  let pvp = false, pick = 0, soloFoe = null;
+  const cur = () => pick ? FOE : mine;
+  // Who a side is, in the words of the mode being played.
+  const sideName = i => pvp ? (i ? '蓝方' : '橙方') : i ? '对手' : '你';
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
   // lastKnockT: the step of the latest ordinary knock shown, so a glance in the same step does not knock twice.
@@ -420,7 +431,7 @@ async function main() {
   };
   function syncBuild() {
     document.querySelectorAll('.slot').forEach(slot => {
-      const k = Number(slot.dataset.slot), part = mine.parts[k];
+      const k = Number(slot.dataset.slot), part = cur().parts[k];
       slot.querySelector('.item b').textContent = NAMES[part.item];
       slot.querySelector('.item .nm').querySelector('.grade')?.remove();
       slot.querySelector('.item .nm').insertAdjacentHTML('afterbegin', gradeTag(part.item));
@@ -435,31 +446,84 @@ async function main() {
       if (url) { thumb.src = url; thumb.alt = NAMES[part.item]; }
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
     });
-    for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === mine.spread));
+    for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === cur().spread));
     // Not while the default stands in for a build whose photo item is on its way: that one is what to keep.
     if (!(late.mine && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
+    if (pvp) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
   }
   let buildReq = 0;
-  async function rebuildMine() {
+  // The bench's side (by default the one being picked) after a change: its top swapped in once its models are down.
+  async function rebuild(side = pick) {
     const req = ++buildReq;
     syncBuild();
-    await loadModels(mine.parts.map(p => byId.get(p.item)));
+    const b = side ? FOE : mine;
+    await loadModels(b.parts.map(p => byId.get(p.item)));
     if (req !== buildReq || phase !== 'build') return;
-    stage.replaceFighter(0, toDef(mine));
+    stage.replaceFighter(side, toDef(b));
     syncBuild();
     stage.pose(previewState());
   }
   // ---------- 一机双人 (Elara 1e2c813c) ----------
-  let pvp = false;
-  function setPvp(two) {
-    pvp = two;
+  // 2P's build is kept on this phone apart from 1P's; one naming an item no longer here starts from DEFAULT_P2.
+  const P2_KEY = 'wanwu-pvp-p2';
+  const keptP2 = () => {
+    let b = null;
+    try { const text = localStorage.getItem(P2_KEY); b = text && readBuild('p2', text); } catch { /* no storage here */ }
+    delete late.p2; // a kept 2P build still waiting for its photo item just starts from the default
+    return structuredClone(b ?? DEFAULT_P2);
+  };
+  let pvpReq = 0;
+  // In or out of 一机双人, onto the bench at 1P's turn (首页's 和人打 / 和电脑打, ?pvp=1, 回单人).
+  async function setPvp(two) {
+    const req = ++pvpReq;
+    foeReq++; // a 换个对手 still loading is let go
+    if (two !== pvp) {
+      if (two) { soloFoe = FOE; FOE = keptP2(); } else { FOE = soloFoe ?? FOE; soloFoe = null; }
+      pvp = two;
+      combatOptions = two ? PVP_COMBAT_OPTIONS : soloOptions;
+      // Out of 一机双人, a reload is single-player again.
+      if (!two && q.get('pvp') === '1') try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(x => x && x !== 'pvp=1').join('&')}`); } catch { /* sandboxed viewer */ }
+    }
+    pick = 0;
+    libSlot = 0;
+    el.app.classList.toggle('pvp', pvp);
+    await loadModels(FOE.parts.map(p => byId.get(p.item)));
+    if (req !== pvpReq) return;
+    if (phase === 'build' || phase === 'result') showBuild();
   }
+  // The bench's top plate: whose turn it is, in their colour, and 下一步 then 开打; single-player, the opponent as before.
+  function renderPick() {
+    el.foe.classList.toggle('p0', pvp && pick === 0);
+    el.foe.classList.toggle('p1', pvp && pick === 1);
+    el.foe.querySelectorAll('.terminal-id').forEach((n, i) => {
+      n.querySelector('span').textContent = pvp ? `${i + 1}P` : i ? '对手' : '你';
+      n.classList.toggle('on', pvp && i === pick);
+      n.classList.toggle(`p${i}`, pvp);
+    });
+    $('pvpBack').hidden = !pvp;
+    el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
+    if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
+    $('foeLabel').textContent = pick ? '轮到上方 2P · 蓝方选装' : '轮到下方 1P · 橙方选装';
+    $('foeBtn').hidden = $('foeMark').hidden = true;
+    el.foeParts.innerHTML = '';
+    $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
+  }
+  function setPick(i) {
+    if (phase !== 'build') return;
+    pick = i;
+    libSlot = 0;
+    syncBuild();
+    renderPick();
+  }
+  // 回首页: the opening page's two choices again; a page without one (not the 评委版) goes straight back to single-player.
+  function goHome() { if (!judge?.showIntro()) setPvp(false); }
+  $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
     phase = 'build';
     pb = replay = null;
     live?.match.free();
     live = null;
-    el.pad.hidden = true;
+    showPads(false);
     hideCoach();
     endNudge();
     stage.setFighters([toDef(mine), toDef(FOE)]);
@@ -469,6 +533,7 @@ async function main() {
     stage.setFocusOn(null);
     stage.setLookahead(null);
     stage.showMe = false;
+    stage.topDown = null;
     stage.pose(previewState());
     el.hud.hidden = true;
     el.result.hidden = true;
@@ -479,6 +544,7 @@ async function main() {
     $('foeBtn').disabled = !el.error.hidden;
     [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
     syncBuild();
+    renderPick();
     layout_();
     stage.updateCamera(0, true);
     takeLate(); // the address's build, if its photo item came in during a match (task #70)
@@ -486,7 +552,8 @@ async function main() {
 
   // ---------- HUD ----------
   function buildHud(defs) {
-    $('foeWho').textContent = fought === null ? '对手' : LADDER[fought].name;
+    $('foeWho').textContent = pvp ? sideName(1) : fought === null ? '对手' : LADDER[fought].name;
+    el.hud.querySelector('.s0 .who b').textContent = sideName(0);
     defs.forEach((def, i) => {
       const box = el.hud.querySelector(`.s${i} .parts`);
       // Imported items often have three- or four-character names: those tags get the compact style (style.css .pc.long).
@@ -589,7 +656,7 @@ async function main() {
   // and glow still say 「it's coming」. `cueAt`: replay time of the one due, null with none.
   const CUE_LEAD = 0.3;
   let cueAt = null;
-  function cue() { cueAt = null; stage.launchFlash(1); sfx.cue(); }
+  function cue(side = 1) { cueAt = null; stage.launchFlash(side); sfx.cue(); }
   // A new match, a jump back into the decisive replay, or a skip to the end: no line, slot or blame carries over (Sol f82fe05f).
   function resetHighlights() {
     cueAt = null; hilite = null; killer.clear(); lastHurt.clear(); heldBreaks.clear(); heldParry = null; lungeDir.fill(null);
@@ -615,7 +682,7 @@ async function main() {
   // left (Elara d021fab4). The opponent's get the picture only (Elara 714284f2).
   function verdict(side, text, cls) {
     const f = stage.fighters[side];
-    if (side !== 0 || !f) return;
+    if (side !== 0 && !pvp || !f) return;
     overlay.verdict(f, text, cls);
   }
   // How far the aim arrow reaches from the core: the lunge's carry, but no further than the far side of the target as it
@@ -682,7 +749,7 @@ async function main() {
     sfx.crunch();
     buzz(25);
     stage.shakeV4(0.8);
-    const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${e.target === 0 ? '你的' : '对手的'}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
+    const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${sideName(e.target)}的${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
     // Over the top only with ?call=slot; the line always takes a break (Elara 937d44f2).
     if (HILITE === 'slot') { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
     // The camera never moves; only a piece or a core breaking jolts the picture: hard since 冲挡加重 (Elara fa18a1da).
@@ -722,7 +789,7 @@ async function main() {
     if (perfect || tiered) sfx.perfect();
     buzz(perfect ? [30, 40, 60] : [25, 40]);
     // 挡分两档: 「完美！」 over the contact, clear of both tops, in place of the 「弹开！」 line under the HUD (Elara 896cf31c).
-    if (e.side === 0) { if (tiered) overlay.stamp(at, '完美！', 'perfect'); else deflectLine(e.t); }
+    if (e.side === 0 || pvp) { if (tiered) overlay.stamp(at, '完美！', 'perfect'); else deflectLine(e.t); }
   }
   // 「弹开！」: a small dark plate where 冲中 goes, not on the tops (Elara 2065efad), one look for every bounce (Elara 03075914).
   // It takes the line from anything but a break, which a broken piece never goes without, and gives it up to anything.
@@ -790,7 +857,7 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if (e.attacker === 0 && (crit && !plain || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
+        if ((e.attacker === 0 || pvp) && (crit && !plain || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
       }
       if (core && !caught && !plain) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
       // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
@@ -806,8 +873,8 @@ async function main() {
         sfx.clank();
       }
     } else if (e.type === 'dashCue') {
-      // The foe's flash, timed by the sim from where its lunge will meet (it can come after the launch).
-      if (e.side === 1) cue();
+      // The foe's flash, timed by the sim from where its lunge will meet (it can come after the launch); 一机双人, either side's.
+      if (e.side === 1 || pvp) cue(e.side);
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
@@ -884,7 +951,7 @@ async function main() {
         sfx.thud();
         buzz(20);
         const at = point ?? stage.fighters[e.side]?.center;
-        if (e.side === 0 && at) overlay.stamp(at, '勉强', 'tight');
+        if ((e.side === 0 || pvp) && at) overlay.stamp(at, '勉强', 'tight');
       } else if (e.outcome === 'perfect' && e.damageApplied !== false) {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
@@ -917,7 +984,7 @@ async function main() {
       sfx.ko();
       buzz(70);
       stage.shakeV4(1.1);
-      overlay.showBanner('核心碎了', replay.meta.winner === 0 ? HEX[0] : '#ffffff', 1.3);
+      overlay.showBanner('核心碎了', replay.meta.winner === 0 || pvp && replay.meta.winner === 1 ? HEX[replay.meta.winner] : '#ffffff', 1.3);
     }
     test.onEvent(e);
   }
@@ -939,7 +1006,7 @@ async function main() {
   const COACH_HOLD = 3;
   let coachTimer = 0, coachSince = -Infinity, coachFirstUp = false;
   function coach(n, broke) {
-    if (control !== 'manual' || !live || coachSeen.has(n) || phase !== 'play') return;
+    if (control !== 'manual' || pvp || !live || coachSeen.has(n) || phase !== 'play') return;
     if (n > 0) coach(0);
     const wait = coachSince + COACH_HOLD - performance.now() / 1000;
     if (wait > 0) { setTimeout(() => coach(n, broke), wait * 1000 + 50); return; }
@@ -1001,7 +1068,7 @@ async function main() {
     if (phase !== 'build' || !el.error.hidden) return;
     const id = ++runId;
     if (!fixedSeed) seed = randomSeed();
-    fought = ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
+    fought = pvp ? null : ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
     outcome = null;
     phase = 'computing';
     el.go.disabled = true;
@@ -1015,14 +1082,16 @@ async function main() {
     let r;
     live?.match.free();
     live = null;
-    if (control === 'manual') {
+    // 一机双人 is always played live: two people press.
+    if (control === 'manual' || pvp) {
       // Played live: the sim steps just ahead of the picture and takes the buttons as it goes.
       // The opponent's play is fixed with its build as 开打 is pressed; one without its own (a build in ?foe=) plays the old way.
       const opponent = fought === null ? null : LADDER[fought];
       const ai = opponent && (combatOptions.combatRules?.impactControls && opponent.impactAi
         ? {...opponent.ai, ...opponent.impactAi}
         : opponent.ai);
-      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual: {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})}});
+      const manual = pvp ? {sides: ['input', 'input']} : {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})};
+      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual});
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules, ...(combat && {combat})}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false};
@@ -1051,13 +1120,18 @@ async function main() {
     stage.setCameraMode('fight');
     stage.setFocusOn(null);
     stage.showMe = true;
+    // 一机双人: straight down on the table, 2P's start up the screen and 1P's down it, so the two ends of the phone each
+    // have their own half; both tops ringed and trailed alike.
+    const [p0, p1] = r.meta.initial.map(f => new THREE.Vector3().fromArray(f.pos));
+    stage.topDown = pvp ? p1.sub(p0).setY(0).normalize() : null;
+    stage.showBoth = pvp;
     buildHud(r.meta.initial.map(f => f.definition));
     for (const h of hpView) Object.assign(h, {core: 1, chip: 1, since: 9});
     [0, 1].forEach(i => overlay.setCoreHp(i, 1, true));
     el.build.hidden = true;
     el.foe.hidden = true;
     el.hud.hidden = false;
-    el.pad.hidden = !live;
+    showPads(Boolean(live));
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
     lastParryT = lastKnockT = -Infinity;
@@ -1068,6 +1142,7 @@ async function main() {
     stage.updateCamera(0, true);
     phase = 'play';
     overlay.showBanner('开转', '#ffffff', 0.8);
+    if (pvp) pvpTip();
     // The new opening delays the foe's charge, which used to bring up the first lesson early.
     if (combatOptions.combatRules?.opening) coach(0);
     else setTimeout(() => coach(0), 400);
@@ -1075,10 +1150,12 @@ async function main() {
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
+    // 一机双人's builds are kept on the phone: its address says only that it is two players.
+    if (pvp) { try { history.replaceState(null, '', `?pvp=1${fixedSeed ? `&seed=${seed}` : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}`); } catch { /* sandboxed viewer */ } return; }
     try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
-    el.pad.hidden = true;
+    showPads(false);
     hideCoach();
     endNudge();
     if (pb.t < pb.end - 1e-6) {
@@ -1097,21 +1174,24 @@ async function main() {
     stage.setCameraMode('result');
     stage.showMe = false;
     stage.setLookahead(null);
-    el.winnerLine.textContent = m.winner === null ? '平局' : m.winner === 0 ? '你赢了' : '你输了';
-    el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
+    el.winnerLine.textContent = m.winner === null ? '平局' : pvp ? `${sideName(m.winner)}胜` : m.winner === 0 ? '你赢了' : '你输了';
+    el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : pvp ? 'blue' : 'lose';
     el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
-    el.whyLine.innerHTML = reasonHtml(reasonLine(replay));
+    el.whyLine.innerHTML = reasonHtml(reasonLine(replay, [sideName(0), sideName(1)]));
     const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
-    el.resultBuild.innerHTML = `<span class="rw">你</span>${builds[0]}<span class="rw vs">${fought === null ? '对手' : esc(LADDER[fought].name)}</span>${builds[1]}`;
+    el.resultBuild.innerHTML = `<span class="rw">${sideName(0)}</span>${builds[0]}<span class="rw vs">${pvp || fought === null ? sideName(1) : esc(LADDER[fought].name)}</span>${builds[1]}`;
+    // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows.
     const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx});
-    el.statsList.innerHTML = pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
-    el.tipLine.textContent = tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
+    el.statsList.innerHTML = pvp ? '' : pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
+    el.tipLine.textContent = pvp ? '' : tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
     showOutcome(outcome);
     $('replayBtn').hidden = pb.slowAt === null;
     setCaption(false, undefined, true);
     // The highlight under the HUD goes with it, or it sits on the result's own lines (Elara 5fd78c17).
     overlay.dropHighlight();
+    // 一机双人's bars stand where the card comes up: they go with the buttons, back for 重看.
+    if (pvp) el.hud.hidden = true;
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
@@ -1120,7 +1200,7 @@ async function main() {
   // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个), the first over the last
   // one is the 三个都赢了 ending (随便挑 opens the ladder). Losing, a draw, or ?foe= leave the result as it was.
   function ladderOutcome(winner) {
-    if (!ladderOn || winner !== 0) return {act: 'again'};
+    if (pvp || !ladderOn || winner !== 0) return {act: 'again'};
     const id = LADDER[fought].id, first = !ladder.won.has(id);
     ladder.won.add(id);
     keepLadder();
@@ -1148,15 +1228,18 @@ async function main() {
       card.innerHTML = `${markHtml(o.unlocked)}<span class="txt"><span class="k">${SVG.open}解锁下一个</span><b>${esc(f.name)}</b><span class="play">${esc(f.play)}</span></span>`;
       el.tipLine.textContent = '';
     }
-    $('againBtn').innerHTML = `<span>${o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
+    $('againBtn').innerHTML = `<span>${pvp ? '重选装备' : o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
     $('againBtn').dataset.act = o.act;
+    $('sameBtn').textContent = pvp ? '原样再战' : '原样再来';
+    $('soloBtn').hidden = !pvp;
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
     if (live && !pb.full) { pb = new Playback(replay, {quietBumps: round}); pb.full = true; }
     if (!pb || pb.slowAt === null) return;
     el.result.hidden = true;
-    el.pad.hidden = true;
+    el.hud.hidden = false;
+    showPads(false);
     stage.clearFx();
     overlay.clear(); lateNums = []; resetHighlights();
     pb.slowEnabled = true;
@@ -1182,7 +1265,7 @@ async function main() {
   };
   let libSlot = 0, libReq = 0;
   function cardHtml(id, k) {
-    const it = byId.get(id), other = mine.parts[1 - k].item === id, own = mine.parts[k].item === id;
+    const it = byId.get(id), other = cur().parts[1 - k].item === id, own = cur().parts[k].item === id;
     // Which side each tag means, not 已装/装着 (same word to a player, Elara 08bbe423).
     const side = j => j ? '右边' : '左边';
     const badge = other ? `<span class="badge">${side(1 - k)}在用</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : '';
@@ -1220,10 +1303,10 @@ async function main() {
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
       card.querySelector('.pick').onclick = () => {
-        if (mine.parts[1 - libSlot].item === id) return;
-        mine.parts[libSlot].item = id;
+        if (cur().parts[1 - libSlot].item === id) return;
+        cur().parts[libSlot].item = id;
         closeLibrary();
-        rebuildMine();
+        rebuild();
       };
       const how = card.querySelector('[data-how]');
       if (how) how.onclick = () => openHow(id);
@@ -1347,7 +1430,7 @@ async function main() {
     }).join('');
     el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${durAll(secs)}` : '';
     // 评委版's replayed items: whose photo it is, the other one a tap away, and 装上去打 (back, for one the sim turned down).
-    const sample = sampleOf(id), other = mine.parts[1 - libSlot].item === id, stuck = sample && !playable.has(id);
+    const sample = sampleOf(id), other = cur().parts[1 - libSlot].item === id, stuck = sample && !playable.has(id);
     el.howNote.hidden = !sample;
     el.howSrc.hidden = !sample;
     if (sample) {
@@ -1359,7 +1442,7 @@ async function main() {
     el.howPick.innerHTML = SAMPLES.map(x => `<button type="button" data-id="${esc(x.item.id)}"${x.item.id === id ? ' aria-current="true"' : ''}><b>${esc(NAMES[x.item.id])}</b><small>${esc(x.tag)}</small></button>`).join('');
     el.howEquip.disabled = !stuck && other;
     el.howEquip.querySelector('span').textContent = stuck ? (el.shoot.hidden ? '回角色库' : '回拍一件') : other ? '另一边已经装着它'
-      : mine.parts[libSlot].item === id ? '装着，回拼装' : sample ? '装上去打' : '装上它';
+      : cur().parts[libSlot].item === id ? '装着，回拼装' : sample ? '装上去打' : '装上它';
     turns.prune();
     turns.show(el.howTurn, id);
     el.how.hidden = false;
@@ -1399,21 +1482,21 @@ async function main() {
   el.howPick.onclick = e => { const b = e.target.closest('[data-id]'); if (b && b.dataset.id !== howItem) openHow(b.dataset.id); };
   el.howEquip.onclick = () => {
     if (sampleOf(howItem) && !playable.has(howItem)) { closeHow(); return; }
-    if (mine.parts[1 - libSlot].item === howItem) return;
+    if (cur().parts[1 - libSlot].item === howItem) return;
     const id = howItem;
     closeHow();
     equip(id);
   };
   // Into the slot the 角色库 was last opened for, from wherever the player is (a 拍一件 tag can be tapped on the result).
   async function equip(id) {
-    if (mine.parts[1 - libSlot].item === id) return;
-    mine.parts[libSlot].item = id;
+    if (cur().parts[1 - libSlot].item === id) return;
+    cur().parts[libSlot].item = id;
     shoot?.close();
     closeLibrary();
-    if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuildMine();
+    if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuild();
   }
-  const equipLabel = id => mine.parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
-    : {text: mine.parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
+  const equipLabel = id => cur().parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
+    : {text: cur().parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
 
   // ---------- 拍一件 (task #47) ----------
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.
@@ -1428,8 +1511,8 @@ async function main() {
     const opens = await Promise.all(keys.map(k => loadModels(late[k].parts.map(x => byId.get(x.item))).then(() => true, () => false)));
     if (phase !== 'build') return;
     const take = k => opens[keys.indexOf(k)] && ready(late[k]);
-    if (take('mine') && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuildMine(); }
-    if (take('foe') && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
+    if (take('mine') && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuild(0); }
+    if (take('foe') && !pvp && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
     for (const k of keys) delete late[k];
   }
   async function addItems(sent) {
@@ -1497,26 +1580,30 @@ async function main() {
   }).catch(showError);
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
-    b.onclick = () => { if (phase !== 'build') return; mine.parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuildMine(); };
+    b.onclick = () => { if (phase !== 'build') return; cur().parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuild(); };
   }));
-  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; mine.spread = b.dataset.spread; rebuildMine(); }; });
+  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; cur().spread = b.dataset.spread; rebuild(); }; });
+  // Each side's 冲 / 挡 (一机双人: 2P's pair is #pad2 at the head of the phone).
+  const pads = [{box: el.pad, dash: el.dashBtn, block: el.blockBtn, dashNope: el.dashNope, blockNope: el.blockNope},
+    {box: el.pad2, dash: $('dashBtn2'), block: $('blockBtn2'), dashNope: $('dashNope2'), blockNope: $('blockNope2')}];
+  function showPads(on) { el.pad.hidden = !on; el.pad2.hidden = !on || !pvp; }
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
-  function press(action) {
-    if (!live || live.done || phase !== 'play') { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
+  function press(action, side = 0) {
+    if (!live || live.done || phase !== 'play' || side && !pvp) { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
     // A 冲 tap, taken or not, is what the hint asks for.
-    if (action === 'dash') nudgeOff(pb.t);
+    if (action === 'dash' && !side) nudgeOff(pb.t);
     // 冲挡加重: a top bounced off a block (or a heavy one after a lunge that met nothing) is stunned, both buttons with it.
-    const c = live.match.control(0), left = Math.max(action === 'dash' ? c.dashIn : c.blockIn, c.stunIn ?? 0);
+    const c = live.match.control(side), left = Math.max(action === 'dash' ? c.dashIn : c.blockIn, c.stunIn ?? 0), pad = pads[side];
     // Still cooling at the next physics step: the sim would drop it anyway, so nothing is sent; the button shakes and
     // 还没好 rises over it, so a tap that cannot count never looks like a dead button.
     if (left > rules.dt + 1e-9) {
-      const nope = action === 'dash' ? el.dashNope : el.blockNope;
-      replay_(action === 'dash' ? el.dashBtn : el.blockBtn, 'deny'); seatNope(nope); replay_(nope, 'show');
+      const nope = action === 'dash' ? pad.dashNope : pad.blockNope;
+      replay_(action === 'dash' ? pad.dash : pad.block, 'deny'); seatNope(nope); replay_(nope, 'show');
       test.denied++; sfx.deny(); diag.tap(action, `冷却 ${left.toFixed(1)}s`); return;
     }
     diag.tap(action, '收下');
-    live.match.press(0, action);
-    if (action === 'dash') coachDashed();
+    live.match.press(side, action);
+    if (action === 'dash' && !side) coachDashed();
     sfx.click();
   }
   // 还没好 and a coach line share the band just above the buttons: while a line is up across it, 还没好 rises clear of it instead
@@ -1529,20 +1616,37 @@ async function main() {
   }
   // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).
   function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
-  for (const [btn, action] of [[el.dashBtn, 'dash'], [el.blockBtn, 'block']]) {
+  for (const [side, pad] of pads.entries()) for (const [btn, action] of [[pad.dash, 'dash'], [pad.block, 'block']]) {
     btn.left = btn.querySelector('.left');
-    // Real press state on touchdown: the button goes down and lights up until the finger lifts.
-    btn.addEventListener('pointerdown', ev => { ev.preventDefault(); btn.classList.add('down'); press(action); });
-    for (const type of ['pointerup', 'pointercancel', 'pointerleave']) btn.addEventListener(type, () => btn.classList.remove('down'));
+    // Real press state on touchdown: the button goes down and lights up until the finger lifts. Each button keeps its own
+    // fingers by pointerId (一机双人: four thumbs at once), so one lifting never lets go of another's press.
+    const fingers = new Set();
+    btn.addEventListener('pointerdown', ev => { ev.preventDefault(); fingers.add(ev.pointerId); btn.classList.add('down'); press(action, side); });
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave']) btn.addEventListener(type, ev => { fingers.delete(ev.pointerId); if (!fingers.size) btn.classList.remove('down'); });
     btn.addEventListener('pointercancel', () => diag.cancel());
     btn.addEventListener('animationend', ev => { if (ev.animationName === 'padDeny') btn.classList.remove('deny'); else if (ev.animationName === 'padPop') btn.classList.remove('pop'); });
   }
   // A thumb held down or rocked on a button opens no menu and selects nothing (远夏's Android, task 5ee99454).
-  el.pad.addEventListener('contextmenu', ev => ev.preventDefault());
-  for (const n of [el.dashNope, el.blockNope]) n.addEventListener('animationend', () => n.classList.remove('show'));
-  const keyBtn = ev => ev.code === 'KeyJ' || ev.code === 'Space' ? el.dashBtn : ev.code === 'KeyK' || ev.code === 'ShiftLeft' || ev.code === 'ShiftRight' ? el.blockBtn : null;
-  addEventListener('keydown', ev => { if (ev.repeat) return; const b = keyBtn(ev); if (!b) return; if (b === el.dashBtn) ev.preventDefault(); b.classList.add('down'); press(b === el.dashBtn ? 'dash' : 'block'); });
-  addEventListener('keyup', ev => keyBtn(ev)?.classList.remove('down'));
+  for (const {box} of pads) box.addEventListener('contextmenu', ev => ev.preventDefault());
+  for (const n of pads.flatMap(x => [x.dashNope, x.blockNope])) n.addEventListener('animationend', () => n.classList.remove('show'));
+  // Keys for a computer: 1P J (or space) and K (or shift), 一机双人's 2P A and S.
+  const KEYS = {KeyJ: [0, 'dash'], Space: [0, 'dash'], KeyK: [0, 'block'], ShiftLeft: [0, 'block'], ShiftRight: [0, 'block'], KeyA: [1, 'dash'], KeyS: [1, 'block']};
+  const keyOf = ev => { const k = KEYS[ev.code]; return k && (!k[0] || pvp) ? {side: k[0], action: k[1], btn: pads[k[0]][k[1]]} : null; };
+  addEventListener('keydown', ev => { if (ev.repeat) return; const k = keyOf(ev); if (!k) return; if (ev.code === 'Space') ev.preventDefault(); k.btn.classList.add('down'); press(k.action, k.side); });
+  addEventListener('keyup', ev => keyOf(ev)?.btn.classList.remove('down'));
+  // 一机双人: two people's thumbs on one glass. No pinch or double-tap zoom, no page dragged, no text picked up, while a
+  // match is on (touch-action and user-select in terminal.css do the rest; iOS Safari needs its gesture events stopped too).
+  const fighting = () => pvp && ['play', 'finale', 'replay'].includes(phase);
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(type, ev => { if (pvp) ev.preventDefault(); }, {passive: false});
+  document.addEventListener('touchmove', ev => { if (fighting()) ev.preventDefault(); }, {passive: false});
+  document.addEventListener('dblclick', ev => { if (fighting()) ev.preventDefault(); }, {passive: false});
+  // The first match ever in 一机双人: one line to each end of the phone, then never again.
+  const PVP_TIP_KEY = 'wanwu-pvp-tip-seen';
+  function pvpTip() {
+    try { if (q.get('coach') !== 'again' && localStorage.getItem(PVP_TIP_KEY) === '1') return; localStorage.setItem(PVP_TIP_KEY, '1'); } catch { /* no storage here: every time */ }
+    el.pvpTip.hidden = false; // shown, its lines' fade (terminal.css) plays from the start
+  }
+  el.pvpTip.addEventListener('animationend', () => { el.pvpTip.hidden = true; });
   // Sound on / off (remembered where the page may store it).
   const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
   el.mute.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
@@ -1559,7 +1663,10 @@ async function main() {
   syncCam();
   function updatePad() {
     if (!live || el.pad.hidden) return;
-    const c = live.match.control(0), M = rules.manual;
+    for (const side of pvp ? [0, 1] : [0]) updateSidePad(side);
+  }
+  function updateSidePad(side) {
+    const c = live.match.control(side), M = rules.manual, pad = pads[side];
     // 冲挡加重 (Elara 8723e99a, 9eb901cb): locked, not cooling, while the top is stunned (both buttons) or 冲 is held after
     // a block that caught nothing (Sol 4ef6dad5; gone from the rules since Elara 2065efad): the whole plate goes into
     // shade, no seconds (terminal.css). A button whose own cooldown runs longer (冲 just spent on the lunge that got bounced) keeps the
@@ -1567,7 +1674,7 @@ async function main() {
     // lunge ends, a lunge charging as the shield runs out empty): that keeps going, but the button no longer lights as if
     // a tap would count (Sol e0535c0d). A tap shakes it as in cooling.
     const stun = c.stunIn ?? 0, dashLock = Math.max(stun, c.dashLockIn ?? 0);
-    for (const [btn, cool, total, on, lock] of [[el.dashBtn, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [el.blockBtn, c.blockIn, M.blockCooldown, c.shield, stun]]) {
+    for (const [btn, cool, total, on, lock] of [[pad.dash, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [pad.block, c.blockIn, M.blockCooldown, c.shield, stun]]) {
       const state = lock > 0 ? (lock >= cool - rules.dt ? 'locked' : 'cooling') : on ? 'on' : cool > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
       const left = state === 'locked' ? lock : cool;
       if (state === 'locked' && btn.dataset.state !== 'locked') btn.lockTotal = lock;
@@ -1583,7 +1690,8 @@ async function main() {
       btn.dataset.state = state;
     }
   }
-  el.go.onclick = () => start();
+  // 一机双人's bench: 1P's 下一步 hands it to 2P, whose 开打 starts the match.
+  el.go.onclick = () => { if (pvp && pick === 0) setPick(1); else start(); };
   $('replayBtn').onclick = () => replaySlow();
   $('againBtn').onclick = () => {
     const act = $('againBtn').dataset.act;
@@ -1593,6 +1701,8 @@ async function main() {
   };
   // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
   $('sameBtn').onclick = () => { showBuild(); start(); };
+  // 一机双人's way back to the three opponents (the 首页 is a tap further, on the bench).
+  $('soloBtn').onclick = () => setPvp(false);
   $('creditsBtn').onclick = () => { el.credits.hidden = false; };
   $('creditsClose').onclick = () => { el.credits.hidden = true; };
   el.credits.onclick = e => { if (e.target === el.credits) el.credits.hidden = true; };
@@ -1626,6 +1736,13 @@ async function main() {
     const building = !el.build.hidden;
     // Fight and result share one fixed frame: below the HUD, above the decisive caption's place, whether or not
     // the caption is showing, so nothing that appears or goes away ever moves the camera.
+    if (pvp && !building && !el.hud.hidden) {
+      // 一机双人: the arena takes the band between the two sides' bars (each just inside its pair of buttons).
+      const at = el.app.getBoundingClientRect().top, s0 = el.hud.querySelector('.s0').getBoundingClientRect(), s1 = el.hud.querySelector('.s1').getBoundingClientRect();
+      stage.setPad(0);
+      stage.resize(w, h, s1.bottom - at + 6, h - (s0.top - at) + 6);
+      return;
+    }
     const top = building ? el.foe.offsetHeight : el.hud.offsetHeight;
     const bottom = building ? el.build.offsetHeight : el.caption.offsetHeight + 24;
     // Manual: the buttons take the room under the arena (the arena only makes way if that room is not there).
@@ -1702,7 +1819,7 @@ async function main() {
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
@@ -1718,7 +1835,9 @@ async function main() {
       const s = [...m.scale].sort((a, b) => a - b), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
       return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), sweptMinMarginLrPx: +m.sweptLr.toFixed(1), sweptMinMarginSafePx: +m.sweptSafe.toFixed(1), core15PctExact: +(100 * m.core15 / m.frames).toFixed(2), outSecs: +m.out.toFixed(2), outRunMaxSecs: +m.outRunMax.toFixed(2), offLrSecs: +m.offLr.toFixed(2), offLrAt: m.offLrAt ?? [], pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
     },
-    setBuild(b) { Object.assign(mine, structuredClone(b)); rebuildMine(); },
+    setBuild(b) { Object.assign(cur(), structuredClone(b)); rebuild(); },
+    setPvp,
+    setPick,
     stage,
     overlay,
     // Framing camera parameters (tuning runs only).
@@ -1848,6 +1967,8 @@ async function main() {
   }
   showBuild();
   setUp();
+  // ?pvp=1: straight into 一机双人, past the opening page.
+  if (q.get('pvp') === '1') { judge?.skipIntro(); setPvp(true); }
   requestAnimationFrame(frame);
   if (q.get('autoplay') === '1') start();
 }

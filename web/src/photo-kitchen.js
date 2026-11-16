@@ -4,6 +4,9 @@ const PHOTO = new URL('./assets/battle-depth.svg', import.meta.url).href;
 // Impact feel on 凡朔's fixed camera (Elara #万物对战:e6f14ad0): the old chase camera's shake, as px of picture translation
 // (its 0.03 × distance jitter at 58°), and a short push-in that tightens the framing and is back within PUSH_TIME.
 const SHAKE_PX = 0.03 / (2 * Math.tan(THREE.MathUtils.degToRad(58 / 2))), PUSH_TIME = 0.22;
+// 一机双人's straight-down camera (stage.topDown): this high over the arena's centre, framing the two tops and never less
+// than TOP_MIN m round the centre. It widens fast as they part and closes in slowly, so a lunge never leaves the band.
+const TOP_HEIGHT = 12, TOP_MIN = 1.5, TOP_ROOM = 1.12;
 
 /** A world-space photographic plate sharing the fight camera (2.5D). */
 export class PhotoKitchen {
@@ -39,6 +42,8 @@ export class PhotoKitchen {
 
   update(dt) {
     const {camera, view} = this.stage;
+    if (this.stage.topDown && document.getElementById('build').hidden) { this.updateTopDown(dt); return; }
+    if (this.plate) this.plate.visible = this.enabled;
     if (this.texture && (this.lastW !== view.w || this.lastH !== view.h)) {
       this.lastW = view.w;
       this.lastH = view.h;
@@ -106,14 +111,34 @@ export class PhotoKitchen {
           (Math.abs(pos.y)+radius)*view.h/(2*halfHeight*depthToFront*0.9));
       }
     }
-    const c = this.stage.cam;
-    let sx = 0, sy = 0;
+    const [sx, sy, push] = this.jolt(dt, building);
+    tangent /= push;
+    const desired = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
+    camera.fov = desired;
+    const ox = view.w / 2 - x, oy = view.h / 2 - y;
+    this.stage.setOffset(ox + sx, oy + sy);
+    camera.updateProjectionMatrix();
+    if (this.plate && !this.referenceReady) {
+      // Leave a small border reserve even at the new maximum zoom-out.
+      const height = 200 * nominal * 2 * 1.02;
+      this.plate.scale.set(height * camera.aspect, height, 1);
+      this.plate.quaternion.copy(camera.quaternion);
+      this.plate.position.copy(camera.position).add(new THREE.Vector3(ox * height / view.h, -oy * height / view.h, -100).applyQuaternion(camera.quaternion));
+      this.referenceReady = true;
+    }
+    this.stage.particles.mat.uniforms.uScale.value = view.h * this.stage.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+  }
+
+  /** The picture's jolts this frame: [x px, y px, how much the push-in tightens the view (1 = none)]. */
+  jolt(dt, building) {
+    const {view} = this.stage, c = this.stage.cam;
+    let sx = 0, sy = 0, push = 1;
     if (!building && dt > 0) {
       if (c.push) {
         c.push.age += dt;
         const k = c.push.age / PUSH_TIME;
         if (k >= 1) c.push = null;
-        else tangent /= 1 + c.push.amount * (k < 0.2 ? Math.sin(k / 0.2 * Math.PI / 2) : (1 - (k - 0.2) / 0.8) ** 2);
+        else push = 1 + c.push.amount * (k < 0.2 ? Math.sin(k / 0.2 * Math.PI / 2) : (1 - (k - 0.2) / 0.8) ** 2);
       }
       if (c.shake4 > 0.001) {
         const amp = c.shake4 * c.shake4 * SHAKE_PX * view.h;
@@ -140,19 +165,34 @@ export class PhotoKitchen {
         }
       }
     } else if (building) { c.push = null; c.shake4 = 0; c.punch = null; c.shakeAge = Infinity; }
-    const desired = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
-    camera.fov = desired;
-    const ox = view.w / 2 - x, oy = view.h / 2 - y;
-    this.stage.setOffset(ox + sx, oy + sy);
-    camera.updateProjectionMatrix();
-    if (this.plate && !this.referenceReady) {
-      // Leave a small border reserve even at the new maximum zoom-out.
-      const height = 200 * nominal * 2 * 1.02;
-      this.plate.scale.set(height * camera.aspect, height, 1);
-      this.plate.quaternion.copy(camera.quaternion);
-      this.plate.position.copy(camera.position).add(new THREE.Vector3(ox * height / view.h, -oy * height / view.h, -100).applyQuaternion(camera.quaternion));
-      this.referenceReady = true;
+    return [sx, sy, push];
+  }
+
+  /** 一机双人: straight down on the arena, stage.topDown up the screen, its centre in the middle of the band between the bars. */
+  updateTopDown(dt) {
+    const {camera, view} = this.stage, fighters = this.stage.fighters;
+    if (this.plate) this.plate.visible = false;
+    camera.position.set(0, TOP_HEIGHT, 0);
+    camera.up.copy(this.stage.topDown);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld(true);
+    const bottom = view.h - this.stage.safeBottom(), y = (view.top + bottom) / 2;
+    const halfH = Math.max(40, (bottom - view.top) / 2), halfW = view.w / 2 - 6, k = view.h / 2;
+    // The tangent of half the vertical field of view that keeps every top's swept circle inside the band.
+    let want = TOP_MIN / TOP_HEIGHT * k / Math.min(halfW, halfH);
+    for (const f of fighters) {
+      if (f.dim > 0.5) continue;
+      const p = (this.fitPoint ??= new THREE.Vector3()).copy(f.center).applyMatrix4(camera.matrixWorldInverse);
+      const r = this.stage.frameRadius(f) * TOP_ROOM, depth = Math.max(1, -p.z - r);
+      want = Math.max(want, (Math.abs(p.x) + r) / depth * k / halfW, (Math.abs(p.y) + r) / depth * k / halfH);
     }
+    if (!(dt > 0) || this.topTan == null || this.topFor !== this.stage.topDown) this.topTan = want;
+    else this.topTan += (want - this.topTan) * (1 - Math.exp(-dt * (want > this.topTan ? 10 : 1.2)));
+    this.topFor = this.stage.topDown;
+    const [sx, sy, push] = this.jolt(dt, false);
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(this.topTan / push));
+    this.stage.setOffset(sx, view.h / 2 - y + sy);
+    camera.updateProjectionMatrix();
     this.stage.particles.mat.uniforms.uScale.value = view.h * this.stage.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
   }
 
