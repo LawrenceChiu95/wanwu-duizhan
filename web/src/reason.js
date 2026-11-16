@@ -20,7 +20,7 @@ export function setNames(items) {
 /** Whole seconds shown for a match time: the fight clock and the result card use this one rounding. */
 export const wholeSeconds = t => Math.floor(t + 1e-6);
 
-/** `who`: the two sides' words (一机双人: 橙方 and 蓝方). */
+/** `who`: the two sides' words (一机双人: 你 and 对面, said to 1P). */
 export function reasonLine(replay, who = ['你', '对手']) {
   const {reason} = replay.meta, why = replay.decisive.why;
   if (reason === 'double-ko' && replay.meta.winner === null) return '两边核心同时碎了';

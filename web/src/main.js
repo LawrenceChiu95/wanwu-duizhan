@@ -337,8 +337,9 @@ async function main() {
   // match last counted, so the result coming back after 重看 counts nothing. readyAge: how far into 准备 → 开打！.
   let score = [0, 0], scored = 0, readyAge = 0;
   const cur = () => pick ? FOE : mine;
-  // Who a side is, in the words of the mode being played.
-  const sideName = i => pvp ? (i ? '蓝方' : '橙方') : i ? '对手' : '你';
+  // Who a side is, in the words of the mode being played. 一机双人's bars each face their own end, so both say 你: a
+  // colour is only a colour, never a name (第二轮, Elara 522ee793).
+  const sideName = i => pvp ? '你' : i ? '对手' : '你';
   // A word a side earned faces that side's end of the phone (Elara 1d222196): 2P's turns to the head.
   const faces2P = i => pvp && i === 1;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
@@ -526,7 +527,7 @@ async function main() {
     $('pvpBack').hidden = !pvp;
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
-    $('foeLabel').textContent = pick ? '轮到上方 2P · 蓝方选装' : '轮到下方 1P · 橙方选装';
+    $('foeLabel').textContent = pick ? '轮到上方 2P 选装' : '轮到下方 1P 选装';
     $('foeBtn').hidden = $('foeMark').hidden = true;
     el.foeParts.innerHTML = '';
     $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
@@ -773,7 +774,7 @@ async function main() {
     sfx.crunch();
     buzz(25);
     stage.shakeV4(0.8);
-    const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${sideName(e.target)}的${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
+    const broke = [late && at ? at : new THREE.Vector3().fromArray(e.pose.pos), `${pvp ? '' : `${sideName(e.target)}的`}${NAMES[e.item] ?? ''}碎了`, `broke t${e.target}`, 1.8];
     // Over the top only with ?call=slot; the line always takes a break (Elara 937d44f2).
     if (HILITE === 'slot') { if (e.t - lastParryT < 1e-6) lateNums.push({wait: 0.5, broke}); else overlay.number(...broke); }
     // The camera never moves; only a piece or a core breaking jolts the picture: hard since 冲挡加重 (Elara fa18a1da).
@@ -1713,14 +1714,14 @@ async function main() {
     if (was < READY_GO && readyAge >= READY_GO) {
       for (const b of el.pvpReady.children) b.textContent = '开打！';
       el.pvpReady.className = 'fight';
-      glow('go');
+      glow('burst');
       sfx.go();
       buzz(30);
     }
     // The first match's line about the buttons comes once the plates are gone, where they stood.
     if (readyAge >= READY) { el.pvpReady.hidden = true; glow(''); phase = 'play'; pvpTip(); }
   }
-  // The edge's glow: '' through the fight, 'ready' breathing, 'go' one bright pulse, 'won0' / 'won1' / 'draw' on the result.
+  // The edge's glow: '' through the fight, 'ready' breathing, 'burst' one bright pulse at 开打！ (not 'go': that is the 开打 button's class), 'won0' / 'won1' / 'draw' on the result.
   function glow(state) { el.pvpGlow.hidden = false; el.pvpGlow.className = state; }
   // Sound on / off (remembered where the page may store it).
   const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
