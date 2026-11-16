@@ -84,6 +84,8 @@ const SVG = {
 };
 // Sol bccac3b7: 锅 out, 抱枕 hugging.
 const DEFAULT = {parts: [{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}], spread: 'e180'};
+// Gone from 评委版 (Elara 17ed7f8b); old builds and links naming it still open (main.js readBuild).
+const RETIRED = new Set(['showcase-flipflop']);
 // 一机双人's 2P before they pick (Elara 1e2c813c: no lopsided start): 40 scripted matches against DEFAULT went 20 : 20.
 const DEFAULT_P2 = {parts: [{item: 'fanshuo-plate', orient: 'out'}, {item: 'fanshuo-roller', orient: 'hug'}], spread: 'e180'};
 const PREVIEW_SPIN = 2.4;
@@ -231,17 +233,26 @@ async function main() {
   // the page opens with the default build rather than an error, and takes the address's once the item comes in.
   const late = {};
   // A kept build naming items this page can't see (?shoot=off: no photo items at all) is held: the default stands in for
-  // it, and it stays kept until the player changes that side themselves (Sol 9db420ed, Elara d0cdc43b).
+  // it, and it stays kept until the player changes that side themselves (Sol 9db420ed, Elara d0cdc43b). held[side] is
+  // the stand-in.
   const held = {};
+  const fillOf = key => key === 'p2' ? DEFAULT_P2 : key === 'foe' ? DEFAULT_FOE : DEFAULT;
   // A build as 物品ID,out或hug,另一物品ID,out或hug,e180或e90: the build, null when it waits in late, undefined when unusable.
   const readBuild = (key, text) => {
     const p = text.split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
     const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
     if (shape && b.parts.every(x => usable(x.item))) return b;
+    // An old build or link naming the retired 拖鞋演示 (Sol 7adde033): its other piece stays, the default's takes the
+    // retired one's place, how both stick out and the spread as they were; held like the above.
+    if (shape && b.parts.some(x => RETIRED.has(x.item)) && b.parts.every(x => usable(x.item) || RETIRED.has(x.item))) {
+      const kept = b.parts.find(x => usable(x.item))?.item, fill = fillOf(key).parts.map(x => x.item).filter(id => id !== kept);
+      let i = 0;
+      return held[key] = {parts: b.parts.map(x => usable(x.item) ? x : {item: fill[i++], orient: x.orient}), spread: b.spread};
+    }
     if (shape && b.parts.every(x => usable(x.item) || !byId.has(x.item))) {
       if (shot || photoLater) { late[key] = b; return null; }
-      held[key] = true;
+      held[key] = fillOf(key);
     }
   };
   const buildArg = b => [b.parts[0].item, b.parts[0].orient, b.parts[1].item, b.parts[1].orient, b.spread].join(',');
@@ -441,8 +452,8 @@ async function main() {
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === cur().spread));
     // Not while the default stands in for a build whose photo item is on its way: that one is what to keep.
-    if (!((late.mine || held.mine) && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
-    if (pvp && !((late.p2 || held.p2) && sameBuild(FOE, DEFAULT_P2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
+    if (!(late.mine && sameBuild(mine, DEFAULT) || held.mine && sameBuild(mine, held.mine))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
+    if (pvp && !(late.p2 && sameBuild(FOE, DEFAULT_P2) || held.p2 && sameBuild(FOE, held.p2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
   }
   // The player changed the side being picked: what it chose is kept from now on, even the default again, and a held or
   // late build for that side is let go (Sol d6d88569). A tap on what is already there changes nothing (Sol 5a3aa4e6).
@@ -1165,9 +1176,10 @@ async function main() {
     // 一机双人's builds are kept on the phone: its address says only that it is two players.
     const shootArgs = SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('');
     if (pvp) { try { history.replaceState(null, '', `?pvp=1${fixedSeed ? `&seed=${seed}` : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${shootArgs}`); } catch { /* sandboxed viewer */ } return; }
-    // A held build isn't named: the address would bring back the default stand-in, and a reload reads the kept one again.
-    const standIn = held.mine && sameBuild(mine, DEFAULT);
-    try { history.replaceState(null, '', `?${standIn ? '' : `mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}`}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${shootArgs}`); } catch { /* sandboxed viewer */ }
+    // A held build kept on the phone isn't named: the address would bring back the stand-in, and a reload reads the kept
+    // one again; an address's stays as it came.
+    const standIn = held.mine && sameBuild(mine, held.mine);
+    try { history.replaceState(null, '', `?${standIn ? q.has('mine') ? `mine=${q.get('mine')}` : '' : `mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}`}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${shootArgs}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     showPads(false);
