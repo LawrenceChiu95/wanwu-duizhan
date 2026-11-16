@@ -38,7 +38,8 @@ export default defineConfig(({mode}) => {
     base: './',
     define: {__JUDGE__: JSON.stringify(judge), __COMBAT__: JSON.stringify(combatBuild)},
     plugins: judge ? [judgeIntro, rapierWasm] : [],
-    resolve: {alias: {'@dimforge/rapier3d-compat': rapier}},
+    // 评委版 bundles the twelve's models only (src/model-files.judge.js).
+    resolve: {alias: [{find: '@dimforge/rapier3d-compat', replacement: rapier}, ...judge ? [{find: /^\.\/model-files\.js$/, replacement: './model-files.judge.js'}] : []]},
     // ?shoot=real: the local 拍一件 backend (tools/import-item/shoot), same origin through this proxy; start it with
     // --frontend-origin set to this page's origin. SHOOT_PORT if it isn't on 4408.
     server: {fs: {allow: [repo]}, allowedHosts,

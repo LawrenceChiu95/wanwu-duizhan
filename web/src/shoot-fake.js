@@ -58,7 +58,9 @@ const ESTIMATE = 90;
 // After a new photo's 认物, this long (ms, on the fake clock) to say 不是它，重拍 before generation starts (task #85).
 const RETAKE_MS = 5000;
 // What each category becomes: an item already in the repo.
-const SOURCE = {pot: 'wasteland-pot', scissors: 'wasteland-knife', broom: 'wasteland-broom', lamp: 'lamp-lux3d', slipper: 'slipper', pillow: 'pillow'};
+// 评委版 bundles the twelve's models only (model-files.judge.js), so there each category copies one of those instead.
+const SOURCE = __JUDGE__ ? {pot: 'fanshuo-pot', scissors: 'fanshuo-knife', broom: 'fanshuo-feather', lamp: 'fanshuo-cup', slipper: 'fanshuo-cushion', pillow: 'fanshuo-rabbit'}
+  : {pot: 'wasteland-pot', scissors: 'wasteland-knife', broom: 'wasteland-broom', lamp: 'lamp-lux3d', slipper: 'slipper', pillow: 'pillow'};
 const CAT_NAME = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
 // recognition.verdict: what it is like and how a knock with it feels, never how strong it is (Elara 48e25b06).
 const VERDICT = {pot: '厚实金属，碰上去闷响一声', lamp: '灯罩轻、底座沉，晃一晃才站稳', scissors: '细长一条，刃口先碰到人',
@@ -325,6 +327,8 @@ export async function fakeApi(q) {
         if (st.jobs[x.job]?.refused) it.scale = 2;
         if (x.label) it.category = x.label;
         if (x.matName) it.materialName = x.matName;
+        // The twelve 评委版 copies are photo items, which the sim takes only when their category is their name.
+        if (it.photoPhysics) it.category = it.name;
         delete it.comparisonBase;
         it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
         return it;

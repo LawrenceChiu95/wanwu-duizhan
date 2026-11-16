@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, ROUND_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS} from '../../sim/v3.js';
-import creditsMd from '../../data/CREDITS.md?raw';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
 import {LiveTurns} from './livecards.js';
@@ -30,7 +29,7 @@ const el = {
   howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'), howNote: $('howNote'),
   howSrc: $('howSrc'), howPick: $('howPick'),
   shoot: $('shootView'), shootBtn: $('shootBtn'),
-  credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
+  busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
   pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin'), pvpReady: $('pvpReady'), pvpGlow: $('pvpGlow'), pvpScore: $('pvpScore')
@@ -50,11 +49,14 @@ const offerOf = items => {
   const rank = id => ROSTER.includes(id) ? ROSTER.indexOf(id) : ROSTER.length;
   return items.map(i => i.id).filter(id => !replaced.has(id) && !EARLIER.has(id)).sort((a, b) => rank(a) - rank(b));
 };
-// The computer's default build; ?foe= can override it for measurements.
-const DEFAULT_FOE = {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
+// The computer's default build; ?foe= can override it for measurements. 评委版 ships none of the early models (models.js),
+// so its default is made of the twelve: 一机双人's 2P default, even with 1P's (Elara 17ed7f8b).
+const DEFAULT_FOE = __JUDGE__ ? {parts: [{item: 'fanshuo-plate', orient: 'out'}, {item: 'fanshuo-roller', orient: 'hug'}], spread: 'e180'}
+  : {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
 // 换个对手 (MVP 规格 §4-2; Elara 11-02 470a4546): the computer's builds to pick from, strong to weak by Sol's R8 two-piece
 // check (test/mvp/results-combo-check-r2: each pair at its best layout against a fixed pool of opponents). The default first.
-const FOES = [
+// 评委版's list is the three opponents' builds instead (below), weakest last.
+const SOLO_FOES = [
   {level: '默认', build: DEFAULT_FOE},
   {level: '强', rank: 'hi', build: {parts: [{item: 'broom', orient: 'out'}, {item: 'pillow', orient: 'out'}], spread: 'e90'}},
   {level: '偏强', rank: 'hi', build: {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'slipper', orient: 'out'}], spread: 'e90'}},
@@ -71,6 +73,7 @@ const LADDER = ladderJson.foes.map(f => {
   const {ai, impactAi, ...build} = tuned;
   return {...f, build, ai: ai ? {...f.ai, ...ai} : f.ai, impactAi};
 });
+const FOES = __JUDGE__ ? [{level: '默认', build: DEFAULT_FOE}, ...LADDER.map((f, i) => ({level: ['弱', '中', '强'][i] ?? '强', rank: ['lo', 'mid', 'hi'][i] ?? 'hi', build: f.build})).reverse()] : SOLO_FOES;
 const LADDER_KEY = 'wanwu-ladder';
 const SVG = {
   lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>',
@@ -125,31 +128,6 @@ const toDef = b => ({parts: [{item: b.parts[0].item, mount: 'e0', orient: b.part
 // R7 (伸出攻、贴着守): 伸出 hits harder and breaks sooner; 贴着 takes blows for the core and hits softer.
 const HINT = {out: '攻：撞人更疼，自己易碎', hug: '守：替核心挡，少掉血'};
 const randomSeed = () => 1 + Math.floor(Math.random() * 9999);
-
-// 评委版 shows its own list instead (judge.js): only what is in that build, in Chinese, one line per thing.
-function renderCredits(items, md = creditsMd) {
-  const link = s => s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
-  const html = [];
-  let list = false, tableHead = false;
-  const close = () => { if (list) html.push('</ul>'); list = false; };
-  for (const line of md.split('\n')) {
-    const l = line.trim();
-    if (/^\|/.test(l)) {
-      if (/^\|[\s|:-]+\|$/.test(l)) continue;
-      if (!list) { html.push('<ul>'); list = true; tableHead = true; }
-      if (tableHead) { tableHead = false; continue; }
-      html.push(`<li>${l.split('|').slice(1, -1).map(c => c.trim()).filter(Boolean).map(c => link(esc(c))).join(' · ')}</li>`);
-      continue;
-    }
-    close();
-    if (/^# /.test(l) || !l) continue;
-    if (/^##+ /.test(l)) html.push(`<h4>${esc(l.replace(/^#+ /, ''))}</h4>`);
-    else html.push(`<p>${link(esc(l))}</p>`);
-  }
-  close();
-  el.creditsBody.innerHTML = html.join('');
-}
 
 // 拍一件's lasting address switches, kept when 开打 rewrites the address (Elara a510bb73 B1); shootReset is not one.
 const SHOOT_KEEP = ['shoot', 'shootSpeed', 'shootFail', 'shootCat', 'shootSix'];
@@ -247,7 +225,6 @@ async function main() {
   stage.jolts = !oldFx;
   const turns = new LiveTurns(stage.renderer, stage.scene.environment);
   const overlay = new Overlay(stage, el);
-  renderCredits(items, judge?.creditsMd);
 
   const mode = q.get('mode') === 'B' ? 'B' : 'A';
   // An address can name a photo item the backend hasn't handed over yet (/items slow or down as the page opens, task #62):
@@ -1612,7 +1589,7 @@ async function main() {
       seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
       goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
-      tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden && el.credits.hidden,
+      tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden,
       fightRoom: () => phase === 'play' || phase === 'finale',
       hudBusy: () => Boolean(overlay.hilite),
       // Just under whichever plate is at the top (the build's title or the match's bars), so the tag covers neither.
@@ -1787,9 +1764,6 @@ async function main() {
   $('sameBtn').onclick = () => { showBuild(); start(); };
   // 一机双人's way back to the three opponents (the 首页 is a tap further, on the bench).
   $('soloBtn').onclick = () => setPvp(false);
-  $('creditsBtn').onclick = () => { el.credits.hidden = false; };
-  $('creditsClose').onclick = () => { el.credits.hidden = true; };
-  el.credits.onclick = e => { if (e.target === el.credits) el.credits.hidden = true; };
 
   // ---------- camera lookahead ----------
   // Where each top will be 0.1 s from now: from the replay when it already has those frames (auto, and
@@ -2050,7 +2024,7 @@ async function main() {
     else turns.render(now / 1000, !el.how.hidden ? el.how : !el.shoot.hidden ? el.shoot : el.library);
     // The 拍一件 tag shows on the build and result screens only: redrawn as the player moves between screens, and the
     // frame a highlight goes up or down under the HUD (its 「做好了」 gives way to it).
-    const tagKey = `${phase}${el.library.hidden}${el.how.hidden}${el.foeSheet.hidden}${el.credits.hidden}${Boolean(overlay.hilite)}`;
+    const tagKey = `${phase}${el.library.hidden}${el.how.hidden}${el.foeSheet.hidden}${Boolean(overlay.hilite)}`;
     if (shoot && tagKey !== lastTagKey) { lastTagKey = tagKey; shoot.paintTag(); }
     overlay.update(dt, true);
     if (pb && phase !== 'build' && phase !== 'computing') { updateHud(dt, pb.state); updateHudFlash(dt); updatePad(); }

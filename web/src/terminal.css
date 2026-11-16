@@ -121,8 +121,6 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .grid button b { font-size:17px;font-weight:700; }
 .grid button.sel { background:#254338;border:1px solid var(--c1);box-shadow:inset 3px 0 var(--c1); }
 .grid button small { color:var(--mute); }
-#creditsBody,#creditsBody p { color:#bdc7b0; }
-#creditsBody a { color:var(--c1l); }
 #busy { clip-path:none;border:1px solid #777954;border-radius:3px;font-size:15px; }
 .num,.call,.me { filter:none; }
 .call { border-radius:2px; }
