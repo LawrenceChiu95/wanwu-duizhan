@@ -462,6 +462,13 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
   padding:7px 4px; background:#10221bd9; box-shadow:inset 0 0 0 1px #4b5942,0 4px 10px #0009; }
 #app.pvp #hud .mid .clock { font-size:19px; }
 #app.pvp #hud .mid .slowtag { writing-mode:vertical-rl; }
+/* The mute off the fight: on the left edge at mid height, where the fight's own sits in 一机双人, so both ends reach it.
+   Under sheets and pages (the 角色库, 拍一件, 换个对手), over the judge's opening card. */
+#muteFloat { position:absolute; left:8px; top:50%; z-index:4; width:38px; height:38px; transform:translateY(-50%);
+  background:#10221bd9; box-shadow:inset 0 0 0 1px #4b5942,0 4px 10px #0009; }
+#muteFloat svg { width:19px; height:19px; }
+#hud:not([hidden]) ~ #muteFloat { display:none; }
+#intro:not([hidden]) ~ #muteFloat { z-index:9; }
 #app.pvp #camSeg, #app.pvp #caption, #app.pvp #fx .me, #app.pvp #coach { display:none; }
 #pvpTip { position:absolute; inset:0; z-index:5; pointer-events:none; }
 #pvpTip b { position:absolute; left:50%; padding:7px 14px 8px 16px; white-space:nowrap; font-size:16px; font-weight:800; color:#ece9d7;

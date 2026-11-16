@@ -489,6 +489,8 @@ async function main() {
   async function setPvp(two) {
     const req = ++pvpReq;
     score = [0, 0];
+    // Back to one player: the run's score goes, not only out of sight (Elara 97280117).
+    if (!two) el.pvpScore.textContent = el.pvpWin.lastChild.textContent = '';
     foeReq++; // a 换个对手 still loading is let go
     if (two !== pvp) {
       if (two) { soloFoe = FOE; FOE = keptP2(); } else { FOE = soloFoe ?? FOE; soloFoe = null; }
@@ -1723,8 +1725,9 @@ async function main() {
   // The edge's glow: '' through the fight, 'ready' breathing, 'burst' one bright pulse at 开打！ (not 'go': that is the 开打 button's class), 'won0' / 'won1' / 'draw' on the result.
   function glow(state) { el.pvpGlow.hidden = false; el.pvpGlow.className = state; }
   // Sound on / off (remembered where the page may store it).
-  const syncMute = () => { el.mute.classList.toggle('off', sfx.muted); el.mute.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); };
-  el.mute.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
+  const mutes = [el.mute, $('muteFloat')];
+  const syncMute = () => { for (const b of mutes) { b.classList.toggle('off', sfx.muted); b.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); } };
+  for (const b of mutes) b.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
   syncMute();
   // 俯视 / 慢三成 / 原速: switch at any time (a cut, then that camera carries on).
   const syncCam = () => { for (const b of el.camSeg.querySelectorAll('[data-cam]')) b.setAttribute('aria-checked', String(b.dataset.cam === camStyle)); };
