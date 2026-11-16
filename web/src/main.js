@@ -304,7 +304,10 @@ async function main() {
   // The rest of the 角色库's models then come down behind it, after the engine (Elara ead80382): opening the 角色库 or
   // swapping an item later needn't wait for the network, and the first screen still waits for the first match's only.
   let prefetched = Promise.resolve();
-  if (judge) { judge.readyIntro(); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
+  // 首页's 和电脑打 / 和人打 (远夏 06bec9f5): a pick before the page below is set up waits for it.
+  let setUp;
+  const whenSetUp = new Promise(ok => { setUp = ok; });
+  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two))); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
   // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
   // if it fails the bench just keeps the usual backdrop.
   if (stage.bench) prefetched.finally(() => stage.bench.want());
@@ -445,6 +448,11 @@ async function main() {
     stage.replaceFighter(0, toDef(mine));
     syncBuild();
     stage.pose(previewState());
+  }
+  // ---------- 一机双人 (Elara 1e2c813c) ----------
+  let pvp = false;
+  function setPvp(two) {
+    pvp = two;
   }
   function showBuild() {
     phase = 'build';
@@ -1839,6 +1847,7 @@ async function main() {
     if (nudge) nudgeTick(pb.t);
   }
   showBuild();
+  setUp();
   requestAnimationFrame(frame);
   if (q.get('autoplay') === '1') start();
 }

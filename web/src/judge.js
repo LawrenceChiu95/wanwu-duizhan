@@ -72,17 +72,30 @@ export const creditsMd = `
 | three.js（3D 画面） | three.js 作者们 | MIT | [GitHub](https://github.com/mrdoob/three.js) |
 `;
 
-/** The opening page (index.html, put in by vite.config.js): its 开始组装 waits for the page to be ready, and the pot's 3D
- *  (potview.js) loads only after that, so it never holds up the first screen. */
-export function readyIntro() {
-  const intro = document.getElementById('intro'), go = document.getElementById('introGo');
+/** The opening page (index.html, put in by vite.config.js): its 和电脑打 and 和人打 wait for the page to be ready, and the
+ *  pot's 3D (potview.js) loads only after that, so it never holds up the first screen. onPick(pvp) gets the choice. */
+export function readyIntro(onPick) {
+  const intro = document.getElementById('intro'), go = document.getElementById('introGo'), pvp = document.getElementById('introPvp');
   if (!intro) return;
-  go.disabled = false;
-  go.querySelector('span').textContent = '开始组装';
   let closePot = () => {};
-  go.onclick = () => { intro.classList.add('out'); setTimeout(() => { intro.hidden = true; closePot(); closePot = () => {}; }, 220); };
+  for (const [key, label, two] of [[go, '和电脑打', false], [pvp, '和人打', true]]) {
+    key.disabled = false;
+    key.querySelector('span').textContent = label;
+    key.onclick = () => { onPick?.(two); intro.classList.add('out'); setTimeout(() => { intro.hidden = true; closePot(); closePot = () => {}; }, 220); };
+  }
   const hint = document.getElementById('introHint');
   import('./potview.js').then(m => m.showPot(document.getElementById('introModel'), hint)).then(close => {
     if (intro.hidden) close(); else closePot = close;
   }).catch(() => { hint.textContent = '3D 未载入 · 显示改装参考图'; });
+}
+
+/** Back to the opening page (双人 → 首页). The pot's 3D was let go when the page closed, so its picture stands in. */
+export function showIntro() {
+  const intro = document.getElementById('intro');
+  if (!intro) return false;
+  document.querySelector('#introModel img').hidden = false;
+  document.getElementById('introHint').textContent = '改装参考图';
+  intro.hidden = false;
+  requestAnimationFrame(() => intro.classList.remove('out'));
+  return true;
 }

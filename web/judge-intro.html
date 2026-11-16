@@ -1,5 +1,5 @@
   <!-- 评委版 opening page (vite.config.js puts it in for --mode judge): 凡朔's 奶锅 page from his UI preview (11-07,
-       Elara ce042e3d). Plain HTML so it shows while the game loads behind it; judge.js turns 开始组装 on once the page is
+       Elara ce042e3d). Plain HTML so it shows while the game loads behind it; judge.js turns 和电脑打 / 和人打 on once the page is
        ready, and only then loads the pot's 3D into the box (the picture stands in until it comes). -->
   <section id="intro" aria-label="万物对战 · 评委试玩">
     <header class="khead"><i></i> 万物对战 <small>评委试玩</small></header>
@@ -16,6 +16,10 @@
         <figure><img src="../data/showcase/pot/styled.webp" alt="改绘的奶锅"><figcaption>改装设计</figcaption></figure>
       </div>
       <p>一张照片生成这口锅，装到核心外侧就能替它挡下撞击。<b>你也可以拍一件：</b>进去后在角色库里点「拍一件」。</p>
-      <button type="button" class="kgo" id="introGo" disabled><span>载入中…</span> <b aria-hidden="true">→</b></button>
+      <!-- Two ways to play (远夏 06bec9f5): the three stages against the computer, or two people at this one phone. -->
+      <div class="kmodes">
+        <button type="button" class="kgo" id="introGo" disabled><span>载入中…</span><small>闯三关</small><b aria-hidden="true">→</b></button>
+        <button type="button" class="kgo" id="introPvp" disabled><span>载入中…</span><small>一台手机，面对面</small><b aria-hidden="true">→</b></button>
+      </div>
     </div>
   </section>
