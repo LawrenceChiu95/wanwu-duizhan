@@ -93,32 +93,34 @@ export class Overlay {
   /**
    * 第 13 版: a one-word verdict on the player's own 冲 / 挡, beside its top (right of the core, level with it, flipped
    * left near the screen edge) so it never lands on the 「你」 tag above. It follows the top, nudges up a little and is
-   * gone within `dur`; a newer one replaces the old.
+   * gone within `dur`; a newer one replaces the old. `flip` (一机双人's 2P): turned 180° to the head of the phone, beside the
+   * top as 2P sees it.
    */
-  verdict(fighter, text, cls, dur = 0.85) {
+  verdict(fighter, text, cls, dur = 0.85, flip = false) {
     for (const v of this.verdicts) v.el.remove();
     const el = document.createElement('div');
     el.className = `num verdict ${cls}`;
     el.textContent = text;
     this.layer.append(el);
-    this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight}];
+    this.verdicts = [{el, f: fighter, age: 0, dur, w: el.offsetWidth, h: el.offsetHeight, flip}];
   }
   /**
    * 挡分两档 (Elara 896cf31c): the block's word where it struck, 「完美！」 or 「勉强」. It stands above the contact point,
    * lifted over whichever top is under it so it covers neither, comes in with a small punch and is gone within `dur`
-   * (real) seconds. A newer one replaces it.
+   * (real) seconds. A newer one replaces it. `flip` (一机双人's 2P): turned 180° and set below the contact, which is above it
+   * as 2P sees it.
    */
-  stamp(point, text, cls, dur = 0.6) {
+  stamp(point, text, cls, dur = 0.6, flip = false) {
     const el = document.createElement('div');
     el.className = `stamp ${cls}`;
     el.textContent = text;
-    this.place(el, point, dur);
+    this.place(el, point, dur, flip);
   }
   /**
    * The big-moment line (「锅 冲中 金属杯！」) in the same spot as a block's word, its plate and colours as under the HUD
    * (Elara 4efa6f73). Too wide for the screen, it says the `short` words instead (「锅 冲中！」, 「马克杯 碎了！」).
    */
-  stampLine(point, words, short, dur = 1.2) {
+  stampLine(point, words, short, dur = 1.2, flip = false) {
     let el = this.lineEl(words);
     el.classList.add('at');
     el.style.maxWidth = 'none';
@@ -126,7 +128,7 @@ export class Overlay {
     const wide = el.offsetWidth > this.layer.clientWidth - 16;
     el.style.maxWidth = '';
     if (short && wide) { el.remove(); el = this.lineEl(short); el.classList.add('at'); }
-    this.place(el, point, dur);
+    this.place(el, point, dur, flip);
   }
   lineEl({who, verb, whom, side, whomSide}) {
     const el = document.createElement('div'), b = document.createElement('b'), v = document.createElement('span'), u = document.createElement('u');
@@ -141,7 +143,7 @@ export class Overlay {
     return el;
   }
   // Puts a word (or line) over the contact point, clear of the tops, in place of the one up now.
-  place(el, point, dur) {
+  place(el, point, dur, flip = false) {
     for (const s of this.stamps) s.el.remove();
     if (!el.isConnected) this.layer.append(el);
     const {stage} = this, at = new THREE.Vector3().copy(point), p = stage.project(at, {x: 0, y: 0}), span = {};
@@ -150,9 +152,9 @@ export class Overlay {
     // Above everything either top can sweep under it while it is up, a big piece's (抱枕, 椅子) included (Castor 27158a5f).
     if (p) for (const f of stage.fighters) {
       if (!f?.core.visible || !stage.screenSpan(f, span)) continue;
-      if (span.left < p.x + w / 2 && span.right > p.x - w / 2) lift = Math.max(lift, p.y - span.top + 6);
+      if (span.left < p.x + w / 2 && span.right > p.x - w / 2) lift = Math.max(lift, flip ? span.bottom - p.y + 6 : p.y - span.top + 6);
     }
-    this.stamps = [{el, at, age: 0, dur, w, h, lift}];
+    this.stamps = [{el, at, age: 0, dur, w, h, lift, flip}];
   }
   /**
    * A big moment, said once at a fixed spot (`top` px from the top of the layer) instead of over the tops: 「拖鞋 撞碎了
@@ -248,9 +250,10 @@ export class Overlay {
       const t = v.age / v.dur;
       if (t >= 1 || !stage.project(v.f.center, p)) { v.el.remove(); this.verdicts.splice(k, 1); continue; }
       const r = stage.screenRadius(v.f.center, stage.coreRadius * 1.6) + 6;
-      const x = p.x + r + v.w <= W - 6 ? p.x + r : p.x - r - v.w, y = p.y - v.h / 2 - ease(Math.min(1, t * 1.6)) * 10;
+      const rise = ease(Math.min(1, t * 1.6)) * 10, right = v.flip ? p.x - r - v.w >= 6 : p.x + r + v.w <= W - 6;
+      const x = right === !v.flip ? p.x + r : p.x - r - v.w, y = p.y - v.h / 2 + (v.flip ? rise : -rise);
       v.el.style.opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
-      v.el.style.transform = `translate(${x}px, ${y}px) scale(${t < 0.1 ? 0.7 + 3 * t : 1})`;
+      v.el.style.transform = `translate(${x}px, ${y}px) scale(${t < 0.1 ? 0.7 + 3 * t : 1})${v.flip ? ' rotate(180deg)' : ''}`;
     }
     for (let k = this.stamps.length - 1; k >= 0; k--) {
       const s = this.stamps[k];
@@ -258,9 +261,11 @@ export class Overlay {
       const t = s.age / s.dur;
       if (t >= 1 || !stage.project(s.at, p)) { s.el.remove(); this.stamps.splice(k, 1); continue; }
       s.x = Math.min(W - 6 - s.w / 2, Math.max(6 + s.w / 2, p.x));
-      s.y = Math.max(stage.view.top + s.h + 6, p.y - s.lift) - ease(Math.min(1, t * 1.5)) * 8;
+      const rise = ease(Math.min(1, t * 1.5)) * 8, punch = t < 0.12 ? 1.35 - 0.35 * ease(t / 0.12) : 1;
+      s.y = s.flip ? Math.min(stage.view.h - stage.safeBottom() - s.h - 6, p.y + s.lift) + rise : Math.max(stage.view.top + s.h + 6, p.y - s.lift) - rise;
       s.el.style.opacity = t > 0.6 ? (1 - t) / 0.4 : 1;
-      s.el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%) scale(${t < 0.12 ? 1.35 - 0.35 * ease(t / 0.12) : 1})`;
+      s.el.style.transform = s.flip ? `translate(${s.x}px, ${s.y}px) translate(-50%, 0) scale(${punch}) rotate(180deg)`
+        : `translate(${s.x}px, ${s.y}px) translate(-50%, -100%) scale(${punch})`;
     }
     if (this.hilite) {
       const h = this.hilite, t = (h.age += dt) / h.dur;

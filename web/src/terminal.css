@@ -480,3 +480,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #app.pvp #foe.p0 .label { color:var(--c0l); } #app.pvp #foe.p1 .label { color:var(--c1l); }
 #result.blue { --edge:linear-gradient(90deg,var(--c1d),var(--c1l)); }
 #result.blue .winner { color:var(--c1l); background:none; filter:none; }
+/* 2P's 橙方胜 / 蓝方胜: in the top half, turned to them; the card itself stays 1P's. */
+#pvpWin { position:absolute; left:16px; right:16px; top:calc(env(safe-area-inset-top) + 64px); z-index:5; display:flex; justify-content:center; pointer-events:none; transform:rotate(180deg); }
+#pvpWin b { padding:6px 22px 8px; font-size:38px; font-weight:950; letter-spacing:3px; color:var(--ink); text-shadow:1px 2px #000;
+  border:12px solid transparent; border-image:var(--hardware) 70 stretch; background:#10221b; background-clip:padding-box; box-shadow:0 5px 12px #0009; }
+#pvpWin.win b { color:var(--c0l); } #pvpWin.blue b { color:var(--c1l); }

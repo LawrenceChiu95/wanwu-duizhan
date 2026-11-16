@@ -1877,14 +1877,14 @@ export class Stage {
    * lowest and highest, projected (CSS px). Sets out.top / out.left / out.right; false when it is off camera.
    */
   screenSpan(f, out) {
-    out.top = Infinity; out.left = Infinity; out.right = -Infinity;
+    out.top = out.left = Infinity; out.right = out.bottom = -Infinity;
     const rings = [[this.coreRadius, -this.coreRadius, this.coreRadius]];
     for (const p of f.parts) if (p.alive) rings.push([p.reach, p.y0, p.y1]);
     const q = {x: 0, y: 0};
     for (const [r, y0, y1] of rings) for (const y of [y0, y1]) for (let k = 0; k < 16; k++) {
       const a = k * Math.PI / 8;
       if (!this.project(f.root.localToWorld(tmpS.set(r * Math.cos(a), y, r * Math.sin(a))), q)) return false;
-      out.top = Math.min(out.top, q.y); out.left = Math.min(out.left, q.x); out.right = Math.max(out.right, q.x);
+      out.top = Math.min(out.top, q.y); out.bottom = Math.max(out.bottom, q.y); out.left = Math.min(out.left, q.x); out.right = Math.max(out.right, q.x);
     }
     return true;
   }

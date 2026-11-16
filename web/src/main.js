@@ -32,7 +32,7 @@ const el = {
   credits: $('credits'), creditsBody: $('creditsBody'), busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
-  pad2: $('pad2'), pvpTip: $('pvpTip')
+  pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
@@ -328,6 +328,8 @@ async function main() {
   const cur = () => pick ? FOE : mine;
   // Who a side is, in the words of the mode being played.
   const sideName = i => pvp ? (i ? '蓝方' : '橙方') : i ? '对手' : '你';
+  // A word a side earned faces that side's end of the phone (Elara 1d222196): 2P's turns to the head.
+  const faces2P = i => pvp && i === 1;
   // A piece that breaks on the very frame a lunge is bounced off a shield: its 「…碎了」 comes half a second later, so the
   // bounce reads first and nobody wonders whether it was blocked (Elara 80e885bc); one still up from before is let go.
   // lastKnockT: the step of the latest ordinary knock shown, so a glance in the same step does not knock twice.
@@ -449,7 +451,7 @@ async function main() {
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === cur().spread));
     // Not while the default stands in for a build whose photo item is on its way: that one is what to keep.
     if (!(late.mine && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
-    if (pvp) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
+    if (pvp && !(late.p2 && sameBuild(FOE, DEFAULT_P2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
   }
   let buildReq = 0;
   // The bench's side (by default the one being picked) after a change: its top swapped in once its models are down.
@@ -464,12 +466,13 @@ async function main() {
     stage.pose(previewState());
   }
   // ---------- 一机双人 (Elara 1e2c813c) ----------
-  // 2P's build is kept on this phone apart from 1P's; one naming an item no longer here starts from DEFAULT_P2.
+  // 2P's build is kept on this phone apart from 1P's; one naming an item no longer here starts from DEFAULT_P2, and one
+  // whose photo item hasn't come in yet waits in late as 1P's does, kept until then (Sol 10478c56).
   const P2_KEY = 'wanwu-pvp-p2';
   const keptP2 = () => {
     let b = null;
+    delete late.p2;
     try { const text = localStorage.getItem(P2_KEY); b = text && readBuild('p2', text); } catch { /* no storage here */ }
-    delete late.p2; // a kept 2P build still waiting for its photo item just starts from the default
     return structuredClone(b ?? DEFAULT_P2);
   };
   let pvpReq = 0;
@@ -481,8 +484,8 @@ async function main() {
       if (two) { soloFoe = FOE; FOE = keptP2(); } else { FOE = soloFoe ?? FOE; soloFoe = null; }
       pvp = two;
       combatOptions = two ? PVP_COMBAT_OPTIONS : soloOptions;
-      // Out of 一机双人, a reload is single-player again.
-      if (!two && q.get('pvp') === '1') try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(x => x && x !== 'pvp=1').join('&')}`); } catch { /* sandboxed viewer */ }
+      // Out of 一机双人, a reload is single-player again: the address as it is now, which 开打 may have written (Sol 10478c56).
+      if (!two && new URLSearchParams(location.search).get('pvp') === '1') try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(x => x && x !== 'pvp=1').join('&')}`); } catch { /* sandboxed viewer */ }
     }
     pick = 0;
     libSlot = 0;
@@ -536,7 +539,7 @@ async function main() {
     stage.topDown = null;
     stage.pose(previewState());
     el.hud.hidden = true;
-    el.result.hidden = true;
+    el.result.hidden = el.pvpWin.hidden = true;
     el.build.hidden = false;
     el.foe.hidden = false;
     setCaption(false);
@@ -644,7 +647,7 @@ async function main() {
     if (tiered && spot) {
       // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」.
       const short = broke ? whom && {who: whom, verb: '碎了', whom: '', side: target, whomSide: target} : {who, verb, whom: '', side, whomSide: target};
-      overlay.stampLine(spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME);
+      overlay.stampLine(spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME, faces2P(side));
       return true;
     }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
@@ -683,7 +686,7 @@ async function main() {
   function verdict(side, text, cls) {
     const f = stage.fighters[side];
     if (side !== 0 && !pvp || !f) return;
-    overlay.verdict(f, text, cls);
+    overlay.verdict(f, text, cls, undefined, faces2P(side));
   }
   // How far the aim arrow reaches from the core: the lunge's carry, but no further than the far side of the target as it
   // stands (Kimi fbe3bc4a 2678e876: a near-camera arrow running past it took half the phone screen). The carry is the
@@ -713,6 +716,7 @@ async function main() {
     'aim-foe': e => e.type === 'dash' && e.phase === 'charge' && e.side === 1 && e.t > 1,
     perfect: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied !== false && e.side === 0,
     held: e => e.type === 'blockResult' && e.outcome === 'perfect' && e.damageApplied === false && e.side === 0,
+    'perfect-foe': e => e.type === 'blockResult' && e.outcome === 'perfect' && e.side === 1,
     empty: e => e.type === 'blockResult' && e.outcome === 'empty' && e.side === 0,
     tight: e => e.type === 'blockResult' && e.outcome === 'tight' && e.side === 0,
     'go-foe': e => e.type === 'dash' && e.phase === 'go' && e.side === 1 && e.t > 1,
@@ -789,7 +793,7 @@ async function main() {
     if (perfect || tiered) sfx.perfect();
     buzz(perfect ? [30, 40, 60] : [25, 40]);
     // 挡分两档: 「完美！」 over the contact, clear of both tops, in place of the 「弹开！」 line under the HUD (Elara 896cf31c).
-    if (e.side === 0 || pvp) { if (tiered) overlay.stamp(at, '完美！', 'perfect'); else deflectLine(e.t); }
+    if (e.side === 0 || pvp) { if (tiered) overlay.stamp(at, '完美！', 'perfect', undefined, faces2P(e.side)); else deflectLine(e.t); }
   }
   // 「弹开！」: a small dark plate where 冲中 goes, not on the tops (Elara 2065efad), one look for every bounce (Elara 03075914).
   // It takes the line from anything but a break, which a broken piece never goes without, and gives it up to anything.
@@ -951,7 +955,7 @@ async function main() {
         sfx.thud();
         buzz(20);
         const at = point ?? stage.fighters[e.side]?.center;
-        if ((e.side === 0 || pvp) && at) overlay.stamp(at, '勉强', 'tight');
+        if ((e.side === 0 || pvp) && at) overlay.stamp(at, '勉强', 'tight', undefined, faces2P(e.side));
       } else if (e.outcome === 'perfect' && e.damageApplied !== false) {
         stage.perfectBlock(e.side, point);
         overlay.screenFlash(0.2);
@@ -1151,8 +1155,9 @@ async function main() {
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
     const waits = k => late[k] && sameBuild(k === 'mine' ? mine : FOE, k === 'mine' ? DEFAULT : DEFAULT_FOE);
     // 一机双人's builds are kept on the phone: its address says only that it is two players.
-    if (pvp) { try { history.replaceState(null, '', `?pvp=1${fixedSeed ? `&seed=${seed}` : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}`); } catch { /* sandboxed viewer */ } return; }
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('')}`); } catch { /* sandboxed viewer */ }
+    const shootArgs = SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('');
+    if (pvp) { try { history.replaceState(null, '', `?pvp=1${fixedSeed ? `&seed=${seed}` : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${shootArgs}`); } catch { /* sandboxed viewer */ } return; }
+    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${shootArgs}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     showPads(false);
@@ -1190,8 +1195,12 @@ async function main() {
     setCaption(false, undefined, true);
     // The highlight under the HUD goes with it, or it sits on the result's own lines (Elara 5fd78c17).
     overlay.dropHighlight();
-    // 一机双人's bars stand where the card comes up: they go with the buttons, back for 重看.
+    // 一机双人's bars stand where the card comes up: they go with the buttons, back for 重看. 2P gets who won in the top
+    // half, turned to them, so nobody has to lean over the card (Elara 1d222196).
     if (pvp) el.hud.hidden = true;
+    el.pvpWin.hidden = !pvp;
+    el.pvpWin.className = el.result.className;
+    el.pvpWin.firstChild.textContent = el.winnerLine.textContent;
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
@@ -1237,7 +1246,7 @@ async function main() {
     // A live match had no decisive slow motion; its finished replay has.
     if (live && !pb.full) { pb = new Playback(replay, {quietBumps: round}); pb.full = true; }
     if (!pb || pb.slowAt === null) return;
-    el.result.hidden = true;
+    el.result.hidden = el.pvpWin.hidden = true;
     el.hud.hidden = false;
     showPads(false);
     stage.clearFx();
@@ -1513,6 +1522,7 @@ async function main() {
     const take = k => opens[keys.indexOf(k)] && ready(late[k]);
     if (take('mine') && sameBuild(mine, DEFAULT)) { mine.parts = structuredClone(late.mine.parts); mine.spread = late.mine.spread; rebuild(0); }
     if (take('foe') && !pvp && sameBuild(FOE, DEFAULT_FOE)) setFoe(late.foe);
+    if (take('p2') && pvp && sameBuild(FOE, DEFAULT_P2)) { FOE.parts = structuredClone(late.p2.parts); FOE.spread = late.p2.spread; rebuild(1); }
     for (const k of keys) delete late[k];
   }
   async function addItems(sent) {
