@@ -249,13 +249,19 @@ async function main() {
   // An address can name a photo item the backend hasn't handed over yet (/items slow or down as the page opens, task #62):
   // the page opens with the default build rather than an error, and takes the address's once the item comes in.
   const late = {};
+  // A kept build naming items this page can't see (?shoot=off: no photo items at all) is held: the default stands in for
+  // it, and it stays kept until the player changes that side themselves (Sol 9db420ed, Elara d0cdc43b).
+  const held = {};
   // A build as 物品ID,out或hug,另一物品ID,out或hug,e180或e90: the build, null when it waits in late, undefined when unusable.
   const readBuild = (key, text) => {
     const p = text.split(',');
     const b = {parts: [{item: p[0], orient: p[1]}, {item: p[2], orient: p[3]}], spread: p[4]};
     const shape = p.length === 5 && b.parts.every(x => ['out', 'hug'].includes(x.orient)) && b.parts[0].item !== b.parts[1].item && ['e180', 'e90'].includes(b.spread);
     if (shape && b.parts.every(x => usable(x.item))) return b;
-    if (shape && (shot || photoLater) && b.parts.every(x => usable(x.item) || !byId.has(x.item))) { late[key] = b; return null; }
+    if (shape && b.parts.every(x => usable(x.item) || !byId.has(x.item))) {
+      if (shot || photoLater) { late[key] = b; return null; }
+      held[key] = true;
+    }
   };
   const buildArg = b => [b.parts[0].item, b.parts[0].orient, b.parts[1].item, b.parts[1].orient, b.spread].join(',');
   const fromUrl = (key = 'mine') => {
@@ -450,17 +456,19 @@ async function main() {
     });
     for (const b of document.querySelectorAll('[data-spread]')) b.setAttribute('aria-checked', String(b.dataset.spread === cur().spread));
     // Not while the default stands in for a build whose photo item is on its way: that one is what to keep.
-    if (!(late.mine && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
-    if (pvp && !(late.p2 && sameBuild(FOE, DEFAULT_P2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
+    if (!((late.mine || held.mine) && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
+    if (pvp && !((late.p2 || held.p2) && sameBuild(FOE, DEFAULT_P2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
   }
-  let buildReq = 0;
+  // One count per side: a newer change to that side lets its older one go, and 1P's and 2P's never cancel each other
+  // (both restored at once when the photo list comes in, Sol c0b3e440).
+  const buildReq = [0, 0];
   // The bench's side (by default the one being picked) after a change: its top swapped in once its models are down.
   async function rebuild(side = pick) {
-    const req = ++buildReq;
+    const req = ++buildReq[side];
     syncBuild();
     const b = side ? FOE : mine;
     await loadModels(b.parts.map(p => byId.get(p.item)));
-    if (req !== buildReq || phase !== 'build') return;
+    if (req !== buildReq[side] || phase !== 'build') return;
     stage.replaceFighter(side, toDef(b));
     syncBuild();
     stage.pose(previewState());
@@ -471,7 +479,7 @@ async function main() {
   const P2_KEY = 'wanwu-pvp-p2';
   const keptP2 = () => {
     let b = null;
-    delete late.p2;
+    delete late.p2; delete held.p2;
     try { const text = localStorage.getItem(P2_KEY); b = text && readBuild('p2', text); } catch { /* no storage here */ }
     return structuredClone(b ?? DEFAULT_P2);
   };
@@ -1157,7 +1165,9 @@ async function main() {
     // 一机双人's builds are kept on the phone: its address says only that it is two players.
     const shootArgs = SHOOT_KEEP.filter(k => q.has(k)).map(k => `&${k}=${encodeURIComponent(q.get(k))}`).join('');
     if (pvp) { try { history.replaceState(null, '', `?pvp=1${fixedSeed ? `&seed=${seed}` : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${shootArgs}`); } catch { /* sandboxed viewer */ } return; }
-    try { history.replaceState(null, '', `?mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${shootArgs}`); } catch { /* sandboxed viewer */ }
+    // A held build isn't named: the address would bring back the default stand-in, and a reload reads the kept one again.
+    const standIn = held.mine && sameBuild(mine, DEFAULT);
+    try { history.replaceState(null, '', `?${standIn ? '' : `mine=${waits('mine') ? q.get('mine') ?? keptArg : buildArg(mine)}`}${ladderOn ? '' : `&foe=${pinned >= 0 ? LADDER[pinned].id : waits('foe') ? q.get('foe') : buildArg(FOE)}`}${fixedSeed ? `&seed=${seed}` : ''}${mode === 'B' ? '&mode=B' : ''}${control === 'auto' ? '&play=auto' : ''}${feelArg === 'old' ? '&feel=old' : feel ? '&feel=bounce' : ''}${combat ? '&combat=position' : ''}${camStyle !== 'slow' ? `&cam=${camStyle}` : ''}${blockTime ? `&block=${q.get('block')}` : ''}${HILITE === 'slot' ? '&call=slot' : ''}${ceramicArg === '0' || ceramicArg === '1' ? `&ceramic=${ceramicArg}` : ''}${stage.bench ? '&scene=kitchen' : ''}${shootArgs}`); } catch { /* sandboxed viewer */ }
   }
   function showResult() {
     showPads(false);
