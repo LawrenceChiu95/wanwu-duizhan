@@ -93,6 +93,12 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
    aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:75})
  })
 });
+// 一机双人 (Elara 1e2c813c): two people, one phone. Both sides are input and every side-0 privilege is shared: the same
+// wind-up, the same dash cue, the same aim lock, ceramic shards either way. charge and pace are Iris's to tune.
+export const PVP_COMBAT_OPTIONS=Object.freeze({
+ ...ROUND_JUDGE_COMBAT_OPTIONS,
+ combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,pvp:Object.freeze({charge:.22,pace:1.25})})
+});
 const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDashLock:.45,stun:.5,heavyMissStun:.25,
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
  contactMinSpeed:.75,contactMinAlignment:.45};
@@ -452,7 +458,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   ['mang','wen','chang'].some(id=>[`${id}AiDamage`,`${id}AiCooldown`,`${id}Pace`,`${id}Guard`,`${id}DashJitter`,`${id}BlockWait`].some(key=>key in round&&!(Number.isFinite(round[key])&&round[key]>0)))||
   round.centerPull>1||round.passiveDamage>1||round.bumpSpeed>1.5||['mang','wen','chang'].some(id=>round[`${id}Guard`]>.5)))throw Error('Invalid round separation rules');
  if(round)r.maxDuration=round.maxDuration;
- const stage=aiProfiles.find(Boolean)?.id,stagePace=round?.[`${stage}Pace`]??1,stageGuard=round?.[`${stage}Guard`]??M?.blockDamage;
+ const pvp=position?.pvp;
+ if(pvp!==undefined&&(!pvp||!round||manual.sides.some(x=>x!=='input')||aiProfiles.some(Boolean)||
+  !['charge','pace'].every(k=>Number.isFinite(pvp[k])&&pvp[k]>0)||pvp.charge<IMPACT.playerCharge||pvp.charge>guardTiming.aiCharge))
+  throw Error('pvp needs round rules, two input sides and a charge between the player and AI wind-ups');
+ const stage=aiProfiles.find(Boolean)?.id,stagePace=pvp?pvp.pace:round?.[`${stage}Pace`]??1,stageGuard=round?.[`${stage}Guard`]??M?.blockDamage;
  const ceramicShards=position?.ceramicShards===true;
  if(ceramicShards&&(!planar||!M))throw Error('Ceramic shards require planar combat with manual controls');
  const bounce=feel==='bounce'||position?structuredClone(feelRules??BOUNCE):null;
@@ -470,7 +480,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const weightLoad=f=>weightFeel&&(impact||lastRecoil!==-Infinity)
   ?Math.max(0,Math.min(1,(f.mass-weightFeel.lightMass)/(weightFeel.heavyMass-weightFeel.lightMass))):0;
  const dashScale=f=>impact?1:1-weightLoad(f)*(weightFeel?.dashLoss??0);
- const chargeTime=i=>impact&&i===0?IMPACT.playerCharge:guardTiming&&manual.sides[i]==='ai'?guardTiming.aiCharge:M.chargeTime;
+ const chargeTime=i=>pvp?pvp.charge:impact&&i===0?IMPACT.playerCharge:guardTiming&&manual.sides[i]==='ai'?guardTiming.aiCharge:M.chargeTime;
  const stunned=f=>impact&&f.ctl.stunUntil>=step;
  // A free straight lunge uses the same per-tick cap, acceleration and
  // damping as Rapier. Contact can end it earlier.
@@ -549,7 +559,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const k=fs[i].ctl;
   if(k.blockResolved)return;
   k.blockResolved=true;
-  const emptyPlayerGuard=impact&&!refinedImpact&&i===0&&outcome==='empty';
+  const emptyPlayerGuard=impact&&!refinedImpact&&(pvp||i===0)&&outcome==='empty';
   if(emptyPlayerGuard)k.dashLockedUntil=step+steps(IMPACT.emptyGuardDashLock);
   events.push({t,type:'blockResult',side:i,outcome,pressStep:k.blockPressStep,resolvedStep:step,...hit,
    ...(emptyPlayerGuard&&{dashLockedUntil:k.dashLockedUntil*r.dt})});
@@ -591,7 +601,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  }
  function cueDash(i){
   const f=fs[i],k=f.ctl;
-  if(!round||manual.sides[i]!=='ai'||k.cued||!(charging(f)||dashing(f)))return;
+  if(!round||manual.sides[i]!=='ai'&&!pvp||k.cued||!(charging(f)||dashing(f)))return;
   const opponent=fs[1-i],a=arr(f.body.translation()),b=arr(opponent.body.translation());
   const delta=sub(b,a),n=horizontalUnit(delta),winding=charging(f);
   const windup=winding?(k.chargeUntil+1-step)*r.dt:0;
@@ -626,7 +636,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   fs.forEach((f,i)=>{
    const k=f.ctl;
    if(aimLock!==undefined&&charging(f)&&step>k.dashPressStep){
-    const lockSteps=impact&&i===0?IMPACT.playerAimLockSteps:steps(aimLock);
+    const lockSteps=impact&&(pvp||i===0)?IMPACT.playerAimLockSteps:steps(aimLock);
     const tracking=step<=k.chargeUntil+1-lockSteps,reach=dashReach*dashScale(f);
     if(tracking){
      const target=flat(arr(f.body.translation()),arr(fs[1-i].body.translation()));
@@ -861,7 +871,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      events.push(event);
      if(M&&event.role==='attack'&&event.damage>0){
       if(event.shield)shieldDamageApplied[event.target]=true;
-      else if(ceramicShards&&event.target===0&&event.damage>=tp.baseHp*.20&&!tp.shardsReleased&&
+      else if(ceramicShards&&(pvp||event.target===0)&&event.damage>=tp.baseHp*.20&&!tp.shardsReleased&&
        /陶瓷|瓷器|瓷质|^瓷$/.test(tp.item.materialName?.trim()??''))ceramicHit=tp;
      }
     }
@@ -952,7 +962,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    ceramicHit.shardsReleased=true;
    const point=arr(ceramicHit.collider.translation());
    let nearest=null;
-   for(const target of fs[1].parts){
+   const side=fs.findIndex(f=>f.parts.includes(ceramicHit));
+   for(const target of fs[1-side].parts){
     if(!target.alive||target.hp<=0)continue;
     const distance=length(sub(point,arr(target.collider.projectPoint(vec(point),true).point)));
     if(distance<=.75&&(!nearest||distance<nearest.distance))nearest={target,distance};
@@ -960,8 +971,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
    const target=nearest?.target;
    const damage=target?Math.min(14,target.baseHp*.30,target.hp):0;
    if(target)target.hp-=damage;
-   events.push({t,type:'archetype',archetype:'brittle',side:0,part:ceramicHit.id,item:ceramicHit.item.id,sourceHpAfter:ceramicHit.hp,
-    target:target?1:null,targetPart:target?.id??null,targetItem:target?.item.id??null,
+   events.push({t,type:'archetype',archetype:'brittle',side,part:ceramicHit.id,item:ceramicHit.item.id,sourceHpAfter:ceramicHit.hp,
+    target:target?1-side:null,targetPart:target?.id??null,targetItem:target?.item.id??null,
     point,distance:nearest?.distance??null,damage,hpAfter:target?.hp??null});
   }
   for(let i=0;i<2;i++)for(const p of fs[i].parts)if(p.alive&&p.hp<=0){const detached=detachPart(world,fs[i],p);events.push({t,type:'break',target:i,targetPart:p.id,item:p.item.id,mount:p.mount,orient:p.orient,...detached,caption:`${name(p)}碎了`});}
