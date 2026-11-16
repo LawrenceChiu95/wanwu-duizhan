@@ -459,6 +459,9 @@ async function main() {
     if (!((late.mine || held.mine) && sameBuild(mine, DEFAULT))) try { localStorage.setItem(BUILD_KEY, buildArg(mine)); } catch { /* no storage here */ }
     if (pvp && !((late.p2 || held.p2) && sameBuild(FOE, DEFAULT_P2))) try { localStorage.setItem(P2_KEY, buildArg(FOE)); } catch { /* no storage here */ }
   }
+  // The player changed the side being picked: what it chose is kept from now on, even the default again, and a held or
+  // late build for that side is let go (Sol d6d88569).
+  const changed = () => { const k = pick ? 'p2' : 'mine'; delete held[k]; delete late[k]; };
   // One count per side: a newer change to that side lets its older one go, and 1P's and 2P's never cancel each other
   // (both restored at once when the photo list comes in, Sol c0b3e440).
   const buildReq = [0, 0];
@@ -1324,6 +1327,7 @@ async function main() {
       card.querySelector('.pick').onclick = () => {
         if (cur().parts[1 - libSlot].item === id) return;
         cur().parts[libSlot].item = id;
+        changed();
         closeLibrary();
         rebuild();
       };
@@ -1510,6 +1514,7 @@ async function main() {
   async function equip(id) {
     if (cur().parts[1 - libSlot].item === id) return;
     cur().parts[libSlot].item = id;
+    changed();
     shoot?.close();
     closeLibrary();
     if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuild();
@@ -1600,9 +1605,9 @@ async function main() {
   }).catch(showError);
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
-    b.onclick = () => { if (phase !== 'build') return; cur().parts[Number(slot.dataset.slot)].orient = b.dataset.orient; rebuild(); };
+    b.onclick = () => { if (phase !== 'build') return; cur().parts[Number(slot.dataset.slot)].orient = b.dataset.orient; changed(); rebuild(); };
   }));
-  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; cur().spread = b.dataset.spread; rebuild(); }; });
+  document.querySelectorAll('[data-spread]').forEach(b => { b.onclick = () => { if (phase !== 'build') return; cur().spread = b.dataset.spread; changed(); rebuild(); }; });
   // Each side's 冲 / 挡 (一机双人: 2P's pair is #pad2 at the head of the phone).
   const pads = [{box: el.pad, dash: el.dashBtn, block: el.blockBtn, dashNope: el.dashNope, blockNope: el.blockNope},
     {box: el.pad2, dash: $('dashBtn2'), block: $('blockBtn2'), dashNope: $('dashNope2'), blockNope: $('blockNope2')}];
@@ -1855,7 +1860,7 @@ async function main() {
       const s = [...m.scale].sort((a, b) => a - b), q = k => +s[Math.floor(k * (s.length - 1))].toFixed(1);
       return {frames: m.frames, core15Pct: +(100 * m.core15 / m.frames).toFixed(1), ok15Pct: +(100 * m.ok15 / m.frames).toFixed(1), minMarginPx: +m.minMargin.toFixed(1), sweptMinMarginLrPx: +m.sweptLr.toFixed(1), sweptMinMarginSafePx: +m.sweptSafe.toFixed(1), core15PctExact: +(100 * m.core15 / m.frames).toFixed(2), outSecs: +m.out.toFixed(2), outRunMaxSecs: +m.outRunMax.toFixed(2), offLrSecs: +m.offLr.toFixed(2), offLrAt: m.offLrAt ?? [], pxPerMetre: {p10: q(0.1), median: q(0.5), p90: q(0.9), min: q(0), max: q(1)}};
     },
-    setBuild(b) { Object.assign(cur(), structuredClone(b)); rebuild(); },
+    setBuild(b) { Object.assign(cur(), structuredClone(b)); changed(); rebuild(); },
     setPvp,
     setPick,
     stage,
