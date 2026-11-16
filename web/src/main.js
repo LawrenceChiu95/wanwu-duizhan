@@ -1163,6 +1163,9 @@ async function main() {
     test.highlights = 0;
     layout_();
     stage.pose(pb.state);
+    // The HUD and buttons as they stand at 0 s now, not on the next frame: 原样再战 showed the last match's seconds and
+    // cooldowns for a frame (Castor, Elara a7234eb7).
+    updateHud(0, pb.state); updatePad();
     stage.setLookahead(lookahead());
     stage.updateCamera(0, true);
     phase = pvp ? 'ready' : 'play';
