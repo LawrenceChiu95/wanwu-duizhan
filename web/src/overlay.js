@@ -200,6 +200,8 @@ export class Overlay {
   }
   setCoreHp(i, frac, snap) { const r = this.rings[i]; r.hp = frac; if (snap) r.shown = frac; }
   dropHighlight() { this.hilite?.el.remove(); this.hilite = null; }
+  /** The words over the tops (完美, 冲中 lines, verdicts) go at once: 一机双人's result has 2P's win line where they stand. */
+  dropWords() { for (const s of this.stamps) s.el.remove(); for (const v of this.verdicts) v.el.remove(); this.stamps = []; this.verdicts = []; }
   clear() {
     for (const n of [...this.nums, ...this.calls, ...this.verdicts, ...this.stamps]) { n.el.remove(); n.pin?.remove(); }
     this.stamps = [];

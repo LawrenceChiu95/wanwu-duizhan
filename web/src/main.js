@@ -509,6 +509,9 @@ async function main() {
   function renderPick() {
     el.foe.classList.toggle('p0', pvp && pick === 0);
     el.foe.classList.toggle('p1', pvp && pick === 1);
+    // 2P's turn turns the whole screen to the head of the phone, so the phone never moves and 1P's buttons are still
+    // at 1P's end when the fight starts (Elara 29b53529).
+    el.app.classList.toggle('turned', pvp && pick === 1 && phase === 'build');
     el.foe.querySelectorAll('.terminal-id').forEach((n, i) => {
       n.querySelector('span').textContent = pvp ? `${i + 1}P` : i ? '对手' : '你';
       n.classList.toggle('on', pvp && i === pick);
@@ -872,7 +875,7 @@ async function main() {
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
-        if ((e.attacker === 0 || pvp) && (crit && !plain || e.dash && !e.parry)) highlight(e.t, 0, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
+        if ((e.attacker === 0 || pvp) && (crit && !plain || e.dash && !e.parry)) highlight(e.t, e.attacker, e.part, e.item, crit ? '暴击' : '冲中', e.target, e.targetPart, e.targetItem, false, undefined, point);
       }
       if (core && !caught && !plain) overlay.screenFlash(dash && !oldFx ? 0.06 : 0.18);
       // A 冲 that also found the weak spot keeps the new feel's lowered light: the hot ring still marks the crit (Sol 9961be5a).
@@ -1156,6 +1159,8 @@ async function main() {
     stage.setLookahead(lookahead());
     stage.updateCamera(0, true);
     phase = 'play';
+    // Back the right way for the fight; 重选装备 afterwards starts again from 1P.
+    if (pvp) { pick = 0; el.app.style.transition = 'none'; el.app.classList.remove('turned'); void el.app.offsetWidth; el.app.style.transition = ''; }
     overlay.showBanner('开转', '#ffffff', 0.8);
     if (pvp) pvpTip();
     // The new opening delays the foe's charge, which used to bring up the first lesson early.
@@ -1210,7 +1215,7 @@ async function main() {
     overlay.dropHighlight();
     // 一机双人's bars stand where the card comes up: they go with the buttons, back for 重看. 2P gets who won in the top
     // half, turned to them, so nobody has to lean over the card (Elara 1d222196).
-    if (pvp) el.hud.hidden = true;
+    if (pvp) { el.hud.hidden = true; overlay.dropWords(); }
     el.pvpWin.hidden = !pvp;
     el.pvpWin.className = el.result.className;
     el.pvpWin.firstChild.textContent = el.winnerLine.textContent;
@@ -1338,7 +1343,7 @@ async function main() {
     // screen together first, so a small model is not stuck behind a big one (task #37), then the rest.
     turns.prune();
     const turnOf = id => el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
-    const onScreen = shown.filter(id => turnOf(id)?.getBoundingClientRect().top < innerHeight);
+    const onScreen = shown.filter(id => { const r = turnOf(id)?.getBoundingClientRect(); return r && r.top < innerHeight && r.bottom > 0; });
     for (const group of [onScreen, shown.filter(id => !onScreen.includes(id))]) {
       await Promise.all(group.map(async id => {
         await loadModels([byId.get(id)]);
@@ -1416,8 +1421,10 @@ async function main() {
         // Measured on the card (its holder also has its margins) against the frame: on a phone it already spans the
         // frame less its margins, so up there it fills the width, edge to edge; on a desktop's centred frame the same.
         const r = card.getBoundingClientRect(), f = lift.closest('#shootView')?.getBoundingClientRect() ?? {left: 0, top: 0, width: innerWidth, height: innerHeight};
-        lift.style.setProperty('--dx', `${f.left + f.width / 2 - (r.left + r.width / 2)}px`);
-        lift.style.setProperty('--dy', `${f.top + f.height / 2 - (r.top + r.height / 2)}px`);
+        // Measured on the screen; on 2P's turn the page is upside down, so the way there is too.
+        const way = el.app.classList.contains('turned') ? -1 : 1;
+        lift.style.setProperty('--dx', `${way * (f.left + f.width / 2 - (r.left + r.width / 2))}px`);
+        lift.style.setProperty('--dy', `${way * (f.top + f.height / 2 - (r.top + r.height / 2))}px`);
         lift.style.setProperty('--k', Math.min(1.2, (f.width + 8) / r.width).toFixed(3));
         lift.classList.add('lifted');
       }
@@ -1635,6 +1642,8 @@ async function main() {
   // of covering its first words (Wren 并排-打碎 at 17 s, Elara 3b8c6897). offsetTop, so the line's slide-in is not counted.
   function seatNope(n) {
     n.style.bottom = '';
+    // 一机双人: that side's bars stand just inside its buttons (8 px up); 还没好 goes past them, onto the arena's edge (Castor ②).
+    if (pvp) { n.style.bottom = `calc(100% + ${8 + (el.hud.querySelector('.side')?.offsetHeight ?? 34) + 6}px)`; return; }
     if (el.coach.hidden) return;
     const a = n.getBoundingClientRect(), c = el.coach.getBoundingClientRect();
     if (a.right > c.left && a.left < c.right) n.style.bottom = `${el.pad.offsetTop + el.pad.offsetHeight - el.coach.offsetTop + 6}px`;
@@ -1762,10 +1771,11 @@ async function main() {
     // Fight and result share one fixed frame: below the HUD, above the decisive caption's place, whether or not
     // the caption is showing, so nothing that appears or goes away ever moves the camera.
     if (pvp && !building && !el.hud.hidden) {
-      // 一机双人: the arena takes the band between the two sides' bars (each just inside its pair of buttons).
-      const at = el.app.getBoundingClientRect().top, s0 = el.hud.querySelector('.s0').getBoundingClientRect(), s1 = el.hud.querySelector('.s1').getBoundingClientRect();
+      // 一机双人: the arena takes the band between the two sides' bars (each just inside its pair of buttons). Measured in
+      // the page's layout, which the screen turned for 2P's build step doesn't change.
+      const s0 = el.hud.querySelector('.s0'), s1 = el.hud.querySelector('.s1');
       stage.setPad(0);
-      stage.resize(w, h, s1.bottom - at + 6, h - (s0.top - at) + 6);
+      stage.resize(w, h, s1.offsetTop + s1.offsetHeight + 6, h - s0.offsetTop + 6);
       return;
     }
     const top = building ? el.foe.offsetHeight : el.hud.offsetHeight;
