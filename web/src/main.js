@@ -9,7 +9,7 @@ import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback, BREAK_STOP} from './playback.js';
 import {BreakHolds} from './break-holds.js';
 import {Overlay} from './overlay.js';
-import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds} from './reason.js';
+import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds, WEN_HINT} from './reason.js';
 import {sfx} from './sfx.js';
 import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
@@ -973,6 +973,8 @@ async function main() {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
     } else if (e.type === 'blockResult') {
+      // 老龟's second block of a lunge this match: once, its result card's line beside the player's top (Elara 424f0bcb).
+      if (wenHint && e.side === 1 && e.outcome !== 'empty' && ++wenHint.caught === 2) overlay.nudge(WEN_HINT, 'deflect nudge', WEN_HINT_TIME);
       // 「挡住了，点冲反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
       if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held ||= e.outcome === 'perfect'; }
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
@@ -1075,6 +1077,8 @@ async function main() {
   // says why, for NUDGE_TIME s; twice a match at most, gone at the next 冲. Match seconds.
   const NUDGE_IDLE = 12, NUDGE_BLOCKS = 3, NUDGE_MAX = 2, NUDGE_TIME = 5;
   let nudge = null;
+  const WEN_HINT_TIME = 4.5;
+  let wenHint = null;
   function nudgeTick(t) {
     if (!nudge || phase !== 'play' || live?.done) return;
     if (nudge.on) { if (t - nudge.since >= NUDGE_TIME) nudgeOff(t); return; }
@@ -1141,6 +1145,7 @@ async function main() {
     stage.trailAlways = !round;
     el.dashBtn.classList.remove('nudge');
     nudge = live && round && fought !== null && LADDER[fought].id === 'mang' ? {on: false, shown: 0, since: 0, caught: 0, held: false} : null;
+    wenHint = live && round && fought !== null && LADDER[fought].id === 'wen' ? {caught: 0} : null;
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
     // 一合一分: an ordinary bump never stops a replay either (quietBumps).
     pb = new Playback(r, {dashOnlyImpact: Boolean(live) && !oldFx && combatOptions.combatRules?.refinedImpact === true, quietBumps: round});

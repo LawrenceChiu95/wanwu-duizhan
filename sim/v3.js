@@ -81,7 +81,7 @@ export const GUARD_TIMING_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...OPENING_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules,
   opening:Object.freeze({...OPENING_JUDGE_COMBAT_OPTIONS.combatRules.opening,minAiDashTime:1.5}),
-  guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.85,changBlockLead:.12,catchDashContact:true})})
+  guardTiming:Object.freeze({aiCharge:.55,aiDashJitter:1.5,blockTime:.50,blockCooldown:3.5,perfectTime:.18,wenBlockLead:.5,changBlockLead:.12,catchDashContact:true})})
 });
 export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...GUARD_TIMING_JUDGE_COMBAT_OPTIONS,
@@ -90,7 +90,7 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:1.6,guardLaunch:3.6,
    aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
-   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:120}),
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:3.5,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:120}),
   // No clock loss (远夏 de947154 A): play to a broken core. From 60 s the pull to the centre and every hit's damage grow the
   // same for both sides, so someone breaks in about 15 s; maxDuration (120 s) is only a silent backstop no simulation reaches.
   overtime:Object.freeze({start:60,ramp:15,pull:4,recovery:4,damage:60,cap:4})

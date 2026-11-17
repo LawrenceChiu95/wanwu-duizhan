@@ -122,7 +122,10 @@ export function pickStats(s, winner) {
 const FOE_TIP = {chang: '长臂猿是最后也是最难的一关，多打几局试试'};
 // Lost to a ladder opponent whose build makes it read tougher than its hp: say why and how to get through, ahead of any
 // other tip (凡朔's 对象 took 老龟 for having more hp: both its pieces hug and it blocks a lot; Elara b9d6e779, 2621157e).
-const FOE_WHY = {wen: '老龟两件都贴着、又爱挡，别迎头冲，等它挡完再冲'};
+// The line beside the top in a match against it says the same (Elara 424f0bcb): 老龟 guards the first lunge, and its own
+// lunge after that is the opening.
+export const WEN_HINT = '它专防先冲，等它冲过来挡住再反打';
+const FOE_WHY = {wen: `老龟两件都贴着，${WEN_HINT.slice(1)}`};
 
 /** One tip, by fixed rules, for the next match. `foe`: the ladder opponent's id, when it was one. */
 export function tipLine(s, winner, foe = null) {
