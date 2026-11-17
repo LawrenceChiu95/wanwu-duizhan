@@ -86,7 +86,7 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
         const response = await request('https://generativelanguage.googleapis.com/v1beta/interactions', {
           method: 'POST', redirect: 'error', signal: attemptSignal,
           headers: {'x-goog-api-key': key.trim(), 'Content-Type': 'application/json', 'Api-Revision': '2026-05-20'},
-          body: JSON.stringify({model: 'gemini-3.5-flash-lite', store: false,
+          body: JSON.stringify({model: 'gemini-3.1-flash-lite', store: false,
             input: [{type: 'text', text: recognitionPrompt}, {type: 'image', data: input.toString('base64'), mime_type: 'image/jpeg'}],
             generation_config: {max_output_tokens: 1024}, response_format: {type: 'text', mime_type: 'application/json', schema: recognitionSchema}})
         });

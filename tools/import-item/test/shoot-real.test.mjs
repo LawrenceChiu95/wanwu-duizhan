@@ -40,7 +40,7 @@ function gateway(options = {}) {
   if (u.hostname === 'generativelanguage.googleapis.com') {
    assert.equal(headers.get('x-goog-api-key'), env.GEMINI_API_KEY); assert.equal(headers.has('authorization'), false);
    assert.equal(request.redirect, 'error'); assert.equal(headers.get('api-revision'), '2026-05-20');
-   const body = JSON.parse(request.body); assert.equal(body.store, false); assert.equal(body.model, 'gemini-3.5-flash-lite'); assert.equal(body.input[0].text, recognitionPrompt);
+   const body = JSON.parse(request.body); assert.equal(body.store, false); assert.equal(body.model, 'gemini-3.1-flash-lite'); assert.equal(body.input[0].text, recognitionPrompt);
    assert.equal(body.input[1].mime_type, 'image/jpeg'); assert.equal((await sharp(Buffer.from(body.input[1].data, 'base64')).metadata()).format, 'jpeg');
    assert.deepEqual(body.response_format.schema.required.sort(), Object.keys(result).sort());
    const temporary = options.visionFailures?.shift();
