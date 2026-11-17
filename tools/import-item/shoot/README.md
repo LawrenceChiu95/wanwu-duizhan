@@ -146,7 +146,7 @@ Gemini 认物遇网络错误、超时或 HTTP 5xx 最多尝试三次。每次限
 
 `/api/shoot/quota` 的limit/remaining为本浏览器生成额度，recognition={limit,remaining}，global={limit,remaining,recognition:{limit,remaining}}，resetsAt为台北下个零点ISO。429 error={code:'quota',kind:'generation'|'recognition',scope:'browser'|'global',resetsAt,...}。生成满message为「今天的生成名额用完了，明天再来」；认物满为「今天的认物名额用完了，明天再来」。预留与任务持久保存，重启不刷新名额。
 
-一台浏览器同时一件，多人按接受顺序串行做，关页面不中断，后台重启仍按原顺序续。job.queuePosition：第一步开始前0代表轮到，正整数为前面件数，第一步开始后/结束为null；recognizing也可能在排队。现有四步时间戳只在真开始时写。跨日排队尚未开始的阶段先核新的当天名额；不能绕过当天上限。已发生生成的免费续接仍属原任务。
+一台浏览器同时一件。认物与生成各自串行，可以同时处理不同人的件。两条队列都按接受顺序处理，关页面不中断，后台重启按原顺序续。job.queuePosition 在认物时表示前面还有几件等着认物，在生成时表示前面还有几件待生成或正在生成。0 代表轮到，第一步生成开始后或任务结束时为 null。现有四步时间戳只在实际开始时写。跨日排队尚未开始的阶段先核新的当天名额。已发生生成的免费续接仍属原任务。
 
 这轮不含外网启动配置、HTTPS Secure cookie、跨域、机器、账号或付费。页面排队展示/额度提示等Iris另接；当前后台通过不等于页面/手机验收。正式站点未来从main发布，当前PR等方案甲获批后才能合。
 

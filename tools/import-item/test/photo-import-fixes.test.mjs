@@ -20,8 +20,8 @@ for (const transient of ['network', 503, 502]) test(`recognition retries ${trans
 for(const status of [401,403,429,400]) test(`recognition does not retry permanent HTTP ${status}`,async()=>{
   let calls=0;await assert.rejects(recognizePhoto({photo,key:'fixture-key',pause:async()=>assert.fail('must not wait'),fetch:async()=>{calls++;return new Response('',{status});}}));assert.equal(calls,1);
 });
-test('recognition stops after one retry with a safe classified error',async()=>{
-  let calls=0;await assert.rejects(recognizePhoto({photo,key:'fixture-key',pause:async()=>{},fetch:async()=>{calls++;throw Error('secret-url-and-key');}}),{code:'recognition-network',message:'recognition-network'});assert.equal(calls,2);
+test('recognition stops after two retries with a safe classified error',async()=>{
+  let calls=0;await assert.rejects(recognizePhoto({photo,key:'fixture-key',pause:async()=>{},fetch:async()=>{calls++;throw Error('secret-url-and-key');}}),{code:'recognition-network',message:'recognition-network'});assert.equal(calls,3);
 });
 test('replacing the style keeps the no-added-base identity constraints',()=>{
   const p=photoPrompt('仙人掌','新的温柔画风');assert.match(p,/不要添加底座、展台、比例尺/);assert.match(p,/保留原花盆/);assert.match(p,/新的温柔画风/);assert.doesNotMatch(p,/工业黄漆/);

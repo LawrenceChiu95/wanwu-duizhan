@@ -150,15 +150,18 @@ test('recognition can finish during another browser’s model, and a manual retr
   assert.equal((await finish(b, second.id)).job.error.code, 'recognition-network');
   const {job: third} = await c.create('split-lane-third');
   assert.equal((await b.call(`jobs/${second.id}/retry`, undefined, 'POST')).status, 200);
-  for (const [owner, job] of [[c, third], [b, second]]) {
+  for (const [owner, job, ahead] of [[c, third, 1], [b, second, 2]]) {
    const {job: ready} = await until(() => owner.call('jobs/' + job.id), r => r.job.recognition);
    assert.equal(ready.status, 'generating');
    assert.equal(ready.steps[0].startedAt, null);
+   assert.equal(ready.queuePosition, ahead);
   }
   assert.deepEqual(submissions, [first.id]);
   releaseModel();
   for (const [owner, job] of [[a, first], [c, third], [b, second]]) {
-   assert.equal((await finish(owner, job.id)).job.status, 'succeeded');
+   const {job: done} = await finish(owner, job.id);
+   assert.equal(done.status, 'succeeded');
+   assert.equal(done.queuePosition, null);
   }
   assert.deepEqual(submissions, [first.id, third.id, second.id]);
  } finally { releaseModel(); }
