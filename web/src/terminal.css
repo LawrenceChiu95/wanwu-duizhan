@@ -56,7 +56,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .item b { font-size:18px;font-weight:800;color:#e1ddc6;letter-spacing:0; }
 .item .nm { gap:5px; }
 .item .spec { color:#92b4a1;font:10px/1.4 Consolas,"Microsoft YaHei",sans-serif;margin-top:3px; }
-.item>svg { color:var(--c1);width:14px; }
+.item .swapchip { height:20px;padding:0 5px;border-radius:2px;background:#0a1b16;color:var(--c1l);box-shadow:inset 0 0 0 1px #485542;font-size:11px;font-weight:700;line-height:20px;letter-spacing:1px; }
 .lux { font:8px/1.3 Consolas,monospace;clip-path:none;color:#a9c7ae;background:#203e2e;border:1px solid #476649;padding:1px 3px; }
 .seg { border-radius:3px;padding:3px;background:#0d1712;box-shadow:inset 0 0 0 1px #5c6049;gap:4px; }
 .seg button { font-size:14px;font-weight:700;color:#b4b6a1;border-radius:2px;transition:background .12s,color .12s; }
@@ -160,10 +160,12 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .bhead { border-width:10px;padding:1px 4px;min-height:35px; }
 .bhead b { font-size:18px; }
 .bhead span { font-size:9px; }
+.bhead .shoot { border-radius:0;border:6px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;box-shadow:none;background:none;color:#242c20;font-weight:800;height:30px;padding:0 4px;margin:-3px 0; }
+.bhead .shoot svg { width:14px;height:14px; }
 .slot { border-width:13px;padding:2px 3px 3px;gap:5px;min-width:0; }
 .slot-rail { font-size:8px;padding-bottom:3px; }
 .slot-rail span { font-size:8px; }
-.item { min-height:44px;padding:4px 5px;border:0;box-shadow:none;background:transparent; }
+.item { min-height:44px;padding:4px 44px 4px 5px;border:0;box-shadow:none;background:transparent; }
 .item b { font-size:17px; }
 .item .spec { font-size:9px;margin-top:2px; }
 .module-display { height:63px;position:relative;border:1px solid #405843;overflow:hidden;

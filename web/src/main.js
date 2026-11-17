@@ -526,13 +526,14 @@ async function main() {
       n.classList.toggle('on', pvp && i === pick);
       n.classList.toggle(`p${i}`, pvp);
     });
-    $('pvpBack').hidden = !pvp;
+    // Single-player has 回首页 too where there is an opening page to go back to (Elara 6b6a3c3b): 和人打 is there.
+    $('pvpBack').hidden = !pvp && !homeOn;
+    $('pvpBack').querySelector('span').textContent = pvp && pick ? '回 1P' : '回首页';
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
     $('foeLabel').textContent = pick ? '轮到上方 2P 选装' : '轮到下方 1P 选装';
     $('foeBtn').hidden = $('foeMark').hidden = true;
     el.foeParts.innerHTML = '';
-    $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
   }
   function setPick(i) {
     if (phase !== 'build') return;
@@ -542,6 +543,7 @@ async function main() {
     renderPick();
   }
   // 回首页: the opening page's two choices again; a page without one (not the 评委版) goes straight back to single-player.
+  const homeOn = Boolean(judge && document.getElementById('intro'));
   function goHome() { score = [0, 0]; if (!judge?.showIntro()) setPvp(false); }
   $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
@@ -1365,7 +1367,8 @@ async function main() {
     renderFoe();
     const last = fought === LADDER.length - 1;
     if (last) return {act: first ? 'pick' : 'again', clear: first};
-    return {act: 'next', unlocked: first ? fought + 1 : null};
+    // The first win over 莽牛 points at 拍一件 too (Elara 6b6a3c3b): it is made while they fight the next one.
+    return {act: 'next', unlocked: first ? fought + 1 : null, shootNow: first && id === 'mang'};
   }
   function showOutcome(o) {
     el.result.classList.toggle('clear', Boolean(o.clear));
@@ -1384,7 +1387,8 @@ async function main() {
     if (o.unlocked != null) {
       const f = LADDER[o.unlocked];
       card.innerHTML = `${markHtml(o.unlocked)}<span class="txt"><span class="k">${SVG.open}解锁下一个</span><b>${esc(f.name)}</b><span class="play">${esc(f.play)}</span></span>`;
-      el.tipLine.textContent = '';
+      el.tipLine.innerHTML = o.shootNow && shoot ? `<button type="button" class="tipshoot">拍一件</button>你身边的东西？<br>做好要 3 分钟左右，先去打${esc(f.name)}，回来就能装上` : '';
+      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link'));
     }
     $('againBtn').innerHTML = `<span>${pvp ? '重选装备' : o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
     $('againBtn').dataset.act = o.act;
@@ -1690,6 +1694,10 @@ async function main() {
     takeLate();
   }
   let shoot = null;
+  // The build's own 拍一件 (Elara 6b6a3c3b) breathes until the player has shot something: none of their photo items in
+  // the catalog and no job kept on this phone.
+  const benchShoot = $('benchShoot');
+  const paintBenchShoot = () => benchShoot.classList.toggle('first', !shoot?.state.stored && items.every(it => shipped.has(it.id) || sampleIds.has(it.id)));
   shoot0.then(async s => {
     // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how the two real items were made.
     if (!s && judge) {
@@ -1723,6 +1731,7 @@ async function main() {
       tagTop: () => { const top = [el.foe, el.hud].find(x => !x.hidden); return top ? top.offsetTop + top.offsetHeight + 8 : null; },
       onChange: () => {
         const s = shoot?.state;
+        paintBenchShoot();
         el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
         el.shootBtn.classList.toggle('new', Boolean(s?.made && !s.stored?.seen));
         // One that failed while the player was elsewhere says so here too (Elara 021f6bf5); 拍一件 then shows it first.
@@ -1733,6 +1742,10 @@ async function main() {
     });
     el.shootBtn.hidden = false;
     el.shootBtn.onclick = () => shoot.open('library');
+    benchShoot.hidden = false;
+    benchShoot.onclick = () => shoot.open('link');
+    paintBenchShoot();
+    if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;
     // ?capture=1 opens 拍一件 as soon as it is there: 凡朔's private link goes straight to the camera (Sol 2779c0dc).
     // A one-off like shootReset, dropped from the address so a reload lands on the build screen.

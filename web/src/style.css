@@ -166,6 +166,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   background: var(--plate); color: var(--c1l); font-size: 13px; font-weight: 600; white-space: nowrap; }
 #foe .swap svg { width: 15px; height: 15px; }
 @media (max-width: 380px) { #foe .swap span { display: none; } #foe .swap { padding: 0 8px; } }
+/* Single-player's 回首页 has a row of its own under the opponent, so it keeps its words (Elara 6b6a3c3b). */
+@media (max-width: 380px) { #app:not(.pvp) #foe #pvpBack span { display: inline; } }
 
 /* 「你」 over the player's top: an orange plate with a chevron pointing down at it. */
 .me { position: absolute; left: 0; top: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; pointer-events: none; opacity: 0; will-change: transform, opacity;
@@ -222,7 +224,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   background: linear-gradient(transparent, rgba(7, 9, 18, 0.9) 14%, var(--bg) 40%); }
 .bhead { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
 .bhead b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--c0); }
-.bhead span { font-size: 12px; color: var(--mute); }
+.bhead b { flex: none; }
+.bhead span { font-size: 12px; color: var(--mute); min-width: 0; word-break: keep-all; }
+/* 拍一件 on the bench (Elara 6b6a3c3b): breathes until the player has shot something. */
+.bhead .shoot { flex: none; align-self: center; margin-left: auto; display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border-radius: 15px;
+  box-shadow: inset 0 0 0 1.5px var(--line); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.bhead .shoot svg { width: 15px; height: 15px; }
+.bhead .shoot:not([hidden]) + .terminal-led { display: none; }
+.bhead .shoot.first { animation: shootBreathe 1.6s ease-in-out infinite alternate; }
+@keyframes shootBreathe { from { filter: drop-shadow(0 0 0 rgba(237, 187, 89, 0)); } to { filter: drop-shadow(0 0 6px rgba(237, 187, 89, 0.85)); } }
 .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .slot { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 9px 8px 8px; min-width: 0;
   background: linear-gradient(160deg, rgba(255, 138, 61, 0.1), rgba(13, 18, 33, 0.92) 45%); box-shadow: inset 0 0 0 1px rgba(255, 138, 61, 0.28);
@@ -234,7 +244,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .item b { font-family: var(--display); font-weight: 400; font-size: 23px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-bottom: 2px; }
 .item .facts { display: flex; align-items: center; gap: 6px; }
 .item .spec { font-size: 10.5px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.item svg { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: var(--mute); }
+.item .swapchip { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 11px; color: var(--mute); white-space: nowrap; }
 .lux { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.02em; color: #0a0f1c; background: #b8f06a; padding: 1px 3px; white-space: nowrap; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); padding: 1px 5px; }
 .seg { display: flex; height: 40px; background: rgba(0, 0, 0, 0.35); box-shadow: inset 0 0 0 1px var(--line); padding: 3px; gap: 3px; }
 .seg button { flex: 1; min-width: 0; font-family: var(--display); font-size: 16px; color: var(--mute); display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; transition: background 0.15s, color 0.15s; }
@@ -822,7 +832,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .hint { font-size: 10px; }
   #foeParts span { font-size: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .go::after, .actions .primary::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .go::after, .actions .primary::after { animation: none; } .bhead .shoot.first { animation: none; filter: drop-shadow(0 0 4px rgba(237, 187, 89, 0.85)); } }
 /* 挡分两档: 「完美！」 / 「勉强」 over the contact point (overlay.stamp); the 评委版 skin is in terminal.css. */
 .stamp { position: absolute; left: 0; top: 0; z-index: 4; white-space: nowrap; pointer-events: none; will-change: transform, opacity; font-family: var(--display); }
 .stamp.perfect { font-size: 26px; letter-spacing: 0.1em; color: #e7b354; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 0, 0, 0.6); }
