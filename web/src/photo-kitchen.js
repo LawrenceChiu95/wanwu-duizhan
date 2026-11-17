@@ -6,9 +6,12 @@ const PHOTO = new URL('./assets/battle-depth.svg', import.meta.url).href;
 const SHAKE_PX = 0.03 / (2 * Math.tan(THREE.MathUtils.degToRad(58 / 2))), PUSH_TIME = 0.22;
 // 一机双人's straight-down camera (stage.topDown): this high over the two tops' midpoint (followed at TOP_FOLLOW /s, so the
 // table never seems to sway). It pushes in and out as single-player does (第三轮 ②): the same zoom on the tops' distance, as a
-// half-width of TOP_NEAR m across the band at 1 (close) to twice that at 2 (apart). A floor under it keeps every top's whole
-// swept circle in the band: it widens at once as a top needs room and gives way slowly, so a lunge never leaves the picture.
-const TOP_HEIGHT = 12, TOP_NEAR = 1.2, TOP_ROOM = 1.12, TOP_FOLLOW = 2.5;
+// half-width of TOP_NEAR m across the band at 1 (close) to TOP_FAR at 2 (apart), the span single-player's picture measures
+// (Wren 6d6b9bfc, 8184271c: 1.1 to 2.6 m and more). A floor under it keeps every top's whole swept circle in the band: it
+// widens at once as a top needs room and gives way at TOP_GIVE /s. Single-player closes in on a clash at once (its fit
+// follows the tops frame by frame), so here the floor and the zoom close in at TOP_GIVE, quicker than single-player's zoom
+// (ω 3), to match it (Elara f224c5ff); opening out stays at 3, slow. A lunge still never leaves the picture.
+const TOP_HEIGHT = 12, TOP_NEAR = 1.05, TOP_FAR = 3.3, TOP_ROOM = 1.12, TOP_FOLLOW = 2.5, TOP_GIVE = 7;
 
 /** A world-space photographic plate sharing the fight camera (2.5D). */
 export class PhotoKitchen {
@@ -110,8 +113,8 @@ export class PhotoKitchen {
   }
 
   /** The fight's zoom, 1 (close) to 2 (apart): approach/contact closes in, separation opens out. A critically damped spring
-   * keeps position and speed continuous on impacts. */
-  zoomStep(dt, building) {
+   * keeps position and speed continuous on impacts. `closing`: its ω while closing in (opening out is always 3). */
+  zoomStep(dt, building, closing = 3) {
     const [a, b] = this.stage.fighters;
     let distance = a && b ? a.center.distanceTo(b.center) : 0;
     if (a?.vel && b?.vel && distance > 0.001) {
@@ -124,7 +127,7 @@ export class PhotoKitchen {
     if (this.collisionAge < 0.22) target = Math.min(target, 1.15);
     if (building) { this.zoom = 1; this.zoomVelocity = 0; this.collisionAge = Infinity; }
     else if (dt > 0) {
-      const step = Math.min(dt, 0.1), omega = 3;
+      const step = Math.min(dt, 0.1), omega = target < (this.zoom ?? 1) ? closing : 3;
       const delta = (this.zoom ?? 1) - target;
       const c = (this.zoomVelocity ?? 0) + omega * delta;
       const decay = Math.exp(-omega * step);
@@ -192,24 +195,27 @@ export class PhotoKitchen {
     camera.updateMatrixWorld(true);
     const bottom = view.h - this.stage.safeBottom(), y = (view.top + bottom) / 2;
     const halfH = Math.max(40, (bottom - view.top) / 2), halfW = view.w / 2 - 6, k = view.h / 2;
-    // The tangent of half the vertical field of view: the zoom's TOP_NEAR..2×TOP_NEAR m across the narrower half of the band,
+    // The tangent of half the vertical field of view: the zoom's TOP_NEAR..TOP_FAR m across the narrower half of the band,
     // and, under it, the floor that keeps every top's swept circle inside the band.
-    const zoomed = TOP_NEAR * THREE.MathUtils.clamp(this.zoomStep(dt, false), 1, 2) / TOP_HEIGHT * k / Math.min(halfW, halfH);
+    const half = THREE.MathUtils.lerp(TOP_NEAR, TOP_FAR, THREE.MathUtils.clamp(this.zoomStep(dt, false, TOP_GIVE), 1, 2) - 1);
+    const zoomed = half / TOP_HEIGHT * k / Math.min(halfW, halfH);
+    // The floor leaves room for this frame's shake, so a jolt never pushes a top over the band's edge.
+    const [sx, sy, push] = this.jolt(dt, false), roomW = Math.max(20, halfW - Math.abs(sx)), roomH = Math.max(20, halfH - Math.abs(sy));
     let floor = 0;
     for (const f of live) {
       const p = (this.fitPoint ??= new THREE.Vector3()).copy(f.center).applyMatrix4(camera.matrixWorldInverse);
       const r = this.stage.frameRadius(f) * TOP_ROOM, depth = Math.max(1, -p.z - r);
-      floor = Math.max(floor, (Math.abs(p.x) + r) / depth * k / halfW, (Math.abs(p.y) + r) / depth * k / halfH);
+      floor = Math.max(floor, (Math.abs(p.x) + r) / depth * k / roomW, (Math.abs(p.y) + r) / depth * k / roomH);
     }
     // As single-player's fit: at once when a top needs more room, then giving way slowly.
     if (fresh || floor > this.topTan) this.topTan = floor;
-    else this.topTan += (floor - this.topTan) * (1 - Math.exp(-dt * 1.2));
+    else this.topTan += (floor - this.topTan) * (1 - Math.exp(-dt * TOP_GIVE));
     this.topFor = this.stage.topDown;
-    // What the band shows across its narrower half, in metres (for measuring against single-player).
-    this.topHalfWidth = Math.max(zoomed, this.topTan) * TOP_HEIGHT * Math.min(halfW, halfH) / k;
-    const [sx, sy, push] = this.jolt(dt, false);
     // An impact's push-in tightens the zoom, never past the floor: both tops stay whole through it.
-    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(zoomed / push, this.topTan)));
+    const tangent = Math.max(zoomed / push, this.topTan);
+    // What the band shows across its narrower half, in metres, push and all (as single-player is measured).
+    this.topHalfWidth = tangent * TOP_HEIGHT * Math.min(halfW, halfH) / k;
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
     this.stage.setOffset(sx, view.h / 2 - y + sy);
     camera.updateProjectionMatrix();
     this.stage.particles.mat.uniforms.uScale.value = view.h * this.stage.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
