@@ -103,6 +103,8 @@ test('2P retains single-player distance zoom, impact push-in and picture shake',
       }
       r.onEvent({t:1,type:'hit',role:'attack',dash:true,damage:12,hpAfter:88,attacker:0,target:1,
         part:'part-0',item:'pot',targetPart:'core',point:[0,0,0]});
+      const randomShake=r.stage.cam.shake4;
+      r.stage.cam.shake4=0;
       r.photo.update(.04);control.photo.update(.04);
       const pushRatio=radius(r)/radius(control);
       const movement=Math.hypot(...r.offsets.at(-1).map((x,i)=>x-control.offsets.at(-1)[i]));
@@ -113,6 +115,12 @@ test('2P retains single-player distance zoom, impact push-in and picture shake',
       assert(r.calls.findIndex(c=>c[0]==='punch')>=0 && r.calls.findIndex(c=>c[0]==='punch')<r.calls.findIndex(c=>c[0]==='lungePunch'),
         'Ordinary impact punch runs before the directional lunge punch');
       assert(r.calls.some(c => c[0]==='overlay.stampLine' && c[2].verb==='冲中'),'Contact-point hit word survives');
+      // The hit's random shake has its own output check; it cannot stand in for the punch above.
+      Object.assign(r.stage.cam,{punch:null,push:null,shakeAge:Infinity,shakeAmp:0,shake4:randomShake});
+      r.photo.update(.04);control.photo.update(.04);
+      const randomMovement=Math.hypot(...r.offsets.at(-1).map((x,i)=>x-control.offsets.at(-1)[i]));
+      console.log('mode-feedback random shake',JSON.stringify({pvp,randomMovement}));
+      assert(randomMovement>1,'Random hit shake reaches the picture without directional punch or decisive shake');
       // Isolate the block from both the preceding hit and the separate random shake.
       Object.assign(r.stage.cam,{punch:null,push:null,shake4:0,shakeAge:Infinity,shakeAmp:0});
       r.onEvent({t:2,type:'blockResult',side:0,attacker:1,deflected:true,perfect:true,point:[0,0,0]});
