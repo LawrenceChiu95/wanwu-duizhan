@@ -87,7 +87,8 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   } catch (error) { await release(); throw error; }
   const template = catalog.items.find(i => i.id === 'pan-lux3d');
   if (!template) { await release(); throw Error('Missing fake pot template'); }
-  let closed = false, storageError = null, chain = Promise.resolve(), runner = Promise.resolve();
+  let closed = false, storageError = null, chain = Promise.resolve();
+  let recognitionRunner = Promise.resolve(), generationRunner = Promise.resolve();
   const abort = new AbortController();
   const retakeWaits = new Map();
   const now = () => new Date(clock()).toISOString();
@@ -102,9 +103,15 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   const pending = () => Object.values(store.jobs).filter(activeStatus).sort((a, b) => a.queueOrder - b.queueOrder);
   const active = owner => pending().find(r => owner === undefined || r.owner === owner);
   const styledReady = record => Boolean(record.job.steps[0].endedAt);
+  const queuePosition = record => {
+    if (!activeStatus(record) || record.job.steps[0].startedAt) return null;
+    const queue = record.job.status === 'recognizing'
+      ? pending().filter(r => r.job.status === 'recognizing') : pending();
+    return Math.max(0, queue.indexOf(record));
+  };
   const publicJob = record => copy({retakeUntil: null, ...record.job,
     styledUrl: styledReady(record) ? `/api/shoot/files/shoot_${record.job.id.slice(2)}/styled.jpg` : null,
-    queuePosition: activeStatus(record) && !record.job.steps[0].startedAt ? Math.max(0, pending().indexOf(record)) : null});
+    queuePosition: queuePosition(record)});
   const get = (id, owner) => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id) || (owner !== undefined && r.owner !== owner)) throw apiError('not-found', 'No such job', 404); return r; };
   const scopedKey = (owner, key) => owner === LOCAL ? key : `${owner}:${key}`;
   const receiptCount = (r, kind, day, browser) => kind === 'recognition'
@@ -204,15 +211,16 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       await save(); return true;
     });
   }
-  async function work(record) {
+  async function work(record, phase) {
     const j = record.job, folder = path.join(directory, j.id);
     try {
-      if (!j.recognition) {
+      if (phase === 'recognition') {
         await serial(async () => { reserve(record, 'generation'); reserve(record, 'recognition'); await save(); });
         const recognition = await provider.recognize(template, context(record));
         // A response received while closing is still valuable paid work: save it
         // before honoring shutdown, then leave later stages for restart.
         await serial(async () => { j.recognition = recognition; if (record.providerState) delete record.providerState.recognitionPending; j.status = 'generating'; j.retakeUntil = !j.fromJob && !j.regenerateOf ? new Date(clock() + 5000).toISOString() : null; await save(); });
+        return;
       }
       if (!await waitForRetake(record)) return;
       if (!record.providerId) {
@@ -285,8 +293,23 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       });
     }
   }
+  const stopRunner = error => {
+    if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); }
+  };
   function start(record) {
-    runner = runner.then(() => !closed && activeStatus(record) ? work(record) : undefined).catch(error => { if (!storageError) { storageError = error; console.error('Shoot persistence failed:', error.code ?? 'UNKNOWN'); } });
+    const order = record.queueOrder;
+    const runnable = () => !closed && !storageError && activeStatus(record) && record.queueOrder === order;
+    let recognized;
+    if (!record.job.recognition) {
+      recognitionRunner = recognitionRunner.then(() => runnable() ? work(record, 'recognition') : undefined).catch(stopRunner);
+      recognized = recognitionRunner;
+    }
+    // Preserve generation's original order. A manual retry gets a new order
+    // and supersedes any queued continuation from the failed recognition.
+    generationRunner = generationRunner.then(async () => {
+      await recognized;
+      if (runnable()) await work(record, 'generation');
+    }).catch(stopRunner);
   }
   for (const record of pending()) start(record);
 
@@ -396,6 +419,6 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       if (!available) throw apiError('not-found', 'No such file', 404);
       return path.join(directory, record.job.id, name);
     }),
-    async close() { closed = true; abort.abort(); try { await runner; await chain; } finally { await release(); } }
+    async close() { closed = true; abort.abort(); try { await generationRunner; await chain; } finally { await release(); } }
   };
 }

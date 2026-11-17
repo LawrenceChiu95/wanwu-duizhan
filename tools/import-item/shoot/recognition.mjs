@@ -75,7 +75,8 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
     let input;
     try { input = await pipeline.toBuffer(); }
     catch { throw failure('recognition-invalid'); }
-    const attemptLimit = 2;
+    // Keep a full attempt available for the backup inside the shared deadline.
+    const attemptLimit = backup ? 2 : 3;
     for (let attempt = 0; attempt < attemptLimit; attempt++) {
       signal.throwIfAborted();
       let status = null;

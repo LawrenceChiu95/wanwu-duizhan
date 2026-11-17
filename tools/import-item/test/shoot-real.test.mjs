@@ -45,11 +45,14 @@ function gateway(options = {}) {
    assert.deepEqual(body.response_format.schema.required.sort(), Object.keys(result).sort());
    const temporary = options.visionFailures?.shift();
    if (temporary === 'network') throw new TypeError('temporary transport failure');
+   if (temporary === 'timeout' || options.visionTimeout) {
+    request.signal.throwIfAborted();
+    return new Promise((_, reject) => request.signal.addEventListener('abort', () => reject(request.signal.reason), {once: true}));
+   }
    if (temporary) return new Response('', {status: temporary});
    if (options.visionNetwork) throw Error('network ' + env.GEMINI_API_KEY);
    if (options.visionStatus) return new Response('private-body ' + env.GEMINI_API_KEY, {status: options.visionStatus});
    if (options.visionBadJson) return new Response('private malformed ' + env.GEMINI_API_KEY);
-   if (options.visionTimeout) return new Promise((_, reject) => request.signal.addEventListener('abort', () => reject(request.signal.reason), {once: true}));
    return Response.json(Object.hasOwn(options, 'visionReply') ? options.visionReply : geminiReply(options.recognition ?? result));
   }
   assert.equal(headers.has('x-goog-api-key'), false);
@@ -206,13 +209,15 @@ test('manual recognition recovery keeps the real job and creates each paid stage
  const j=await jobs.create({photo:image,clientKey:'manual-real-recovery'},'same-owner');
  const failed=await finish(jobs,j.id);
  assert.equal(failed.error.code,'recognition-service');assert.equal(failed.error.retry,'same');assert.equal(failed.error.charged,false);
- assert.equal(g.visionCalls(),2);assert.deepEqual(g.creates,[]);
- assert.equal((await jobs.quota('same-owner')).recognition.remaining,5);
+ assert.equal(g.visionCalls(),3);assert.deepEqual(g.creates,[]);
+ const failedQuota = await jobs.quota('same-owner');
+ assert.equal(failedQuota.recognition.remaining,5);
+ assert.equal(failedQuota.global.recognition.remaining,399);
  const savedPhoto=await fs.readFile(path.join(directory,j.id,'photo.jpg'));
  options.visionStatus=null;
  const accepted=await jobs.retry(j.id,'same-owner');assert.equal(accepted.id,j.id);
  const done=await finish(jobs,j.id);assert.equal(done.status,'succeeded');
- assert.equal(g.visionCalls(),3);assert.deepEqual(g.creates,['image','mesh']);
+ assert.equal(g.visionCalls(),4);assert.deepEqual(g.creates,['image','mesh']);
  const q=await jobs.quota('same-owner');assert.equal(q.recognition.remaining,4);assert.equal(q.global.recognition.remaining,398);assert.equal(q.budget.remaining,26);
  await assert.rejects(jobs.retry(j.id,'same-owner'),{code:'not-allowed'});
  const state=await readJson(path.join(directory,'state.json'));assert.equal(Object.keys(state.jobs).length,1);
@@ -230,15 +235,18 @@ test('real startup names missing env keys before touching disk and refuses provi
  await assert.rejects(fs.access(path.join(directory, '.owner')), {code: 'ENOENT'});
 });
 
-test('offline real HTTP task: structured vision, two durable paid stages, geometry/rating, no provider secrets in public output', async t => {
- const directory = await dir(), g = gateway({directory, visionFailures: [503], statuses: {image: [0, 1, 3], mesh: [1, 3]}});
- let app = await startShootServer({port: 0, directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: async () => {}}});
+test('offline real HTTP task: vision recovers on the third try with one receipt and two durable paid stages', async () => {
+ const directory = await dir(), g = gateway({directory, visionFailures: ['timeout', 503], statuses: {image: [0, 1, 3], mesh: [1, 3]}});
+ let app = await startShootServer({port: 0, directory, mode: 'real', env, realOptions: {fetch: g.fetch, timeoutMs: 150, pause: async () => {}}});
  try {
   const create = async () => { const form = new FormData(); form.append('photo', new Blob([image]), 'test.png'); form.append('clientKey', 'real-key-0001'); const response = await fetch(app.url + '/api/shoot/jobs', {method: 'POST', body: form}); assert.equal(response.status, 202); return (await response.json()).job; };
   const copies = await Promise.all(Array.from({length: 10}, create)); assert.equal(new Set(copies.map(j => j.id)).size, 1);
   const done = await finish(app.jobs, copies[0].id); assert.equal(done.status, 'succeeded');
   assert.equal(done.recognition.lengthMeters, .42); assert.equal(done.recognition.massKg, .72);
-  assert.equal(g.visionCalls(), 2); assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(g.observations, ['multimodal-to-image', 'img-to-3d']);
+  assert.equal(g.visionCalls(), 3); assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(g.observations, ['multimodal-to-image', 'img-to-3d']);
+  const q = await app.jobs.quota();
+  assert.equal(q.recognition.remaining, q.recognition.limit - 1);
+  assert.equal(q.global.recognition.remaining, 399);
   assert.ok(done.steps.every(s => s.startedAt && s.endedAt));
   const [item] = await app.jobs.items(); validateRuntimeItem(item, catalog); assert.deepEqual(item.rating, rateItem(item, catalog.materials));
   assert.equal(item.material, 'metal'); assert.equal(item.condition, 'worn'); assert.equal(item.mass, .72);
@@ -260,8 +268,8 @@ test('offline real HTTP task: structured vision, two durable paid stages, geomet
 
 for (const options of [{visionReply: {status: 'failed', steps: []}}, {recognition: {...result, massKg: -1}}, {visionTimeout: true}]) test(`vision refusal/bounds/timeout never enters Aholo ${JSON.stringify(options)}`, async t => {
  const {jobs, g} = await open(t, options), j = await jobs.create({photo: image, clientKey: 'vision-fail-0001'}), done = await finish(jobs, j.id);
- assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), options.visionTimeout ? 2 : 1);
- assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), options.visionTimeout ? 2 : 1);
+ assert.equal(done.error.code, options.visionTimeout ? 'recognition-network' : 'recognition-invalid'); assert.equal(done.error.charged, false); assert.deepEqual(g.creates, []); assert.equal(g.visionCalls(), options.visionTimeout ? 3 : 1);
+ assert.equal((await jobs.create({photo: image, clientKey: 'vision-fail-0001'})).id, j.id); assert.equal(g.visionCalls(), options.visionTimeout ? 3 : 1);
 });
 
 for (const flags of [{clear: false, recognizable: true}, {clear: true, recognizable: false}]) test(`schema-compliant unclear photo does not guess a category or create paid Aholo work ${JSON.stringify(flags)}`, async t => {
@@ -548,7 +556,7 @@ for (const [options, code] of [[{visionStatus: 401}, 'recognition-auth'], [{visi
   const j = await jobs.create({photo: image, clientKey: 'vision-classified-001'}), failed = await finish(jobs, j.id);
   assert.equal(failed.error.code, code); assert.equal(failed.error.retry, ['recognition-network', 'recognition-service'].includes(code) ? 'same' : 'none'); assert.equal(failed.error.charged, false);
   await jobs.close(); jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch}});
-  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), options.visionStatus === 503 || options.visionNetwork ? 2 : 1); assert.deepEqual(g.creates, []);
+  assert.equal((await jobs.get(j.id)).error.code, code); assert.equal(g.visionCalls(), options.visionStatus === 503 || options.visionNetwork ? 3 : 1); assert.deepEqual(g.creates, []);
   assert.equal(logs.filter(line => line.startsWith('Shoot recognition attempt:')).length, g.visionCalls());
   assert.equal(logs.filter(line => line.startsWith('Shoot job failed:')).length, 1);
   assert.ok(logs.every(line => line.includes(code) && line.includes(j.id) && line.includes('"time":')));

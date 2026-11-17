@@ -34,8 +34,8 @@ test('all eight demo texts decode only after whole-fence removal',()=>{
  assert.equal(fixtures.length,8);
  for(const f of fixtures){assert.throws(()=>JSON.parse(f.text));assert.deepEqual(JSON.parse(qwenText(f.text)),f.expected);assert.doesNotThrow(()=>parseRecognition(currentReply(f.expected)));}
 });
-test('default path allows one retry, while normal primary success never calls backup',async()=>{
- let primary=0,secondary=0;await assert.rejects(recognizePhoto({...base,fetch:async()=>{primary++;return broken();},backupFetch:async()=>{secondary++;assert.fail();}}),{code:'recognition-network'});assert.equal(primary,2);assert.equal(secondary,0);
+test('default path allows two retries, while normal primary success never calls backup',async()=>{
+ let primary=0,secondary=0;await assert.rejects(recognizePhoto({...base,fetch:async()=>{primary++;return broken();},backupFetch:async()=>{secondary++;assert.fail();}}),{code:'recognition-network'});assert.equal(primary,3);assert.equal(secondary,0);
  assert.equal((await recognizePhoto({...base,backup,fetch:async()=>google(result),backupFetch:async()=>assert.fail()})).name,result.name);
 });
 for(const problem of ['network',500,503,429])test(`primary ${problem} automatically uses backup once with bounded private protocol`,async()=>{

@@ -43,7 +43,8 @@ test('two real HTTP browser identities isolate keys, status, actions, items and 
  assert.notEqual(a.cookie, b.cookie);
  const replies = [await a.create('same-browser-key'), await b.create('same-browser-key')];
  const x = replies[0].job, y = replies[1].job; assert.notEqual(x.id, y.id);
- assert.equal((await b.call('jobs/' + y.id)).job.queuePosition, 1);
+ const second = await until(() => b.call('jobs/' + y.id), r => r.job.status === 'generating');
+ assert.equal(second.job.queuePosition, 1);
  assert.equal((await b.call('quota')).activeJobId, y.id);
  for (const action of ['', '/retry', '/retake']) assert.equal((await b.call('jobs/' + x.id + action, undefined, action ? 'POST' : 'GET')).status, 404);
  assert.equal((await b.call('jobs/' + x.id + '/regenerate', {confirm: true, clientKey: 'cross-regen-key'})).status, 404);
@@ -116,6 +117,51 @@ test('global reservations and per-browser single job serialize concurrent accept
   assert.equal((await app.jobs.quota()).used, 0);
   assert.deepEqual((await app.jobs.items()), []);
  } finally { release(); }
+});
+
+test('recognition can finish during another browser’s model, and a manual retry reenters the generation queue at the end', async t => {
+ const dir = await directory(), generator = await fakeGenerator(dir, {delayMs: 1});
+ const {recognize, submit, step} = generator;
+ const submissions = [];
+ let releaseModel, notifyModel, recognitionCalls = 0;
+ const modelGate = new Promise(resolve => { releaseModel = resolve; });
+ const firstModel = new Promise(resolve => { notifyModel = resolve; });
+ generator.recognize = async (...args) => {
+  if (++recognitionCalls === 2) throw Object.assign(Error('fixture'), {code: 'recognition-network'});
+  return recognize(...args);
+ };
+ generator.submit = id => {
+  submissions.push(id);
+  return submit(id);
+ };
+ generator.step = async (key, ...args) => {
+  if (key === 'model' && submissions.length === 1) {
+   notifyModel();
+   await modelGate;
+  }
+  return step(key, ...args);
+ };
+ const app = await appFor(t, {directory: dir, generator});
+ const [a, b, c] = [browser(app), browser(app), browser(app)];
+ try {
+  const {job: first} = await a.create('split-lane-first');
+  await firstModel;
+  const {job: second} = await b.create('split-lane-retry');
+  assert.equal((await finish(b, second.id)).job.error.code, 'recognition-network');
+  const {job: third} = await c.create('split-lane-third');
+  assert.equal((await b.call(`jobs/${second.id}/retry`, undefined, 'POST')).status, 200);
+  for (const [owner, job] of [[c, third], [b, second]]) {
+   const {job: ready} = await until(() => owner.call('jobs/' + job.id), r => r.job.recognition);
+   assert.equal(ready.status, 'generating');
+   assert.equal(ready.steps[0].startedAt, null);
+  }
+  assert.deepEqual(submissions, [first.id]);
+  releaseModel();
+  for (const [owner, job] of [[a, first], [c, third], [b, second]]) {
+   assert.equal((await finish(owner, job.id)).job.status, 'succeeded');
+  }
+  assert.deepEqual(submissions, [first.id, third.id, second.id]);
+ } finally { releaseModel(); }
 });
 
 test('five recognition attempts persist, generation is returned after rejection, Taipei midnight restores daily limits', async () => {
