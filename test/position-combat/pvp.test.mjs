@@ -68,3 +68,20 @@ test('a perfect guard takes a reaction after the cue, not a press on it', async 
  assert.equal(early, 0);
  assert.ok(timed >= 4, `only ${timed} of 6 perfect`);
 });
+
+// No clock loss (远夏 de947154): two people who never press still end on a broken core soon after 60 s, and the
+// tightening leaves the first 60 s exactly as they were (the same frames as the old 75 s rules up to then).
+test('a match nobody presses ends on a broken core, unchanged before 60 s', async () => {
+ const run = async combatRules => {
+  const game = await pvp(5, [pot, knife], combatRules);
+  try { while (!game.done) game.advance(); return game.result(); } finally { game.free(); }
+ };
+ const now = await run(rules.combatRules);
+ const {overtime, ...rest} = rules.combatRules;
+ const old = await run({...rest, round: {...rest.round, maxDuration: 75}});
+ assert.equal(old.meta.reason, 'timeout');
+ assert.ok(['ko', 'double-ko'].includes(now.meta.reason), now.meta.reason);
+ assert.ok(now.meta.duration > 60 && now.meta.duration < 80, `${now.meta.duration}`);
+ const upTo60 = r => JSON.stringify(r.frames.filter(f => f.t <= 60));
+ assert.equal(upTo60(now), upTo60(old));
+});

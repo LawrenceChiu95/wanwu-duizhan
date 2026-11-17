@@ -90,7 +90,10 @@ export const ROUND_JUDGE_COMBAT_OPTIONS=Object.freeze({
    dashRecoil:.8,dashLaunch:2.8,clashSpeed:2.6,guardRecoil:1.6,guardLaunch:3.6,
    aiChargeBrake:16,aiMinApproach:1.45,cueLead:.4,guardStun:1,guardBrake:24,
    guardBrakeDelay:.09,dashDamage:1.9,counterDamage:5.2,mangHp:1.3,wenHp:1.5,changHp:1.8,
-   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:75})
+   aiDamage:2.55,aiCooldown:3.5,hitCap:.5,wenAiCooldown:3,wenIdleDashAfter:3,wenAiDamage:6,changAiDamage:10,changAiCooldown:3,wenPace:1.45,changPace:1.6,changGuard:.4,wenDashJitter:1.5,wenBlockWait:.4,changBlockWait:.4,maxDuration:120}),
+  // No clock loss (远夏 de947154 A): play to a broken core. From 60 s the pull to the centre and every hit's damage grow the
+  // same for both sides, so someone breaks in about 15 s; maxDuration (120 s) is only a silent backstop no simulation reaches.
+  overtime:Object.freeze({start:60,ramp:15,pull:4,recovery:4,damage:60,cap:4})
  })
 });
 // 一机双人 (Elara 1e2c813c): two people, one phone. Both sides are input and every side-0 privilege is shared: the same
@@ -493,6 +496,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(pvp!==undefined&&(!pvp||!round||manual.sides.some(x=>x!=='input')||aiProfiles.some(Boolean)||
   !['charge','pace'].every(k=>Number.isFinite(pvp[k])&&pvp[k]>0)||pvp.charge<IMPACT.playerCharge||pvp.charge>guardTiming.aiCharge))
   throw Error('pvp needs round rules, two input sides and a charge between the player and AI wind-ups');
+ const overtime=position?.overtime;
+ if(overtime!==undefined&&(!overtime||!round||!['start','ramp','pull','recovery','damage','cap'].every(k=>Number.isFinite(overtime[k])&&overtime[k]>=0)||
+  overtime.ramp<=0||overtime.start>=round.maxDuration))throw Error('overtime needs round rules, a start before maxDuration and a positive ramp');
+ // 0 until overtime.start, then 1 per ramp seconds, unbounded.
+ const tightening=()=>overtime&&t>overtime.start?(t-overtime.start)/overtime.ramp:0;
  const stage=aiProfiles.find(Boolean)?.id,stagePace=pvp?pvp.pace:round?.[`${stage}Pace`]??1,stageGuard=round?.[`${stage}Guard`]??M?.blockDamage;
  const ceramicShards=position?.ceramicShards===true;
  if(ceramicShards&&(!planar||!M))throw Error('Ceramic shards require planar combat with manual controls');
@@ -723,7 +731,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   const motion=bounce&&(impact||lastRecoil!==-Infinity)?bounce:r;
   const openingScale=opening?.rampSeconds&&lastSeen===-Infinity
    ?Math.min(1,t/opening.rampSeconds):1;
-  const recovering=round&&t-lastRecoil<round.recovery;
+  const recovering=round&&t-lastRecoil<(overtime?round.recovery/(1+overtime.recovery*tightening()):round.recovery);
   fs.forEach((f,i)=>{
    const p=arr(planar?f.body.translation():f.body.worldCom()),delta=sub(arr(planar?fs[1-i].body.translation():fs[1-i].body.worldCom()),p),dist=length(delta),n=dist>1e-6?scale(delta,1/dist):[0,0,0],isStunned=M&&stunned(f),pursuit=isStunned||recovering||t-lastRecoil<r.recoilPause?0:1,v=arr(f.body.linvel());
    // Pull to the centre (stronger out of the spin plane), pursue the opponent, and, while pursuing,
@@ -741,6 +749,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
     const radial=horizontalUnit(p);
     acceleration=add(scale(acceleration,round.centerPull),scale([-radial[2],0,radial[0]],round.orbit));
    }
+   const squeeze=tightening();
+   if(squeeze)acceleration=add(acceleration,scale(p,-motion.attraction*overtime.pull*squeeze));
    if(openingScale<1)acceleration=scale(acceleration,openingScale);
    acceleration=add(acceleration,[0,-r.top.planeAttraction*p[1]-r.top.planeDamping*v[1],0]);
    acceleration=add(acceleration,scale(across,-r.top.tangentialDamping*pursuit*turn));
@@ -892,7 +902,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      // No single blow decides a round match: a strong counter into a core once took it whole in 3 s (Iris 11-15).
      // Stages 2 and 3 ground on to the clock (Wren e031daaa): there every blow both ways counts for more, and on 长臂猿 a tight
      // guard lets more through (still under half), so the faster ending doesn't tip the match to the player (Elara 2720a2dc).
-     if(round)d.damage=Math.min(d.damage*pace,round.hitCap*tp.maxHp)*guardShare;
+     if(round){
+      const squeeze=tightening(),cap=round.hitCap*(squeeze?1+overtime.cap*squeeze:1);
+      d.damage=Math.min(d.damage*pace*(squeeze?1+overtime.damage*squeeze*(1+squeeze):1),Math.min(1,cap)*tp.maxHp)*guardShare;
+     }
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
     }
