@@ -1,7 +1,7 @@
-"""Judge publisher, now versioned. Navigation must pass before any release action.
+"""Judge publisher. Node, web and navigation must pass before any release action.
 
-State/manifests retain the existing ce64f25 archive by default; --state-dir accepts
-an explicitly prepared release directory. Existing commit/rollback checks remain.
+Release commands require --state-dir so a new release cannot overwrite old evidence.
+`checks BUILD` runs only the local gates, without contacting the release service.
 This script does not grant permission to deploy a new candidate.
 """
 
@@ -11,8 +11,11 @@ import re
 import runpy
 import sys
 import subprocess
+import shlex
+import time
 
-QA = Path('/Users/lawrence/Desktop/My Life/Game Building/万物对战/开发归档/魔搭接线/评委版换版-ce64f25')
+ROOT = Path(__file__).resolve().parents[1]
+QA = None
 if len(sys.argv) > 2 and sys.argv[1] == '--state-dir':
     QA = Path(sys.argv[2]).resolve(strict=True)
     del sys.argv[1:3]
@@ -25,15 +28,38 @@ metadata = previous['metadata']
 judge = previous['JUDGE']
 judge_url = previous['JUDGE_URL']
 judge_space = previous['JUDGE_SPACE']
-old = '3b7900fb50a5565fa636c9ba0be28ba893f8b2d5'
-old_entry = 'assets/index-B8OQpjSH.js'
+baseline_source = 'ce64f253458d4e71be4f2545a032cde6d38d0aeb'
+old = '13d950c663059e5f7b0efccb24c4081f27c556dd'
+old_entry = 'assets/index-B-a5oaRG.js'
+fallback = {'source': 'cb16254', 'commit': '3b7900fb50a5565fa636c9ba0be28ba893f8b2d5',
+            'entry': 'assets/index-B8OQpjSH.js'}
+rollback_name = 'rollback-' + old[:7] + '.tar.gz'
+
+
+def release_checks(build_path):
+    # Keep the local Node command identical to CI, including future added test files.
+    workflow = (ROOT / '.github/workflows/node-tests.yml').read_text()
+    commands = re.findall(r'^\s*- run: (node --test .+)$', workflow, re.MULTILINE)
+    assert len(commands) == 1, 'Expected exactly one CI Node test command'
+    build = Path(build_path).resolve(strict=True)
+    assert (build / 'index.html').is_file()
+    checks = [('node', shlex.split(commands[0])), ('web', ['npm', 'test', '--prefix', 'web']),
+              ('navigation', ['node', str(ROOT / 'scripts/check-judge-navigation.mjs'), str(build)])]
+    for name, command in checks:
+        started = time.monotonic()
+        result = subprocess.run(['nice', '-n', '20', *command], cwd=ROOT)
+        print(json.dumps({'check': name, 'command': shlex.join(command), 'exit': result.returncode,
+                          'seconds': round(time.monotonic() - started, 3)}), flush=True)
+        result.check_returncode()
 
 
 def read(name):
+    assert QA is not None, 'Release commands require --state-dir with a new evidence directory'
     return json.loads((QA / name).read_text())
 
 
 def save(name, value):
+    assert QA is not None, 'Release commands require --state-dir with a new evidence directory'
     (QA / name).write_text(json.dumps({'at': previous['now'](), **value}, indent=2) + '\n')
 
 
@@ -60,15 +86,21 @@ def preflight():
     results = previous['public_files'](judge_url, previous['committed_web'](files))
     assert all(row['match'] for row in results), [row['path'] for row in results if not row['match']]
     services = previous['services']()
-    rollback = QA / 'rollback-3b7900f.tar.gz'
+    assert QA is not None, 'preflight requires --state-dir'
+    rollback = QA / rollback_name
     rollback.write_bytes(git(judge, 'archive', '--format=tar.gz', old))
+    # Retain the previous approved escape hatch as well as this release's immediate rollback.
+    fallback_files = previous['tree'](judge, fallback['commit'])
+    assert 'web/' + fallback['entry'] in fallback_files
+    (QA / 'fallback-cb16254.tar.gz').write_bytes(git(judge, 'archive', '--format=tar.gz', fallback['commit']))
     save('judge-baseline-preflight.json',
-         {'commit': old, 'entry': old_entry, 'files': files, 'public': results, 'processes': services['processes']})
+         {'source': baseline_source, 'commit': old, 'entry': old_entry, 'fallback': fallback,
+          'files': files, 'public': results, 'processes': services['processes']})
     print(f'Judge baseline {old[:7]}: {len(results)} public files, 4331 and gateway healthy.')
 
 
 def prepare(source, build_path):
-    git(previous['SOURCE'], 'merge-base', '--is-ancestor', 'aceeaaf', source)
+    git(previous['SOURCE'], 'merge-base', '--is-ancestor', baseline_source, source)
     build = Path(build_path).resolve(strict=True)
     index = (build / 'index.html').read_bytes()
     entry = re.search(rb'assets/index-[\w-]+\.js', index).group().decode()
@@ -82,13 +114,13 @@ def prepare(source, build_path):
 def publish():
     candidate = read('judge-candidate-manifest.json')
     # Must pass before checking or mutating the release checkout, and before any push.
-    subprocess.run(['node', str(Path(__file__).with_name('check-judge-navigation.mjs')), candidate['build']], check=True)
+    release_checks(candidate['build'])
     manifest = candidate['files']
     baseline = read('judge-baseline-preflight.json')
     rollback_tree = baseline['files']
     gateway = read('judge-candidate-gateway.json')
     assert gateway['checked'] == len(manifest) and not gateway['mismatches']
-    assert baseline['commit'] == old and (QA / 'rollback-3b7900f.tar.gz').is_file()
+    assert baseline['commit'] == old and (QA / rollback_name).is_file()
     assert revision(judge) == remote_head(judge) == old
     assert not git(judge, 'status', '--porcelain')
     assert_live(old_entry)
@@ -108,7 +140,7 @@ def publish():
         target.write_bytes((build / path).read_bytes())
     git(judge, 'add', '-A', '--', 'web')
     git(judge, *previous['IDENTITY'], 'commit', '-m',
-        f"Deploy reviewed photo queues and new-item flow ({candidate['source'][:7]})")
+        f"Deploy reviewed judge candidate ({candidate['source'][:7]})")
     release = revision(judge)
     expected = {name: info for name, info in rollback_tree.items() if not name.startswith('web/')}
     expected.update({'web/' + path: info for path, info in manifest.items()})
@@ -159,6 +191,6 @@ def rollback():
 
 
 if __name__ == '__main__':
-    commands = {'preflight': preflight, 'prepare': prepare, 'publish': publish, 'observe': lambda: print(json.dumps(observe())),
+    commands = {'checks': release_checks, 'preflight': preflight, 'prepare': prepare, 'publish': publish, 'observe': lambda: print(json.dumps(observe())),
                 'verify': verify, 'rollback': rollback, 'verify-rollback': lambda: verify(restore=True)}
     commands[sys.argv[1]](*sys.argv[2:])

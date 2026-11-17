@@ -50,19 +50,21 @@ try {
     }
     return null;
    };
+   const waitHome=() => page.waitForFunction(() => [...document.querySelectorAll('button')].some(el => {
+    if(el.textContent.trim()!=='回首页') return false;
+    const r=el.getBoundingClientRect();
+    return r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
+   }),null,{timeout:5000});
    const goHome=async(screen,fallback) => {
     console.log(JSON.stringify({width,checkpoint:screen}));
-    if(!fallback) await page.waitForFunction(() => [...document.querySelectorAll('button')].some(el => {
-     if(el.textContent.trim()!=='回首页') return false;
-     const r=el.getBoundingClientRect();
-     return r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
-    }),null,{timeout:5000}).catch(() => {});
+    if(!fallback) await waitHome();
     const button=await reachable();
     if(button) {await button.tap();await welcome();report.push({width,screen,home:true});}
     else {
      assert(fallback,`${width}px ${screen}: no direct route home`);
      // A child page uses its real visible back key, then the bench's home: at most two taps.
      const backKey=fallback();assert(await backKey.isVisible(),screen+' visible back key');await backKey.tap();
+     await waitHome();
      const back=await reachable();assert(back,screen+': back must expose home in one tap');
      await back.tap();await welcome();report.push({width,screen,home:true,taps:2});
     }

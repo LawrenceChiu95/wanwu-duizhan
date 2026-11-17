@@ -36,14 +36,15 @@ function rig(pvp) {
     project:(point,out) => {out.x=point.x*60;out.y=point.z*60;return true;},
     fieldUniforms:{hitPoint:{value:new THREE.Vector3()}, hitAge:{value:0}, hitPower:{value:0}},
   }, {get(target,key) {return key in target ? target[key] : (...args) => calls.push([key,...args]);}});
-  const methods = ['impact(point,', 'shake(px,', 'lungePunch(point,', 'shakeV4(amount)'];
+  const methods = ['impact(point,', 'shake(px,', 'punch(point,', 'lungePunch(point,', 'shakeV4(amount)'];
   // One-line methods end on the same line rather than at the next indentation boundary.
   for (const name of methods) {
     const start = '  '+name, line = stageSource.slice(stageSource.indexOf(start)).split('\n')[0];
     const method = line.includes(' }') ? line.trim() : body(stageSource,start).trim();
-    stage[name.split('(')[0]] = vm.runInNewContext('({'+method+'})', {
-      THREE, tmp:new THREE.Vector3(), tmp2:new THREE.Vector3(), SHAKE_TIME:.16,
-    })[name.split('(')[0]];
+    const key=name.split('(')[0], run=vm.runInNewContext('({'+method+'})', {
+      THREE, tmp:new THREE.Vector3(), tmp2:new THREE.Vector3(), SHAKE_TIME:.16, PUNCH_TIME:.14,
+    })[key];
+    stage[key]=function(...args) {calls.push([key,...args]);return run.apply(this,args);};
   }
   const photo = Object.assign(Object.create(PhotoKitchen.prototype), {stage, enabled:false});
   stage.kitchen = {photo};
@@ -91,23 +92,35 @@ test('2P retains single-player distance zoom, impact push-in and picture shake',
     assert(relative>=.85 && relative<=1.15,'The two camera projections retain their judge ratio within 15%');
     ratios.forEach((r,i) => assert(r>=current[i]*.99,'Neither mode loses its current zoom span'));
     assert(ratios[1]/ratios[0]>=.85,'2P retains at least 85% of the single-player span');
-    for(const r of [solo,duel]) {
+    for(const pvp of [false,true]) {
+      const r=rig(pvp), control=rig(pvp);
       // Approach from the wide view: at contact, push-in has room before the fit floor.
-      r.stage.fighters.forEach((f,i)=>f.center.set((i?1:-1)*1.8,0,0));
-      for(let n=0;n<120;n++) r.photo.update(1/60);
-      r.stage.fighters.forEach((f,i)=>f.center.set((i?1:-1)*.4,0,0));
-      r.photo.update(1/60);const before=radius(r);
+      for(const twin of [r,control]) {
+        twin.stage.fighters.forEach((f,i)=>f.center.set((i?1:-1)*1.8,0,0));
+        for(let n=0;n<120;n++) twin.photo.update(1/60);
+        twin.stage.fighters.forEach((f,i)=>f.center.set((i?1:-1)*.4,0,0));
+        twin.photo.update(1/60);
+      }
       r.onEvent({t:1,type:'hit',role:'attack',dash:true,damage:12,hpAfter:88,attacker:0,target:1,
         part:'part-0',item:'pot',targetPart:'core',point:[0,0,0]});
-      r.photo.update(.04);
-      assert(radius(r)<before*.99,'A landed lunge tightens the actual picture');
+      r.photo.update(.04);control.photo.update(.04);
+      const pushRatio=radius(r)/radius(control);
+      const movement=Math.hypot(...r.offsets.at(-1).map((x,i)=>x-control.offsets.at(-1)[i]));
+      console.log('mode-feedback impact',JSON.stringify({pvp,pushRatio,movement}));
+      assert(pushRatio<=.9,'A landed lunge tightens the picture at least 10% beyond the same-frame no-event control');
       assert(r.stage.cam.punch?.lunge,'Lunge-direction camera punch survives');
-      assert(r.offsets.at(-1).some((x,i) => Math.abs(x-(i?0:-5.85))>1),'A real impact moves the picture');
+      assert(movement>1,'A real impact moves the picture from its same-frame no-event offset');
+      assert(r.calls.findIndex(c=>c[0]==='punch')>=0 && r.calls.findIndex(c=>c[0]==='punch')<r.calls.findIndex(c=>c[0]==='lungePunch'),
+        'Ordinary impact punch runs before the directional lunge punch');
       assert(r.calls.some(c => c[0]==='overlay.stampLine' && c[2].verb==='冲中'),'Contact-point hit word survives');
+      // Isolate the block from both the preceding hit and the separate random shake.
+      Object.assign(r.stage.cam,{punch:null,push:null,shake4:0,shakeAge:Infinity,shakeAmp:0});
       r.onEvent({t:2,type:'blockResult',side:0,attacker:1,deflected:true,perfect:true,point:[0,0,0]});
       assert(r.stage.cam.shakeAmp>0 && r.stage.cam.shake4>0,'A perfect block shakes');
-      r.stage.cam.punch=null;r.stage.cam.push=null;
-      const shake=r.photo.jolt(.02,false);assert(Math.hypot(...shake.slice(0,2))>1,'Block shake reaches the picture without lunge punch');
+      r.stage.cam.punch=null;r.stage.cam.push=null;r.stage.cam.shake4=0;
+      const shake=r.photo.jolt(.02,false),blockMovement=Math.hypot(...shake.slice(0,2));
+      console.log('mode-feedback decisive block',JSON.stringify({pvp,blockMovement}));
+      assert(blockMovement>1,'Decisive block shake reaches the picture without random shake or punch');
       assert(r.calls.some(c => c[0]==='overlay.stamp' && c[2]==='完美！'),'Perfect-block word survives');
     }
   } finally {globalThis.document=oldDocument;Math.random=oldRandom;}
