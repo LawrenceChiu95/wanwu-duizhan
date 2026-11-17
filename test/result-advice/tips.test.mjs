@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {setNames, matchStats, tipLine, NAMES} from '../../web/src/reason.js';
+import {setNames, matchStats, tipLine, NAMES, reasonLine, endLine} from '../../web/src/reason.js';
 import {ratingOf, GRADES} from '../../web/src/rating.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../data/catalog.json', import.meta.url)));
@@ -287,4 +287,19 @@ test('lost stage 1 on time without a 冲 says so; anyone who lunged, other stage
   assert.notEqual(tipLine(read('timeout', 0, 12, true), 1, 'mang'), turtle, 'not ?feel=old');
   assert.notEqual(tipLine(read('ko', 0, 12), 1, 'mang'), turtle, 'only a loss on time');
   assert.notEqual(tipLine(read('timeout', 0, 12), null, 'mang'), turtle, 'not a draw');
+});
+
+// No clock loss (第三轮 ④): stage 1's lesson now comes from the arena closing in after 60 s, and the lines say that, not 时间到.
+test('a stage 1 loss that went past the tightening says the arena closed in; 时间到 only for older replays', () => {
+  const overtime = {start: 60, ramp: 15};
+  const read = (duration, presses, blocks, reason = 'ko') => matchStats({meta: {reason, duration, combatRules: {overtime}}, events: [
+    ...Array.from({length: presses}, () => ({type: 'dash', phase: 'end', side: 0, quality: 'blocked'})),
+    ...Array.from({length: blocks}, () => ({type: 'blockResult', side: 0, outcome: 'tight', deflected: true}))
+  ]}, [{parts: []}, {parts: []}], () => false);
+  assert.equal(tipLine(read(71, 0, 12), 1, 'mang'), '一直在挡没出手，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血');
+  assert.equal(tipLine(read(71, 2, 12), 1, 'mang'), '出手太少，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血');
+  assert.doesNotMatch(tipLine(read(40, 0, 12), 1, 'mang'), /收紧|时间到/, 'not before the tightening');
+  assert.doesNotMatch(tipLine(read(71, 0, 12), 1, 'wen'), /收紧/, 'stage 1 only');
+  assert.equal(reasonLine({meta: {reason: 'timeout', winner: 0, combatRules: {overtime}}, decisive: {why: {kind: 'timeout', criterion: 'core-hp-ratio'}}}), '拖得太久，你的核心剩血多');
+  assert.equal(endLine({meta: {reason: 'timeout', combatRules: {overtime}}}), '拖得太久，比剩血');
 });

@@ -4,9 +4,11 @@ const PHOTO = new URL('./assets/battle-depth.svg', import.meta.url).href;
 // Impact feel on 凡朔's fixed camera (Elara #万物对战:e6f14ad0): the old chase camera's shake, as px of picture translation
 // (its 0.03 × distance jitter at 58°), and a short push-in that tightens the framing and is back within PUSH_TIME.
 const SHAKE_PX = 0.03 / (2 * Math.tan(THREE.MathUtils.degToRad(58 / 2))), PUSH_TIME = 0.22;
-// 一机双人's straight-down camera (stage.topDown): this high over the arena's centre, framing the two tops and never less
-// than TOP_MIN m round the centre. It widens fast as they part and closes in slowly, so a lunge never leaves the band.
-const TOP_HEIGHT = 12, TOP_MIN = 1.5, TOP_ROOM = 1.12;
+// 一机双人's straight-down camera (stage.topDown): this high over the two tops' midpoint (followed at TOP_FOLLOW /s, so the
+// table never seems to sway). It pushes in and out as single-player does (第三轮 ②): the same zoom on the tops' distance, as a
+// half-width of TOP_NEAR m across the band at 1 (close) to twice that at 2 (apart). A floor under it keeps every top's whole
+// swept circle in the band: it widens at once as a top needs room and gives way slowly, so a lunge never leaves the picture.
+const TOP_HEIGHT = 12, TOP_NEAR = 1.2, TOP_ROOM = 1.12, TOP_FOLLOW = 2.5;
 
 /** A world-space photographic plate sharing the fight camera (2.5D). */
 export class PhotoKitchen {
@@ -75,30 +77,8 @@ export class PhotoKitchen {
     const nominal = this.stage.coreRadius * 6.5 * 0.7 * view.h / (2 * depth * view.w * (48 / 393));
     this.maxFov = THREE.MathUtils.radToDeg(2 * Math.atan(nominal * 2));
     const building = !document.getElementById('build').hidden;
-    // The fight drives the target: approach/contact closes in, separation opens out.
-    // A critically damped spring keeps position and speed continuous on impacts.
     const [a, b] = this.stage.fighters;
-    let distance = a && b ? a.center.distanceTo(b.center) : 0;
-    if (a?.vel && b?.vel && distance > 0.001) {
-      const direction = b.center.clone().sub(a.center).divideScalar(distance);
-      distance += THREE.MathUtils.clamp(b.vel.clone().sub(a.vel).dot(direction) * 0.12, -0.25, 0.25);
-    }
-    const progress = THREE.MathUtils.clamp((distance - 0.8) / 1.8, 0, 1);
-    this.collisionAge = (this.collisionAge ?? Infinity) + Math.max(0, dt);
-    let target = 1 + progress * progress * (3 - 2 * progress);
-    if (this.collisionAge < 0.22) target = Math.min(target, 1.15);
-    if (building) { this.zoom = 1; this.zoomVelocity = 0; this.collisionAge = Infinity; }
-    else if (dt > 0) {
-      const step = Math.min(dt, 0.1), omega = 3;
-      const delta = (this.zoom ?? 1) - target;
-      const c = (this.zoomVelocity ?? 0) + omega * delta;
-      const decay = Math.exp(-omega * step);
-      this.zoom = target + (delta + c * step) * decay;
-      this.zoomVelocity = ((this.zoomVelocity ?? 0) - omega * c * step) * decay;
-    }
-    this.zoom ??= 1;
-    this.zoomTarget = target;
-    let tangent = nominal * THREE.MathUtils.clamp(this.zoom, 1, 2);
+    let tangent = nominal * THREE.MathUtils.clamp(this.zoomStep(dt, building), 1, 2);
     if (!this.enabled && !building && a && b) {
       tangent /= 2.15;
       const halfHeight = Math.max(1, Math.min(y - view.top, view.h - this.stage.safeBottom() - y));
@@ -127,6 +107,33 @@ export class PhotoKitchen {
       this.referenceReady = true;
     }
     this.stage.particles.mat.uniforms.uScale.value = view.h * this.stage.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+  }
+
+  /** The fight's zoom, 1 (close) to 2 (apart): approach/contact closes in, separation opens out. A critically damped spring
+   * keeps position and speed continuous on impacts. */
+  zoomStep(dt, building) {
+    const [a, b] = this.stage.fighters;
+    let distance = a && b ? a.center.distanceTo(b.center) : 0;
+    if (a?.vel && b?.vel && distance > 0.001) {
+      const direction = b.center.clone().sub(a.center).divideScalar(distance);
+      distance += THREE.MathUtils.clamp(b.vel.clone().sub(a.vel).dot(direction) * 0.12, -0.25, 0.25);
+    }
+    const progress = THREE.MathUtils.clamp((distance - 0.8) / 1.8, 0, 1);
+    this.collisionAge = (this.collisionAge ?? Infinity) + Math.max(0, dt);
+    let target = 1 + progress * progress * (3 - 2 * progress);
+    if (this.collisionAge < 0.22) target = Math.min(target, 1.15);
+    if (building) { this.zoom = 1; this.zoomVelocity = 0; this.collisionAge = Infinity; }
+    else if (dt > 0) {
+      const step = Math.min(dt, 0.1), omega = 3;
+      const delta = (this.zoom ?? 1) - target;
+      const c = (this.zoomVelocity ?? 0) + omega * delta;
+      const decay = Math.exp(-omega * step);
+      this.zoom = target + (delta + c * step) * decay;
+      this.zoomVelocity = ((this.zoomVelocity ?? 0) - omega * c * step) * decay;
+    }
+    this.zoom ??= 1;
+    this.zoomTarget = target;
+    return this.zoom;
   }
 
   /** The picture's jolts this frame: [x px, y px, how much the push-in tightens the view (1 = none)]. */
@@ -172,25 +179,37 @@ export class PhotoKitchen {
   updateTopDown(dt) {
     const {camera, view} = this.stage, fighters = this.stage.fighters;
     if (this.plate) this.plate.visible = false;
-    camera.position.set(0, TOP_HEIGHT, 0);
+    const fresh = !(dt > 0) || this.topTan == null || this.topFor !== this.stage.topDown;
+    // Over the midpoint of the tops still standing (a broken core's top no longer counts).
+    const mid = (this.topMid ??= new THREE.Vector3()).set(0, 0, 0), live = fighters.filter(f => f.dim <= 0.5);
+    for (const f of live) mid.add(f.center);
+    if (live.length) mid.divideScalar(live.length).setY(0);
+    const centre = this.topCentre ??= new THREE.Vector3();
+    if (fresh) centre.copy(mid); else centre.lerp(mid, 1 - Math.exp(-dt * TOP_FOLLOW));
+    camera.position.set(centre.x, TOP_HEIGHT, centre.z);
     camera.up.copy(this.stage.topDown);
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(centre.x, 0, centre.z);
     camera.updateMatrixWorld(true);
     const bottom = view.h - this.stage.safeBottom(), y = (view.top + bottom) / 2;
     const halfH = Math.max(40, (bottom - view.top) / 2), halfW = view.w / 2 - 6, k = view.h / 2;
-    // The tangent of half the vertical field of view that keeps every top's swept circle inside the band.
-    let want = TOP_MIN / TOP_HEIGHT * k / Math.min(halfW, halfH);
-    for (const f of fighters) {
-      if (f.dim > 0.5) continue;
+    // The tangent of half the vertical field of view: the zoom's TOP_NEAR..2×TOP_NEAR m across the narrower half of the band,
+    // and, under it, the floor that keeps every top's swept circle inside the band.
+    const zoomed = TOP_NEAR * THREE.MathUtils.clamp(this.zoomStep(dt, false), 1, 2) / TOP_HEIGHT * k / Math.min(halfW, halfH);
+    let floor = 0;
+    for (const f of live) {
       const p = (this.fitPoint ??= new THREE.Vector3()).copy(f.center).applyMatrix4(camera.matrixWorldInverse);
       const r = this.stage.frameRadius(f) * TOP_ROOM, depth = Math.max(1, -p.z - r);
-      want = Math.max(want, (Math.abs(p.x) + r) / depth * k / halfW, (Math.abs(p.y) + r) / depth * k / halfH);
+      floor = Math.max(floor, (Math.abs(p.x) + r) / depth * k / halfW, (Math.abs(p.y) + r) / depth * k / halfH);
     }
-    if (!(dt > 0) || this.topTan == null || this.topFor !== this.stage.topDown) this.topTan = want;
-    else this.topTan += (want - this.topTan) * (1 - Math.exp(-dt * (want > this.topTan ? 10 : 1.2)));
+    // As single-player's fit: at once when a top needs more room, then giving way slowly.
+    if (fresh || floor > this.topTan) this.topTan = floor;
+    else this.topTan += (floor - this.topTan) * (1 - Math.exp(-dt * 1.2));
     this.topFor = this.stage.topDown;
+    // What the band shows across its narrower half, in metres (for measuring against single-player).
+    this.topHalfWidth = Math.max(zoomed, this.topTan) * TOP_HEIGHT * Math.min(halfW, halfH) / k;
     const [sx, sy, push] = this.jolt(dt, false);
-    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(this.topTan / push));
+    // An impact's push-in tightens the zoom, never past the floor: both tops stay whole through it.
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(zoomed / push, this.topTan)));
     this.stage.setOffset(sx, view.h / 2 - y + sy);
     camera.updateProjectionMatrix();
     this.stage.particles.mat.uniforms.uScale.value = view.h * this.stage.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));

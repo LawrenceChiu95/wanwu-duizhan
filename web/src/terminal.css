@@ -500,24 +500,12 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #pvpReady .t0 { bottom:calc(env(safe-area-inset-bottom) + var(--pvp-pad) + 58px); transform:translateX(-50%); }
 #pvpReady .t1 { top:calc(env(safe-area-inset-top) + var(--pvp-pad) + 58px); transform:translateX(-50%) rotate(180deg); }
 #pvpReady.fight .t0 { color:var(--c0l); animation:pvpGo0 .6s ease-out both; }
+/* 第三轮 ①: single-player gets the foot's plate alone, over its 冲 / 挡 where the first lesson comes up after it. */
+#pvpReady.solo .t1 { display:none; }
+#pvpReady.solo .t0 { bottom:calc(env(safe-area-inset-bottom) + 150px); }
 #pvpReady.fight .t1 { color:var(--c1l); animation:pvpGo1 .6s ease-out both; }
 @keyframes pvpGo0 { 0% { transform:translateX(-50%) scale(1.25); } 30% { transform:translateX(-50%) scale(1); } 75% { opacity:1; } 100% { opacity:0; transform:translateX(-50%) scale(1.04); } }
 @keyframes pvpGo1 { 0% { transform:translateX(-50%) rotate(180deg) scale(1.25); } 30% { transform:translateX(-50%) rotate(180deg) scale(1); } 75% { opacity:1; } 100% { opacity:0; transform:translateX(-50%) rotate(180deg) scale(1.04); } }
-/* 第二轮 ③ 凡朔's glow round the edge: a thin line and a soft fall-off inward, 1P's colour along the foot, 2P's along the
-   head, the two sides blending across the middle. Under the buttons and bars; the winner's colour all round at the end. */
-#pvpGlow { position:absolute; inset:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); pointer-events:none; transition:opacity .4s; }
-#pvpGlow::before, #pvpGlow::after { content:''; position:absolute; inset:0; transition:opacity .5s;
-  --fall:#000 3px,#000b 3px,#0005 12px,#0000 30px,#0000 calc(100% - 30px),#0005 calc(100% - 12px),#000b calc(100% - 3px),#000 calc(100% - 3px);
-  -webkit-mask:linear-gradient(90deg,var(--fall)),linear-gradient(0deg,var(--fall)); mask:linear-gradient(90deg,var(--fall)),linear-gradient(0deg,var(--fall)); }
-#pvpGlow::before { background:linear-gradient(0deg,#ffb84a 0 36%,#4fe0d2 64% 100%); }
-#pvpGlow::after { background:var(--win,#ffb84a); opacity:0; }
-#pvpGlow.ready { animation:pvpBreathe 1.2s ease-in-out infinite; }
-#pvpGlow.burst { animation:pvpPulse .6s ease-out both; }
-#pvpGlow.won0 { --win:#ffb84a; } #pvpGlow.won1 { --win:#4fe0d2; }
-#pvpGlow.won0::after, #pvpGlow.won1::after { opacity:1; }
-#pvpGlow.draw { opacity:.6; }
-@keyframes pvpBreathe { 0%,100% { opacity:.45; } 50% { opacity:1; } }
-@keyframes pvpPulse { 0% { filter:brightness(1.7); } 100% { filter:none; } }
 /* 第二轮 ⑤ the run so far: under 你赢了 on the card, and under 2P's plate at the head. */
 #result .score { margin-top:2px; font:800 17px/1.3 var(--display, inherit); letter-spacing:2px; color:var(--ink); opacity:.85; }
 #pvpWin { flex-direction:column; align-items:center; gap:4px; }

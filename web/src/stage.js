@@ -116,18 +116,19 @@ function coreTextures(color) {
 }
 
 const backdropShader = {
-  vertexShader: `varying vec3 vP, worldPos, clipXYW;
+  vertexShader: `varying vec3 vP, worldPos, clipXYW; varying vec3 screenXYW;
     void main(){
       vP = normalize(position);
       worldPos = (modelMatrix * vec4(position,1.0)).xyz;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+      screenXYW = gl_Position.xyw;
       vec2 ndc = gl_Position.xy/gl_Position.w;
       float aspect = projectionMatrix[1][1]/projectionMatrix[0][0];
       vec2 physical = vec2(ndc.x*aspect, ndc.y);
       vec2 tilted = mat2(0.848,-0.530,0.530,0.848)*physical;
       clipXYW = vec3(tilted.x/aspect,tilted.y,1.0)*gl_Position.w;
     }`,
-  fragmentShader: `varying vec3 vP, worldPos, clipXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom, fieldFade;
+  fragmentShader: `varying vec3 vP, worldPos, clipXYW, screenXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom, fieldFade, fieldHeat, fieldThrob;
     void main(){
       // Stereographic projection curves the peripheral grid without distorting the fighters.
       vec2 lens = clipXYW.xy / clipXYW.z * vec2(0.60,0.78) * fieldZoom;
@@ -166,7 +167,8 @@ const backdropShader = {
       float trail = fract(-sectorAngle/3.14159265 + floor((lat+0.18)/3.0+0.5)*0.27);
       float head = smoothstep(0.0,0.012,trail)*exp(-trail*15.0);
       float tail = smoothstep(0.0,0.012,trail)*exp(-trail*6.5);
-      vec3 cyan = vec3(0.055,0.62,0.72);
+      // No clock loss (第三轮 ④): from 60 s, as the arena tightens, its cyan runs hot towards amber and throbs (fieldHeat 0..1).
+      vec3 cyan = mix(vec3(0.055,0.62,0.72), vec3(0.95,0.42,0.06), fieldHeat) * (1.0 + 0.55 * fieldThrob);
       vec3 light = vec3(0.012,0.03,0.07)*line + cyan*(trunk*(0.18+0.72*sweep)+0.14*fringe);
       light += band*fan*(cyan*(0.022+0.35*fine+0.36*line));
       light += arc*(vec3(1.2,0.015,0.42)*tail + vec3(1.1,0.33,0.76)*head);
@@ -182,6 +184,10 @@ const backdropShader = {
       float ribbon = exp(-distance2*0.66 - 2.1*offset.y*offset.y);
       vec3 scattered = (vec3(0.60,0.64,0.67)*ribbon + vec3(0.29,0.20,0.27)*haze
                        + vec3(0.085,0.034,0.105)*halo) * (0.97 + 0.03*sin(fieldTime*1.2));
+      // ... and an amber band behind everything closes in from the picture's edges (a third of the way in at full heat).
+      float edge = length(screenXYW.xy / screenXYW.z), inner = mix(1.45, 0.62, fieldHeat);
+      float closing = smoothstep(inner, inner + 0.55, edge) * fieldHeat;
+      light += vec3(1.0,0.36,0.05) * closing * (0.30 + 0.35 * fieldThrob);
       gl_FragColor = vec4(base + light + 0.70 * scattered, fieldFade);
       #include <colorspace_fragment>
     }`
@@ -770,7 +776,7 @@ export class Stage {
       l.target = target;
     }
 
-    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}, fieldFade:{value:1}};
+    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}, fieldFade:{value:1}, fieldHeat:{value:0}, fieldThrob:{value:0}};
     const fieldMaterial = new THREE.ShaderMaterial({...backdropShader, uniforms:this.fieldUniforms, side: THREE.BackSide, depthWrite: false});
     const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.MeshBasicMaterial({color:0x080d18, side:THREE.BackSide, depthWrite:false}));
     back.renderOrder = -2;
@@ -848,6 +854,7 @@ export class Stage {
     this.fighters = [];
     this.debris = [];
     this.time = 0;
+    this.heat = 0;
     this.cam = {focus: new THREE.Vector3(), dist: 4, yaw: CAM_YAW, pitch: 0.95, ready: false, mode: 'fight', shakeAge: 1, shakeAmp: 0, offset: [0, 0],
       fv: new THREE.Vector3(), logD: 0, logDv: 0, goal: 0, hist: [], clock: 0, offY: 0, offYv: 0, punch: null, only: null, cardTop: null, ahead: null, stat: null};
     this.view = {w: 390, h: 844, top: 70, bottom: 130};
@@ -1386,6 +1393,8 @@ export class Stage {
   /** Every blow's shake: the chase cameras and 凡朔's fixed camera (photo-kitchen.js) both play it out. */
   shakeV4(amount) { this.cam.shake4 = Math.min(1.2, Math.max(this.cam.shake4 ?? 0, amount)); }
   setPushV4(amount) { this.cam.push4 = amount; }
+  /** How far the arena has tightened (no clock loss, 第三轮 ④): 0 until 60 s, 1 fifteen seconds on. */
+  setHeat(h) { this.heat = h; }
   /** Yesterday's chase camera (03a4da9 updateCamera, fight and result), lifted as it was; only the safe area now counts the 冲/挡 pad. */
   updateCameraV4(dt, snap) {
     const [a, b] = this.fighters;
@@ -1625,6 +1634,10 @@ export class Stage {
     if (this.fighters[0]) this.fadeFront(this.fighters[0], this.cam.mode === 'build');
     this.fieldUniforms.fieldTime.value = this.time;
     this.fieldUniforms.fieldZoom.value = 0.84 * (this.kitchen?.photo?.zoom ?? 1);
+    // The heat's throb quickens as it grows (about 1 to 2.5 beats a second), a pulse rather than a flicker.
+    this.heatPhase = ((this.heatPhase ?? 0) + realDt * (1 + 1.5 * this.heat)) % 1;
+    this.fieldUniforms.fieldHeat.value = this.heat;
+    this.fieldUniforms.fieldThrob.value = this.heat * (0.5 - 0.5 * Math.cos(this.heatPhase * 2 * Math.PI)) ** 2;
     this.fieldUniforms.hitAge.value += realDt;
     // 冲挡加重 (Elara c53fc626): with shortHitLight (the new feel) a struck piece's flash is warm and gone in about 0.1 s,
     // and the striker's edge too, so a piece never sits whited out under the push-in; ?feel=old keeps the 评委版's.

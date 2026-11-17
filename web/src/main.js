@@ -32,11 +32,12 @@ const el = {
   busy: $('busy'), busyText: $('busyText'), error: $('error'),
   coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
-  pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin'), pvpReady: $('pvpReady'), pvpGlow: $('pvpGlow'), pvpScore: $('pvpScore')
+  pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin'), pvpReady: $('pvpReady'), pvpScore: $('pvpScore')
 };
 // Manual mode: the sim runs live this far ahead of what is shown (a press is taken at the next physics step).
 const LIVE_LEAD = 0.05;
-// 一机双人's start (第二轮 ①): 准备 for READY_GO s, then 开打！ until READY; the sim starts after it, so its numbers are untouched.
+// Every match's start (一机双人 第二轮 ①, single-player too from 第三轮 ①): 准备 for READY_GO s, then 开打！ until READY; the
+// sim starts after it, so its numbers are untouched.
 const READY = 1.5, READY_GO = 0.9;
 // The trial page (远夏 77df1bda, Elara 910599fc) offers 凡朔's twelve (Sol's rated items, in his order), then the player's
 // own photos, not the drafts a comparisonBase replaces. The earlier items stay in the catalog only for the three
@@ -545,6 +546,7 @@ async function main() {
   $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
     phase = 'build';
+    stage.setHeat(0);
     pb = replay = null;
     live?.match.free();
     live = null;
@@ -561,7 +563,7 @@ async function main() {
     stage.topDown = null;
     stage.pose(previewState());
     el.hud.hidden = true;
-    el.result.hidden = el.pvpWin.hidden = el.pvpReady.hidden = el.pvpGlow.hidden = true;
+    el.result.hidden = el.pvpWin.hidden = el.pvpReady.hidden = true;
     el.build.hidden = false;
     el.foe.hidden = false;
     setCaption(false);
@@ -608,7 +610,6 @@ async function main() {
       });
       overlay.setCoreHp(i, frac);
     });
-    el.clock.textContent = pb ? wholeSeconds(pb.t) : '0';
   }
   // The same blow on the HUD: the striking piece lights in its side's colour, the piece (or core bar) hit flashes white.
   const hudChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .core .bar`) : el.hud.querySelectorAll(`.s${side} .pc`)[Number(part.split('-')[1])];
@@ -1069,8 +1070,8 @@ async function main() {
   function hideCoach() { clearTimeout(coachTimer); coachFirstUp = false; el.coach.hidden = true; }
 
   // ---------- 提示出手 ----------
-  // Stage 1 only (Elara af9e8542): a player who only blocks runs out the clock and loses (Sol a8851e63). After NUDGE_IDLE s
-  // without a 冲, or NUDGE_BLOCKS blocks that caught a lunge with no 冲 between, 冲 beats and a plate under the player's top
+  // Stage 1 only (Elara af9e8542): a player who only blocks loses (Sol a8851e63), since 第三轮 ④ to the arena closing in
+  // after 60 s rather than to the clock. After NUDGE_IDLE s without a 冲, or NUDGE_BLOCKS blocks that caught a lunge with no 冲 between, 冲 beats and a plate under the player's top
   // says why, for NUDGE_TIME s; twice a match at most, gone at the next 冲. Match seconds.
   const NUDGE_IDLE = 12, NUDGE_BLOCKS = 3, NUDGE_MAX = 2, NUDGE_TIME = 5;
   let nudge = null;
@@ -1175,14 +1176,13 @@ async function main() {
     updateHud(0, pb.state); updatePad();
     stage.setLookahead(lookahead());
     stage.updateCamera(0, true);
-    phase = pvp ? 'ready' : 'play';
+    stage.setHeat(0);
+    phase = 'ready';
     // Back the right way for the fight; 重选装备 afterwards starts again from 1P.
     if (pvp) { pick = 0; el.app.style.transition = 'none'; el.app.classList.remove('turned'); void el.app.offsetWidth; el.app.style.transition = ''; }
-    // 一机双人 (第二轮 ①): both ends get 准备 then 开打！ before anything counts, so a hand still on its way is not behind.
-    if (pvp) getReady(); else overlay.showBanner('开转', '#ffffff', 0.8);
-    // The new opening delays the foe's charge, which used to bring up the first lesson early.
-    if (combatOptions.combatRules?.opening) coach(0);
-    else setTimeout(() => coach(0), 400);
+    // 准备 then 开打！ before anything counts, so a hand still on its way is not behind: both ends in 一机双人 (第二轮 ①), the
+    // player's alone single-player (第三轮 ①, in place of 开转). The first lesson waits for 开打 (readyStep).
+    getReady();
     // Shareable address on a normal page; sandboxed viewers (opaque origin) refuse URL changes, which is fine.
     // An address build still waiting for its photo item stays in the address, unless the player has changed that side (task #70).
     // ?foe= stays too, so a reload is still a measurement and not the ladder (Sol's S1 on PR #84).
@@ -1253,8 +1253,6 @@ async function main() {
     el.pvpWin.className = m.winner === null ? 'draw' : m.winner === 1 ? 'blue' : 'lose';
     el.pvpWin.firstChild.textContent = said(1);
     el.pvpWin.lastChild.textContent = `你 ${score[1]} : ${score[0]} 对面`;
-    // The winner's colour all round the edge (凡朔's 「箭头指向谁赢」); a draw keeps both.
-    if (pvp) glow(m.winner === null ? 'draw' : `won${m.winner}`);
     el.result.hidden = false;
     layout_();
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
@@ -1302,7 +1300,6 @@ async function main() {
     if (!pb || pb.slowAt === null) return;
     el.result.hidden = el.pvpWin.hidden = true;
     el.hud.hidden = false;
-    if (pvp) glow('');
     showPads(false);
     stage.clearFx();
     overlay.clear(); lateNums = []; resetHighlights();
@@ -1718,29 +1715,37 @@ async function main() {
     el.pvpTip.hidden = false; // shown, its lines' fade (terminal.css) plays from the start
   }
   el.pvpTip.addEventListener('animationend', () => { el.pvpTip.hidden = true; });
-  // 准备 → 开打！ (第二轮 ①): the plates and the glow; the loop counts readyAge on and lets the fight go at READY.
+  // No clock loss (第三轮 ④): how far the arena has tightened at match time t, from the rules this match is played under.
+  function heatAt(t) {
+    const o = (live ? combatOptions.combatRules : replay?.meta.combatRules)?.overtime;
+    return o ? Math.min(1, Math.max(0, (t - o.start) / o.ramp)) : 0;
+  }
+  // 准备 → 开打！: the plates (single-player only the one at the foot); the loop counts readyAge on and lets the fight go at READY.
   function getReady() {
     readyAge = 0;
     for (const b of el.pvpReady.children) b.textContent = '准备';
-    el.pvpReady.className = '';
+    el.pvpReady.className = pvp ? '' : 'solo';
     el.pvpReady.hidden = false;
-    glow('ready');
   }
   function readyStep(dt) {
     const was = readyAge;
     readyAge += dt;
     if (was < READY_GO && readyAge >= READY_GO) {
       for (const b of el.pvpReady.children) b.textContent = '开打！';
-      el.pvpReady.className = 'fight';
-      glow('burst');
+      el.pvpReady.className = pvp ? 'fight' : 'solo fight';
       sfx.go();
       buzz(30);
     }
-    // The first match's line about the buttons comes once the plates are gone, where they stood.
-    if (readyAge >= READY) { el.pvpReady.hidden = true; glow(''); phase = 'play'; pvpTip(); }
+    // The first match's line about the buttons comes once the plates are gone, where they stood; single-player, the first
+    // lesson (it shows only in play, so during 准备 it was lost).
+    if (readyAge >= READY) {
+      el.pvpReady.hidden = true; phase = 'play';
+      if (pvp) pvpTip();
+      // The new opening delays the foe's charge, which used to bring up the first lesson early.
+      else if (combatOptions.combatRules?.opening) coach(0);
+      else setTimeout(() => coach(0), 400);
+    }
   }
-  // The edge's glow: '' through the fight, 'ready' breathing, 'burst' one bright pulse at 开打！ (not 'go': that is the 开打 button's class), 'won0' / 'won1' / 'draw' on the result.
-  function glow(state) { el.pvpGlow.hidden = false; el.pvpGlow.className = state; }
   // Sound on / off (remembered where the page may store it).
   const mutes = [el.mute, $('muteFloat')];
   const syncMute = () => { for (const b of mutes) { b.classList.toggle('off', sfx.muted); b.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); } };
@@ -1919,6 +1924,8 @@ async function main() {
     // Safe-area audit: worst overflow per phase over every rendered frame (px > 0 means something was cut off).
     trackSafe(speed = 1) { test.speed = speed; test.safe = {}; test.frame = null; },
     safe: () => test.safe,
+    // 一机双人's camera: the metres across the band's narrower half, and the zoom (1 close .. 2 apart).
+    topView: () => ({half: stage.kitchen?.photo.topHalfWidth ?? null, zoom: stage.kitchen?.photo.zoom ?? null}),
     // The player's own aim arrow: 0 on the lane .. 1 grey (off the full-lunge lane), null when none is showing.
     caught: () => test.caught ?? null,
     aimWide: () => stage.fighters[0]?.act.aimDir ? stage.fighters[0].act.aimWide : null,
@@ -1978,6 +1985,7 @@ async function main() {
       stage.pose(pb.state);
       stage.setLookahead(lookahead());
       stage.setPushV4(pb.pushAmount(pb.t));
+      stage.setHeat(heatAt(pb.t));
       const slow = pb.slowAmount(pb.t);
       el.slowtag.classList.toggle('on', slow > 0.3);
       if (pb.inDecisive(pb.t)) { if (!el.caption.classList.contains('on')) setCaption(true); captionHold = 1.6; }
@@ -1986,7 +1994,8 @@ async function main() {
         replayEnd += dt;
         if (replayEnd > 0.6) showResult();
       } else if (pb.done) {
-        if (phase === 'play' && replay.meta.reason === 'timeout') overlay.showBanner('时间到', '#ffffff', 1.3);
+        // A match on time says so; with no clock (第三轮 ④) the backstop is silent, only the card says 拖得太久.
+        if (phase === 'play' && replay.meta.reason === 'timeout' && !replay.meta.combatRules?.overtime) overlay.showBanner('时间到', '#ffffff', 1.3);
         phase = 'finale';
         finaleAge = finaleSim = 0;
         endNudge();

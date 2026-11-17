@@ -17,8 +17,11 @@ export function setNames(items) {
   }
 }
 
-/** Whole seconds shown for a match time: the fight clock and the result card use this one rounding. */
+/** Whole seconds shown for a match time: the result card's (and older pages' fight clock) one rounding. */
 export const wholeSeconds = t => Math.floor(t + 1e-6);
+// No clock loss (第三轮 ④, sim combatRules.overtime): the arena tightens from 60 s until a core breaks; a match still going at
+// the silent backstop is judged on HP left, said as 拖得太久, never 时间到 (no clock is shown). Older replays keep 时间到.
+const ENOUGH = '拖得太久', overtimeOf = replay => replay.meta?.combatRules?.overtime ?? null;
 
 /** `who`: the two sides' words (一机双人: 你 and 对面, said to 1P). */
 export function reasonLine(replay, who = ['你', '对手']) {
@@ -26,9 +29,9 @@ export function reasonLine(replay, who = ['你', '对手']) {
   if (reason === 'double-ko' && replay.meta.winner === null) return '两边核心同时碎了';
   if (reason === 'timeout') {
     // 时间到 is judged too (Sol 1da0b823): core HP left first, then the pieces still standing; equal on both is a draw.
-    const W = who[replay.meta.winner === 0 ? 0 : 1];
-    if (why?.kind !== 'timeout' || replay.meta.winner === null) return why?.kind === 'timeout' ? '时间到，两边剩的血一样多' : '时间到，两颗核心都还在';
-    return why.criterion === 'part-hp' ? `时间到，核心一样，${W}的件剩血多` : `时间到，${W}的核心剩血多`;
+    const W = who[replay.meta.winner === 0 ? 0 : 1], T = overtimeOf(replay) ? ENOUGH : '时间到';
+    if (why?.kind !== 'timeout' || replay.meta.winner === null) return why?.kind === 'timeout' ? `${T}，两边剩的血一样多` : `${T}，两颗核心都还在`;
+    return why.criterion === 'part-hp' ? `${T}，核心一样，${W}的件剩血多` : `${T}，${W}的核心剩血多`;
   }
   if (!why) return '核心先被打空的一方输了';
   const W = who[why.attacker === 0 ? 0 : 1], L = who[why.target === 0 ? 0 : 1];
@@ -52,7 +55,7 @@ export function reasonLine(replay, who = ['你', '对手']) {
 /** The result card's top line: how the match ended. */
 export function endLine(replay) {
   const {reason} = replay.meta;
-  return reason === 'timeout' ? '时间到，比剩血' : reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了';
+  return reason === 'timeout' ? `${overtimeOf(replay) ? ENOUGH : '时间到'}，比剩血` : reason === 'double-ko' ? '两颗核心同时碎了' : '核心碎了';
 }
 
 /** What the player did this match, from the replay's own events (the page never judges a hit itself). */
@@ -61,6 +64,8 @@ export function endLine(replay) {
 export function matchStats(replay, defs, shot = () => false, {oldFeel = false, foeGrades} = {}) {
   const foe = defs[1]?.parts.map(({item}, i) => ({item, grade: foeGrades ? foeGrades[i] : GRADE[item]})) ?? [];
   const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null], timeout: replay.meta?.reason === 'timeout', oldFeel,
+    // Still going when the arena began to tighten (no clock loss): what a match on time was before.
+    squeezed: Boolean(overtimeOf(replay)) && replay.meta.duration > overtimeOf(replay).start, overtime: Boolean(overtimeOf(replay)),
     // Advice follows this item's scores, rather than its category or overall grade.
     hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null,
     outmatched: outmatched(defs[0]?.parts.map(p => p.item).filter(shot) ?? [], foe)};
@@ -127,6 +132,8 @@ export function tipLine(s, winner, foe = null) {
   // Lost stage 1 on time without a single 冲 (Sol a8851e63: its turtle runs out the clock 99 times in 100): say so plainly.
   // Only there, new feel, never pressed: telling a player who did lunge 「没出手」 is worse than saying nothing (Elara 27b4d4c3).
   // Anyone else losing stage 1 on time hears they lunged too little, never the 莽牛 line on blocking (Castor 72baf2c8, Elara ad7297c3).
+  // No clock loss (第三轮 ④): what taught it is the arena closing in after a minute, so that is what the line says.
+  if (winner === 1 && foe === 'mang' && s.squeezed && !s.oldFeel) return s.presses === 0 ? '一直在挡没出手，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血' : '出手太少，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血';
   if (winner === 1 && foe === 'mang' && s.timeout && !s.oldFeel) return s.presses === 0 ? '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血' : '时间到：出手太少。挡住后点冲，才打得掉它的血';
   if (winner === 1 && FOE_WHY[foe]) return FOE_WHY[foe];
   // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
@@ -149,5 +156,5 @@ export function tipLine(s, winner, foe = null) {
   if (s.landed === 0) return '一次没冲中，离近一点再按冲';
   if (s.blocks === 0) return '它冲过来时按挡，能把它弹开';
   if (mine?.orient === 'hug') return `贴着的${NAMES[mine.item] ?? '那件'}被打碎了，换一件更结实的贴着`;
-  return winner === null ? '时间到按剩血判，多冲中几下就能赢' : '换个装法再打一局';
+  return winner === null ? `${s.overtime ? ENOUGH : '时间到'}按剩血判，多冲中几下就能赢` : '换个装法再打一局';
 }
