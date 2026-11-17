@@ -131,7 +131,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .kitchen-panel:not([open]) { opacity:.65; }
 .kitchen-panel:not([open]):hover { opacity:1; }
 .kitchen-panel select { max-width:135px;background:#10251a;color:var(--ink);border:1px solid #627254;font:11px var(--body);padding:4px; }
-@media(max-width:380px) { .terminal-brand b {font-size:20px;} .item b {font-size:16px;} .hint {font-size:9px;} .bhead span {font-size:9px;} }
+@media(max-width:380px) { .terminal-brand b {font-size:20px;} .item b {font-size:16px;} .hint {font-size:9px;} .bhead span {font-size:11px;} }
 @media(max-height:720px) { .slot {gap:5px;padding:10px 8px 8px;} .slot-rail {padding-bottom:4px;} .item {min-height:46px;} #build {gap:7px;} .bhead {padding:6px 9px;} }
 :where(.seen-720) .slot {gap:5px;padding:10px 8px 8px;} :where(.seen-720) .slot-rail {padding-bottom:4px;} :where(.seen-720) .item {min-height:46px;} :where(.seen-720) #build {gap:7px;} :where(.seen-720) .bhead {padding:6px 9px;}
 @media(prefers-reduced-motion:reduce) { .pad.on {animation:none;} }
@@ -159,7 +159,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #build { gap:6px;padding-top:10px;background:linear-gradient(transparent,#111b14ea 5%,#101a13f2 80%); }
 .bhead { border-width:10px;padding:1px 4px;min-height:35px; }
 .bhead b { font-size:18px; }
-.bhead span { font-size:9px; }
+.bhead span { font-size:12px;color:#c3cdbd; }
 .bhead .shoot { border-radius:0;border:6px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;box-shadow:none;background:none;color:#242c20;font-weight:800;height:30px;padding:0 4px;margin:-3px 0; }
 .bhead .shoot svg { width:14px;height:14px; }
 .slot { border-width:13px;padding:2px 3px 3px;gap:5px;min-width:0; }
@@ -335,6 +335,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .card.gradeS.own { --restS:inset 0 0 0 2px var(--c0),0 0 18px -6px #edbb59aa; }
 .card .badge { border-radius:1px;background:#203e2e;color:#c5d1bb;box-shadow:inset 0 0 0 1px #476649; }
 .card .badge.own { background:var(--c0);color:#1c1608;box-shadow:none; }
+.card .badge.new { background:var(--c0l);color:#1c1608;box-shadow:0 0 0 1px #1c1608,0 0 10px rgba(236,206,133,.55);font-weight:700;padding:0 10px; }
 .card .cat { border-radius:1px;color:#a9c7ae;box-shadow:inset 0 0 0 1px #476649; }
 .card .spec,.card .rates { color:#92b4a1; }
 .card .how,.card .src { margin:2px 4px 0;border-top-color:#405843; }
@@ -440,6 +441,13 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 @keyframes pcCrackLine { 0% { opacity:1;clip-path:inset(0 100% 0 0); } 18% { opacity:1;clip-path:inset(0 0 0 0); } 60% { opacity:.9; } 100% { opacity:.5; } }
 
 /* 三个都赢了: 拍一件 inside the tip, a word you can tap (Elara 2621157e). */
+/* 拍一件 after the first 莽牛 win: a cream plate of its own over the result's buttons, the 组装台's 拍一件 made wide. */
+.shootnow { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:46px;margin:0 0 10px;padding:0 10px;
+  border:8px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;color:#242c20;
+  font:400 18px/1 var(--display);letter-spacing:1px;box-shadow:0 3px 4px #0008;cursor:pointer; }
+.shootnow svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round; }
+.shootnow[hidden] { display:none; }
+.shootnow:active { transform:translateY(1px); }
 .tip .tipshoot { all:unset;cursor:pointer;margin:0 2px;padding:0 1px;color:inherit;font-weight:800;
   border-bottom:1.5px solid currentColor; }
 .tip .tipshoot:focus-visible { outline:2px solid var(--c1);outline-offset:2px; }
@@ -464,19 +472,19 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
   padding:7px 4px; background:#10221bd9; box-shadow:inset 0 0 0 1px #4b5942,0 4px 10px #0009; }
 #app.pvp #hud .mid .clock { font-size:19px; }
 #app.pvp #hud .mid .slowtag { writing-mode:vertical-rl; }
-/* The mute off the fight: on the left edge at mid height, where the fight's own sits in 一机双人, so both ends reach it.
-   Under sheets and pages (the 角色库, 拍一件, 换个对手), over the judge's opening card. */
-#muteFloat { position:absolute; left:8px; top:50%; z-index:4; width:38px; height:38px; transform:translateY(-50%);
-  background:#10221bd9; box-shadow:inset 0 0 0 1px #4b5942,0 4px 10px #0009; }
-#muteFloat svg { width:19px; height:19px; }
-#hud:not([hidden]) ~ #muteFloat { display:none; }
-#intro:not([hidden]) ~ #muteFloat { z-index:9; }
-/* 回首页: a cream iron plate just over the mute, off the fight only (#app.offfight: 选装备 and 结算). */
-#homeFloat { position:absolute; left:8px; top:min(50% - 27px, var(--home-max, 100%)); z-index:4; height:40px; transform:translateY(-100%); display:flex; align-items:center;
-  gap:3px; padding:0 5px 0 2px; border:7px solid transparent; border-image:url('./assets/terminal/cream.webp') 80 fill stretch; background:none;
-  color:#242c20; font-size:13px; font-weight:800; box-shadow:0 4px 8px #0009; }
-#homeFloat svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
-#homeFloat[hidden], #app:not(.offfight) #homeFloat, #intro:not([hidden]) ~ #homeFloat { display:none; }
+/* 回首页 and the sound off the fight: a pair of the plate's own chips either side of 万物对战 (Pollux, Elara 56506aa2). */
+#foe .terminal-brand { position:relative; }
+#foe .hkey { position:absolute; top:calc(50% + 7px); transform:translateY(-50%); z-index:1; height:28px; display:flex; align-items:center; justify-content:center; gap:2px; clip-path:none; border:0; }
+#foe #homeBtn { left:-5px; padding:0 4px 0 2px; }
+#foe #homeBtn[hidden] { display:none; }
+#foe #homeBtn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+#foe #muteTop { right:-5px; width:30px; padding:0; }
+#foe #muteTop svg { width:17px; height:17px; }
+#app:not(.offfight) #foe .hkey { visibility:hidden; }
+/* Narrow phones: the chips keep saying where they go back to (the 换个对手 one alone goes down to its icon); 回首页 drops
+   its arrow to fit beside the name. */
+@media (max-width:380px) { #foe :is(#homeBtn,#pvpBack) span { display:inline; } #foe #homeBtn { padding:0 3px; font-size:10.5px; } #foe #homeBtn svg { display:none; } }
+#foe .terminal-brand b { font-size:clamp(22px,6.6vw,27px); }
 #app.pvp #camSeg, #app.pvp #caption, #app.pvp #fx .me, #app.pvp #coach { display:none; }
 #pvpTip { position:absolute; inset:0; z-index:5; pointer-events:none; }
 #pvpTip b { position:absolute; left:50%; padding:7px 14px 8px 16px; white-space:nowrap; font-size:16px; font-weight:800; color:#ece9d7;
@@ -537,4 +545,6 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 @keyframes teachRing { 50% { opacity:.45; border-width:5px; } }
 #pad.teach-dash .pad.block, #pad.teach-block .pad.dash { filter:brightness(.38) saturate(.4); }
 #pad.teach-dash .pad.dash:not(.deny):not(.pop), #pad.teach-block .pad.block:not(.deny):not(.pop) { z-index:1; animation:teachLit .8s ease-in-out infinite; }
+/* The lesson's 挡 taken while the fight stands still: held in with a gold edge till the shield is up. */
+#pad .pad.block.armed { z-index:1; transform:translateY(4px) scale(.965); outline:3px solid var(--c0l); outline-offset:1px; filter:brightness(1.15) drop-shadow(0 0 14px #ecce85cc); }
 @keyframes teachLit { 0%,100% { transform:scale(1.07); filter:brightness(1.1) drop-shadow(0 0 8px #ffeeb0); } 50% { transform:scale(1.12); filter:brightness(1.28) drop-shadow(0 0 16px #ffeeb0); } }

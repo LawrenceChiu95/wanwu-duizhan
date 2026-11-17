@@ -526,7 +526,7 @@ async function main() {
       n.classList.toggle('on', pvp && i === pick);
       n.classList.toggle(`p${i}`, pvp);
     });
-    // With an opening page, 回首页 is #homeFloat and this is only 2P's 回 1P; without one, 一机双人's way back to single-player.
+    // With an opening page, 回首页 is #homeBtn and this is only 2P's 回 1P; without one, 一机双人's way back to single-player.
     $('pvpBack').hidden = !pvp || !pick && homeOn;
     $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
@@ -546,16 +546,16 @@ async function main() {
   // Off the fight only (选装备 either side's turn, 结算): two hands on the phone mid-fight don't tap it by mistake (Elara
   // 4f2df5b4). The ladder and the build stay as they are; the two-player score starts again.
   const homeOn = Boolean(judge && document.getElementById('intro'));
-  $('homeFloat').hidden = !homeOn;
+  $('homeBtn').hidden = !homeOn;
   function goHome() {
     if (phase !== 'build' && phase !== 'result') return;
     score = [0, 0];
-    el.hud.hidden = true; // single-player's result keeps it up, and with it the opening page's mute would go
+    el.hud.hidden = true; // single-player's result keeps it up
     // The opening page is inside #app: turn 2P's screen back first, at once, so it is never shown upside down.
     if (pick) { el.app.style.transition = 'none'; setPick(0); void el.app.offsetWidth; el.app.style.transition = ''; }
     if (!judge?.showIntro()) setPvp(false);
   }
-  $('homeFloat').onclick = goHome;
+  $('homeBtn').onclick = goHome;
   $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
     phase = 'build';
@@ -1064,6 +1064,7 @@ async function main() {
     teach = null;
     el.teach.hidden = true;
     el.pad.classList.remove('teach-dash', 'teach-block');
+    el.blockBtn.classList.remove('armed');
   }
   function teachShow(kind) {
     el.teach.dataset.kind = kind;
@@ -1135,7 +1136,7 @@ async function main() {
     if (teach !== t || t.stop !== stop || live?.match !== m0) return;
     if (at === null) {
       t.stop = null;
-      if (t.armed) { t.armed = false; t.lesson = 3; m0.press(0, 'block'); }
+      if (t.armed) { t.armed = false; t.lesson = 3; el.blockBtn.classList.remove('armed'); m0.press(0, 'block'); }
       return;
     }
     t.blockAt = at;
@@ -1195,6 +1196,7 @@ async function main() {
     teach.blockAt = null;
     if (!teach.armed) { teach.lesson = 3; return; }
     teach.armed = false;
+    el.blockBtn.classList.remove('armed');
     m.press(0, 'block');
   }
   // The lesson's 挡 landed: a 完美 lights 冲 for the counter; anything else ends it there.
@@ -1397,7 +1399,6 @@ async function main() {
     el.result.hidden = false;
     layout_();
     // 回首页 stays over the mute unless the card comes up that far (a first win's unlock and 拍一件 lines): then just above it.
-    el.app.style.setProperty('--home-max', `${el.result.offsetTop - 10}px`);
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
     stage.setFocusOn(m.winner, el.result.offsetTop);
   }
@@ -1431,13 +1432,15 @@ async function main() {
     if (o.unlocked != null) {
       const f = LADDER[o.unlocked];
       card.innerHTML = `${markHtml(o.unlocked)}<span class="txt"><span class="k">${SVG.open}解锁下一个</span><b>${esc(f.name)}</b><span class="play">${esc(f.play)}</span></span>`;
-      el.tipLine.innerHTML = o.shootNow && shoot ? `<button type="button" class="tipshoot">拍一件</button>你身边的东西？<br>做好要 3 分钟左右，先去打${esc(f.name)}，回来就能装上` : '';
-      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link'));
+      el.tipLine.innerHTML = o.shootNow && shoot ? `做好要 3 分钟左右，先去打${esc(f.name)}，回来就能装上` : '';
     }
+    $('shootNowBtn').hidden = !(o.shootNow && shoot);
     $('againBtn').innerHTML = `<span>${pvp ? '重选装备' : o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
     $('againBtn').dataset.act = o.act;
     $('sameBtn').textContent = pvp ? '原样再战' : '原样再来';
-    $('soloBtn').hidden = !pvp;
+    // 结算's way back, beside its main button: the 首页 in both modes when there is one (Pollux, Elara 56506aa2).
+    $('soloBtn').hidden = !pvp && !homeOn;
+    $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -1470,11 +1473,23 @@ async function main() {
     return '来源：现成的 3D 模型';
   };
   let libSlot = 0, libReq = 0;
-  function cardHtml(id, k) {
+  // The player's own photo items not put on yet: first in the 角色库, newest first, marked 新 (Elara 5ca726ff). Kept on
+  // this phone once one goes into a slot; the 拍一件 tag's 「做好了 · 装上去打」 waits for that too.
+  const PLACED_KEY = 'wanwu-placed';
+  const placed = (() => { try { return new Set(JSON.parse(localStorage.getItem(PLACED_KEY) ?? '[]')); } catch { return new Set(); } })();
+  const isPlaced = id => placed.has(id) || [mine, FOE].some(b => b.parts.some(x => x.item === id));
+  const unplaced = () => OFFER.filter(id => !shipped.has(id) && !sampleIds.has(id) && !isPlaced(id)).reverse();
+  function place(id) {
+    if (placed.has(id)) return;
+    placed.add(id);
+    try { localStorage.setItem(PLACED_KEY, JSON.stringify([...placed])); } catch { /* no storage here */ }
+    shoot?.paintTag();
+  }
+  function cardHtml(id, k, isNew) {
     const it = byId.get(id), other = cur().parts[1 - k].item === id, own = cur().parts[k].item === id;
     // Which side each tag means, not 已装/装着 (same word to a player, Elara 08bbe423).
     const side = j => j ? '右边' : '左边';
-    const badge = other ? `<span class="badge">${side(1 - k)}在用</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : '';
+    const badge = other ? `<span class="badge">${side(1 - k)}在用</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
     const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
@@ -1501,8 +1516,8 @@ async function main() {
     // Collection so far, best grade first (远夏 11-02: collect the S).
     const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
     el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}`;
-    const shown = byGrade(OFFER, rate);
-    el.libGrid.innerHTML = shown.map(id => cardHtml(id, k)).join('');
+    const first = unplaced(), shown = [...first, ...byGrade(OFFER.filter(id => !first.includes(id)), rate)];
+    el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
     revealUnseen();
     el.libGrid.scrollTop = 0;
     el.library.hidden = false;
@@ -1512,6 +1527,7 @@ async function main() {
         if (cur().parts[1 - libSlot].item === id) return;
         changed(cur().parts[libSlot].item, id);
         cur().parts[libSlot].item = id;
+        place(id);
         closeLibrary();
         rebuild();
       };
@@ -1701,6 +1717,7 @@ async function main() {
     if (cur().parts[1 - libSlot].item === id) return;
     changed(cur().parts[libSlot].item, id);
     cur().parts[libSlot].item = id;
+    place(id);
     shoot?.close();
     closeLibrary();
     if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuild();
@@ -1765,7 +1782,7 @@ async function main() {
         return {id: x.item.id, name: NAMES[x.item.id], tag: x.tag, own: x.own, photo: pictureUrl(x.item.origin.photo), time: durAll(steps.map(st => st.seconds))};
       }),
       item: id => byId.get(id), refused: id => simRefused.has(id), name: id => NAMES[id], grade: rate, spec,
-      seen: id => gradesSeen.has(seenKey(id)), flip: turnOver,
+      seen: id => gradesSeen.has(seenKey(id)), flip: turnOver, placed: isPlaced,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
       goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
       tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden,
@@ -1788,6 +1805,7 @@ async function main() {
     el.shootBtn.onclick = () => shoot.open('library');
     benchShoot.hidden = false;
     benchShoot.onclick = () => shoot.open('link');
+    $('shootNowBtn').onclick = () => shoot.open('link');
     paintBenchShoot();
     if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;
@@ -1829,6 +1847,9 @@ async function main() {
       // The 挡 stop: taken at the 完美 step, the line up or not yet (then the stop holds till the shadow is done).
       if (teach.lesson === 1 && action === 'block' && teach.stop?.kind === 'block') {
         teach.armed = true; teach.lesson = 2; sfx.click();
+        // The press shows at once (Pollux, Elara 56506aa2): 挡 stays in, gold-edged, till its shield goes up.
+        teachHide();
+        el.blockBtn.classList.add('armed');
         if (teach.blockAt !== null) teachGo();
         return;
       }
@@ -1906,7 +1927,7 @@ async function main() {
     }
   }
   // Sound on / off (remembered where the page may store it).
-  const mutes = [el.mute, $('muteFloat')];
+  const mutes = [el.mute, $('muteTop'), $('introMute')].filter(Boolean);
   const syncMute = () => { for (const b of mutes) { b.classList.toggle('off', sfx.muted); b.setAttribute('aria-label', sfx.muted ? '打开声音' : '关掉声音'); } };
   for (const b of mutes) b.addEventListener('click', () => { sfx.setMuted(!sfx.muted); syncMute(); });
   syncMute();
@@ -1960,8 +1981,8 @@ async function main() {
   };
   // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
   $('sameBtn').onclick = () => { showBuild(); start(); };
-  // 一机双人's way back to the three opponents (the 首页 is a tap further, on the bench).
-  $('soloBtn').onclick = () => setPvp(false);
+  // 一机双人's way back to the three opponents; with an opening page, back to it.
+  $('soloBtn').onclick = () => { if (homeOn) goHome(); else setPvp(false); };
 
   // ---------- camera lookahead ----------
   // Where each top will be 0.1 s from now: from the replay when it already has those frames (auto, and

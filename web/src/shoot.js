@@ -139,7 +139,8 @@ async function uploadable(file) {
  * ctx (main.js): api; addItems(items); item(id); refused(id) → the game turned it down; name(id); grade(id) → rating; spec(id); seen(id) / markSeen(id) for the
  * card flip; flip(el, id) turns a face-down card over; turns, loadModels; equipLabel(id) → {text, disabled}; equip(id);
  * libraryOpen(), openLibrary(); openHow(id); goPlay(); tagRoom() → whether the top tag may show now; fightRoom() → whether a
- * match is on (where 好了 shows a moment, untappable); tagTop() → where the tag goes, under the top plate; onChange().
+ * match is on (where 好了 shows a moment, untappable); tagTop() → where the tag goes, under the top plate; placed(id) → put in a
+ * slot yet (「做好了」 stays on the tag until then); onChange().
  * 评委版 only: strict (see readQuota); quota, what the page asked as it opened; samples, the two real generations shown
  * beside 拍照 ({id, name, tag, own, photo, time}), and sample(id) replays one (Elara edd90212, 9e17f724).
  */
@@ -368,7 +369,7 @@ export function mountShoot(ctx) {
         <p class="snote warn" data-live="warn" hidden></p>
         ${foot(go('play', '先去打一局'))}`;
     } else if (kind === 'confirm') {
-      html = `${frame('', '')}<p class="snote">生成一般两分半左右，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
+      html = `${frame('', '')}<p class="snote">生成一般 3 分钟左右，等的时候可以先去打一局</p><p class="serr" data-live="send"></p>
         ${foot(ghost('retake', '重拍', ICON.retry), go('submit', '用这张，开始'))}`;
     } else if (kind === 'wait') {
       html = `${frame('scan', '<i class="sline"></i>')}<p class="snote" data-live="warn">正在找回这一件…</p>
@@ -380,7 +381,7 @@ export function mountShoot(ctx) {
       html = `${frame(job.recognition ? 'scan got' : 'scan', `<i class="sline"></i><span class="stag" data-live="rtag">${job.recognition ? '认好了' : '认物中'}</span>`)}
         ${idCard()}${api.kind === 'fake' ? `<div class="sfines"><p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p></div>` : ''}
         <div class="sfoot"><button type="button" class="sghost sretake" data-act="nothis" hidden>${ICON.retry}<span>不是它，重拍</span></button>
-          <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么，几秒就好</span></p></div>`;
+          <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么</span></p></div>`;
     } else if (kind === 'gen') {
       // The photo, then the styled picture over it as soon as there is one (Elara 207a725b); the 鉴定卡 under it.
       html = `${frame('gen', `<img class="sstyled" data-live="styled" alt="改成游戏画风的图" hidden><i class="sedge"></i><i class="ssweep"></i>
@@ -463,7 +464,9 @@ export function mountShoot(ctx) {
       live('next').textContent = retakeLate() ? retakeSay : !left ? '认好了，马上开始生成' : retakeSay ? `${retakeSay}（还剩 ${left} 秒）` : `${left} 秒后开始生成`;
     }
     const queued = shown === 'qrecog' || shown === 'qgen';
-    if (queued) live('ahead').innerHTML = `前面还有 <em>${ahead()}</em> 个人`;
+    // Waiting for generation: when theirs is done, about 3 minutes for each one ahead (the one being made counts) and 3
+    // for theirs (Elara 29784833 b6322589, Sol 787696c8). Waiting for 认物: no minutes.
+    if (queued) live('ahead').innerHTML = shown === 'qgen' ? `前面还有 <em>${ahead()}</em> 件，做好大约 <em>${(ahead() + 1) * 3}</em> 分钟` : `前面还有 <em>${ahead()}</em> 个人`;
     if (shown === 'wait' || shown === 'gen' || shown === 'fetch' || queued) {
       const warn = live('warn'), fails = shown === 'fetch' ? itemFails : pollFails;
       const text = offline ? '连不上，自动重连中' : fails >= DOWN_AFTER ? SAY['server-down'] : fails ? '后台没回话，过一会儿再查'
@@ -508,7 +511,7 @@ export function mountShoot(ctx) {
     if (toastLeft > 0) setTimeout(toastTick, 100);
   }
   function paintTag() {
-    const room = ctx.tagRoom(), state = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (stored.seen ? null : 'done')
+    const room = ctx.tagRoom(), state = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (ctx.placed?.(job.itemId) ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
     // In a match only 好了, only for a moment, and not to be tapped: the fight's buttons are right there.
     const quiet = !room && state === 'done' && ctx.fightRoom?.() && toastLeft > 0 && !ctx.hudBusy?.();
@@ -524,7 +527,7 @@ export function mountShoot(ctx) {
       : state === 'done' ? `<b>${what}做好了</b><span class="sgo">装上去打</span>${ICON.arrow}`
       : state === 'bad' ? `<b>${stopped() ? (startError === 'session' ? '拍照记录找不到了，去看看' : '拍一件连错了后台，去看看') : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
-      : ahead() ? `<i class="ring" style="--fill:0.02"></i><b>${job.recognition ? what : '新的一件'}排队中</b><small>前面还有 ${ahead()} 人</small>`
+      : ahead() ? `<i class="ring" style="--fill:0.02"></i><b>${job.recognition ? what : '新的一件'}排队中</b><small>${job.status === 'recognizing' ? `前面还有 ${ahead()} 人` : `前面 ${ahead()} 件，做好约 ${(ahead() + 1) * 3} 分钟`}</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
   }
