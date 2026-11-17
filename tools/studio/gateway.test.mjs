@@ -47,6 +47,9 @@ test('immutable build preloads bytes, isolates paths and revalidates actual outp
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-studio-static-')), outside = await fs.mkdtemp(path.join(os.tmpdir(), 'wanwu-studio-outside-'));
   await fs.mkdir(path.join(root, 'assets')); await fs.writeFile(path.join(root, 'index.html'), 'page '.repeat(100));
   await fs.writeFile(path.join(root, 'assets/app-Hash12345.js'), 'immutable JS');
+  const music = Buffer.from([0x49, 0x44, 0x33]);
+  await fs.writeFile(path.join(root, 'assets/bgm.mp3'), music);
+  await fs.writeFile(path.join(root, 'LICENSES.txt'), 'Fixture licenses');
   const kitchen = Buffer.from([0x1f, 0x8b, 0x08, 0x00]);
   await fs.writeFile(path.join(root, 'assets/kitchen.spz'), kitchen);
   await fs.writeFile(path.join(outside, 'private.json'), 'private'); await fs.symlink(path.join(outside, 'private.json'), path.join(root, 'escape.json'));
@@ -54,6 +57,14 @@ test('immutable build preloads bytes, isolates paths and revalidates actual outp
   const g = createGateway({publicOrigin: 'https://game.example', webRoot: root}); t.after(() => g.disconnect()); const port = await listen(t, g.server);
   assert.equal((await request(port, '/escape.json')).status, 404); assert.equal((await request(port, '/%xx')).status, 404);
   assert.equal((await request(port, '/assets/app-Hash12345.js')).headers['cache-control'], 'public, max-age=31536000, immutable');
+  const musicResponse = await request(port, '/assets/bgm.mp3');
+  assert.equal(musicResponse.status, 200);
+  assert.equal(musicResponse.headers['content-type'], 'audio/mpeg');
+  assert.deepEqual(musicResponse.bytes, music);
+  const licenses = await request(port, '/LICENSES.txt');
+  assert.equal(licenses.status, 200);
+  assert.equal(licenses.headers['content-type'], 'text/plain; charset=utf-8');
+  assert.equal(licenses.bytes.toString(), 'Fixture licenses');
   const kitchenResponse = await request(port, '/assets/kitchen.spz');
   assert.equal(kitchenResponse.status, 200);
   assert.equal(kitchenResponse.headers['content-type'], 'application/octet-stream');
