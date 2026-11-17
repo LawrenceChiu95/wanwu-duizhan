@@ -30,7 +30,7 @@ const el = {
   howSrc: $('howSrc'), howPick: $('howPick'),
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   busy: $('busy'), busyText: $('busyText'), error: $('error'),
-  coach: $('coach'), coachTag: $('coachTag'), coachText: $('coachText'),
+  teach: $('teach'), teachText: $('teachText'), teachRing: $('teachRing'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
   pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin'), pvpReady: $('pvpReady'), pvpScore: $('pvpScore')
 };
@@ -551,7 +551,7 @@ async function main() {
     live?.match.free();
     live = null;
     showPads(false);
-    hideCoach();
+    endTeach();
     endNudge();
     stage.setFighters([toDef(mine), toDef(FOE)]);
     stage.clearFx();
@@ -771,7 +771,6 @@ async function main() {
     const at = stage.breakPart(e.target, Number(e.targetPart.split('-')[1]), e);
     if (by) highlight(e.t, by.side, by.part, by.item, '撞碎了', e.target, e.targetPart, e.item, true, undefined, at);
     else if (HILITE === 'line') highlight(e.t, e.target, null, null, '碎了', e.target, null, null, true, NAMES[e.item] ?? '', at);
-    coach(2, {side: e.target, k: Number(e.targetPart.split('-')[1])});
     // New feel: the picture holds as the replay's does, and the piece's slot under the HUD shakes, cracks and goes dark
     // (凡朔's 对象 lost the break among the knocks; Elara 2621157e). ?feel=old as it was.
     if (pb?.dashOnlyImpact) pb.freezeFor(BREAK_STOP);
@@ -907,6 +906,7 @@ async function main() {
     } else if (e.type === 'dashCue') {
       // The foe's flash, timed by the sim from where its lunge will meet (it can come after the launch); 一机双人, either side's.
       if (e.side === 1 || pvp) cue(e.side);
+      if (e.side === 1) teachFlash(e);
     } else if (e.type === 'break') {
       // A piece the ceramic shards broke breaks when they land (Elara f08a6c36); any other break shows at once.
       if (!heldBreaks.hold(`${e.target}:${e.targetPart}`, e)) breakNow(e);
@@ -929,7 +929,6 @@ async function main() {
         if (b && stage.fighters[e.target]?.parts[Number(e.targetPart.split('-')[1])]?.alive) breakNow(b, true);
       }});
     } else if (e.type === 'dash') {
-      if (e.phase === 'charge' && e.side === 1) coach(1);
       if (e.phase === 'charge') {
         stage.charge(e.side, e.until - e.t);
         // 第 13 版: the direction is set at the press; show it through the wind-up so both sides can read the lunge.
@@ -973,6 +972,7 @@ async function main() {
       stage.raiseShield(e.side, e.until - e.t);
       sfx.ting();
     } else if (e.type === 'blockResult') {
+      teachBlocked(e);
       // 老龟's second block of a lunge this match: once, its result card's line beside the player's top (Elara 424f0bcb).
       if (wenHint && e.side === 1 && e.outcome !== 'empty' && ++wenHint.caught === 2) overlay.nudge(WEN_HINT, 'deflect nudge', WEN_HINT_TIME);
       // 「挡住了，点冲反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
@@ -1024,52 +1024,142 @@ async function main() {
     test.onEvent(e);
   }
 
-  // ---------- 首局提示 ----------
-  // Three lines, each once ever (remembered on this phone): at the start, the first time the other top winds up a
-  // lunge, the first time a piece breaks. Manual play only. A sandboxed viewer without storage just shows them again.
-  const COACH = [{text: '按冲，朝它扑过去', at: 'dash'}, {text: '它冲过来时按挡，把它弹开', at: 'block'}, {text: '件只挡一边，核心随时会挨撞', at: 'mid'}];
-  // 挡分两档: line 2 teaches the timing, since pressing as the wind-up starts now blocks nothing (Elara 896cf31c).
-  const COACH_TIERED = '它一闪光就按挡';
-  // Line 3 says what the broken piece took with it (Elara 11-02 a788037f): only its own side; the core can be hit any
-  // time and still fights with what is left (task #31, Sol's 2891 / 9099 diagnosis).
-  const BROKE_LINE = {out: '伸出的件碎了，还有另一件和核心能撞', hug: '贴着的件碎了，核心这一边没了遮挡'};
-  const COACH_KEY = 'wanwu-coach-seen';
-  const coachSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(COACH_KEY) ?? '[]')); } catch { return new Set(); } })();
-  if (q.get('coach') === 'again') coachSeen.clear();
-  // Line 1 stays up until the player first presses 冲 (Elara 11-02 a788037f: it went by before it could be read); a line
-  // waiting behind it comes once 冲 is pressed or after COACH_HOLD s. Lines 2 and 3 stay COACH_HOLD s each.
-  const COACH_HOLD = 3;
-  let coachTimer = 0, coachSince = -Infinity, coachFirstUp = false;
-  function coach(n, broke) {
-    if (control !== 'manual' || pvp || !live || coachSeen.has(n) || phase !== 'play') return;
-    if (n > 0) coach(0);
-    const wait = coachSince + COACH_HOLD - performance.now() / 1000;
-    if (wait > 0) { setTimeout(() => coach(n, broke), wait * 1000 + 50); return; }
-    coachSeen.add(n);
-    coachSince = performance.now() / 1000;
-    coachFirstUp = n === 0;
-    try { localStorage.setItem(COACH_KEY, JSON.stringify([...coachSeen])); } catch { /* no storage here */ }
-    // Numbered in the order they actually came up: lines 2 and 3 follow the match (a piece can break before a lunge).
-    el.coachTag.textContent = `${coachSeen.size}/3`;
-    // 「还有另一件」 is checked when the line actually shows: a line queued behind another can come up after that side's
-    // other piece broke too, and then only the general line is still true (task #33).
-    const f = broke && stage.fighters[broke.side], orient = f?.def.parts[broke.k]?.orient;
-    const brokeLine = orient === 'out' && !f.parts.some((p, m) => m !== broke.k && p.alive) ? null : BROKE_LINE[orient];
-    el.coachText.textContent = n === 2 && brokeLine ? brokeLine : n === 1 && tiered ? COACH_TIERED : COACH[n].text;
-    el.coach.dataset.at = COACH[n].at;
-    el.coach.hidden = false;
-    for (const n of [el.dashNope, el.blockNope]) if (n.classList.contains('show')) seatNope(n);
-    clearTimeout(coachTimer);
-    if (!coachFirstUp) coachTimer = setTimeout(() => { el.coach.hidden = true; }, (COACH_HOLD + 1.2) * 1000);
+  // ---------- 第一关教学 ----------
+  // A new phone's first 莽牛 (Elara 6b6a3c3b, after Pollux's plan): twice the whole fight all but stops, the button to
+  // press lights up, the other goes into shade and one big line by the tops says what to do. First as the tops close in:
+  // 冲. Then the first lunge 莽牛 flashes for while 挡 is ready: the flash ringed, 挡. That press is taken at the physics step
+  // that makes it a 完美 (a shadow match replays the presses so far and runs on to find where the lunge lands), so the
+  // lesson ends in the bounce it promised, and 冲 flashes for the counter. A stop waits TEACH_WAIT s of real time at most,
+  // then the fight carries on. The sim never runs more than LIVE_LEAD past the picture, so it stops with it. Not again
+  // on this phone, nor in 一机双人 or a replay; ?coach=again brings it back.
+  const TEACH_KEY = 'wanwu-teach-seen', TEACH_WAIT = 2.5, TEACH_SLOW = 0.03, TEACH_IN = 0.2, TEACH_COUNTER = 1.6;
+  // How far the tops close in (metres between cores from the start) before the first stop; the press lands this many
+  // physics steps before the lunge would touch, well inside the 完美 window.
+  const TEACH_NEAR = 0.35, TEACH_EARLY = 8;
+  const TEACH_LINE = {dash: '点冲，撞它', block: '它一闪光，点挡', counter: '点冲，反打'};
+  let teach = null;
+  function teachStart(args) {
+    teach = null;
+    if (!live || pvp || !round || fought === null || LADDER[fought].id !== 'mang') return;
+    try { if (q.get('coach') !== 'again' && localStorage.getItem(TEACH_KEY) === '1') return; localStorage.setItem(TEACH_KEY, '1'); } catch { /* no storage here: every first 莽牛 */ }
+    // lesson: 0 waits for the tops to close, 1 for a lunge to wind up, 2 for the block's result, 3 done.
+    teach = {lesson: 0, stop: null, inputs: [], args, from: null, blockAt: null, armed: false, counterUntil: 0};
   }
-  // The first 冲: line 1 has done its job; it goes, and whatever waits behind it may come now.
-  function coachDashed() {
-    if (!coachFirstUp) return;
-    coachFirstUp = false;
-    coachSince = -Infinity;
-    el.coach.hidden = true;
+  function endTeach() {
+    if (teach) teach.stop = null;
+    teach = null;
+    el.teach.hidden = true;
+    el.pad.classList.remove('teach-dash', 'teach-block');
   }
-  function hideCoach() { clearTimeout(coachTimer); coachFirstUp = false; el.coach.hidden = true; }
+  function teachShow(kind) {
+    el.teach.dataset.kind = kind;
+    el.teachText.textContent = TEACH_LINE[kind];
+    el.teach.hidden = false;
+    el.pad.classList.toggle('teach-dash', kind !== 'block');
+    el.pad.classList.toggle('teach-block', kind === 'block');
+  }
+  function teachHide() { el.teach.hidden = true; el.pad.classList.remove('teach-dash', 'teach-block'); }
+  function teachStop(kind) {
+    teach.stop = {kind, since: performance.now()};
+    if (kind === 'dash') teachShow(kind);
+  }
+  // The stop ends: a press, or TEACH_WAIT s gone. Full speed at once. A 挡 pressed after the stop, before the lunge
+  // lands, still goes in at the lesson's step.
+  function teachGo() {
+    const s = teach?.stop;
+    if (!s) return;
+    teach.stop = null;
+    teachHide();
+    if (s.kind === 'dash') teach.lesson = 1;
+  }
+  // The speed the picture (and the sim behind it) runs at: down to TEACH_SLOW over TEACH_IN s, back at once.
+  function teachScale() {
+    const s = teach?.stop;
+    if (!s) return 1;
+    const age = (performance.now() - s.since) / 1000;
+    if (age >= TEACH_WAIT) { teachGo(); return 1; }
+    return 1 - (1 - TEACH_SLOW) * (1 - (1 - Math.min(1, age / TEACH_IN)) ** 2);
+  }
+  // Each frame of play: the first stop once the tops have closed in with 冲 ready; the line and the ring follow the tops.
+  function teachTick() {
+    if (!teach) return;
+    if (!live || live.done) { endTeach(); return; }
+    const [a, b] = pb.state.fighters;
+    if (teach.lesson === 0 && !teach.stop) {
+      const c = live.match.control(0), d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
+      teach.d0 ??= d;
+      if (c.dashIn <= rules.dt && !c.charging && !c.dashing && !(c.stunIn > 0) && teach.d0 - d >= TEACH_NEAR) teachStop('dash');
+    }
+    if (teach.lesson === 2 && teach.counterUntil && performance.now() > teach.counterUntil) { teach.lesson = 3; teachHide(); }
+    if (el.teach.hidden) return;
+    const fa = stage.fighters[0], fb = stage.fighters[1], p = {x: 0, y: 0}, q2 = {x: 0, y: 0};
+    if (!fa || !fb || !stage.project(fa.center, p) || !stage.project(fb.center, q2)) return;
+    // Beside the two tops, never over them (the flash has to be seen): under both if it fits above the buttons, else
+    // over both, clear of the top bar.
+    const h = el.teachText.offsetHeight, w = el.teachText.offsetWidth, W = el.app.clientWidth, ra = stage.screenRadius(fa.center, stage.reachOf(fa) + 0.1), rb = stage.screenRadius(fb.center, stage.reachOf(fb) + 0.1);
+    const under = Math.max(p.y + ra, q2.y + rb) + 14, over = Math.min(p.y - ra, q2.y - rb) - 14 - h;
+    const y = under + h <= el.pad.offsetTop - 12 ? under : Math.max(stage.view.top + 8, over);
+    const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, (p.x + q2.x) / 2));
+    el.teachText.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translateX(-50%)`;
+    if (el.teach.dataset.kind === 'block') {
+      const r = Math.max(28, stage.screenRadius(fb.center, stage.reachOf(fb) + 0.15));
+      el.teachRing.style.width = el.teachRing.style.height = `${(2 * r).toFixed(1)}px`;
+      el.teachRing.style.transform = `translate(${q2.x.toFixed(1)}px, ${q2.y.toFixed(1)}px) translate(-50%, -50%)`;
+    }
+  }
+  // 莽牛 flashes for a lunge: the second stop, if 挡 is ready and the lunge would land. The picture slows at once; the
+  // line comes up when the shadow match has found the step to block at (a lunge that would miss, or 挡 not ready, waits
+  // for the next).
+  async function teachFlash(e) {
+    if (!teach || teach.lesson !== 1 || teach.stop || !live || live.done) return;
+    const c = live.match.control(0);
+    if (c.blockIn > rules.dt || c.stunIn > 0) return;
+    const stop = teach.stop = {kind: 'block', since: performance.now()}, t = teach;
+    const at = await teachContact(e.t).catch(err => { console.warn('教学: 影子对局失败', err); return null; });
+    if (teach !== t || t.stop !== stop) return;
+    if (at === null || at - TEACH_EARLY <= live.match.step + 1) { t.stop = null; return; }
+    t.from = e.t;
+    t.blockAt = at - TEACH_EARLY;
+    teachShow('block');
+  }
+  // The step 莽牛's lunge flashed at `from` touches the player's top if nothing more is pressed, or null (it would
+  // miss or be cut short, or the shadow has not kept to the live match). The sim is deterministic: the same start and the
+  // same presses at the same steps make the same fight.
+  async function teachContact(from) {
+    const m0 = live.match, now = m0.step, until = now + Math.ceil(2.5 / rules.dt), args = teach.args;
+    const m = await createV3Match({...args, manual: {...args.manual, inputs: teach.inputs.map(x => ({...x}))}});
+    try {
+      while (!m.done && m.step < now) m.advance();
+      const mine = m0.frames.findLast(f => f.t <= m.t + 1e-9), theirs = m.frames.findLast(f => f.t <= m.t + 1e-9);
+      if (!mine || !theirs || mine.t !== theirs.t || mine.fighters.some((f, i) => f.pos.some((v, k) => v !== theirs.fighters[i].pos[k]))) { console.warn('教学: 影子对局对不上'); return null; }
+      let seen = m.events.length;
+      while (!m.done && m.step < until) {
+        m.advance();
+        for (; seen < m.events.length; seen++) {
+          const e = m.events[seen];
+          if (e.type === 'dash' && e.phase === 'end' && e.side === 1 && e.t > from) return e.outcome === 'hit' ? Math.round(e.t / rules.dt) : null;
+        }
+      }
+      return null;
+    } finally { m.free(); }
+  }
+  // Before each live physics step: an armed 挡 goes in at its step.
+  function teachStep(m) {
+    if (!teach?.blockAt || m.step + 1 < teach.blockAt) return;
+    teach.blockAt = null;
+    // No 挡 by then: the lesson is over, the lunge lands as it would.
+    if (!teach.armed) { teach.lesson = 3; return; }
+    teach.armed = false;
+    m.press(0, 'block');
+    teach.inputs.push({step: m.step + 1, side: 0, action: 'block'});
+  }
+  // The lesson's 挡 landed: a 完美 lights 冲 for the counter; anything else ends it there.
+  function teachBlocked(e) {
+    if (!teach || teach.lesson !== 2 || e.side !== 0 || teach.counterUntil) return;
+    if (e.outcome !== 'perfect' || !e.deflected) { teach.lesson = 3; return; }
+    teach.counterUntil = performance.now() + TEACH_COUNTER * 1000;
+    teachShow('counter');
+  }
 
   // ---------- 提示出手 ----------
   // Stage 1 only (Elara af9e8542): a player who only blocks loses (Sol a8851e63), since 第三轮 ④ to the arena closing in
@@ -1128,10 +1218,11 @@ async function main() {
         ? {...opponent.ai, ...opponent.impactAi}
         : opponent.ai);
       const manual = pvp ? {sides: ['input', 'input']} : {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})};
-      const match = await createV3Match({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual});
+      const args = {fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual};
+      const match = await createV3Match(args);
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules, ...(combat && {combat})}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
-      live = {match, done: false};
+      live = {match, done: false, args};
     } else {
       // Yield to the page every few hundred physics steps so the preview keeps spinning.
       r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, onProgress: () => new Promise(res => setTimeout(res, 0))});
@@ -1145,6 +1236,7 @@ async function main() {
     stage.trailAlways = !round;
     el.dashBtn.classList.remove('nudge');
     nudge = live && round && fought !== null && LADDER[fought].id === 'mang' ? {on: false, shown: 0, since: 0, caught: 0, held: false} : null;
+    teachStart(live?.args);
     wenHint = live && round && fought !== null && LADDER[fought].id === 'wen' ? {caught: 0} : null;
     // Live under the reworked rules only a landed 冲 and a 挡 that caught one stop the picture (Elara 2065efad, Sol 54ec30e6).
     // 一合一分: an ordinary bump never stops a replay either (quietBumps).
@@ -1202,7 +1294,7 @@ async function main() {
   }
   function showResult() {
     showPads(false);
-    hideCoach();
+    endTeach();
     endNudge();
     if (pb.t < pb.end - 1e-6) {
       stage.clearFx();
@@ -1673,19 +1765,22 @@ async function main() {
       test.denied++; sfx.deny(); diag.tap(action, `冷却 ${left.toFixed(1)}s`); return;
     }
     diag.tap(action, '收下');
+    // 第一关教学: a 冲 before the first stop needs no stop; the lesson's 挡 waits for its step (teachStep); any press ends
+    // a stop.
+    if (teach && !side) {
+      if (teach.lesson === 0 && action === 'dash') teach.lesson = 1;
+      if (teach.lesson === 1 && action === 'block' && teach.blockAt > live.match.step + 1) { teach.armed = true; teachGo(); teach.lesson = 2; sfx.click(); return; }
+      teachGo();
+    }
     live.match.press(side, action);
-    if (action === 'dash' && !side) coachDashed();
+    teach?.inputs.push({step: live.match.step + 1, side, action});
     sfx.click();
   }
-  // 还没好 and a coach line share the band just above the buttons: while a line is up across it, 还没好 rises clear of it instead
-  // of covering its first words (Wren 并排-打碎 at 17 s, Elara 3b8c6897). offsetTop, so the line's slide-in is not counted.
+  // 还没好 sits just above its button.
   function seatNope(n) {
     n.style.bottom = '';
     // 一机双人: that side's bars stand just inside its buttons (8 px up); 还没好 goes past them, onto the arena's edge (Castor ②).
     if (pvp) { n.style.bottom = `calc(100% + ${8 + (el.hud.querySelector('.side')?.offsetHeight ?? 34) + 6}px)`; return; }
-    if (el.coach.hidden) return;
-    const a = n.getBoundingClientRect(), c = el.coach.getBoundingClientRect();
-    if (a.right > c.left && a.left < c.right) n.style.bottom = `${el.pad.offsetTop + el.pad.offsetHeight - el.coach.offsetTop + 6}px`;
   }
   // Restart a one-shot CSS animation class (a second tap mid-shake shakes again).
   function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
@@ -1743,14 +1838,10 @@ async function main() {
       sfx.go();
       buzz(30);
     }
-    // The first match's line about the buttons comes once the plates are gone, where they stood; single-player, the first
-    // lesson (it shows only in play, so during 准备 it was lost).
+    // 一机双人's first match: its line about the buttons comes once the plates are gone, where they stood.
     if (readyAge >= READY) {
       el.pvpReady.hidden = true; phase = 'play';
       if (pvp) pvpTip();
-      // The new opening delays the foe's charge, which used to bring up the first lesson early.
-      else if (combatOptions.combatRules?.opening) coach(0);
-      else setTimeout(() => coach(0), 400);
     }
   }
   // Sound on / off (remembered where the page may store it).
@@ -1924,7 +2015,7 @@ async function main() {
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
-    status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on')}),
+    status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
@@ -1951,7 +2042,7 @@ async function main() {
     cam: CAM,
     start,
     music: () => sfx._music(),
-    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage})) ?? []
+    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage, side: e.side, outcome: e.outcome})) ?? []
   };
 
   // ---------- loop ----------
@@ -1969,6 +2060,7 @@ async function main() {
     if (test.frozen) dt = 0;
     dt *= test.speed;
     if (phase === 'loading') return;
+    if (phase === 'play' && teach) dt *= teachScale();
     for (const n of lateNums) if ((n.wait -= dt) <= 0) overlay.number(...n.broke);
     lateNums = lateNums.filter(n => n.wait > 0);
     let simDt = dt;
@@ -1982,11 +2074,12 @@ async function main() {
       if (phase === 'play' && live && !live.done) {
         // Keep the live sim just ahead of the picture; once it is over, the replay is complete.
         const m = live.match;
-        while (!m.done && m.t < pb.t + dt + LIVE_LEAD) m.advance();
+        while (!m.done && m.t < pb.t + dt + LIVE_LEAD) { teachStep(m); m.advance(); }
         if (m.done) { live.done = true; replay = m.result(); pb.r = replay; setCaption(false, reasonLine(replay)); }
         pb.sync(live.done);
       }
       simDt = pb.advance(dt, 1, onEvent);
+      if (phase === 'play') teachTick();
       if (cueAt !== null && pb.t >= cueAt - 1e-9) cue();
       flushParry();
       stage.pose(pb.state);

@@ -510,3 +510,23 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #result .score { margin-top:2px; font:800 17px/1.3 var(--display, inherit); letter-spacing:2px; color:var(--ink); opacity:.85; }
 #pvpWin { flex-direction:column; align-items:center; gap:4px; }
 #pvpWin .score { padding:2px 12px 3px; font-size:16px; font-weight:800; letter-spacing:2px; color:var(--ink); background:#10221be6; box-shadow:0 3px 8px #0009; }
+/* 冲 / 挡 in plain words under each button, both ends in 一机双人 (Elara 6b6a3c3b ③). */
+:is(#pad,#pad2) { row-gap:5px; }
+#pad { bottom:calc(env(safe-area-inset-bottom) + 8px); }
+#pad2 { top:calc(env(safe-area-inset-top) + 8px); }
+#app.pvp { --pvp-pad:calc(8px + 73px + 20px + 8px); }
+:is(#pad,#pad2) .say { text-align:center; font:700 12px/1.2 var(--display); letter-spacing:.12em; color:#d8d6c2; opacity:.8; text-shadow:0 1px 2px #000; pointer-events:none; }
+/* 第一关教学 (Elara 6b6a3c3b ②): the fight all but stopped, the arena in shade, one line on the 准备 plate between the tops;
+   the button to press lit and large, the other dark; 莽牛's flash ringed. */
+#teach { position:absolute; inset:0; z-index:3; pointer-events:none; }
+#teach .veil { position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 46%, rgba(4,9,7,.15) 20%, rgba(4,9,7,.62)); animation:teachIn .2s ease-out both; }
+#teach[data-kind="counter"] .veil { display:none; }
+#teachText { position:absolute; left:0; top:0; padding:5px 22px 7px; white-space:nowrap; font-size:30px; font-weight:950; letter-spacing:4px; color:var(--ink); text-shadow:1px 2px #000;
+  border:12px solid transparent; border-image:var(--hardware) 70 stretch; background:#10221b; background-clip:padding-box; box-shadow:0 5px 12px #0009; animation:teachIn .2s ease-out both; }
+#teachRing { display:none; position:absolute; left:0; top:0; border-radius:50%; border:3px solid #fff8dc; box-shadow:0 0 0 2px #0009, 0 0 22px 4px #fff3c4aa, inset 0 0 16px #fff3c466; animation:teachRing .7s ease-in-out infinite; }
+#teach[data-kind="block"] #teachRing { display:block; }
+@keyframes teachIn { from { opacity:0; } }
+@keyframes teachRing { 50% { opacity:.45; border-width:5px; } }
+#pad.teach-dash .pad.block, #pad.teach-block .pad.dash { filter:brightness(.38) saturate(.4); }
+#pad.teach-dash .pad.dash:not(.deny):not(.pop), #pad.teach-block .pad.block:not(.deny):not(.pop) { z-index:1; animation:teachLit .8s ease-in-out infinite; }
+@keyframes teachLit { 0%,100% { transform:scale(1.07); filter:brightness(1.1) drop-shadow(0 0 8px #ffeeb0); } 50% { transform:scale(1.12); filter:brightness(1.28) drop-shadow(0 0 16px #ffeeb0); } }
