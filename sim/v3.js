@@ -903,8 +903,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
      // Stages 2 and 3 ground on to the clock (Wren e031daaa): there every blow both ways counts for more, and on 长臂猿 a tight
      // guard lets more through (still under half), so the faster ending doesn't tip the match to the player (Elara 2720a2dc).
      if(round){
-      const squeeze=tightening(),cap=round.hitCap*(squeeze?1+overtime.cap*squeeze:1);
-      d.damage=Math.min(d.damage*pace*(squeeze?1+overtime.damage*squeeze*(1+squeeze):1),Math.min(1,cap)*tp.maxHp)*guardShare;
+      const squeeze=tightening(),cap=squeeze?Math.min(1,round.hitCap*(1+overtime.cap*squeeze)):round.hitCap;
+      d.damage=Math.min(d.damage*pace*(squeeze?1+overtime.damage*squeeze*(1+squeeze):1),cap*tp.maxHp)*guardShare;
      }
      const damage=Math.min(tp.hp,d.damage);
      pending.push({tp,event:{t,type:weak?'weak':'hit',attacker,target,part:ap.id,targetPart:tp.id,item:ap.item.id,targetItem:tp.item.id,mount:ap.mount,targetMount:tp.mount,orient:ap.orient,targetOrient:tp.orient,point:tpnt,impulse,closingSpeed,role,strikeAttacker:roles.attacker,clash:roles.clash,...positionInfo,normalSpeeds:roles.normalSpeeds,attackScores:roles.scores,masses:fs.map(f=>f.mass),matchupMultipliers,weakContact:weakTouch,weak,criticalRoll:roll,criticalChance:r.weakCritChance,roleMultiplier,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,...d,damageBeforeHpClamp:d.damage,damage,...flags,caption:weak?`${name(ap)}撞中${name(tp)}弱点`:`${name(tp)}受撞，掉血了`}});
