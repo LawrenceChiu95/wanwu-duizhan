@@ -55,8 +55,14 @@ try {
     const r=el.getBoundingClientRect();
     return r.width>0&&r.height>0&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));
    }),null,{timeout:5000});
+   const settledApp=() => page.locator('#app').evaluate(el => {
+    // 2P's bench rotates for .4s. A hit-test during that rotation is transient.
+    el.getBoundingClientRect();
+    return Promise.all(el.getAnimations().map(animation => animation.finished.catch(() => {})));
+   });
    const goHome=async(screen,fallback) => {
     console.log(JSON.stringify({width,checkpoint:screen}));
+    await settledApp();
     if(!fallback) await waitHome();
     const button=await reachable();
     if(button) {await button.tap();await welcome();report.push({width,screen,home:true});}
