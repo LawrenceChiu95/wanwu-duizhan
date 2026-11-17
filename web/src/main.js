@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, ROUND_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS} from '../../sim/v3.js';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
 import {LiveTurns} from './livecards.js';
@@ -164,7 +164,7 @@ async function main() {
   const feel = feelArg === 'bounce' ? 'bounce' : undefined;
   // A page built with WANWU_COMBAT (vite.config.js) plays only those rules, whatever the address says.
   const combat = (__COMBAT__ || q.get('combat')) === 'position' ? 'position' : undefined;
-  const soloOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : ROUND_JUDGE_COMBAT_OPTIONS)
+  const soloOptions = __COMBAT__ === 'position' ? (feelArg === 'old' ? PLANAR_JUDGE_COMBAT_OPTIONS : MATERIAL_JUDGE_COMBAT_OPTIONS)
     : combat ? {combat, combatRules: POSITION_COMBAT_RULES} : {};
   // 一机双人 plays its own rules (sim/v3.js PVP_COMBAT_OPTIONS), whatever the page's single-player ones are.
   let combatOptions = soloOptions;
@@ -212,7 +212,7 @@ async function main() {
   const usable = id => OFFER.includes(id) || playable.has(id);
   const rate = id => ratingOf(byId.get(id));
   // A grade letter, coloured by grade (empty for an item without one).
-  const gradeTag = (id, cls = 'grade') => { const g = rate(id)?.grade; return g ? `<i class="${cls} g${g}">${g}</i>` : ''; };
+  const gradeTag = (grade, cls = 'grade') => grade ? `<i class="${cls} g${grade}">${grade}</i>` : '';
   const spec = id => { const it = byId.get(id); return `${Math.round(Math.max(...it.bounds.max.map((v, i) => v - it.bounds.min[i])) * 100)} cm · ${it.mass} kg`; };
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
@@ -351,11 +351,18 @@ async function main() {
 
   // Opponent tag on the build screen, and 换个对手: a sheet of the computer's builds; the pick stays for the next rounds.
   const sameBuild = (x, y) => x.spread === y.spread && x.parts.every((p, i) => p.item === y.parts[i].item && p.orient === y.parts[i].orient);
-  const partsHtml = b => b.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}${ICON[p.orient]}</span>`).join('');
+  const partsHtml = (b, ladderOpponent = false) => {
+    // The ladder AI fights with pinned catalog scores. Convert those scores without applying player material bonuses.
+    const pinnedRatings = ladderOpponent && control === 'manual' && combatOptions.combatRules?.itemRatings;
+    return b.parts.map(p => {
+      const rating = pinnedRatings ? ratingOf({rating: byId.get(p.item)?.rating}) : rate(p.item);
+      return `<span>${gradeTag(rating?.grade)}${esc(NAMES[p.item])}${ICON[p.orient]}</span>`;
+    }).join('');
+  };
   const markHtml = (i, cls = '') => `<span class="ft f${i + 1}${cls}">${LADDER[i].mark}</span>`;
   function renderFoe() {
-    el.foeParts.innerHTML = partsHtml(FOE);
     const at = ladderOn ? ladder.at : pinned;
+    el.foeParts.innerHTML = partsHtml(FOE, at >= 0);
     if (at < 0) return;
     const f = LADDER[at];
     el.foe.classList.add('ladder');
@@ -393,7 +400,7 @@ async function main() {
       const won = ladder.won.has(f.id);
       return `<button type="button" class="rung${won ? ' won' : ''}" role="radio" aria-checked="${i === ladder.at}" data-rung="${i}">${markHtml(i)}${head}
         ${won ? `<span class="st won">${SVG.check}已赢</span>` : i === ladder.at ? '<span class="st now">正在打</span>' : ''}
-        <span class="play">${esc(f.play)}</span><span class="rparts">${partsHtml(f.build)}</span></button>`;
+        <span class="play">${esc(f.play)}</span><span class="rparts">${partsHtml(f.build, true)}</span></button>`;
     }).join('');
     for (const row of el.foeList.querySelectorAll('[data-rung]')) row.onclick = () => {
       const i = Number(row.dataset.rung);
@@ -440,7 +447,7 @@ async function main() {
       const k = Number(slot.dataset.slot), part = cur().parts[k];
       slot.querySelector('.item b').textContent = NAMES[part.item];
       slot.querySelector('.item .nm').querySelector('.grade')?.remove();
-      slot.querySelector('.item .nm').insertAdjacentHTML('afterbegin', gradeTag(part.item));
+      slot.querySelector('.item .nm').insertAdjacentHTML('afterbegin', gradeTag(rate(part.item)?.grade));
       slot.querySelector('.lux').hidden = !isLux(part.item);
       slot.querySelector('.spec').textContent = spec(part.item);
       slot.querySelector('.hint').textContent = HINT[part.orient];
@@ -1216,14 +1223,21 @@ async function main() {
     el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
     const who = pvp ? ['你', '对面'] : [sideName(0), sideName(1)];
     el.whyLine.innerHTML = reasonHtml(reasonLine(replay, who));
-    const builds = m.initial.map(f => f.definition.parts.map(p => `<span>${gradeTag(p.item)}${esc(NAMES[p.item])}</span>`).join(''));
+    const defs = m.initial.map(f => f.definition);
+    const foeRatings = m.combatRules?.itemRatings?.parts?.[1];
+    const foeGrades = defs[1].parts.map((p, i) => {
+      const rating = foeRatings ? ratingOf({rating: foeRatings[i]}) : rate(p.item);
+      return rating?.grade ?? null;
+    });
+    const builds = defs.map((def, side) => def.parts.map((p, i) =>
+      `<span>${gradeTag(side === 1 ? foeGrades[i] : rate(p.item)?.grade)}${esc(NAMES[p.item])}</span>`).join(''));
     el.resultBuild.innerHTML = `<span class="rw">${who[0]}</span>${builds[0]}<span class="rw vs">${pvp || fought === null ? who[1] : esc(LADDER[fought].name)}</span>${builds[1]}`;
     // 第二轮 ⑤: the run so far, each end from its own side.
     if (pvp && scored !== runId) { scored = runId; if (m.winner !== null) score[m.winner]++; }
     el.pvpScore.hidden = !pvp;
     el.pvpScore.textContent = `你 ${score[0]} : ${score[1]} 对面`;
     // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows.
-    const stats = matchStats(replay, replay.meta.initial.map(f => f.definition), id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx});
+    const stats = matchStats(replay, defs, id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx, foeGrades});
     el.statsList.innerHTML = pvp ? '' : pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = pvp ? '' : tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
@@ -1333,7 +1347,7 @@ async function main() {
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
-        <span class="nm">${gradeTag(id, 'big')}<b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span>
+        <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }

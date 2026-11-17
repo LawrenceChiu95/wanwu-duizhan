@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {loadCatalog, loadRules, registerItems} from '../../sim/index.js';
-import {rateItem, photoMassLimit} from '../../sim/item-rating.js';
+import {rateItem, photoMassLimit, currentItemRating} from '../../sim/item-rating.js';
 import {simulateV3, mountTransform, loadV3Rules, tierDamage} from '../../sim/v3.js';
 const exec = promisify(execFile), root = fileURLToPath(new URL('../../', import.meta.url));
 const base = await loadRules();
@@ -24,6 +24,9 @@ test('unrestricted photo identity registers, fights, and validates its individua
   const invalid=structuredClone(item); edit(invalid); await assert.rejects(registerItems([invalid]));
  }
  await registerItems([item]);
+ const loaded=(await loadCatalog()).find(i=>i.id===item.id);
+ assert.deepEqual(loaded,item);
+ await registerItems([{...loaded,currentRating:currentItemRating(item)}]);
  const replay=await simulateV3({mode:'A',seed:41671,fighters:[{parts:[{item:item.id,mount:'e0',orient:'out'}]},{parts:[{item:'broom',mount:'e0',orient:'out'}]}]});
  assert.ok(replay.frames.length>10); assert.equal(replay.frames[0].fighters[0].parts[0].item,item.id);
 });

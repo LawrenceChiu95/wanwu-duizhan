@@ -1,4 +1,4 @@
-// Offline preparation writes per-object scores; web/src/rating.js ratingOf uses gradeFor/ratingScores here to derive display letters and grade.
+// Keep the original score record for older clients and input-only replays.
 export const GRADE_FLOORS = {S:75,A:60,B:45,C:30,D:0};
 const toughness={metal:1,wood:.8,plastic:.65,cloth:1.4,rubber:.65};
 const conditions={unknown:[1,1],intact:[1,1],worn:[.95,.9],damaged:[.6,.5]};
@@ -68,4 +68,54 @@ export function rateItem(item,materials){
  // Stable per-item reveal revision: metadata/name/image-only changes do not reveal again.
  const version=`${photoContact?photoRatingVersion:'rating-v1'}:${Object.values(scores).join('-')}:${Object.values(GRADE_FLOORS).join('-')}`;
  return {version,scores,letters,grade:ratingGrade(scores,version)};
+}
+
+// Setting the entire table to 1 selects the letters-only rule on the exact original scores.
+export const MATERIAL_DURABILITY = Object.freeze({metal:1.12,wood:1.04,plastic:.98,rubber:.94,cloth:.90,foam:.84,paper:.62,fragile:1});
+const materialEnabled = Object.values(MATERIAL_DURABILITY).some(value => value !== 1);
+export const CURRENT_RATING_VERSION = materialEnabled ? 'rating-v3' : 'rating-letters-v3';
+const gradeLetters = Object.keys(GRADE_FLOORS);
+const attackFloors = [75,60,38,20,0], rangeFloors = [80,60,50,30,0];
+const durabilityFloors = materialEnabled ? [80,62,52,44,0] : [82,64,52,51,0];
+const gradeAt = (value, floors) => gradeLetters[floors.findIndex(floor => value >= floor)];
+
+function materialDurability(item) {
+ const name = item.materialName ?? '';
+ if(typeof name!=='string'||!Number.isFinite(item.mass)||item.mass<=0)return null;
+ const kind = /陶瓷|瓷器|瓷质|玻璃/.test(name) ? 'fragile'
+  : /纸/.test(name) ? 'paper' : /泡沫|海绵/.test(name) ? 'foam' : item.material;
+ if(typeof kind!=='string'||!Object.hasOwn(MATERIAL_DURABILITY, kind))return null;
+ const wear = item.condition === 'worn' ? .98 : item.condition === 'damaged' ? .5 : 1;
+ const base = 78 * Math.min(1, item.mass / 2)**.14 * wear;
+ const weighted = score(base * MATERIAL_DURABILITY[kind]);
+ const durability = kind === 'fragile'
+  ? Math.min(score(weighted * .8), (GRADE_FLOORS[gradeFor(weighted)] || GRADE_FLOORS.C) - 1)
+  : weighted;
+ return item.photoPhysics.hasBladeOrPoint ? Math.min(durability, GRADE_FLOORS.A - 1) : durability;
+}
+
+// Keep attack and range from the exact version originally saved, including pre-contact photo records.
+export function currentItemRating(item) {
+ const original = ratingScores(item);
+ if(!original)return null;
+ const derivedDurability = materialEnabled && item.photoPhysics ? materialDurability(item) : original.durability;
+ if(derivedDurability === null)return item.rating;
+ const {attack, range} = original, durability = derivedDurability;
+ const letters = {
+  attack:gradeAt(attack,attackFloors),
+  range:gradeAt(range,rangeFloors),
+  durability:gradeAt(durability,durabilityFloors)
+ };
+ // Range has its own letter and does not determine the overall grade.
+ const grade = gradeLetters.find(letter => letter === letters.attack || letter === letters.durability);
+ return {
+  version:`${CURRENT_RATING_VERSION}:${attack}-${range}-${durability}`,
+  scores:{attack,range,durability},
+  letters,
+  grade
+ };
+}
+
+export function withCurrentRating(item) {
+ return {...item, currentRating:currentItemRating(item)};
 }

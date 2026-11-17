@@ -31,5 +31,7 @@ export function validateRuntimeItem(item,catalog){
  itemSignature(item);
  const calculated=rateItem(item,catalog.materials);
  if(itemSignature(item.rating)!==itemSignature(calculated))throw Error(`Runtime item rating mismatch: ${item.id}`);
- return structuredClone(item);
+ // A display rating is derived on read and is not part of the stored item.
+ const {currentRating, ...original}=item;
+ return structuredClone(original);
 }

@@ -58,11 +58,12 @@ export function endLine(replay) {
 /** What the player did this match, from the replay's own events (the page never judges a hit itself). */
 /** `shot(id)`: whether the player photographed this item (拍一件), for `outmatched`. `oldFeel`: ?feel=old, counted exactly as
  * the 评委版 counts (a glance is a 冲中 there, Elara 14f39c4f). */
-export function matchStats(replay, defs, shot = () => false, {oldFeel = false} = {}) {
+export function matchStats(replay, defs, shot = () => false, {oldFeel = false, foeGrades} = {}) {
+  const foe = defs[1]?.parts.map(({item}, i) => ({item, grade: foeGrades ? foeGrades[i] : GRADE[item]})) ?? [];
   const s = {presses: 0, landed: 0, blocked: 0, missed: 0, perfect: 0, blocks: 0, firstBroken: [null, null], timeout: replay.meta?.reason === 'timeout', oldFeel,
     // Advice follows this item's scores, rather than its category or overall grade.
     hugAttacker: defs[0]?.parts.find(p => p.orient === 'hug' && PREFERRED_ORIENT[p.item] === 'out' && !defs[0].parts.some(other => other !== p && PREFERRED_ORIENT[other.item] === 'out'))?.item ?? null,
-    outmatched: outmatched(defs[0]?.parts.map(p => p.item).filter(shot) ?? [], defs[1]?.parts.map(p => p.item) ?? [])};
+    outmatched: outmatched(defs[0]?.parts.map(p => p.item).filter(shot) ?? [], foe)};
   const tiered = Boolean(replay.meta?.combatRules?.guardTiming);
   for (const e of replay.events) {
     if (e.type === 'dash' && e.phase === 'end' && e.side === 0) {
@@ -89,11 +90,11 @@ export function matchStats(replay, defs, shot = () => false, {oldFeel = false} =
 // A photographed item lighter than the opponent's heaviest part, or graded below its best one (Elara 365a2667): what
 // the photo was up against, so the tip can name both. Unknown mass or grade compares as nothing.
 function outmatched(mine, foe) {
-  const heavy = foe.filter(id => MASS[id] != null).sort((a, b) => MASS[b] - MASS[a])[0];
-  const best = foe.filter(id => GRADE[id]).sort((a, b) => GRADE_RANK[GRADE[a]] - GRADE_RANK[GRADE[b]])[0];
+  const heavy = foe.filter(p => MASS[p.item] != null).sort((a, b) => MASS[b.item] - MASS[a.item])[0];
+  const best = foe.filter(p => p.grade).sort((a, b) => GRADE_RANK[a.grade] - GRADE_RANK[b.grade])[0];
   for (const id of mine) {
-    if (heavy && MASS[id] != null && MASS[id] < MASS[heavy]) return {item: id, foe: heavy, by: 'mass'};
-    if (best && GRADE[id] && GRADE_RANK[GRADE[id]] > GRADE_RANK[GRADE[best]]) return {item: id, foe: best, by: 'grade'};
+    if (heavy && MASS[id] != null && MASS[id] < MASS[heavy.item]) return {item: id, foe: heavy.item, by: 'mass'};
+    if (best && GRADE[id] && GRADE_RANK[GRADE[id]] > GRADE_RANK[best.grade]) return {item: id, foe: best.item, by: 'grade', foeGrade: best.grade};
   }
   return null;
 }
@@ -134,7 +135,8 @@ export function tipLine(s, winner, foe = null) {
     // An item still named for what it was taken as (「我拍的拖鞋」) loses the 我拍的: the line says 你拍的 already.
     const mine = (NAMES[o.item] ?? '那件').replace(/^我拍的/, ''), foe = NAMES[o.foe] ?? '那件';
     return o.by === 'mass' ? `你拍的${mine}比对面的${foe}轻，换一件更重、更硬的再来`
-      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${GRADE[o.foe]} 级，换一件更大、更硬的再来`;
+      // A grade can come from attack as much as durability, so a lower one says nothing about which is harder (Elara 07c3c82a).
+      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${o.foeGrade} 级，换一件等级更高的再来`;
   }
   if (FOE_TIP[foe]) return FOE_TIP[foe];
   if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;

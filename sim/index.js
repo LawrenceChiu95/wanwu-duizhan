@@ -1,5 +1,5 @@
 import {itemSignature, validateRuntimeItem} from './runtime-items.js';
-export {ratingScores,itemHardness} from './item-rating.js';
+export {ratingScores,itemHardness,CURRENT_RATING_VERSION,currentItemRating} from './item-rating.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import {add,sub,scale,length,vec,arr,quat,qarr,euler,rotate,inverseRotate,random} from './math.js';
 let initialized;
