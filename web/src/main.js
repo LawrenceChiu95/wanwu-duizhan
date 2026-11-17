@@ -1715,10 +1715,12 @@ async function main() {
     el.pvpTip.hidden = false; // shown, its lines' fade (terminal.css) plays from the start
   }
   el.pvpTip.addEventListener('animationend', () => { el.pvpTip.hidden = true; });
-  // No clock loss (第三轮 ④): how far the arena has tightened at match time t, from the rules this match is played under.
+  // No clock loss (第三轮 ④): how tight the arena looks at match time t, from the rules this match is played under. The
+  // picture runs ahead of the rules (Elara 08ad43bb): an ease-out, so it shows within a second of 60 s and is plainly
+  // different by 62 s (0.44 of the way), while the pull and damage are still barely up.
   function heatAt(t) {
     const o = (live ? combatOptions.combatRules : replay?.meta.combatRules)?.overtime;
-    return o ? Math.min(1, Math.max(0, (t - o.start) / o.ramp)) : 0;
+    return o ? 1 - (1 - Math.min(1, Math.max(0, (t - o.start) / o.ramp))) ** 4 : 0;
   }
   // 准备 → 开打！: the plates (single-player only the one at the foot); the loop counts readyAge on and lets the fight go at READY.
   function getReady() {

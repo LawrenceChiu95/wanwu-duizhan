@@ -133,8 +133,12 @@ export function tipLine(s, winner, foe = null) {
   // Only there, new feel, never pressed: telling a player who did lunge 「没出手」 is worse than saying nothing (Elara 27b4d4c3).
   // Anyone else losing stage 1 on time hears they lunged too little, never the 莽牛 line on blocking (Castor 72baf2c8, Elara ad7297c3).
   // No clock loss (第三轮 ④): what taught it is the arena closing in after a minute, so that is what the line says.
-  if (winner === 1 && foe === 'mang' && s.squeezed && !s.oldFeel) return s.presses === 0 ? '一直在挡没出手，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血' : '出手太少，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血';
-  if (winner === 1 && foe === 'mang' && s.timeout && !s.oldFeel) return s.presses === 0 ? '时间到：你一直在挡，没出手。挡住后点冲，才打得掉它的血' : '时间到：出手太少。挡住后点冲，才打得掉它的血';
+  // The silent backstop (HP left at 120 s) says 拖得太久, not 撞碎: each line follows how the match really ended (Sol 11f8fe0f).
+  if (winner === 1 && foe === 'mang' && s.squeezed && !s.timeout && !s.oldFeel) return s.presses === 0 ? '一直在挡没出手，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血' : '出手太少，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血';
+  if (winner === 1 && foe === 'mang' && s.timeout && !s.oldFeel) {
+    const T = s.overtime ? ENOUGH : '时间到';
+    return s.presses === 0 ? `${T}：你一直在挡，没出手。挡住后点冲，才打得掉它的血` : `${T}：出手太少。挡住后点冲，才打得掉它的血`;
+  }
   if (winner === 1 && FOE_WHY[foe]) return FOE_WHY[foe];
   // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
   const o = winner === 1 && s.outmatched;
@@ -156,5 +160,7 @@ export function tipLine(s, winner, foe = null) {
   if (s.landed === 0) return '一次没冲中，离近一点再按冲';
   if (s.blocks === 0) return '它冲过来时按挡，能把它弹开';
   if (mine?.orient === 'hug') return `贴着的${NAMES[mine.item] ?? '那件'}被打碎了，换一件更结实的贴着`;
-  return winner === null ? `${s.overtime ? ENOUGH : '时间到'}按剩血判，多冲中几下就能赢` : '换个装法再打一局';
+  // Older replays keep their line, whatever the draw (Sol 11f8fe0f).
+  if (winner === null) return s.timeout || !s.overtime ? `${s.overtime ? ENOUGH : '时间到'}按剩血判，多冲中几下就能赢` : '两边同时碎了，多冲中几下就能先打碎它';
+  return '换个装法再打一局';
 }

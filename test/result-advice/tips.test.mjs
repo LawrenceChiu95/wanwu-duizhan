@@ -302,4 +302,13 @@ test('a stage 1 loss that went past the tightening says the arena closed in; 时
   assert.doesNotMatch(tipLine(read(71, 0, 12), 1, 'wen'), /收紧/, 'stage 1 only');
   assert.equal(reasonLine({meta: {reason: 'timeout', winner: 0, combatRules: {overtime}}, decisive: {why: {kind: 'timeout', criterion: 'core-hp-ratio'}}}), '拖得太久，你的核心剩血多');
   assert.equal(endLine({meta: {reason: 'timeout', combatRules: {overtime}}}), '拖得太久，比剩血');
+  // Each line follows how the match really ended (Sol 11f8fe0f): the HP backstop is not 撞碎, a double break is not 按剩血.
+  assert.equal(tipLine(read(120, 0, 12, 'timeout'), 1, 'mang'), '拖得太久：你一直在挡，没出手。挡住后点冲，才打得掉它的血');
+  assert.equal(tipLine(read(120, 2, 12, 'timeout'), 1, 'mang'), '拖得太久：出手太少。挡住后点冲，才打得掉它的血');
+  const draw = (reason, duration) => matchStats({meta: {reason, winner: null, duration, combatRules: {overtime}}, events: [
+    ...Array.from({length: 4}, () => ({type: 'dash', phase: 'end', side: 0, quality: 'full'})),
+    ...Array.from({length: 3}, () => ({type: 'blockResult', side: 0, outcome: 'tight', deflected: true}))
+  ]}, [{parts: []}, {parts: []}], () => false);
+  assert.equal(tipLine(draw('double-ko', 45), null), '两边同时碎了，多冲中几下就能先打碎它');
+  assert.equal(tipLine(draw('timeout', 120), null), '拖得太久按剩血判，多冲中几下就能赢');
 });
