@@ -471,6 +471,12 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #muteFloat svg { width:19px; height:19px; }
 #hud:not([hidden]) ~ #muteFloat { display:none; }
 #intro:not([hidden]) ~ #muteFloat { z-index:9; }
+/* 回首页: a cream iron plate just over the mute, off the fight only (#app.offfight: 选装备 and 结算). */
+#homeFloat { position:absolute; left:8px; top:min(50% - 27px, var(--home-max, 100%)); z-index:4; height:40px; transform:translateY(-100%); display:flex; align-items:center;
+  gap:3px; padding:0 5px 0 2px; border:7px solid transparent; border-image:url('./assets/terminal/cream.webp') 80 fill stretch; background:none;
+  color:#242c20; font-size:13px; font-weight:800; box-shadow:0 4px 8px #0009; }
+#homeFloat svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+#homeFloat[hidden], #app:not(.offfight) #homeFloat, #intro:not([hidden]) ~ #homeFloat { display:none; }
 #app.pvp #camSeg, #app.pvp #caption, #app.pvp #fx .me, #app.pvp #coach { display:none; }
 #pvpTip { position:absolute; inset:0; z-index:5; pointer-events:none; }
 #pvpTip b { position:absolute; left:50%; padding:7px 14px 8px 16px; white-space:nowrap; font-size:16px; font-weight:800; color:#ece9d7;

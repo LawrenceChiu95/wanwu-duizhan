@@ -526,9 +526,9 @@ async function main() {
       n.classList.toggle('on', pvp && i === pick);
       n.classList.toggle(`p${i}`, pvp);
     });
-    // Single-player has 回首页 too where there is an opening page to go back to (Elara 6b6a3c3b): 和人打 is there.
-    $('pvpBack').hidden = !pvp && !homeOn;
-    $('pvpBack').querySelector('span').textContent = pvp && pick ? '回 1P' : '回首页';
+    // With an opening page, 回首页 is #homeFloat and this is only 2P's 回 1P; without one, 一机双人's way back to single-player.
+    $('pvpBack').hidden = !pvp || !pick && homeOn;
+    $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
     $('foeLabel').textContent = pick ? '轮到上方 2P 选装' : '轮到下方 1P 选装';
@@ -543,8 +543,19 @@ async function main() {
     renderPick();
   }
   // 回首页: the opening page's two choices again; a page without one (not the 评委版) goes straight back to single-player.
+  // Off the fight only (选装备 either side's turn, 结算): two hands on the phone mid-fight don't tap it by mistake (Elara
+  // 4f2df5b4). The ladder and the build stay as they are; the two-player score starts again.
   const homeOn = Boolean(judge && document.getElementById('intro'));
-  function goHome() { score = [0, 0]; if (!judge?.showIntro()) setPvp(false); }
+  $('homeFloat').hidden = !homeOn;
+  function goHome() {
+    if (phase !== 'build' && phase !== 'result') return;
+    score = [0, 0];
+    el.hud.hidden = true; // single-player's result keeps it up, and with it the opening page's mute would go
+    // The opening page is inside #app: turn 2P's screen back first, at once, so it is never shown upside down.
+    if (pick) { el.app.style.transition = 'none'; setPick(0); void el.app.offsetWidth; el.app.style.transition = ''; }
+    if (!judge?.showIntro()) setPvp(false);
+  }
+  $('homeFloat').onclick = goHome;
   $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
     phase = 'build';
@@ -1027,16 +1038,17 @@ async function main() {
   }
 
   // ---------- 第一关教学 ----------
-  // A new phone's first 莽牛 (Elara 6b6a3c3b, after Pollux's plan): twice the whole fight all but stops, the button to
-  // press lights up, the other goes into shade and one big line by the tops says what to do. First as the tops close in:
-  // 冲. Then the first lunge 莽牛 flashes for while 挡 is ready: the flash ringed, 挡. That press is taken at the physics step
-  // that makes it a 完美 (a shadow match replays the presses so far and runs on to find where the lunge lands), so the
-  // lesson ends in the bounce it promised, and 冲 flashes for the counter. A stop waits TEACH_WAIT s of real time at most,
-  // then the fight carries on. The sim never runs more than LIVE_LEAD past the picture, so it stops with it. Not again
-  // on this phone, nor in 一机双人 or a replay; ?coach=again brings it back.
-  const TEACH_KEY = 'wanwu-teach-seen', TEACH_WAIT = 2.5, TEACH_SLOW = 0.03, TEACH_IN = 0.2, TEACH_COUNTER = 1.6;
-  // How far the tops close in (metres between cores from the start) before the first stop; the press lands this many
-  // physics steps before the lunge would touch, well inside the 完美 window.
+  // A new phone's first 莽牛 (Elara 6b6a3c3b, after Pollux's plan): twice the fight stops dead, the button to press lights
+  // up, the other goes into shade and one big line by the tops says what to do. First as the tops close in: 冲. Then the
+  // first lunge 莽牛 flashes for while 挡 is ready: the flash ringed, 挡. The sim never runs more than LIVE_LEAD past the
+  // picture, so it stops with it, not one step on (Elara d308f7b8): a press any time in the stop is the same press. The
+  // lesson's 挡 is taken at the physics step a shadow match has shown to be a 完美 (it replays the live presses and tries
+  // the step), so the lesson ends in the bounce it promised, and 冲 flashes for the counter. A stop waits TEACH_WAIT s of
+  // real time at most, then the fight carries on as it would. Not again on this phone, nor in 一机双人 or a replay;
+  // ?coach=again brings it back.
+  const TEACH_KEY = 'wanwu-teach-seen', TEACH_WAIT = 2.5, TEACH_COUNTER = 1.6;
+  // How far the tops close in (metres between cores from the start) before the first stop; the 挡 goes in this many
+  // physics steps before the lunge touches, well inside the 完美 window.
   const TEACH_NEAR = 0.35, TEACH_EARLY = 8;
   const TEACH_LINE = {dash: '点冲，撞它', block: '它一闪光，点挡', counter: '点冲，反打'};
   let teach = null;
@@ -1045,7 +1057,7 @@ async function main() {
     if (!live || pvp || !round || fought === null || LADDER[fought].id !== 'mang') return;
     try { if (q.get('coach') !== 'again' && localStorage.getItem(TEACH_KEY) === '1') return; localStorage.setItem(TEACH_KEY, '1'); } catch { /* no storage here: every first 莽牛 */ }
     // lesson: 0 waits for the tops to close, 1 for a lunge to wind up, 2 for the block's result, 3 done.
-    teach = {lesson: 0, stop: null, inputs: [], args, from: null, blockAt: null, armed: false, counterUntil: 0};
+    teach = {lesson: 0, stop: null, args, blockAt: null, armed: false, counterUntil: 0};
   }
   function endTeach() {
     if (teach) teach.stop = null;
@@ -1061,26 +1073,27 @@ async function main() {
     el.pad.classList.toggle('teach-block', kind === 'block');
   }
   function teachHide() { el.teach.hidden = true; el.pad.classList.remove('teach-dash', 'teach-block'); }
+  // since: when the line went up (the wait counts from there); null while the shadow match is still working out the 挡.
   function teachStop(kind) {
-    teach.stop = {kind, since: performance.now()};
+    teach.stop = {kind, since: kind === 'dash' ? performance.now() : null};
     if (kind === 'dash') teachShow(kind);
   }
-  // The stop ends: a press, or TEACH_WAIT s gone. Full speed at once. A 挡 pressed after the stop, before the lunge
-  // lands, still goes in at the lesson's step.
+  // The stop ends: a press, or TEACH_WAIT s gone. Full speed at once.
   function teachGo() {
     const s = teach?.stop;
     if (!s) return;
     teach.stop = null;
     teachHide();
     if (s.kind === 'dash') teach.lesson = 1;
+    // The 挡 stop let go unpressed: the lunge lands as it would, and that is the lesson over.
+    else if (!teach.armed) { teach.lesson = 3; teach.blockAt = null; }
   }
-  // The speed the picture (and the sim behind it) runs at: down to TEACH_SLOW over TEACH_IN s, back at once.
+  // The speed the picture (and the sim behind it) runs at: 0 in a stop, full again at once.
   function teachScale() {
     const s = teach?.stop;
     if (!s) return 1;
-    const age = (performance.now() - s.since) / 1000;
-    if (age >= TEACH_WAIT) { teachGo(); return 1; }
-    return 1 - (1 - TEACH_SLOW) * (1 - (1 - Math.min(1, age / TEACH_IN)) ** 2);
+    if (s.since !== null && performance.now() - s.since >= TEACH_WAIT * 1000) { teachGo(); return 1; }
+    return 0;
   }
   // Each frame of play: the first stop once the tops have closed in with 冲 ready; the line and the ring follow the tops.
   function teachTick() {
@@ -1109,51 +1122,80 @@ async function main() {
       el.teachRing.style.transform = `translate(${q2.x.toFixed(1)}px, ${q2.y.toFixed(1)}px) translate(-50%, -50%)`;
     }
   }
-  // 莽牛 flashes for a lunge: the second stop, if 挡 is ready and the lunge would land. The picture slows at once; the
-  // line comes up when the shadow match has found the step to block at (a lunge that would miss, or 挡 not ready, waits
-  // for the next).
+  // 莽牛 flashes for a lunge: the second stop, if 挡 is ready. The fight stops at once; the line comes up when the shadow
+  // match has found a 挡 step that makes a 完美. No such step (the lunge would miss, or the shadow has not kept to the
+  // live match): the fight goes on and the next flash is tried. A 挡 pressed before the line is up waits for it.
   async function teachFlash(e) {
     if (!teach || teach.lesson !== 1 || teach.stop || !live || live.done) return;
     const c = live.match.control(0);
     if (c.blockIn > rules.dt || c.stunIn > 0) return;
-    const stop = teach.stop = {kind: 'block', since: performance.now()}, t = teach;
-    const at = await teachContact(e.t).catch(err => { console.warn('教学: 影子对局失败', err); return null; });
-    if (teach !== t || t.stop !== stop) return;
-    if (at === null || at - TEACH_EARLY <= live.match.step + 1) { t.stop = null; return; }
-    t.from = e.t;
-    t.blockAt = at - TEACH_EARLY;
+    teachStop('block');
+    const stop = teach.stop, t = teach, m0 = live.match;
+    const at = await teachPlan(e.t).catch(err => { console.warn('教学: 影子对局失败', err); return null; });
+    if (teach !== t || t.stop !== stop || live?.match !== m0) return;
+    if (at === null) {
+      t.stop = null;
+      if (t.armed) { t.armed = false; t.lesson = 3; m0.press(0, 'block'); }
+      return;
+    }
+    t.blockAt = at;
+    if (t.armed) { t.stop = null; return; }
+    stop.since = performance.now();
     teachShow('block');
   }
-  // The step 莽牛's lunge flashed at `from` touches the player's top if nothing more is pressed, or null (it would
-  // miss or be cut short, or the shadow has not kept to the live match). The sim is deterministic: the same start and the
-  // same presses at the same steps make the same fight.
-  async function teachContact(from) {
-    const m0 = live.match, now = m0.step, until = now + Math.ceil(2.5 / rules.dt), args = teach.args;
-    const m = await createV3Match({...args, manual: {...args.manual, inputs: teach.inputs.map(x => ({...x}))}});
+  // The presses the live match took from the player so far, at the steps it took them.
+  const takenPresses = m => m.events.flatMap(e => e.side === 0 && (e.type === 'block' || e.type === 'dash' && e.phase === 'charge') ? [{step: e.pressStep, side: 0, action: e.type}] : []);
+  // A shadow of the live match (stopped now): the same start and the live presses, plus `extra`, run up to the live step.
+  // The sim is deterministic, so it is the same fight; one that has not kept to it (other events, other places) is null.
+  async function teachShadow(extra = []) {
+    const m0 = live.match, now = m0.step, args = teach.args;
+    const m = await createV3Match({...args, manual: {...args.manual, inputs: [...takenPresses(m0), ...extra]}});
+    while (!m.done && m.step < now) m.advance();
+    const a = m0.frames.at(-1), b = m.frames.findLast(f => f.t <= m.t + 1e-9);
+    if (m.step !== now || m0.step !== now || m.events.length !== m0.events.length || !b || a.t !== b.t || a.fighters.some((f, i) => f.pos.some((v, k) => v !== b.fighters[i].pos[k]))) { m.free(); console.warn('教学: 影子对局对不上'); return null; }
+    return m;
+  }
+  // The step to take the lesson's 挡 at for a 完美 on the lunge flashed at `from`, or null. First where the lunge would
+  // first touch with nothing pressed; then that 挡, tried in a second shadow, moved to the touch it meets if need be.
+  async function teachPlan(from) {
+    const now = live.match.step, until = now + Math.ceil(TEACH_WAIT / rules.dt);
+    let m = await teachShadow(), touch = null;
+    if (!m) return null;
     try {
-      while (!m.done && m.step < now) m.advance();
-      const mine = m0.frames.findLast(f => f.t <= m.t + 1e-9), theirs = m.frames.findLast(f => f.t <= m.t + 1e-9);
-      if (!mine || !theirs || mine.t !== theirs.t || mine.fighters.some((f, i) => f.pos.some((v, k) => v !== theirs.fighters[i].pos[k]))) { console.warn('教学: 影子对局对不上'); return null; }
-      let seen = m.events.length;
-      while (!m.done && m.step < until) {
+      for (let seen = m.events.length; touch === null && !m.done && m.step < until;) {
         m.advance();
-        for (; seen < m.events.length; seen++) {
+        for (; seen < m.events.length && touch === null; seen++) {
           const e = m.events[seen];
-          if (e.type === 'dash' && e.phase === 'end' && e.side === 1 && e.t > from) return e.outcome === 'hit' ? Math.round(e.t / rules.dt) : null;
+          if (e.t > from && (e.type === 'dash' && e.phase === 'end' && e.side === 1 || e.damage > 0 && e.target === 0)) touch = Math.round(e.t / rules.dt);
         }
       }
-      return null;
     } finally { m.free(); }
+    for (let tries = 0; touch !== null && tries < 3; tries++) {
+      const at = Math.max(now + 1, touch - TEACH_EARLY);
+      m = await teachShadow([{step: at, side: 0, action: 'block'}]);
+      if (!m) return null;
+      let got = null;
+      try {
+        for (let seen = m.events.length; !got && !m.done && m.step < until;) {
+          m.advance();
+          for (; seen < m.events.length && !got; seen++) if (m.events[seen].type === 'blockResult' && m.events[seen].side === 0) got = m.events[seen];
+        }
+      } finally { m.free(); }
+      if (!got) return null;
+      if (got.outcome === 'perfect' && got.deflected) return at;
+      // Met later than planned (a 紧挡): go again from where the shield was met. An empty one: no lunge came in time.
+      const met = Math.round(got.t / rules.dt);
+      touch = got.outcome === 'empty' || met <= touch ? null : met;
+    }
+    return null;
   }
-  // Before each live physics step: an armed 挡 goes in at its step.
+  // Before each live physics step: the armed 挡 goes in at its step.
   function teachStep(m) {
-    if (!teach?.blockAt || m.step + 1 < teach.blockAt) return;
+    if (teach?.blockAt === null || teach?.blockAt === undefined || m.step + 1 < teach.blockAt || teach.stop) return;
     teach.blockAt = null;
-    // No 挡 by then: the lesson is over, the lunge lands as it would.
     if (!teach.armed) { teach.lesson = 3; return; }
     teach.armed = false;
     m.press(0, 'block');
-    teach.inputs.push({step: m.step + 1, side: 0, action: 'block'});
   }
   // The lesson's 挡 landed: a 完美 lights 冲 for the counter; anything else ends it there.
   function teachBlocked(e) {
@@ -1354,6 +1396,8 @@ async function main() {
     el.pvpWin.lastChild.textContent = `你 ${score[1]} : ${score[0]} 对面`;
     el.result.hidden = false;
     layout_();
+    // 回首页 stays over the mute unless the card comes up that far (a first win's unlock and 拍一件 lines): then just above it.
+    el.app.style.setProperty('--home-max', `${el.result.offsetTop - 10}px`);
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
     stage.setFocusOn(m.winner, el.result.offsetTop);
   }
@@ -1782,11 +1826,15 @@ async function main() {
     // a stop.
     if (teach && !side) {
       if (teach.lesson === 0 && action === 'dash') teach.lesson = 1;
-      if (teach.lesson === 1 && action === 'block' && teach.blockAt > live.match.step + 1) { teach.armed = true; teachGo(); teach.lesson = 2; sfx.click(); return; }
+      // The 挡 stop: taken at the 完美 step, the line up or not yet (then the stop holds till the shadow is done).
+      if (teach.lesson === 1 && action === 'block' && teach.stop?.kind === 'block') {
+        teach.armed = true; teach.lesson = 2; sfx.click();
+        if (teach.blockAt !== null) teachGo();
+        return;
+      }
       teachGo();
     }
     live.match.press(side, action);
-    teach?.inputs.push({step: live.match.step + 1, side, action});
     sfx.click();
   }
   // 还没好 sits just above its button.
@@ -2055,7 +2103,7 @@ async function main() {
     cam: CAM,
     start,
     music: () => sfx._music(),
-    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage, side: e.side, outcome: e.outcome})) ?? []
+    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage, side: e.side, phase: e.phase, outcome: e.outcome})) ?? []
   };
 
   // ---------- loop ----------
@@ -2073,6 +2121,7 @@ async function main() {
     if (test.frozen) dt = 0;
     dt *= test.speed;
     if (phase === 'loading') return;
+    el.app.classList.toggle('offfight', phase === 'build' || phase === 'result');
     if (phase === 'play' && teach) dt *= teachScale();
     for (const n of lateNums) if ((n.wait -= dt) <= 0) overlay.number(...n.broke);
     lateNums = lateNums.filter(n => n.wait > 0);
