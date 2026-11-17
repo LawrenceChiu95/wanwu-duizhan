@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/playback.test.mjs test/break-holds.test.mjs",
+    "test": "node --test test/playback.test.mjs test/break-holds.test.mjs test/mode-feedback.test.mjs",
     "dev": "vite --host 127.0.0.1 --port 4330 --strictPort",
     "build": "vite build",
     "dev:judge": "vite --mode judge --host 127.0.0.1 --port 4330 --strictPort",
