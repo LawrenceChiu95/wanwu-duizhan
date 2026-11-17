@@ -84,11 +84,12 @@
   <div id="caption" aria-live="polite"><span class="tag">决胜</span><p id="captionText"></p></div>
 
   <section id="build">
-    <div class="bhead"><b>组装台</b><span>两件装在核心两侧</span><i class="terminal-led" aria-hidden="true"></i></div>
+    <!-- Elara 6b6a3c3b: say what the pieces are, and 拍一件 one tap from here (shown when a shoot backend is on, like #shootBtn). -->
+    <div class="bhead"><b>组装台</b><span>每件都是实物照片做成的&nbsp;3D，<wbr>点槽位换件</span><button type="button" class="shoot" id="benchShoot" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button><i class="terminal-led" aria-hidden="true"></i></div>
     <div class="slots">
       <div class="slot" data-slot="0">
         <div class="slot-rail" aria-hidden="true"><span>接口 / 01</span><i></i><i></i><i></i></div>
-        <button type="button" class="item" data-pick="0"><span class="nm"><b></b></span><span class="facts"><small class="spec"></small><i class="lux">Lux3D</i></span><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
+        <button type="button" class="item" data-pick="0"><span class="nm"><b></b></span><span class="facts"><small class="spec"></small><i class="lux">Lux3D</i></span><i class="swapchip">换件</i></button>
         <div class="module-display"><img class="module-thumb" alt="" hidden></div>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
           <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
@@ -98,7 +99,7 @@
       </div>
       <div class="slot" data-slot="1">
         <div class="slot-rail" aria-hidden="true"><span>接口 / 02</span><i></i><i></i><i></i></div>
-        <button type="button" class="item" data-pick="1"><span class="nm"><b></b></span><span class="facts"><small class="spec"></small><i class="lux">Lux3D</i></span><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg></button>
+        <button type="button" class="item" data-pick="1"><span class="nm"><b></b></span><span class="facts"><small class="spec"></small><i class="lux">Lux3D</i></span><i class="swapchip">换件</i></button>
         <div class="module-display"><img class="module-thumb" alt="" hidden></div>
         <div class="seg orient" role="radiogroup" aria-label="怎么装">
           <button type="button" data-orient="out" role="radio"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3.2" /><path d="M9.5 12H21" /><path d="M17 8.5l4 3.5-4 3.5" /></svg>伸出<em class="role atk">攻</em></button>
@@ -147,8 +148,8 @@
     <p class="why" id="whyLine"></p>
     <!-- 结算 (MVP 规格 §4-7): up to three numbers from this match, then one tip from the rules below. -->
     <ul class="stats" id="statsList"></ul>
-    <p class="tip" id="tipLine"></p>
     <div class="unlock" id="unlockCard" hidden></div>
+    <p class="tip" id="tipLine"></p>
     <div class="actions">
       <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
       <button type="button" id="sameBtn" class="ghost">原样再来</button>
