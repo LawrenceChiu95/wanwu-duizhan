@@ -548,7 +548,7 @@ async function main() {
   const homeOn = Boolean(judge && document.getElementById('intro'));
   $('homeBtn').hidden = !homeOn;
   function goHome() {
-    if (phase !== 'build' && phase !== 'result') return;
+    if (phase !== 'build' && phase !== 'result' && phase !== 'loading') return;
     score = [0, 0];
     el.hud.hidden = true; // single-player's result keeps it up
     // The opening page is inside #app: turn 2P's screen back first, at once, so it is never shown upside down.
@@ -987,7 +987,7 @@ async function main() {
     } else if (e.type === 'blockResult') {
       teachBlocked(e);
       // 老龟's second block of a lunge this match: once, its result card's line beside the player's top (Elara 424f0bcb).
-      if (wenHint && e.side === 1 && e.outcome !== 'empty' && ++wenHint.caught === 2) overlay.nudge(WEN_HINT, 'deflect nudge', WEN_HINT_TIME);
+      if (wenHint && e.side === 1 && e.outcome !== 'empty' && ++wenHint.caught === 2) overlay.nudge(WEN_HINT.replace('：', '\n'), 'deflect nudge two', WEN_HINT_TIME);
       // 「挡住了，点冲反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
       if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held ||= e.outcome === 'perfect'; }
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
@@ -1044,9 +1044,12 @@ async function main() {
   // picture, so it stops with it, not one step on (Elara d308f7b8): a press any time in the stop is the same press. The
   // lesson's 挡 is taken at the physics step a shadow match has shown to be a 完美 (it replays the live presses and tries
   // the step), so the lesson ends in the bounce it promised, and 冲 flashes for the counter. A stop waits TEACH_WAIT s of
-  // real time at most, then the fight carries on as it would. Not again on this phone, nor in 一机双人 or a replay;
-  // ?coach=again brings it back.
-  const TEACH_KEY = 'wanwu-teach-seen', TEACH_WAIT = 2.5, TEACH_COUNTER = 1.6;
+  // real time at most (4.5: a first look reads the line and finds the button in about 3, Castor 9329c4e0), then the fight
+  // carries on as it would; a 挡 pressed after that, before its step comes, still goes in at it. Not again on this phone,
+  // nor in 一机双人 or a replay; ?coach=again brings it back.
+  const TEACH_KEY = 'wanwu-teach-seen', TEACH_WAIT = 4.5, TEACH_COUNTER = 1.6;
+  // How far ahead (s of fight) the shadow looks for the lunge's touch.
+  const TEACH_LOOK = 2.5;
   // How far the tops close in (metres between cores from the start) before the first stop; the 挡 goes in this many
   // physics steps before the lunge touches, well inside the 完美 window.
   const TEACH_NEAR = 0.35, TEACH_EARLY = 8;
@@ -1086,8 +1089,8 @@ async function main() {
     teach.stop = null;
     teachHide();
     if (s.kind === 'dash') teach.lesson = 1;
-    // The 挡 stop let go unpressed: the lunge lands as it would, and that is the lesson over.
-    else if (!teach.armed) { teach.lesson = 3; teach.blockAt = null; }
+    // The 挡 stop let go unpressed: the lunge comes on as it would. Its step stays the lesson's till it comes (teachStep),
+    // for a 挡 pressed late.
   }
   // The speed the picture (and the sim behind it) runs at: 0 in a stop, full again at once.
   function teachScale() {
@@ -1159,7 +1162,7 @@ async function main() {
   // The step to take the lesson's 挡 at for a 完美 on the lunge flashed at `from`, or null. First where the lunge would
   // first touch with nothing pressed; then that 挡, tried in a second shadow, moved to the touch it meets if need be.
   async function teachPlan(from) {
-    const now = live.match.step, until = now + Math.ceil(TEACH_WAIT / rules.dt);
+    const now = live.match.step, until = now + Math.ceil(TEACH_LOOK / rules.dt);
     let m = await teachShadow(), touch = null;
     if (!m) return null;
     try {
@@ -1753,6 +1756,8 @@ async function main() {
     setNames(items);
     OFFER.splice(0, OFFER.length, ...offerNow());
     takeLate();
+    // A finished one not put on yet may be among them: its 「做好了」 shows now (Sol 521149bb).
+    shoot?.paintTag();
   }
   let shoot = null;
   // The build's own 拍一件 (Elara 6b6a3c3b) breathes until the player has shot something: none of their photo items in
@@ -1845,7 +1850,7 @@ async function main() {
     if (teach && !side) {
       if (teach.lesson === 0 && action === 'dash') teach.lesson = 1;
       // The 挡 stop: taken at the 完美 step, the line up or not yet (then the stop holds till the shadow is done).
-      if (teach.lesson === 1 && action === 'block' && teach.stop?.kind === 'block') {
+      if (teach.lesson === 1 && action === 'block' && (teach.stop?.kind === 'block' || teach.blockAt !== null)) {
         teach.armed = true; teach.lesson = 2; sfx.click();
         // The press shows at once (Pollux, Elara 56506aa2): 挡 stays in, gold-edged, till its shield goes up.
         teachHide();
@@ -1853,6 +1858,8 @@ async function main() {
         if (teach.blockAt !== null) teachGo();
         return;
       }
+      // Anything else before the 挡's step: the fight is no longer the one its 完美 was worked out for.
+      if (teach.blockAt !== null && !teach.armed) { teach.blockAt = null; teach.lesson = 3; }
       teachGo();
     }
     live.match.press(side, action);
@@ -2141,8 +2148,9 @@ async function main() {
     }
     if (test.frozen) dt = 0;
     dt *= test.speed;
+    // 回首页 is out of reach in a fight only: from the first frame on the bench, models still loading or not (Castor 9329c4e0).
+    el.app.classList.toggle('infight', !['loading', 'build', 'result'].includes(phase));
     if (phase === 'loading') return;
-    el.app.classList.toggle('offfight', phase === 'build' || phase === 'result');
     if (phase === 'play' && teach) dt *= teachScale();
     for (const n of lateNums) if ((n.wait -= dt) <= 0) overlay.number(...n.broke);
     lateNums = lateNums.filter(n => n.wait > 0);

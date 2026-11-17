@@ -407,6 +407,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 提示出手 (Elara af9e8542): the same plate, under the player's top and riding with it, a size down for its longer words;
    冲 beats in its own brass while it is up. */
 #fx .hilite.nudge { left:0;font-size:16px;letter-spacing:.06em;padding:4px 10px; }
+/* 老龟's hint in two lines, 它专防先冲 over what to do, so it is never wider than the phone (Castor 9329c4e0). */
+#fx .hilite.nudge.two { flex-direction:column;align-items:center;gap:0;white-space:pre-line;text-align:center;line-height:1.35;padding:4px 12px 5px; }
 :is(#pad,#pad2) .pad.dash.nudge:not(.deny):not(.pop):not(.down) { animation:padNudge .8s ease-in-out infinite; }
 @keyframes padNudge { 0%,100% { transform:scale(1);filter:brightness(1); }
   45% { transform:scale(1.07);filter:brightness(1.3) drop-shadow(0 0 12px #e7b354cc); } }
@@ -480,7 +482,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #foe #homeBtn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
 #foe #muteTop { right:-5px; width:30px; padding:0; }
 #foe #muteTop svg { width:17px; height:17px; }
-#app:not(.offfight) #foe .hkey { visibility:hidden; }
+#app.infight #foe .hkey { visibility:hidden; }
 /* Narrow phones: the chips keep saying where they go back to (the 换个对手 one alone goes down to its icon); 回首页 drops
    its arrow to fit beside the name. */
 @media (max-width:380px) { #foe :is(#homeBtn,#pvpBack) span { display:inline; } #foe #homeBtn { padding:0 3px; font-size:10.5px; } #foe #homeBtn svg { display:none; } }

@@ -10,6 +10,7 @@
 import {ShootError, decodeImage, newClientKey, setPass} from './shoot-api.js';
 
 const JOB_KEY = 'wanwu-shoot-job';
+const MADE_KEY = 'wanwu-shoot-made';
 const CAT = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
 // The 「好了」 line (Elara 8d32a2a6): the five scoring materials and three states of wear; 不确定 says nothing.
 const MATERIAL = {metal: '金属', wood: '木头', plastic: '塑料', cloth: '布', rubber: '橡胶'};
@@ -151,6 +152,13 @@ export function mountShoot(ctx) {
   const {api} = ctx;
   let stored = (() => { try { return JSON.parse(localStorage.getItem(JOB_KEY)); } catch { return null; } })();
   const keep = () => { try { if (stored) localStorage.setItem(JOB_KEY, JSON.stringify(stored)); else localStorage.removeItem(JOB_KEY); } catch { /* no storage here */ } };
+  // A finished item let go for a new photo before it was put on: the tag keeps saying 「做好了 · 装上去打」 for it till it
+  // is (Elara 5ca726ff, Sol 0a6517fd), unless a job of this page has something of its own to say.
+  let made = (() => { try { return JSON.parse(localStorage.getItem(MADE_KEY)); } catch { return null; } })(), tagMade = null;
+  const keepMade = () => { try { if (made) localStorage.setItem(MADE_KEY, JSON.stringify(made)); else localStorage.removeItem(MADE_KEY); } catch { /* no storage here */ } };
+  function letGo() {
+    if (job?.status === 'succeeded' && !ctx.placed?.(job.itemId)) { made = {id: job.itemId, what: catOf(job.recognition)}; keepMade(); }
+  }
   let job = null, offline = false, pending = null, startError = null, busyNote = '', quota = ctx.quota ?? null, shown = '', recogAt = -Infinity, timer = 0, ticker = 0;
   let quotaErr = 'generation-browser'; // which allowance the last quota error was about
   // Errors running: polls that got a server error, item fetches that failed after 好了, sends that got a server error.
@@ -511,10 +519,14 @@ export function mountShoot(ctx) {
     if (toastLeft > 0) setTimeout(toastTick, 100);
   }
   function paintTag() {
-    const room = ctx.tagRoom(), state = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (ctx.placed?.(job.itemId) ? null : 'done')
+    if (made && ctx.placed?.(made.id)) { made = null; keepMade(); }
+    const own = !stored || !job ? null : stopped() ? 'bad' : fetching() ? 'run' : refused() ? (stored.seen ? null : 'bad') : job.status === 'succeeded' ? (ctx.placed?.(job.itemId) ? null : 'done')
       : job.status === 'failed' ? (stored.seen ? null : 'bad') : 'run';
+    // The one let go: on the build and result screens only, once it is in the 角色库.
+    tagMade = !own && made && ctx.item(made.id) ? made : null;
+    const room = ctx.tagRoom(), state = own ?? (tagMade ? 'done' : null);
     // In a match only 好了, only for a moment, and not to be tapped: the fight's buttons are right there.
-    const quiet = !room && state === 'done' && ctx.fightRoom?.() && toastLeft > 0 && !ctx.hudBusy?.();
+    const quiet = !room && !tagMade && state === 'done' && ctx.fightRoom?.() && toastLeft > 0 && !ctx.hudBusy?.();
     el.tag.hidden = !(room || quiet) || !el.view.hidden || !state;
     if (el.tag.hidden) return;
     el.tag.className = quiet ? 'done quiet' : state;
@@ -522,7 +534,7 @@ export function mountShoot(ctx) {
     el.tag.inert = quiet;
     const top = ctx.tagTop?.();
     el.tag.style.top = top == null ? '' : `${top}px`;
-    const what = esc(catOf(job.recognition));
+    const what = esc(tagMade ? tagMade.what : catOf(job.recognition));
     const html = quiet ? `<b>${what}做好了</b><small>打完就能装上去打</small>`
       : state === 'done' ? `<b>${what}做好了</b><span class="sgo">装上去打</span>${ICON.arrow}`
       : state === 'bad' ? `<b>${stopped() ? (startError === 'session' ? '拍照记录找不到了，去看看' : '拍一件连错了后台，去看看') : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
@@ -531,7 +543,8 @@ export function mountShoot(ctx) {
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
   }
-  el.tag.onclick = () => { if (!el.tag.inert) open('tag'); };
+  // The one let go has no job to show: straight on, as the 好了 screen's 装上去打 does.
+  el.tag.onclick = () => { if (el.tag.inert) return; if (tagMade) ctx.equip(tagMade.id); else open('tag'); };
 
   // ---------- actions ----------
   async function send(fn) {
@@ -602,7 +615,7 @@ export function mountShoot(ctx) {
   el.cam.onchange = () => picked(el.cam.files[0]);
   el.album.onchange = () => picked(el.album.files[0]);
   // Back to taking a photo; a retake has just given its generation back, so today's count is asked again.
-  function fresh() { retakeSay = ''; retaking = false; lateAt = -Infinity; startError = null; pending = null; job = null; stored = null; busyNote = ''; lastSend = null; sendFails = 0; keep(); sync(); loadQuota(); }
+  function fresh() { letGo(); retakeSay = ''; retaking = false; lateAt = -Infinity; startError = null; pending = null; job = null; stored = null; busyNote = ''; lastSend = null; sendFails = 0; keep(); sync(); loadQuota(); }
   async function ask() {
     await loadQuota();
     el.askText.textContent = `会多算一次${quota?.remaining != null ? `（今天还剩 ${quota.remaining} 次）` : ''}，用同一张照片和同一个认物结果重新做一件。`;
@@ -668,7 +681,7 @@ export function mountShoot(ctx) {
     busyNote = fresh && stored && job && !final(job) ? '上一件还在做，做完才能拍下一件' : '';
     // A finished job seen already gives way to a new photo. One not seen yet is shown first, however 拍一件 was opened
     // (Elara 5027aa74): a failure while the player was off playing a game would otherwise go without a word.
-    if (fresh && stored && job && final(job) && !stored.hold && stored.seen) { stored = null; job = null; keep(); }
+    if (fresh && stored && job && final(job) && !stored.hold && stored.seen) { letGo(); stored = null; job = null; keep(); }
     // Back from the 角色库 a while later: a server error may be sent again three more times.
     if (fresh && startError) { if (startError === 'quota' || startError === 'budget') pending = null; startError = null; sendFails = 0; }
     shown = '';

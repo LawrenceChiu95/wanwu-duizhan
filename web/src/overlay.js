@@ -284,9 +284,11 @@ export class Overlay {
       else {
         // Below the reach of its pieces (as 「你」 sits above it), kept on screen and clear of the buttons.
         const r = Math.min(64, stage.screenRadius(me.center, stage.reachOf(me) + 0.1) * 0.95);
-        const x = Math.min(W - 6 - n.w / 2, Math.max(6 + n.w / 2, p.x)), y = Math.min(stage.view.h - stage.safeBottom() - n.h - 6, p.y + r + 4);
+        // Kept on screen at its size now, the punch in included (Castor 9329c4e0: it stuck out 19 px as it came in).
+        const k = n.age < 0.12 ? 1.25 - 0.25 * ease(n.age / 0.12) : 1, half = n.w * k / 2;
+        const x = Math.min(W - 6 - half, Math.max(6 + half, p.x)), y = Math.min(stage.view.h - stage.safeBottom() - n.h - 6, p.y + r + 4);
         n.el.style.opacity = t > 0.85 ? (1 - t) / 0.15 : 1;
-        n.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translateX(-50%) scale(${n.age < 0.12 ? 1.25 - 0.25 * ease(n.age / 0.12) : 1})`;
+        n.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translateX(-50%) scale(${k})`;
       }
     }
     this.flash *= Math.exp(-dt * 11);
