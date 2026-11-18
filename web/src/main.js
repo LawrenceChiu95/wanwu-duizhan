@@ -1354,31 +1354,44 @@ async function main() {
   const screens = new MutationObserver(rs => { if (rs.some(flipped)) { choiceReq++; swapTipNow(); } });
   for (const n of SCREENS.map(k => document.getElementById(k)).filter(Boolean)) screens.observe(n, {attributeFilter: ['hidden'], attributeOldValue: true});
   screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
-  // The first time on the bench (Elara 1370fb7f): a small bubble over the left 换件 saying the 角色库 has more. It covers
-  // nothing that can be pressed; any tap puts it away for good, and 拍一件 holds its breath while it is up (terminal.css).
-  const TIP_KEY = 'wanwu-swap-tip', swapTip = $('swapTip');
-  let tipDone = q.get('swaptip') !== 'again' && (() => { try { return localStorage.getItem(TIP_KEY) === '1'; } catch { return false; } })();
+  // Two bubbles on the bench, each once (Elara 7efbda7b): the first visit's under 拍一件, its body pulled left so only the
+  // tail reaches the key, off ModelScope's ball at the right edge (Elara aa489e4f); then, back from the first match against
+  // the computer (won or lost), one under the left 换件 for the 角色库. Under their keys, so 「组装台」 stays clear (Elara
+  // 6cdfe227). Taps go through (拍一件 still opens); any tap puts it away for good, and 拍一件 holds its breath while the
+  // 换件 one is up (style.css). New keys: old phones have 'wanwu-swap-tip' set from the first bubble.
+  const swapTip = $('swapTip'), again = q.get('swaptip') === 'again';
+  const TIPS = [
+    {key: 'wanwu-bubble-shoot', chip: () => $('benchShoot'), ready: () => true, text: () => '拍一件你身边的东西，它替你上场\n也可以先用这套直接开打',
+      left: (c, w) => c.left + c.width / 2 - w + 24},
+    {key: 'wanwu-bubble-swap', chip: () => el.build.querySelector('[data-swap="0"]'), ready: () => soloDone, text: () => `库里还有 ${OFFER.length} 件现成的，\n点这儿换一件`, hush: true,
+      left: (c, w) => c.right - w + 6},
+  ];
+  for (const t of TIPS) t.done = !again && (() => { try { return localStorage.getItem(t.key) === '1'; } catch { return false; } })();
+  let soloDone = false, tipUp = null; // soloDone: a match against the computer came to its result on this page
   function swapTipNow() {
     const off = id => document.getElementById(id)?.hidden ?? true;
     const room = phase === 'build' && !pvp && !el.build.hidden && ['library', 'howView', 'shootView', 'foeSheet', 'intro'].every(off);
-    if (tipDone || !room || !swapTip.hidden) return;
-    swapTip.textContent = `库里还有 ${OFFER.filter(id => shipped.has(id)).length} 件现成的，\n点这儿换一件`;
+    const t = TIPS.find(t => !t.done && t.ready() && !t.chip()?.hidden);
+    if (!room || !t || tipUp) return;
+    tipUp = t;
+    swapTip.textContent = t.text();
     swapTip.hidden = false;
-    el.build.classList.add('tipping');
+    el.build.classList.toggle('tipping', Boolean(t.hush));
     placeSwapTip();
     addEventListener('pointerdown', dropSwapTip, {capture: true, once: true});
   }
   function placeSwapTip() {
-    if (swapTip.hidden) return;
-    const chip = el.build.querySelector('[data-swap="0"]').getBoundingClientRect(), box = el.build.getBoundingClientRect();
-    const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, chip.right - box.left - w + 6));
+    if (!tipUp) return;
+    const chip = tipUp.chip().getBoundingClientRect(), box = el.build.getBoundingClientRect();
+    const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, tipUp.left(chip, w) - box.left));
     swapTip.style.left = `${left.toFixed(1)}px`;
-    swapTip.style.top = `${(chip.top - box.top - swapTip.offsetHeight - 9).toFixed(1)}px`;
+    swapTip.style.top = `${(chip.bottom - box.top + 9).toFixed(1)}px`;
     swapTip.style.setProperty('--tail', `${(mid - left).toFixed(1)}px`);
   }
   function dropSwapTip() {
-    tipDone = true;
-    try { localStorage.setItem(TIP_KEY, '1'); } catch { /* no storage here: it shows once per page load */ }
+    tipUp.done = true;
+    try { localStorage.setItem(tipUp.key, '1'); } catch { /* no storage here: it shows once per page load */ }
+    tipUp = null;
     swapTip.hidden = true;
     el.build.classList.remove('tipping');
   }
@@ -1527,6 +1540,7 @@ async function main() {
       stage.pose(pb.state);
     }
     phase = 'result';
+    if (!pvp) soloDone = true;
     const m = replay.meta;
     stage.setCameraMode('result');
     stage.showMe = false;

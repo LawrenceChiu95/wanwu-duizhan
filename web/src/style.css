@@ -232,7 +232,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .bhead .shoot svg { width: 15px; height: 15px; }
 .bhead .shoot:not([hidden]) + .terminal-led { display: none; }
 .bhead .shoot.first { animation: shootBreathe 1.6s ease-in-out infinite alternate; }
-/* …but not while the first visit's bubble is up over 换件 (Elara 1370fb7f). */
+/* …but not while the bubble is up under 换件 (Elara 1370fb7f). */
 #build.tipping .bhead .shoot.first { animation: none; filter: none; }
 /* 「组装台 · 12 件可选」 (Elara 6cdfe227): the count beside the title, 拍一件 alone on the right. */
 .bhead span em { font-style: normal; font-variant-numeric: tabular-nums; }
