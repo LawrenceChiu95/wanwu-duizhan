@@ -215,15 +215,20 @@ async function main() {
   const rate = id => ratingOf(byId.get(id));
   // A grade letter, coloured by grade (empty for an item without one).
   const gradeTag = (grade, cls = 'grade') => grade ? `<i class="${cls} g${grade}">${grade}</i>` : '';
-  // A piece's strong point beside its grade (Elara b8d58d49): the highest of its own attack / range / durability scores,
-  // and 碎了崩人 for a ceramic one (sim/v3.js's own test of the material: glass does not shatter into shards). Nothing
-  // for a piece without scores; a photographed one by its scores too.
+  // A piece's strong point (Elara b8d58d49, 4daa3d4b): of attack / range / durability, the one it stands out on most
+  // against the twelve ready-made pieces' average (durability runs high for all of them, so its own highest says little);
+  // nothing when it's above average on none. A photographed piece is held to the same averages. 崩片伤人 for a ceramic
+  // one whatever its scores (sim/v3.js's own test of the material: glass does not chip).
   const TRAIT = {attack: '能打', range: '够得远', durability: '耐撞'};
+  let traitMean;
   const traitsOf = id => {
     const s = rate(id)?.scores;
-    if (!s) return [];
-    const best = Object.keys(TRAIT).reduce((a, k) => s[k] > s[a] ? k : a);
-    return [TRAIT[best], ...(/陶瓷|瓷器|瓷质|^瓷$/.test(byId.get(id)?.materialName?.trim() ?? '') ? ['碎了崩人'] : [])];
+    const chips = /陶瓷|瓷器|瓷质|^瓷$/.test(byId.get(id)?.materialName?.trim() ?? '') ? ['崩片伤人'] : [];
+    if (!s) return chips;
+    traitMean ??= (ss => Object.fromEntries(Object.keys(TRAIT).map(k => [k, ss.reduce((a, x) => a + x[k], 0) / ss.length])))(
+      OFFER.filter(x => shipped.has(x)).map(x => rate(x)?.scores).filter(Boolean));
+    const [best, over] = Object.keys(TRAIT).map(k => [k, s[k] - traitMean[k]]).reduce((a, b) => b[1] > a[1] ? b : a);
+    return [...(over > 0 ? [TRAIT[best]] : []), ...chips];
   };
   const traitTags = id => traitsOf(id).map(t => `<span class="trait">${t}</span>`).join('');
   // A slot's spec line is one line: when the specialties and the size don't all fit, the size goes first, then the
