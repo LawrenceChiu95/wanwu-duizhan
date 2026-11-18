@@ -4,6 +4,8 @@ import {createServer} from 'node:http';
 import {readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {chromium} from '../web/node_modules/playwright/index.mjs';
+// The ladder's second opponent, the one the first win over 狂冲 unlocks (data/foes.json order).
+const secondFoe=JSON.parse(await readFile(new URL('../data/foes.json',import.meta.url))).foes[1].name;
 const build=path.resolve(process.argv[2]??'web/dist-judge-position');
 assert((await stat(path.join(build,'index.html'))).isFile(),'Pass the built judge directory');
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.wasm':'application/wasm','.glb':'model/gltf-binary','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.mp3':'audio/mpeg'};
@@ -170,7 +172,7 @@ try {
     return {winner,counter:Boolean(blow?.attacker===0&&blow.dash&&perfect&&blow.t-perfect.t<1-1e-6)};
    });
    assert.deepEqual(end,{winner:0,counter:true},`${width}px: the scripted fight must be won on a 反打 (pick another seed if the ladder changed)`);
-   const again=page.locator('#againBtn');assert.equal(await again.innerText(),'迎战铁壁','the yellow key names the next foe (Elara 2e1d0976)');assert.match(await page.locator('#unlockCard').innerText(),/新解锁\s*铁壁/,'the first win shows what it unlocks');await again.tap();await phase('build');
+   const again=page.locator('#againBtn');assert.equal(await again.innerText(),`迎战${secondFoe}`,'the yellow key names the next foe (Elara 2e1d0976)');assert.match(await page.locator('#unlockCard').innerText(),new RegExp(`新解锁\\s*${secondFoe}`),'the first win shows what it unlocks');await again.tap();await phase('build');
    await page.waitForFunction(() => !document.querySelector('#goBtn').disabled);
    const next=await page.locator('#foeLabel').innerText();assert.notEqual(next,foe,'迎战<next> brings the next foe');
    await page.locator('#goBtn').tap();await phase('play');await noFightHome('solo-next-fight');
