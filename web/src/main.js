@@ -540,7 +540,6 @@ async function main() {
   }
   function setPick(i) {
     if (phase !== 'build') return;
-    choiceReq++;
     pick = i;
     libSlot = 0;
     syncBuild();
@@ -1291,11 +1290,21 @@ async function main() {
   // A model is fetched only once a card or a build needs it, and can fail: the build changes only once it is here, so the
   // old one can always fight (Sol f0e85efc). say() puts a short line where 计算中 shows.
   const fetched = id => loadModels([byId.get(id)]).then(() => true, e => { console.error(e); return false; });
-  // A choice waiting on its model belongs to the player, slot and screen it was made on: passing the phone, 开打, closing
-  // or reopening the 角色库 or choosing again drops it (Sol 2622da9b), so a late model never picks for anyone.
+  // A choice waiting on its model belongs to the screen it was made on (Sol 2622da9b 83f3ed9d, Elara 65e0cee4): any change
+  // of screen drops it — 首页, 拍一件, 看它怎么来的, the 角色库 shut or opened, 开打, the result, the phone passed to 2P —
+  // all caught here as those screens show or hide, so a late model never picks for anyone. Choosing again drops it too.
   let choiceReq = 0;
-  const choosing = () => { const ask = ++choiceReq, side = pick, slot = libSlot, was = phase;
-    return () => ask === choiceReq && pick === side && libSlot === slot && phase === was; };
+  const SCREENS = ['intro', 'build', 'result', 'library', 'shootView', 'howView', 'pvpReady', 'pvpWin', 'hud'];
+  const flipped = r => r.attributeName === 'hidden' ? (r.oldValue !== null) !== r.target.hidden
+    : (r.oldValue ?? '').split(' ').includes('turned') !== r.target.classList.contains('turned');
+  const screens = new MutationObserver(rs => { if (rs.some(flipped)) choiceReq++; });
+  for (const n of SCREENS.map(k => document.getElementById(k)).filter(Boolean)) screens.observe(n, {attributeFilter: ['hidden'], attributeOldValue: true});
+  screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
+  const choosing = () => {
+    screens.takeRecords(); // the screens this choice closed on its way (装上它 leaves 拍一件) are before it
+    const ask = ++choiceReq, side = pick, slot = libSlot, was = phase;
+    return () => { if (screens.takeRecords().some(flipped)) choiceReq++; return ask === choiceReq && pick === side && libSlot === slot && phase === was; };
+  };
   let sayTimer = 0;
   function say(text) {
     clearTimeout(sayTimer);
@@ -1310,7 +1319,6 @@ async function main() {
   async function start() {
     if (phase !== 'build' || !el.error.hidden) return;
     const id = ++runId;
-    choiceReq++;
     if (!fixedSeed) seed = randomSeed();
     fought = pvp ? null : ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
     outcome = null;
@@ -1590,7 +1598,6 @@ async function main() {
   }
   async function openLibrary(k, again = false) {
     const req = ++libReq, top = el.libGrid.scrollTop;
-    if (!again) choiceReq++;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
@@ -1639,7 +1646,7 @@ async function main() {
       if (req !== libReq || el.library.hidden) return;
     }
   }
-  function closeLibrary() { libReq++; choiceReq++; el.library.hidden = true; }
+  function closeLibrary() { libReq++; el.library.hidden = true; }
 
   // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over when 拍一件's 好了 shows it, with a sound
   // by grade and gold for an S. Remembered per item and rating version, so a re-rated item turns over again there.
