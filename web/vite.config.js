@@ -48,6 +48,8 @@ export default defineConfig(({mode}) => {
     // Separate chunks so each Artifacts publish batch stays under the upload limit.
     build: {target: 'es2022', chunkSizeWarningLimit: 5000, assetsInlineLimit: 0, rollupOptions: {output: {manualChunks(id) {
       if (id.includes('rapier3d-compat')) return 'rapier';
+      // 首页's 看碰撞体 only (potview.js): with the pot's 3D, not in the first screen's three.
+      if (/node_modules\/three\/examples\/jsm\/(geometries\/ConvexGeometry|math\/ConvexHull)/.test(id)) return 'potshell';
       if (id.includes('node_modules/three')) return 'three';
     }}}}
   };
