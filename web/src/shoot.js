@@ -113,11 +113,15 @@ const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(
 const about = sec => sec > 75 ? `${Math.round(sec / 60)} 分钟左右` : sec > 45 ? '1 分钟左右' : sec > 10 ? `${Math.ceil(sec / 10) * 10} 秒左右` : '几秒';
 // task #84: the real 认物 names the thing as the model says it (name, no inSix); only the fake backend still sorts
 // every photo into the six and says which one it counts as.
-const catOf = r => r?.name ?? CAT[r?.category] ?? '东西';
+// Nobody picked one of the six in time: no name of a thing it isn't (Elara 258971dd).
+const NAMELESS = '无名之物';
+const catOf = r => r?.chosen === 'timeout' ? NAMELESS : r?.name ?? CAT[r?.category] ?? '东西';
 const countAs = r => !('inSix' in (r ?? {})) ? catOf(r) : r.inSix ? `按${catOf(r)}算` : `不在六类里，按最像的${catOf(r)}算`;
 const matOf = r => r?.materialName ?? MATERIAL[r?.material] ?? '';
 /** The tag beside an item's name: one of the six, or nothing when the category is just the name again (task #84). */
-export const catLabel = (it, name) => (c => c !== name ? c : '')(CAT[it?.category] ?? it?.category ?? '');
+// One the player picked says so, one nobody picked says what it counts as (Elara 258971dd; item.chosen, Sol).
+export const catLabel = (it, name) => it?.chosen === 'player' ? '你选的' : it?.chosen === 'timeout' ? '按枕头算'
+  : (c => c !== name ? c : '')(CAT[it?.category] ?? it?.category ?? '');
 
 /** A small JPEG data URL of the photo for this page's own screens (the backend keeps the original). */
 async function thumbOf(blob, side = 480) {
@@ -454,7 +458,8 @@ export function mountShoot(ctx) {
       html = `${frame('held', `<span class="sbadge">${ICON.wait}核实中</span>`)}<div class="smsg held"><b>这件还在核实，不会多扣</b></div>${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'done') {
       const id = code, r = ctx.grade(id), it = ctx.item(id), eq = ctx.equipLabel(id);
-      const line = [it.materialName ?? MATERIAL[it.material], ctx.spec(id), WEAR[it.condition]].filter(Boolean).join(' · ');
+      // Broken only between its parts, never inside one (Elara 258971dd: 「完好」 split over two lines).
+      const line = [it.materialName ?? MATERIAL[it.material], ...ctx.spec(id).split(' · '), WEAR[it.condition]].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join(' · ');
       const end = Math.max(...job.steps.map(s => ms(s.endedAt) ?? 0)), took = end ? (end - ms(job.createdAt)) / 1000 : null;
       // A page reopened in another browser has no photo of its own; the item carries the one the backend kept (Elara cf1366e6).
       const shot = photo() || it.origin?.photo || '';
@@ -462,7 +467,7 @@ export function mountShoot(ctx) {
           <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D</figcaption></figure></div>
         <div class="sstage"><div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
           ${r ? `<i class="big g${r.grade}">${r.grade}</i>` : ''}
-          <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, ctx.name(id)))}</span><small>${esc(line)}</small></div>
+          <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, ctx.name(id)))}</span><small>${line}</small></div>
           ${r ? `<span class="rates">${[['attack', '攻击'], ['range', '范围'], ['durability', '耐久']].map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : ''}
           <span class="cover" aria-hidden="true"><i>?</i></span></div></div><i class="sdim" aria-hidden="true"></i>
         <p class="sdone">${ICON.check}<span>已经放进角色库${took ? `，用时 ${dur(took)}` : ''}</span>${it.origin ? `<button type="button" data-act="how">${ICON.play}看它怎么来的</button>` : ''}</p>

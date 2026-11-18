@@ -166,10 +166,11 @@ export async function fakeApi(q) {
         t = rec.genAt;
       }
     }
-    const n = st.items.length + 1, base = rec.recognition.name ?? `我拍的${CAT_NAME[rec.cat]}`;
+    const n = st.items.length + 1, chosen = rec.recognition.chosen;
+    const base = chosen === 'timeout' ? '无名之物' : rec.recognition.name ?? `我拍的${CAT_NAME[rec.cat]}`;
     const same = st.items.filter(i => i.cat === rec.cat && i.label === rec.recognition.name).length;
     const secs = s => rec.times[s]?.[1] != null ? (rec.times[s][1] - rec.times[s][0]) / 1000 : STAGES[s][1];
-    st.items.push({id: `shot-${n}`, job: rec.id, cat: rec.cat, label: rec.recognition.name, matName: rec.recognition.materialName,
+    st.items.push({id: `shot-${n}`, job: rec.id, cat: rec.cat, chosen, label: rec.recognition.name, matName: rec.recognition.materialName,
       name: same ? `${base} ${same + 1}` : base, photo: rec.photo,
       steps: [{key: 'photo', seconds: secs(0)}, {key: 'styled', seconds: secs(1)}, {key: 'model', seconds: secs(2) + secs(3) + secs(4)}]});
     rec.done = {status: 'succeeded', error: null};
@@ -365,6 +366,7 @@ export async function fakeApi(q) {
         if (x.matName) it.materialName = x.matName;
         // The twelve 评委版 copies are photo items, which the sim takes only when their category is their name.
         if (it.photoPhysics) it.category = it.name;
+        if (x.chosen) it.chosen = x.chosen; // picked of the six, or the pillow once time ran out (Elara 258971dd)
         delete it.comparisonBase;
         it.origin = {photo: read(x.photo) ?? '', styled: stillUrl(src.id), steps: x.steps};
         return it;
