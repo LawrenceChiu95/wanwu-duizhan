@@ -540,6 +540,7 @@ async function main() {
   }
   function setPick(i) {
     if (phase !== 'build') return;
+    choiceReq++;
     pick = i;
     libSlot = 0;
     syncBuild();
@@ -1290,6 +1291,11 @@ async function main() {
   // A model is fetched only once a card or a build needs it, and can fail: the build changes only once it is here, so the
   // old one can always fight (Sol f0e85efc). say() puts a short line where 计算中 shows.
   const fetched = id => loadModels([byId.get(id)]).then(() => true, e => { console.error(e); return false; });
+  // A choice waiting on its model belongs to the player, slot and screen it was made on: passing the phone, 开打, closing
+  // or reopening the 角色库 or choosing again drops it (Sol 2622da9b), so a late model never picks for anyone.
+  let choiceReq = 0;
+  const choosing = () => { const ask = ++choiceReq, side = pick, slot = libSlot, was = phase;
+    return () => ask === choiceReq && pick === side && libSlot === slot && phase === was; };
   let sayTimer = 0;
   function say(text) {
     clearTimeout(sayTimer);
@@ -1304,6 +1310,7 @@ async function main() {
   async function start() {
     if (phase !== 'build' || !el.error.hidden) return;
     const id = ++runId;
+    choiceReq++;
     if (!fixedSeed) seed = randomSeed();
     fought = pvp ? null : ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
     outcome = null;
@@ -1583,6 +1590,7 @@ async function main() {
   }
   async function openLibrary(k, again = false) {
     const req = ++libReq, top = el.libGrid.scrollTop;
+    if (!again) choiceReq++;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
@@ -1599,12 +1607,12 @@ async function main() {
       card.querySelector('.pick').onclick = async () => {
         if (cur().parts[1 - libSlot].item === id || card.classList.contains('wait')) return;
         // A just-shot item's 3D may still be on its way: the build changes once it is here (Sol f0e85efc).
-        // A new card dealt in meanwhile redraws the grid, not the choice: drop it only if the 角色库 closed or changed side.
-        const slot = libSlot;
+        // A new card dealt in meanwhile redraws the grid, not the choice.
+        const still = choosing();
         card.classList.add('wait');
         const ok = await fetched(id);
         card.classList.remove('wait');
-        if (el.library.hidden || libSlot !== slot) return;
+        if (!still() || el.library.hidden) return;
         if (!ok) { say('它的 3D 没下载下来，再点一次试试'); return; }
         changed(cur().parts[libSlot].item, id);
         cur().parts[libSlot].item = id;
@@ -1631,7 +1639,7 @@ async function main() {
       if (req !== libReq || el.library.hidden) return;
     }
   }
-  function closeLibrary() { libReq++; el.library.hidden = true; }
+  function closeLibrary() { libReq++; choiceReq++; el.library.hidden = true; }
 
   // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over when 拍一件's 好了 shows it, with a sound
   // by grade and gold for an S. Remembered per item and rating version, so a re-rated item turns over again there.
@@ -1789,7 +1797,9 @@ async function main() {
     if (cur().parts[1 - libSlot].item === id) return;
     shoot?.close();
     closeLibrary();
-    if (!await fetched(id)) { say('它的 3D 没下载下来，原来的还能打'); return; }
+    const still = choosing(), ok = await fetched(id);
+    if (!still()) return;
+    if (!ok) { say('它的 3D 没下载下来，原来的还能打'); return; }
     if (cur().parts[1 - libSlot].item === id) return;
     changed(cur().parts[libSlot].item, id);
     cur().parts[libSlot].item = id;
