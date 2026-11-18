@@ -40,28 +40,27 @@
       "build": {
         "parts": [
           {
-            "item": "fanshuo-pot",
+            "item": "fanshuo-plate",
             "orient": "out"
           },
           {
-            "item": "fanshuo-plate",
+            "item": "fanshuo-mouse",
             "orient": "hug"
           }
         ],
-        "spread": "e180"
+        "spread": "e90"
       },
       "ai": {
         "version": 1,
-        "id": "wen",
-        "think": 0.1,
-        "reactionDelay": 0.25,
-        "reactionJitter": 0.065,
+        "id": "chang",
+        "think": 0.075,
+        "reactionDelay": 0.2,
+        "reactionJitter": 0.02,
         "dashRange": [
           0.5,
           2.9
         ],
-        "blockLead": 0.5,
-        "idleDashAfter": 8
+        "blockLead": 0.12
       }
     },
     {
@@ -100,15 +99,15 @@
       "id": "shuangren",
       "name": "双刃",
       "mark": "刃",
-      "play": "奶锅和盘子都伸出，挡住就反打它露出的核心",
+      "play": "两件都伸出，下手狠，自己也脆",
       "build": {
         "parts": [
           {
-            "item": "fanshuo-pot",
+            "item": "fanshuo-plate",
             "orient": "out"
           },
           {
-            "item": "fanshuo-plate",
+            "item": "fanshuo-knife",
             "orient": "out"
           }
         ],
