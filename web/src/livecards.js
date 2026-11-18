@@ -20,6 +20,14 @@ const TURN = 6; // seconds per turn, as the strips had
 const angle = (rig, turns) => rig.swing ? rig.swing * Math.cos(turns * Math.PI * 2) : turns * Math.PI * 2;
 const FADE = 0.4; // seconds the model takes to fade in over its still (style.css); it holds the still's angle meanwhile
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+// The turntables' tone mapping: Khronos PBR Neutral keeps a model's hues and brightness where the stage's ACES greys and
+// darkens them (Elara b32bfd9a ③). Set only while one is drawn; the stage keeps its own.
+const TURN_TONE = {toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 0.85};
+function turnTone(r) {
+  const was = {toneMapping: r.toneMapping, toneMappingExposure: r.toneMappingExposure};
+  Object.assign(r, TURN_TONE);
+  return () => Object.assign(r, was);
+}
 
 export class LiveTurns {
   constructor(renderer, environment) {
@@ -74,7 +82,8 @@ export class LiveTurns {
       ctx.drawImage(gl, 0, gl.height - size, size, size, 0, 0, size, size);
       return ctx.getImageData(0, 0, size, size);
     };
-    const black = over(0x000000), white = over(0xffffff).data, d = black.data;
+    const untone = turnTone(r), black = over(0x000000), white = over(0xffffff).data, d = black.data;
+    untone();
     r.setViewport(saved.viewport);
     r.setScissor(saved.scissor);
     r.setScissorTest(saved.scissorTest);
@@ -105,7 +114,7 @@ export class LiveTurns {
       if (!size) continue;
       // Both sides: a fresh canvas is 300×150, so a 150 px card at 2× would keep its height (crops the model).
       if (v.canvas.width !== size || v.canvas.height !== size) v.canvas.width = v.canvas.height = size;
-      saved ??= {target: r.getRenderTarget(), viewport: r.getViewport(new THREE.Vector4()), scissor: r.getScissor(new THREE.Vector4()), scissorTest: r.getScissorTest(), color: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha()};
+      saved ??= {target: r.getRenderTarget(), viewport: r.getViewport(new THREE.Vector4()), scissor: r.getScissor(new THREE.Vector4()), scissorTest: r.getScissorTest(), color: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha(), untone: turnTone(r)};
       r.setRenderTarget(null);
       r.setViewport(0, 0, size / pr, size / pr);
       r.setScissor(0, 0, size / pr, size / pr);
@@ -127,6 +136,7 @@ export class LiveTurns {
     r.setScissor(saved.scissor);
     r.setScissorTest(saved.scissorTest);
     r.setClearColor(saved.color, saved.alpha);
+    saved.untone();
   }
 }
 

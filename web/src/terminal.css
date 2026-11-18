@@ -410,6 +410,19 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 老龟's hint in two lines, 它专防先冲 over what to do, so it is never wider than the phone (Castor 9329c4e0). */
 #fx .hilite.nudge.two { flex-direction:column;align-items:center;gap:0;white-space:pre-line;text-align:center;line-height:1.35;padding:4px 12px 5px; }
 :is(#pad,#pad2) .pad.dash.nudge:not(.deny):not(.pop):not(.down) { animation:padNudge .8s ease-in-out infinite; }
+/* 反打 (Elara b32bfd9a ①): lit for about half a second while the eyes are on the arena, so all at once, no fade. The
+   button itself only jumps to 1.05 and settles at 1.03, so at 360–430 wide it keeps off the screen's edge and 挡 (Elara
+   4addfea3: a bigger button is a bigger target); the show is the ring round it, glowing and pulsing, and a shock ring
+   going out once from its middle (Elara 8a3f4759). Both rings sit 3px out from the plate's 12px frame (inset counts
+   from inside it) and round the whole button (.pad.ready::after, the shine, would have it 34% wide). */
+:is(#pad,#pad2) .pad.dash.counter:not(.deny):not(.pop):not(.down) { z-index:1; transform:scale(1.03); filter:brightness(1.3) saturate(1.2); animation:counterPop .24s ease-out both; }
+:is(#pad,#pad2) .pad.dash.counter:not(.deny):not(.down)::after { content:""; position:absolute; inset:-15px; width:auto; background:none; border-radius:7px; pointer-events:none; border:3px solid #fff4cf;
+  box-shadow:0 0 9px 1px #ffcf4dcc, 0 0 24px 4px #ffcf4d88, inset 0 0 14px #ffe08aaa; animation:counterGlow .16s ease-in-out infinite alternate; }
+:is(#pad,#pad2) .pad.dash.counter:not(.deny):not(.down)::before { content:""; position:absolute; inset:-15px; border-radius:7px; pointer-events:none; border:4px solid #ffe08a;
+  animation:counterShock .5s ease-out both; }
+@keyframes counterPop { 0% { transform:scale(1); } 50% { transform:scale(1.05); } 100% { transform:scale(1.03); } }
+@keyframes counterGlow { to { box-shadow:0 0 11px 2px #ffcf4dee, 0 0 30px 6px #ffcf4dbb, inset 0 0 18px #ffe08add; border-color:#ffe08a; } }
+@keyframes counterShock { from { transform:scale(1); opacity:1; } to { transform:scale(1.03, 1.4); opacity:0; } }
 @keyframes padNudge { 0%,100% { transform:scale(1);filter:brightness(1); }
   45% { transform:scale(1.07);filter:brightness(1.3) drop-shadow(0 0 12px #e7b354cc); } }
 

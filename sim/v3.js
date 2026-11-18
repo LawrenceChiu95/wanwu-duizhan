@@ -103,6 +103,13 @@ export const PVP_COMBAT_OPTIONS=Object.freeze({
  ...ROUND_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,pvp:Object.freeze({charge:.22,pace:1.5})})
 });
+// 反打 (Elara b32bfd9a ①): the 冲 button lights as 「反打」 while control().counterIn is at least this (s). The counter
+// window runs the whole stun (guardStun, 1 s), but the foe flies on all that time: in 6,080 scripted tries after a 完美 on
+// the three stages and in 一机双人, no 冲 pressed with under 0.65 s left reached it in time. The 0.05 over that is for the
+// frame between the light and the tap. Lit, it lands as the counter (test/position-combat/counter-cue.test.mjs).
+export const COUNTER_CUE_LIT=.7;
+// The share of the lunge's reach counterLands() counts on (see test/position-combat/counter-cue.test.mjs).
+const COUNTER_REACH_SHARE=.85;
 export const MATERIAL_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...ROUND_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,
@@ -699,6 +706,20 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   });
  }
  const countering=(i)=>round&&step<=fs[i].ctl.counterUntilRound&&stunned(fs[1-i]);
+ // Whether a 冲 pressed now (taken next step) meets the foe while countering() still holds, erring short: the foe drifts
+ // on at its speed now till its brake (from the press, not before guardBrakeEarliest) has stopped it, we drift in the
+ // wind-up, and the lunge then covers what a free straight one would (the same per-tick speed) till the window shuts,
+ // against the gap to the cores touching (parts touch sooner). Read-only, for the 反打 light (COUNTER_CUE_LIT).
+ const counterLands=side=>{
+  const f=fs[side],foe=fs[1-side],end=Math.min(f.ctl.counterUntilRound??-Infinity,foe.ctl.stunUntil),go=step+1+steps(chargeTime(side));
+  if(!round||end<=step||!stunned(foe))return false;
+  const a=arr(f.body.translation()),b=arr(foe.body.translation()),flatSpeed=v=>Math.hypot(v[0],v[2]);
+  const drift=flatSpeed(arr(foe.body.linvel()))*((Math.max(step+1,foe.ctl.guardBrakeEarliest)-step)*r.dt+1/round.guardBrake)+flatSpeed(arr(f.body.linvel()))*(go-step)*r.dt;
+  const gap=Math.hypot(b[0]-a[0],b[2]-a[2])-2*r.core.radius+drift,scaleBy=dashScale(f);
+  let speed=M.dashSpeed*scaleBy,reach=0;
+  for(let n=Math.min(steps(M.dashTime),end-go);n>0;n--){speed=(Math.min(speed,M.dashSpeedLimit*scaleBy)+M.dashThrust*scaleBy*r.dt)/(1+r.linearDamping*r.dt);reach+=speed*r.dt;}
+  return reach*COUNTER_REACH_SHARE>=gap;
+ };
  function deflect(defender,point,perfect,damageApplied){
   const attacker=1-defender,guard=fs[defender].ctl,other=fs[attacker].ctl;
   const stun=round?.guardStun??IMPACT.stun;
@@ -1058,7 +1079,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   /** Queue a press for an 'input' side; it is taken at the start of the next step (or ignored on cooldown). */
   press(side,action){if(!M||manual.sides[side]!=='input'||!ACTIONS.includes(action))throw Error('press needs a manual input side and dash | block');if(!done)queued[side].push(action);},
   /** Button state for a side: seconds until ready, and what it is doing now. */
-  control(side){const k=fs[side].ctl,f=fs[side];return {dashIn:Math.max(0,Math.max(k.dashReady,k.dashLockedUntil)-step)*r.dt,blockIn:Math.max(0,k.blockReady-step)*r.dt,charging:charging(f),dashing:dashing(f),shield:shielded(f),...(impact&&{stunIn:Math.max(0,k.stunUntil-step+1)*r.dt,dashLockIn:Math.max(0,k.dashLockedUntil-step)*r.dt})};},
+  control(side){const k=fs[side].ctl,f=fs[side];return {dashIn:Math.max(0,Math.max(k.dashReady,k.dashLockedUntil)-step)*r.dt,blockIn:Math.max(0,k.blockReady-step)*r.dt,charging:charging(f),dashing:dashing(f),shield:shielded(f),...(impact&&{stunIn:Math.max(0,k.stunUntil-step+1)*r.dt,dashLockIn:Math.max(0,k.dashLockedUntil-step)*r.dt}),
+   // How long a 冲 pressed now (taken next step) still meets countering(): the foe stunned by our 完美 and the window open.
+   // counterLands: and it gets there in time (counterLands above).
+   ...(round&&{counterIn:Math.max(0,Math.min(k.counterUntilRound??-Infinity,fs[1-side].ctl.stunUntil)-step)*r.dt,counterLands:counterLands(side)})};},
   advance,
   result(){if(!done)throw Error('match not finished');return result;},
   /** Abandon a match before its end (frees the physics world). */

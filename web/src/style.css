@@ -764,7 +764,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    column and a square pane its (square) canvas fills edge to edge (Elara 69a1c60d); the photo takes the same height. */
 .spair { flex: none; display: grid; grid-template-columns: 2fr 3fr; gap: 10px; margin: 12px 14px 0; }
 .spair figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.spair .pane { position: relative; display: block; border-radius: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.04); }
+.spair .pane { position: relative; display: block; border-radius: 12px; overflow: hidden; background: #c4c6c0; }
 .spair figure:first-child .pane { flex: 1; }
 .spair figure:last-child .pane { width: min(100%, 42vh); aspect-ratio: 1; align-self: center; }
 .spair .pane::after { content: ""; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
