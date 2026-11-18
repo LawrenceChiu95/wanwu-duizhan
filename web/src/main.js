@@ -1287,6 +1287,18 @@ async function main() {
     overlay.dropNudge();
   }
 
+  // A model is fetched only once a card or a build needs it, and can fail: the build changes only once it is here, so the
+  // old one can always fight (Sol f0e85efc). say() puts a short line where 计算中 shows.
+  const fetched = id => loadModels([byId.get(id)]).then(() => true, e => { console.error(e); return false; });
+  let sayTimer = 0;
+  function say(text) {
+    clearTimeout(sayTimer);
+    el.busyText.textContent = text;
+    el.busy.classList.add('say');
+    el.busy.hidden = false;
+    sayTimer = setTimeout(() => { if (el.busy.classList.contains('say')) { el.busy.hidden = true; el.busy.classList.remove('say'); } }, 2600);
+  }
+
   // ---------- match ----------
   let runId = 0;
   async function start() {
@@ -1300,8 +1312,17 @@ async function main() {
     el.foeSheet.hidden = true;
     $('foeBtn').disabled = true;
     el.busyText.textContent = '计算中';
+    el.busy.classList.remove('say');
     el.busy.hidden = false;
-    await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)));
+    // A build only changes once its models are here, so this fails only on a lost connection: back to the build, 开打 lit.
+    try { await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item))); } catch (e) {
+      console.error(e);
+      if (id !== runId) return;
+      phase = 'build';
+      el.go.disabled = $('foeBtn').disabled = !el.error.hidden;
+      say('3D 没下载下来，再点一次开打');
+      return;
+    }
     await nextPaint();
     const t0 = performance.now();
     let r;
@@ -1575,8 +1596,16 @@ async function main() {
     el.library.hidden = false;
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
-      card.querySelector('.pick').onclick = () => {
-        if (cur().parts[1 - libSlot].item === id) return;
+      card.querySelector('.pick').onclick = async () => {
+        if (cur().parts[1 - libSlot].item === id || card.classList.contains('wait')) return;
+        // A just-shot item's 3D may still be on its way: the build changes once it is here (Sol f0e85efc).
+        // A new card dealt in meanwhile redraws the grid, not the choice: drop it only if the 角色库 closed or changed side.
+        const slot = libSlot;
+        card.classList.add('wait');
+        const ok = await fetched(id);
+        card.classList.remove('wait');
+        if (el.library.hidden || libSlot !== slot) return;
+        if (!ok) { say('它的 3D 没下载下来，再点一次试试'); return; }
         changed(cur().parts[libSlot].item, id);
         cur().parts[libSlot].item = id;
         place(id);
@@ -1592,8 +1621,9 @@ async function main() {
     const turnOf = id => el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
     const onScreen = shown.filter(id => { const r = turnOf(id)?.getBoundingClientRect(); return r && r.top < innerHeight && r.bottom > 0; });
     for (const group of [onScreen, shown.filter(id => !onScreen.includes(id))]) {
+      // One that fails keeps its styled picture and leaves the others turning in.
       await Promise.all(group.map(async id => {
-        await loadModels([byId.get(id)]);
+        if (!await fetched(id)) return;
         if (req !== libReq || el.library.hidden) return;
         const turn = turnOf(id);
         if (turn) turns.show(turn, id);
@@ -1671,15 +1701,23 @@ async function main() {
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
   // each step's real time beside it. 品类 shows only for one of the six; a real item's category is its name (task #84).
   const STEPS = [{key: 'photo', name: '照片', play: 3}, {key: 'styled', name: '改成画风的图', play: 3}, {key: 'model', name: '3D 转起来', play: 4}];
-  // Whole seconds first, so 119.6 reads 2 分 00 秒; a total adds the rounded steps, so the parts add up to it.
+  // Whole seconds first, so 119.6 reads 2 分 00 秒. The total is the real one rounded (保温杯 155.2 s is 2 分 35 秒, as the
+  // report says; Elara 035de2b0), and the steps round so they add up to it: the ones with the most cut off go up first.
   const dur = sec => (sec = Math.round(sec)) >= 60 ? `${Math.floor(sec / 60)} 分 ${String(sec % 60).padStart(2, '0')} 秒` : `${sec} 秒`;
-  const durAll = secs => dur(secs.reduce((a, b) => a + Math.round(b), 0));
+  const wholeSteps = secs => {
+    const out = secs.map(Math.floor);
+    let left = Math.round(secs.reduce((a, b) => a + b, 0)) - out.reduce((a, b) => a + b, 0);
+    for (const i of secs.map((x, i) => i).sort((a, b) => (secs[b] % 1) - (secs[a] % 1))) if (left-- > 0) out[i]++;
+    return out;
+  };
+  const durAll = secs => dur(secs.reduce((a, b) => a + b, 0));
   let howItem = null, howT = 0, howTimer = 0, howReq = 0;
   async function openHow(id) {
     const it = byId.get(id), o = it?.origin;
     if (!o) return;
     howItem = id;
-    const secs = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds);
+    const raw = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds), timed = raw.every(Number.isFinite);
+    const secs = timed ? wholeSteps(raw) : raw;
     el.howTitle.textContent = `${NAMES[id]}是怎么来的`;
     el.howCat.textContent = catLabel(it, NAMES[id]);
     el.howCat.parentElement.hidden = !el.howCat.textContent;
@@ -1687,7 +1725,7 @@ async function main() {
       const pic = st.key === 'model' ? '<canvas class="mini3d"></canvas>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
       return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
     }).join('');
-    el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${durAll(secs)}` : '';
+    el.howTotal.textContent = timed ? `实际用时 ${durAll(secs)}` : '';
     // 评委版's replayed items: whose photo it is, the other one a tap away, and 装上去打 (back, for one the sim turned down).
     const sample = sampleOf(id), other = cur().parts[1 - libSlot].item === id, stuck = sample && !playable.has(id);
     el.howNote.hidden = !sample;
@@ -1749,12 +1787,14 @@ async function main() {
   // Into the slot the 角色库 was last opened for, from wherever the player is (a 拍一件 tag can be tapped on the result).
   async function equip(id) {
     if (cur().parts[1 - libSlot].item === id) return;
+    shoot?.close();
+    closeLibrary();
+    if (!await fetched(id)) { say('它的 3D 没下载下来，原来的还能打'); return; }
+    if (cur().parts[1 - libSlot].item === id) return;
     changed(cur().parts[libSlot].item, id);
     cur().parts[libSlot].item = id;
     place(id);
-    shoot?.close();
-    closeLibrary();
-    if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuild();
+    if (phase === 'result') showBuild(); else rebuild();
   }
   const equipLabel = id => cur().parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
     : {text: cur().parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
