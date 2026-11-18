@@ -284,9 +284,11 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* The opponent's mark: an ID plate instead of a slanted tile; harder ones get a brighter rim, the last a brass one. */
 .ft { clip-path:none;border-radius:1px;color:#e3ddc8;background:#0b1c15;box-shadow:inset 0 0 0 1px #4a6149;font-weight:900; }
 .ft.f1 { background:#0b1c15;box-shadow:inset 0 0 0 1px #6fa595; }
-.ft.f2 { background:#0d2a22;box-shadow:inset 0 0 0 1px var(--c1);color:#d9f2ea; }
-.ft.f3 { background:#10302a;color:#f0e6c6;box-shadow:inset 0 0 0 1px var(--c1),inset 0 0 0 3px #0b1c15,inset 0 0 0 4px #b89a4e; }
-.ft.f3::after { content:none; }
+.ft.f2 { background:#0c231b;box-shadow:inset 0 0 0 1px #5fb39b;color:#dcece4; }
+.ft.f3 { background:#0d2a22;box-shadow:inset 0 0 0 1px var(--c1);color:#d9f2ea; }
+.ft.f4 { background:#0f2e27;box-shadow:inset 0 0 0 2px var(--c1);color:#e6f6ef; }
+.ft.f5 { background:#10302a;color:#f0e6c6;box-shadow:inset 0 0 0 1px var(--c1),inset 0 0 0 3px #0b1c15,inset 0 0 0 4px #b89a4e; }
+.ft.f5::after { content:none; }
 .ft.off { background:#0d1712;box-shadow:inset 0 0 0 1px #2f3b2f; }
 .ft.off svg { color:#56645a; }
 #foe.ladder .label { font-size:15px;color:var(--ink);font-weight:800;letter-spacing:1px; }
@@ -297,7 +299,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .pips i { width:6px;height:6px;border-radius:0;box-shadow:inset 0 0 0 1px #4a6a5e; }
 .pips i.won { background:var(--c1); }
 .pips i.now { box-shadow:inset 0 0 0 1px var(--c1),0 0 5px #4fc8bd88; }
-/* 三个对手 sheet: one cassette screen per opponent, joined by a wire. */
+/* 五个对手 sheet: one cassette screen per opponent, joined by a wire. */
 .head .prog { font:700 12px var(--body);font-variant-numeric:tabular-nums;color:var(--c1l); }
 .head.clear b { background:none;color:var(--c0l); }
 .fsub { color:#a3af98; }

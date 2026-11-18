@@ -1,5 +1,5 @@
 {
-  "note": "独立试玩页的三个对手装法。沿用正式版顺序、说明和 AI；新装法须以独立复测结果为准。",
+  "note": "单人五关的顺序、装法和 AI。评委版优先用 judgeBuilds 中对应的装法及 AI 参数。",
   "foes": [
     {
       "id": "mang",
@@ -33,6 +33,37 @@
       }
     },
     {
+      "id": "lian",
+      "name": "连环",
+      "mark": "连",
+      "play": "贴近就冲，挡得慢半拍",
+      "build": {
+        "parts": [
+          {
+            "item": "fanshuo-plate",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-mouse",
+            "orient": "hug"
+          }
+        ],
+        "spread": "e90"
+      },
+      "ai": {
+        "version": 1,
+        "id": "chang",
+        "think": 0.075,
+        "reactionDelay": 0.2,
+        "reactionJitter": 0.02,
+        "dashRange": [
+          0.5,
+          2.9
+        ],
+        "blockLead": 0.12
+      }
+    },
+    {
       "id": "wen",
       "name": "铁壁",
       "mark": "守",
@@ -62,6 +93,37 @@
         ],
         "blockLead": 0.22,
         "idleDashAfter": 8
+      }
+    },
+    {
+      "id": "shuangren",
+      "name": "双刃",
+      "mark": "刃",
+      "play": "两件都伸出，下手狠，自己也脆",
+      "build": {
+        "parts": [
+          {
+            "item": "fanshuo-plate",
+            "orient": "out"
+          },
+          {
+            "item": "fanshuo-knife",
+            "orient": "out"
+          }
+        ],
+        "spread": "e90"
+      },
+      "ai": {
+        "version": 1,
+        "id": "chang",
+        "think": 0.05,
+        "reactionDelay": 0.04,
+        "reactionJitter": 0.02,
+        "dashRange": [
+          0.5,
+          3.0
+        ],
+        "blockLead": 0.12
       }
     },
     {

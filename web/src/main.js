@@ -57,7 +57,7 @@ const DEFAULT_FOE = __JUDGE__ ? {parts: [{item: 'fanshuo-plate', orient: 'out'},
   : {parts: [{item: 'pan-lux3d', orient: 'out'}, {item: 'lamp-lux3d', orient: 'hug'}], spread: 'e180'};
 // 换个对手 (MVP 规格 §4-2; Elara 11-02 470a4546): the computer's builds to pick from, strong to weak by Sol's R8 two-piece
 // check (test/mvp/results-combo-check-r2: each pair at its best layout against a fixed pool of opponents). The default first.
-// 评委版's list is the three opponents' builds instead (below), weakest last.
+// 评委版's list is the five opponents' builds instead (below), weakest last.
 const SOLO_FOES = [
   {level: '默认', build: DEFAULT_FOE},
   {level: '强', rank: 'hi', build: {parts: [{item: 'broom', orient: 'out'}, {item: 'pillow', orient: 'out'}], spread: 'e90'}},
@@ -67,7 +67,8 @@ const SOLO_FOES = [
 ];
 // 两件的位置 (Elara ee609025): 两侧 (180° apart) or 直角 (90°); the icons say the same.
 const SPREAD = {e180: '两侧', e90: '直角'};
-// 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
+// 五个对手 (task #86, Elara 2a3c7171; two more 11-19, 3ac182a6): one harder than the last, each won unlocks the next. Progress
+// stays on this phone. How many there are is said from foes.json (LADDER_N), not written in the words.
 // A page built for one set of rules (__COMBAT__, vite.config.js) takes the foe builds tuned for them where there are any
 // (judgeBuilds.<current|position>.<foe id>). A tuned build can override its foe's reaction settings.
 const LADDER = ladderJson.foes.map(f => {
@@ -76,8 +77,12 @@ const LADDER = ladderJson.foes.map(f => {
   const {ai, impactAi, ...build} = tuned;
   return {...f, build, ai: ai ? {...f.ai, ...ai} : f.ai, impactAi};
 });
-const FOES = __JUDGE__ ? [{level: '默认', build: DEFAULT_FOE}, ...LADDER.map((f, i) => ({level: ['弱', '中', '强'][i] ?? '强', rank: ['lo', 'mid', 'hi'][i] ?? 'hi', build: f.build})).reverse()] : SOLO_FOES;
+const FOES = __JUDGE__ ? [{level: '默认', build: DEFAULT_FOE}, ...LADDER.map((f, i) => ({level: ['弱', '偏弱', '中', '偏强', '强'][i] ?? '强', rank: ['lo', 'lo', 'mid', 'hi', 'hi'][i] ?? 'hi', build: f.build})).reverse()] : SOLO_FOES;
 const LADDER_KEY = 'wanwu-ladder';
+const LADDER_N = '零一二三四五六七八九十'[ladderJson.foes.length] ?? String(ladderJson.foes.length);
+// A phone that played the three before 连环 and 双刃 came between them (save without `open`): each of the three it had
+// opened stays open, so beating 铁壁 there still has 断风 open (Elara 3ac182a6: no one loses a stage they had).
+const OLD_LADDER = ['mang', 'wen', 'chang'];
 // A computer with a mouse (and so a keyboard): 冲 and 挡 show their keys there (Elara 82e87ad7), not on a phone or a pad.
 const KEYBOARD = matchMedia('(hover: hover) and (pointer: fine)');
 const SVG = {
@@ -309,13 +314,15 @@ async function main() {
     let kept = null;
     try { kept = JSON.parse(localStorage.getItem(ladderKey)); } catch { /* no storage, or not ours */ }
     const won = new Set((Array.isArray(kept?.won) ? kept.won : []).filter(id => LADDER.some(f => f.id === id)));
-    const open = i => i === 0 || won.has(LADDER[i - 1].id);
+    // Opened other than by beating the one before it: only an old save's, kept from then on.
+    const opened = new Set(Array.isArray(kept?.open) ? kept.open : kept ? OLD_LADDER.filter((id, k) => k > 0 && won.has(OLD_LADDER[k - 1])) : []);
+    const open = i => i === 0 || won.has(LADDER[i - 1].id) || opened.has(LADDER[i].id);
     const keptAt = LADDER.findIndex(f => f.id === kept?.at);
     // The one picked last time; else the first not yet won (the last, once all are).
     const at = keptAt >= 0 && open(keptAt) ? keptAt : Math.max(0, LADDER.findIndex((f, i) => open(i) && !won.has(f.id)));
-    return {won, open, at: at < 0 ? LADDER.length - 1 : at};
+    return {won, opened, open, at: at < 0 ? LADDER.length - 1 : at};
   })();
-  const keepLadder = () => { try { localStorage.setItem(ladderKey, JSON.stringify({won: [...ladder.won], at: LADDER[ladder.at].id})); } catch { /* no storage here */ } };
+  const keepLadder = () => { try { localStorage.setItem(ladderKey, JSON.stringify({won: [...ladder.won], open: [...ladder.opened], at: LADDER[ladder.at].id})); } catch { /* no storage here */ } };
   let FOE = structuredClone(ladderOn ? LADDER[ladder.at].build : pinned >= 0 ? LADDER[pinned].build : fromUrl('foe') ?? DEFAULT_FOE);
   let seed = Number.isInteger(Number(q.get('seed'))) && q.has('seed') ? Number(q.get('seed')) : randomSeed();
   const fixedSeed = q.has('seed');
@@ -406,9 +413,9 @@ async function main() {
     $('foeLabel').textContent = f.name;
     $('foeBtn').hidden = !ladderOn;
     if (!ladderOn) return;
-    // The number is how many are won (as the ladder's 已赢 N/3); the ring marks the one being fought.
+    // The number is how many are won (as the ladder's 已赢 N/5); the ring marks the one being fought.
     const won = LADDER.filter(g => ladder.won.has(g.id)).length;
-    $('foeBtn').setAttribute('aria-label', `三个对手，已赢 ${won} 个，现在打第 ${ladder.at + 1} 个`);
+    $('foeBtn').setAttribute('aria-label', `${LADDER_N}个对手，已赢 ${won} 个，现在打第 ${ladder.at + 1} 个`);
     $('foeBtn').innerHTML = `<i class="pips">${LADDER.map((g, i) => `<i class="${ladder.won.has(g.id) ? 'won' : ''}${i === ladder.at ? ' now' : ''}"></i>`).join('')}</i><b>${won}/${LADDER.length}</b>${SVG.down}`;
   }
   renderFoe();
@@ -426,16 +433,16 @@ async function main() {
   function openLadder() {
     const won = LADDER.filter(f => ladder.won.has(f.id)).length, clear = won === LADDER.length;
     $('foeHead').classList.toggle('clear', clear);
-    $('foeTitle').textContent = clear ? '三个都赢了' : '三个对手';
+    $('foeTitle').textContent = clear ? `${LADDER_N}个都赢了` : `${LADDER_N}个对手`;
     $('foeProg').textContent = `已赢 ${won} / ${LADDER.length}`;
     $('foeSub').textContent = clear ? '随便挑一个，换个装法再打一轮' : '一个比一个难，赢了上一个才解锁下一个';
     el.foeList.innerHTML = LADDER.map((f, i) => {
-      const head = `<span class="nm">${esc(f.name)}<small>第 ${i + 1} 个</small></span>`;
+      // The 已赢/正在打 tag sits after 第 N 个, not at the right edge: with five rows the top one lands under ModelScope's ball at 390x664.
+      const head = (st = '') => `<span class="nm">${esc(f.name)}<small>第 ${i + 1} 个</small>${st}</span>`;
       if (!ladder.open(i)) return `<div class="rung locked" role="radio" aria-checked="false" aria-disabled="true" data-rung="${i}">
-        <span class="ft off">${SVG.lock}</span>${head}<span class="play">${esc(f.play)}</span><span class="need">${SVG.lock}赢了${esc(LADDER[i - 1].name)}解锁</span></div>`;
+        <span class="ft off">${SVG.lock}</span>${head()}<span class="play">${esc(f.play)}</span><span class="need">${SVG.lock}赢了${esc(LADDER[i - 1].name)}解锁</span></div>`;
       const won = ladder.won.has(f.id);
-      return `<button type="button" class="rung${won ? ' won' : ''}" role="radio" aria-checked="${i === ladder.at}" data-rung="${i}">${markHtml(i)}${head}
-        ${won ? `<span class="st won">${SVG.check}已赢</span>` : i === ladder.at ? '<span class="st now">正在打</span>' : ''}
+      return `<button type="button" class="rung${won ? ' won' : ''}" role="radio" aria-checked="${i === ladder.at}" data-rung="${i}">${markHtml(i)}${head(won ? `<span class="st won">${SVG.check}已赢</span>` : i === ladder.at ? '<span class="st now">正在打</span>' : '')}
         <span class="play">${esc(f.play)}</span><span class="rparts">${partsHtml(f.build, true)}</span></button>`;
     }).join('');
     for (const row of el.foeList.querySelectorAll('[data-rung]')) row.onclick = () => {
@@ -1598,7 +1605,7 @@ async function main() {
     el.tipLine.textContent = advice?.line ?? '';
     outcome ??= ladderOutcome(m.winner);
     // When, why and the numbers in one line (Elara 97af5a2d): 「第 45 秒，你的刀撞碎了狂冲的核心 · 冲中 11 · 完美挡 8」. The
-    // numbers go with a loss and with 三个都赢了 (Elara ee078f5c), and when the line would wrap (fitWhy, after layout).
+    // numbers go with a loss and with 五个都赢了 (Elara ee078f5c), and when the line would wrap (fitWhy, after layout).
     const why = `第 ${wholeSeconds(m.duration)} 秒，${reasonLine(replay, who)}`.split('\n');
     const numsHtml = outcome.lost || outcome.clear || !nums.length ? '' : `<span class="nums"> · ${esc(nums.join(' · '))}</span>`;
     el.whyLine.innerHTML = reasonHtml(why[0]).replace(/<\/span>$/, `${numsHtml}</span>`) + (why[1] ? reasonHtml(why[1]) : '');
@@ -1631,18 +1638,23 @@ async function main() {
     row.querySelector('.nums')?.remove();
     for (let px = parseFloat(getComputedStyle(el.whyLine).fontSize); px > 12 && row.scrollWidth > row.clientWidth + 0.5; px -= 0.5) el.whyLine.style.fontSize = `${px - 0.5}px`;
   }
-  // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个), the first over the last
-  // one is the 三个都赢了 ending (随便挑 opens the ladder). Losing, a draw, or ?foe= leave the result as it was.
+  // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个; no 新解锁 card when an old
+  // save had it open already), the first over the last one is the 五个都赢了 ending (随便挑 opens the ladder). Losing, a
+  // draw, or ?foe= leave the result as it was.
   function ladderOutcome(winner) {
     if (pvp || !ladderOn || winner !== 0) return {act: 'again', lost: !pvp && winner !== 0};
-    const id = LADDER[fought].id, first = !ladder.won.has(id);
+    const id = LADDER[fought].id, first = !ladder.won.has(id), unlocks = fought + 1 < LADDER.length && !ladder.open(fought + 1);
     ladder.won.add(id);
     keepLadder();
     renderFoe();
-    const last = fought === LADDER.length - 1;
-    if (last) return {act: first ? 'pick' : 'again', clear: first};
+    // The ending is the win that makes all five won, whichever it was: an old save can beat 断风 before 连环 and 双刃
+    // (Sol 3ffce751, 98d0a72b). Short of that, 打下一个 goes to the next one not yet won (after this one, else from the top).
+    const unwon = (from = 0) => LADDER.findIndex((f, i) => i >= from && !ladder.won.has(f.id));
+    if (first && unwon() < 0) return {act: 'pick', clear: true};
+    if (fought === LADDER.length - 1 && unwon() < 0) return {act: 'again'};
+    const to = [unwon(fought + 1), unwon()].find(i => i >= 0) ?? fought + 1;
     // The first win over 狂冲 points at 拍一件 too (Elara 6b6a3c3b): it is made while they fight the next one.
-    return {act: 'next', unlocked: first ? fought + 1 : null, shootNow: first && id === 'mang'};
+    return {act: 'next', to, unlocked: first && unlocks ? fought + 1 : null, shootNow: first && id === 'mang'};
   }
   // One yellow key for what to do next, at most one outlined key under it, the rest a line of small links (远夏 a63667e4
   // 「我根本就不知道要点哪个」, Elara ee078f5c). Each key's `act` is one of RESULT_ACTS.
@@ -1651,11 +1663,11 @@ async function main() {
     el.result.classList.toggle('lost', Boolean(o.lost));
     $('clearTrio').hidden = !o.clear;
     if (o.clear) {
-      el.winnerLine.textContent = '三个都赢了';
+      el.winnerLine.textContent = `${LADDER_N}个都赢了`;
       $('clearTrio').innerHTML = LADDER.map((f, i) => `<span><span class="tw">${markHtml(i)}<i>${SVG.check}</i></span>${esc(f.name)}</span>`).join('');
     }
-    // Lost: the tip (how to win next time) in the accent colour, word for word. Won: no tip; all three beaten, just the
-    // three ticks. A first win: what it unlocks on a small card of its own, with a sweep of light (Elara 97af5a2d).
+    // Lost: the tip (how to win next time) in the accent colour, word for word. Won: no tip; all five beaten, just the
+    // five ticks. A first win: what it unlocks on a small card of its own, with a sweep of light (Elara 97af5a2d).
     el.tipLine.hidden = !o.lost || !el.tipLine.textContent;
     const card = $('unlockCard');
     card.hidden = o.unlocked == null;
@@ -1674,7 +1686,7 @@ async function main() {
     }
     else if (o.clear) [main, second] = shoot ? [shootKey, {act: 'pick', label: '随便挑一个再打'}] : [{act: 'pick', label: '随便挑一个再打'}];
     else if (o.act === 'next') {
-      const f = LADDER[Math.min(fought + 1, LADDER.length - 1)];
+      const f = LADDER[o.to];
       main = {act: 'next', label: `迎战${f.name}`};
       // After the first win over 狂冲: 拍一件 under it (Elara 6b6a3c3b). Not how long it takes: said before a photo is taken,
       // it reads as already being made (Elara d8dd76ce); the wait page says it.
@@ -2335,7 +2347,7 @@ async function main() {
   // The result's keys by what they say they do (showOutcome). 原样再来 / 再打一次 / 再来一局: the same two builds again at
   // once (a new seed unless ?seed= fixed it). 换件再打: straight into the 角色库 (Elara 1370fb7f).
   const RESULT_ACTS = {
-    next: () => { showBuild(); pickFoe(Math.min(fought + 1, LADDER.length - 1)); },
+    next: () => { showBuild(); pickFoe(outcome?.to ?? Math.min(fought + 1, LADDER.length - 1)); },
     pick: () => { showBuild(); openLadder(); },
     again: () => showBuild(),
     same: () => { showBuild(); start(); },
@@ -2344,7 +2356,7 @@ async function main() {
   };
   for (const id of ['againBtn', 'altBtn']) $(id).onclick = () => RESULT_ACTS[$(id).dataset.act]?.();
   $('sameBtn').onclick = RESULT_ACTS.same;
-  // 一机双人's way back to the three opponents; with an opening page, back to it.
+  // 一机双人's way back to the five opponents; with an opening page, back to it.
   $('soloBtn').onclick = () => { if (homeOn) goHome(); else setPvp(false); };
 
   // ---------- camera lookahead ----------
