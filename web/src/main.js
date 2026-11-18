@@ -1981,7 +1981,7 @@ async function main() {
     // there in time, Sol 0fe8da0c). The eyes are on the
     // 完美 in the arena then (Elara fa80d1bb), so it comes on with a sound of its own as well as a pop and a ring.
     // Once off it stays off till the next 完美 (counterLands can come back for a step or two: one light, one sound).
-    let counter = !live.done && (c.counterIn ?? 0) + 1e-9 >= COUNTER_CUE_LIT && c.counterLands && c.dashIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0);
+    let counter = !live.done && counterLit(c);
     if (!(c.counterIn > 0)) pad.counterOver = false;
     else if (!counter && pad.dash.classList.contains('counter')) pad.counterOver = true;
     counter &&= !pad.counterOver;
@@ -1990,6 +1990,20 @@ async function main() {
       pad.dash.word.textContent = counter ? '反打' : '冲';
       if (counter) sfx.counter();
     }
+  }
+  // A 冲 taken at the next step would land as the counter (control() of the step now), so 反打 can light.
+  function counterLit(c) {
+    return (c.counterIn ?? 0) + 1e-9 >= COUNTER_CUE_LIT && c.counterLands && c.dashIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0);
+  }
+  // Release check only (__top.counterBot(), scripts/check-judge-navigation.mjs): taps 挡 a beat after each of the foe's
+  // cues and 冲 only while 反打 is lit, step by step in the sim loop (the same at any speed), so the fight is won on a
+  // 反打 and the result screen reads a match that ended with its window open (Wren b7e0e2df).
+  let bot = null;
+  function botStep(m) {
+    for (; bot.seen < m.events.length; bot.seen++) { const e = m.events[bot.seen]; if (e.type === 'dashCue' && e.side === 1) bot.block = m.step + 30; }
+    const c = m.control(0);
+    if (bot.block !== null && m.step >= bot.block) { bot.block = null; if (c.blockIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0)) press('block'); }
+    else if (counterLit(c)) press('dash');
   }
   // 一机双人's bench: 1P's 下一步 hands it to 2P, whose 开打 starts the match.
   el.go.onclick = () => { if (pvp && pick === 0) setPick(1); else start(); };
@@ -2123,6 +2137,7 @@ async function main() {
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
     // Safe-area audit: worst overflow per phase over every rendered frame (px > 0 means something was cut off).
+    counterBot(on = true) { bot = on ? {seen: 0, block: null} : null; },
     trackSafe(speed = 1) { test.speed = speed; test.safe = {}; test.frame = null; },
     safe: () => test.safe,
     // 一机双人's camera: the metres across the band's narrower half, and the zoom (1 close .. 2 apart).
@@ -2179,7 +2194,7 @@ async function main() {
       if (phase === 'play' && live && !live.done) {
         // Keep the live sim just ahead of the picture; once it is over, the replay is complete.
         const m = live.match;
-        while (!m.done && m.t < pb.t + dt + LIVE_LEAD) { teachStep(m); m.advance(); }
+        while (!m.done && m.t < pb.t + dt + LIVE_LEAD) { teachStep(m); if (bot) botStep(m); m.advance(); }
         if (m.done) { live.done = true; replay = m.result(); pb.r = replay; setCaption(false, reasonLine(replay)); }
         pb.sync(live.done);
       }

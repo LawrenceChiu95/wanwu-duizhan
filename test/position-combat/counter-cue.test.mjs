@@ -137,3 +137,20 @@ test('without a 完美, 反打 never lights', async () => {
   }
  } finally { m.free(); }
 });
+
+// Wren b7e0e2df: a fight won on a 反打 ends with the window open, and the page reads control() on the result screen after
+// the world is freed. Blocks a beat after each cue and lunges only while 反打 is lit (main.js botStep), so it is.
+test('control() after a fight won on a 反打 never reads the freed world', async () => {
+ const m = await createV3Match(setup('mang', 803, [P1, foeBuild('mang')]));
+ try {
+  let block = null;
+  for (let seen = 0; !m.done && m.t < 90; m.advance()) {
+   for (; seen < m.events.length; seen++) if (m.events[seen].type === 'dashCue' && m.events[seen].side === 1) block = m.step + 30;
+   const c = m.control(0);
+   if (block !== null && m.step >= block) { block = null; m.press(0, 'block'); }
+   else if (lit(c)) m.press(0, 'dash');
+  }
+  assert.ok(m.done && m.control(0).counterIn > 0, 'the fight ends with the counter window open');
+  for (const side of [0, 1]) assert.equal(m.control(side).counterLands, false);
+ } finally { m.free(); }
+});

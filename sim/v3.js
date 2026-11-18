@@ -709,10 +709,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  // Whether a 冲 pressed now (taken next step) meets the foe while countering() still holds, erring short: the foe drifts
  // on at its speed now till its brake (from the press, not before guardBrakeEarliest) has stopped it, we drift in the
  // wind-up, and the lunge then covers what a free straight one would (the same per-tick speed) till the window shuts,
- // against the gap to the cores touching (parts touch sooner). Read-only, for the 反打 light (COUNTER_CUE_LIT).
+ // against the gap to the cores touching (parts touch sooner). Read-only, for the 反打 light (COUNTER_CUE_LIT). Never after
+ // the end: the world is freed then, and the page reads control() on the result screen (Wren b7e0e2df).
  const counterLands=side=>{
   const f=fs[side],foe=fs[1-side],end=Math.min(f.ctl.counterUntilRound??-Infinity,foe.ctl.stunUntil),go=step+1+steps(chargeTime(side));
-  if(!round||end<=step||!stunned(foe))return false;
+  if(!round||done||end<=step||!stunned(foe))return false;
   const a=arr(f.body.translation()),b=arr(foe.body.translation()),flatSpeed=v=>Math.hypot(v[0],v[2]);
   const drift=flatSpeed(arr(foe.body.linvel()))*((Math.max(step+1,foe.ctl.guardBrakeEarliest)-step)*r.dt+1/round.guardBrake)+flatSpeed(arr(f.body.linvel()))*(go-step)*r.dt;
   const gap=Math.hypot(b[0]-a[0],b[2]-a[2])-2*r.core.radius+drift,scaleBy=dashScale(f);
