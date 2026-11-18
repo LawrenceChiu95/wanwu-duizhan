@@ -1363,15 +1363,16 @@ async function main() {
   const screens = new MutationObserver(rs => { if (rs.some(flipped)) { choiceReq++; swapTipNow(); } });
   for (const n of SCREENS.map(k => document.getElementById(k)).filter(Boolean)) screens.observe(n, {attributeFilter: ['hidden'], attributeOldValue: true});
   screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
-  // Two bubbles on the bench, each once (Elara 7efbda7b): the first visit's under 拍一件, its body pulled left so only the
-  // tail reaches the key, off ModelScope's ball at the right edge (Elara aa489e4f); then, back from the first match against
+  // Two bubbles on the bench, each once (Elara 7efbda7b): the first visit's over 拍一件, on the arena's dark lower edge with
+  // its tail down to the key, clear of both 换件 and 「组装台」 (Elara 43e23287), its body pulled left so only the tail
+  // reaches the key, off ModelScope's ball at the right edge (Elara aa489e4f); then, back from the first match against
   // the computer (won or lost), one for the left 换件 and the 角色库. Neither over 「组装台」 (Elara 6cdfe227); the second sits
   // on the left slot's 3D window with no tail, since under its key it hid the name, trait and size (Elara 17d98c59). Taps go through (拍一件 still opens); any tap puts it away for good, and 拍一件 holds its breath while the
   // 换件 one is up (style.css). New keys: old phones have 'wanwu-swap-tip' set from the first bubble.
   const swapTip = $('swapTip'), again = q.get('swaptip') === 'again';
   const TIPS = [
     {key: 'wanwu-bubble-shoot', chip: () => $('benchShoot'), ready: () => true, text: () => '拍一件你身边的东西，它替你上场\n也可以先用这套直接开打',
-      left: (c, w) => c.left + c.width / 2 - w + 24},
+      left: (c, w) => c.left + c.width / 2 - w + 24, up: true},
     {key: 'wanwu-bubble-swap', chip: () => el.build.querySelector('[data-swap="0"]'), ready: () => soloDone, text: () => `库里还有 ${OFFER.length} 件现成的，\n点上面的「换件」换一件`, hush: true,
       over: () => el.build.querySelector('.slot[data-slot="0"] .module-display')},
   ];
@@ -1387,6 +1388,7 @@ async function main() {
     swapTip.hidden = false;
     el.build.classList.toggle('tipping', Boolean(t.hush));
     swapTip.classList.toggle('flat', Boolean(t.over));
+    swapTip.classList.toggle('up', Boolean(t.up));
     placeSwapTip();
     addEventListener('pointerdown', dropSwapTip, {capture: true, once: true});
   }
@@ -1405,7 +1407,7 @@ async function main() {
     const chip = tipUp.chip().getBoundingClientRect();
     const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, tipUp.left(chip, w) - box.left));
     swapTip.style.left = `${left.toFixed(1)}px`;
-    swapTip.style.top = `${(chip.bottom - box.top + 9).toFixed(1)}px`;
+    swapTip.style.top = `${(tipUp.up ? chip.top - box.top - 9 - swapTip.offsetHeight : chip.bottom - box.top + 9).toFixed(1)}px`;
     swapTip.style.setProperty('--tail', `${(mid - left).toFixed(1)}px`);
   }
   function dropSwapTip() {
