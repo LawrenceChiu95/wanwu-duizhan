@@ -175,7 +175,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .bhead .shoot svg { width:14px;height:14px; }
 .slot { border-width:13px;padding:2px 3px 3px;gap:5px;min-width:0; }
 .slot-rail { padding-bottom:3px; }
-.item { min-height:44px;padding:4px 44px 4px 5px;border:0;box-shadow:none;background:transparent; }
+.item { min-height:44px;padding:4px 5px;border:0;box-shadow:none;background:transparent; }
 .item b { font-size:17px; }
 .item .spec { font-size:11px;margin-top:2px; }
 .module-display { height:63px;position:relative;border:1px solid #405843;overflow:hidden;
@@ -336,6 +336,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .card .badge.own { background:var(--c0);color:#1c1608;box-shadow:none; }
 .card .badge.new { background:var(--c0l);color:#1c1608;box-shadow:0 0 0 1px #1c1608,0 0 10px rgba(236,206,133,.55);font-weight:700;padding:0 10px; }
 .card .cat { border-radius:1px;color:#a9c7ae;box-shadow:inset 0 0 0 1px #476649; }
+.trait { border-radius:1px;color:#e8c46a;background:#2a2612;box-shadow:inset 0 0 0 1px #5d5124; }
 .card .spec,.card .rates { color:#92b4a1; }
 .card .how,.card .src { margin:2px 4px 0;border-top-color:#405843; }
 .card .src { color:#92b4a1; }
