@@ -639,6 +639,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .hfoot { flex: 1; display: flex; align-items: flex-end; position: sticky; bottom: 0; z-index: 1; padding: 14px 14px calc(env(safe-area-inset-bottom) + 18px); background: linear-gradient(transparent, var(--bg) 14px); }
 .hfoot .go { width: 100%; }
 .hfoot .go:disabled { opacity: 0.45; }
+/* Short phones (390×664, 360×640): a lower stage and tighter rows, so 「实际用时」 is above 装上去打 without a scroll (Castor, Elara 6cdfe227). */
+@media (max-height: 740px) { .hstage { max-height: 37vh; } .hsteps li { padding: 7px 0; } }
+:where(.seen-740) .hstage { max-height: calc(var(--seen) * 0.37); }
+:where(.seen-740) .hsteps li { padding: 7px 0; }
 /* ---------- 拍一件 (task #47) ---------- */
 /* Under 看它怎么来的 (same layer, earlier in the page), over the 角色库. */
 #shootView { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; }
