@@ -101,7 +101,7 @@ try {
    };
    const fight=async pvp => {
     await page.locator('#goBtn').tap();await phase('play');
-    // A fresh phone's first 莽牛 opens with the lesson (Elara 534cbd22), four stops each waiting for its lit button. At
+    // A fresh phone's first 狂冲 opens with the lesson (Elara 534cbd22), four stops each waiting for its lit button. At
     // 390 it is gone through with the button each card is about pressed once just before it (Elara 8b471471, d2999ce8):
     // 冲 at the start and after 知道了, 挡 after stop 2, 反打 as soon as it lights; all four cards must still come.
     if(!pvp&&width===390) {
@@ -157,7 +157,7 @@ try {
     await goHome(pvp?'pvp-result':'solo-result');
    };
    await choose(false);await fight(false);
-   // Won on a 反打, then 打下一个 and 开打 (Wren b7e0e2df): the match ends with the counter window open and the result
+   // Won on a 反打, then 迎战<next> and 开打 (Wren b7e0e2df): the match ends with the counter window open and the result
    // screen still reads its buttons; the next foe's fight must start, page error free.
    console.log(JSON.stringify({width,checkpoint:'solo-counter-win'}));
    await choose(false);const foe=await page.locator('#foeLabel').innerText();
@@ -170,9 +170,9 @@ try {
     return {winner,counter:Boolean(blow?.attacker===0&&blow.dash&&perfect&&blow.t-perfect.t<1-1e-6)};
    });
    assert.deepEqual(end,{winner:0,counter:true},`${width}px: the scripted fight must be won on a 反打 (pick another seed if the ladder changed)`);
-   const again=page.locator('#againBtn');assert.equal(await again.innerText(),'打下一个');await again.tap();await phase('build');
+   const again=page.locator('#againBtn');assert.equal(await again.innerText(),'迎战铁壁','the yellow key names the next foe (Elara 2e1d0976)');assert.match(await page.locator('#unlockCard').innerText(),/新解锁\s*铁壁/,'the first win shows what it unlocks');await again.tap();await phase('build');
    await page.waitForFunction(() => !document.querySelector('#goBtn').disabled);
-   const next=await page.locator('#foeLabel').innerText();assert.notEqual(next,foe,'打下一个 brings the next foe');
+   const next=await page.locator('#foeLabel').innerText();assert.notEqual(next,foe,'迎战<next> brings the next foe');
    await page.locator('#goBtn').tap();await phase('play');await noFightHome('solo-next-fight');
    report.push({width,screen:'solo-counter-next',foe,next});
    await page.evaluate(() => window.__top.trackSafe(14));await phase('result');await goHome('solo-next-result');

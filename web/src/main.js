@@ -9,7 +9,7 @@ import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
 import {Playback, BREAK_STOP} from './playback.js';
 import {BreakHolds} from './break-holds.js';
 import {Overlay} from './overlay.js';
-import {reasonLine, endLine, matchStats, pickStats, tipLine, NAMES, setNames, wholeSeconds, WEN_HINT} from './reason.js';
+import {reasonLine, matchStats, pickStats, tipAdvice, NAMES, setNames, wholeSeconds, WEN_HINT} from './reason.js';
 import {sfx} from './sfx.js';
 import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
@@ -22,10 +22,10 @@ const el = {
   app: $('app'), canvas: $('view'), fx: $('fx'), flash: $('flash'), banner: $('banner'),
   caption: $('caption'), captionText: $('captionText'), slowtag: $('slowtag'), clock: $('clock'),
   hud: $('hud'), foe: $('foe'), foeParts: $('foeParts'), build: $('build'), go: $('goBtn'),
-  result: $('result'), resultMeta: $('resultMeta'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), statsList: $('statsList'), tipLine: $('tipLine'),
+  result: $('result'), winnerLine: $('winnerLine'), whyLine: $('whyLine'), tipLine: $('tipLine'),
   foeSheet: $('foeSheet'), foeList: $('foeList'),
   library: $('library'), libGrid: $('libGrid'), libTitle: $('libTitle'), libCount: $('libCount'), libGrades: $('libGrades'),
-  resultBuild: $('resultBuild'), how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
+  how: $('howView'), howTitle: $('howTitle'), howShot: $('howShot'), howTurn: $('howTurn'), howCat: $('howCat'), howNow: $('howNow'),
   howBar: $('howBar'), howSteps: $('howSteps'), howTotal: $('howTotal'), howEquip: $('howEquip'), howNote: $('howNote'),
   howSrc: $('howSrc'), howPick: $('howPick'),
   shoot: $('shootView'), shootBtn: $('shootBtn'),
@@ -82,6 +82,7 @@ const SVG = {
   open: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.6-1.8" /></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>',
   down: '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" /></svg>',
+  camera: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>',
   arrow: '<svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>'
 };
 // Sol bccac3b7: 锅 out, 抱枕 hugging.
@@ -604,9 +605,21 @@ async function main() {
       const box = el.hud.querySelector(`.s${i} .parts`);
       // Imported items often have three- or four-character names: those tags get the compact style (style.css .pc.long).
       const fit = name => [...name].length > 3 ? ' long long4' : [...name].length > 2 ? ' long' : '';
-      box.innerHTML = def.parts.map(p => `<span class="pc${fit(NAMES[p.item])}">${ICON[p.orient]}<b>${esc(NAMES[p.item])}</b><span class="mini"><i></i></span></span>`).join('');
+      box.innerHTML = def.parts.map(p => `<span class="pc${fit(NAMES[p.item])}" data-item="${esc(p.item)}">${ICON[p.orient]}<b>${esc(NAMES[p.item])}</b><span class="mini"><i></i></span></span>`).join('');
     });
   }
+  // A name that does not fit its slot whole takes a short form, never 「按摩…」 (Elara 97af5a2d): measured again when a piece
+  // breaks, since 碎 then sits beside it.
+  const SHORT = {'fanshuo-roller': '滚筒', 'fanshuo-rabbit': '靠垫'};
+  function fitChip(pc) {
+    const b = pc.querySelector('b'), id = pc.dataset.item, full = NAMES[id] ?? '', plain = full.replace(/^我拍的/, '');
+    for (const n of [full, SHORT[id], plain, plain.slice(-3), plain.slice(-2)]) {
+      if (!n) continue;
+      b.textContent = n;
+      if (b.scrollWidth <= b.clientWidth + 0.5) return;
+    }
+  }
+  const fitChips = () => el.hud.querySelectorAll('.pc').forEach(fitChip);
   function updateHud(dt, state) {
     state.fighters.forEach((f, i) => {
       const v = hpView[i], frac = Math.max(0, f.hp / f.maxHp);
@@ -625,7 +638,7 @@ async function main() {
         const p = f.parts[k], pf = Math.max(0, Math.min(p.maxHp, p.hp + (p.alive ? sp?.owed ?? 0 : 0)) / p.maxHp), bar = pc.querySelector('.mini i');
         bar.style.transform = `scaleX(${pf})`;
         bar.classList.toggle('low', pf < 0.4);
-        pc.classList.toggle('gone', !p.alive);
+        if (pc.classList.contains('gone') === p.alive) { pc.classList.toggle('gone', !p.alive); fitChip(pc); }
       });
       overlay.setCoreHp(i, frac);
     });
@@ -998,7 +1011,7 @@ async function main() {
       sfx.ting();
     } else if (e.type === 'blockResult') {
       teachBlocked(e);
-      // 老龟's second block of a lunge this match: once, its result card's line beside the player's top (Elara 424f0bcb).
+      // 铁壁's second block of a lunge this match: once, its result card's line beside the player's top (Elara 424f0bcb).
       if (wenHint && e.side === 1 && e.outcome !== 'empty' && ++wenHint.caught === 2) overlay.nudge(WEN_HINT.replace('：', '\n'), 'deflect nudge two', WEN_HINT_TIME);
       // 「挡住了，点反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
       if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held ||= e.outcome === 'perfect'; }
@@ -1050,13 +1063,13 @@ async function main() {
   }
 
   // ---------- 第一关教学 ----------
-  // A new phone's first 莽牛 (Elara 534cbd22, from Altair's plan): four times the fight stops dead and the screen goes dark
+  // A new phone's first 狂冲 (Elara 534cbd22, from Altair's plan): four times the fight stops dead and the screen goes dark
   // but for what the stop is about, with a card beside it (a title, two lines at most). Only the lit button goes on, with
   // no time-out; a tap anywhere else does nothing but make it hop; 跳过 on the card ends the lesson.
-  // 1 the tops come on: both tops and the bars, 知道了. 2 they close in: 冲 and your top. 3 莽牛 flashes for a lunge with 挡
-  // ready: 莽牛 and 挡. The lesson's 挡 is taken at the physics step a shadow match has shown to be a 完美 (it replays the
-  // live presses and tries the step), so it gets the bounce it promised. 4 莽牛 bounced off and reeling, 冲 lit as 反打:
-  // 莽牛 and 反打, and a 冲 then lands as the counter (counterLit, the light ①).
+  // 1 the tops come on: both tops and the bars, 知道了. 2 they close in: 冲 and your top. 3 狂冲 flashes for a lunge with 挡
+  // ready: 狂冲 and 挡. The lesson's 挡 is taken at the physics step a shadow match has shown to be a 完美 (it replays the
+  // live presses and tries the step), so it gets the bounce it promised. 4 狂冲 bounced off and reeling, 冲 lit as 反打:
+  // 狂冲 and 反打, and a 冲 then lands as the counter (counterLit, the light ①).
   // The sim never runs more than LIVE_LEAD past the picture, so it stops with it (Elara d308f7b8): a press any time in a
   // stop is the same press. For 4 the sim waits at the lit step (teachStep) and the picture comes up to it. Not again on
   // this phone, nor in 一机双人 or a replay; ?coach=again brings it back.
@@ -1068,7 +1081,7 @@ async function main() {
   // How far the tops close in (metres between cores from the start) before stop 2; the 挡 goes in this many physics steps
   // before the lunge touches, well inside the 完美 window.
   const TEACH_NEAR = 0.35, TEACH_EARLY = 8;
-  // Stop 4 once this much of the counter window is left (a fifth gone: 莽牛 seen bounced off).
+  // Stop 4 once this much of the counter window is left (a fifth gone: 狂冲 seen bounced off).
   const TEACH_REEL = 0.8;
   // The card at each stop, its two lines broken where the sentence breaks (20 characters at most: one line at 360 wide);
   // the words are the sim's (counterDamage 5.2 to a 冲's 1.9; a 完美 stuns the lunger).
@@ -1084,7 +1097,7 @@ async function main() {
   function teachStart(args) {
     teach = null;
     if (!live || pvp || !round || fought === null || LADDER[fought].id !== 'mang') return;
-    try { if (q.get('coach') !== 'again' && localStorage.getItem(TEACH_KEY) === '1') return; localStorage.setItem(TEACH_KEY, '1'); } catch { /* no storage here: every first 莽牛 */ }
+    try { if (q.get('coach') !== 'again' && localStorage.getItem(TEACH_KEY) === '1') return; localStorage.setItem(TEACH_KEY, '1'); } catch { /* no storage here: every first 狂冲 */ }
     // lesson: 0 waits for the tops to close (or a 冲 already taken: dashed), 1 for a lunge to wind up, 2 for the block's
     // 完美, 3 done. hold: the sim step stop 4 waits at.
     teach = {intro: false, lesson: 0, stop: null, args, blockAt: null, armed: false, lit: false, hold: null, dashed: false};
@@ -1181,7 +1194,7 @@ async function main() {
     const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, tops.reduce((s, t) => s + t.x, 0) / tops.length));
     el.teachCard.style.transform = `translate(${(x - w / 2).toFixed(1)}px, ${y.toFixed(1)}px)`;
   }
-  // 莽牛 flashes for a lunge: stop 3, if 挡 is ready. The fight stops at once; the card comes up when the shadow match has
+  // 狂冲 flashes for a lunge: stop 3, if 挡 is ready. The fight stops at once; the card comes up when the shadow match has
   // found a 挡 step that makes a 完美. No such step (the lunge would miss, or the shadow has not kept to the live match):
   // the fight goes on and the next flash is tried. A 挡 pressed before the card is up waits for it.
   async function teachFlash(e) {
@@ -1435,6 +1448,8 @@ async function main() {
     el.build.hidden = true;
     el.foe.hidden = true;
     el.hud.hidden = false;
+    el.hud.classList.remove('dim');
+    fitChips();
     showPads(Boolean(live));
     if (!live) setCaption(false, reasonLine(r));
     captionHold = 0;
@@ -1491,44 +1506,57 @@ async function main() {
     const said = side => m.winner === null ? '平局' : m.winner === side ? '你赢了' : '你输了';
     el.winnerLine.textContent = said(0);
     el.result.className = m.winner === null ? 'draw' : m.winner === 0 ? 'win' : 'lose';
-    el.resultMeta.textContent = `第 ${wholeSeconds(m.duration)} 秒 · ${endLine(replay)}`;
     const who = pvp ? ['你', '对面'] : [sideName(0), sideName(1)];
-    el.whyLine.innerHTML = reasonHtml(reasonLine(replay, who));
     const defs = m.initial.map(f => f.definition);
     const foeRatings = m.combatRules?.itemRatings?.parts?.[1];
     const foeGrades = defs[1].parts.map((p, i) => {
       const rating = foeRatings ? ratingOf({rating: foeRatings[i]}) : rate(p.item);
       return rating?.grade ?? null;
     });
-    const builds = defs.map((def, side) => def.parts.map((p, i) =>
-      `<span>${gradeTag(side === 1 ? foeGrades[i] : rate(p.item)?.grade)}${esc(NAMES[p.item])}</span>`).join(''));
-    el.resultBuild.innerHTML = `<span class="rw">${who[0]}</span>${builds[0]}<span class="rw vs">${pvp || fought === null ? who[1] : esc(LADDER[fought].name)}</span>${builds[1]}`;
     // 第二轮 ⑤: the run so far, each end from its own side.
     if (pvp && scored !== runId) { scored = runId; if (m.winner !== null) score[m.winner]++; }
     el.pvpScore.hidden = !pvp;
     el.pvpScore.textContent = `你 ${score[0]} : ${score[1]} 对面`;
-    // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows.
+    // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows. Alone, two numbers at
+    // most, numbers only (a piece's name would be cut short, Elara ee078f5c).
     const stats = matchStats(replay, defs, id => !shipped.has(id) && !sampleIds.has(id), {oldFeel: oldFx, foeGrades});
-    el.statsList.innerHTML = pvp ? '' : pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
-    el.tipLine.textContent = pvp ? '' : tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
+    const nums = pvp ? [] : pickStats(stats, m.winner).filter(x => /^\d+$/.test(x.value)).slice(0, 2).map(x => `${x.label} ${x.value}`);
+    const advice = pvp ? null : tipAdvice(stats, m.winner, fought === null ? null : LADDER[fought].id);
+    el.tipLine.textContent = advice?.line ?? '';
     outcome ??= ladderOutcome(m.winner);
+    // When, why and the numbers in one line (Elara 97af5a2d): 「第 45 秒，你的刀撞碎了狂冲的核心 · 冲中 11 · 完美挡 8」. The
+    // numbers go with a loss and with 三个都赢了 (Elara ee078f5c), and when the line would wrap (fitWhy, after layout).
+    const why = `第 ${wholeSeconds(m.duration)} 秒，${reasonLine(replay, who)}`.split('\n');
+    const numsHtml = outcome.lost || outcome.clear || !nums.length ? '' : `<span class="nums"> · ${esc(nums.join(' · '))}</span>`;
+    el.whyLine.innerHTML = reasonHtml(why[0]).replace(/<\/span>$/, `${numsHtml}</span>`) + (why[1] ? reasonHtml(why[1]) : '');
     $('replayBtn').hidden = pb.slowAt === null;
-    showOutcome(outcome);
+    showOutcome(outcome, advice);
     setCaption(false, undefined, true);
     // The highlight under the HUD goes with it, or it sits on the result's own lines (Elara 5fd78c17).
     overlay.dropHighlight();
     // 一机双人's bars stand where the card comes up: they go with the buttons, back for 重看. 2P gets who won in the top
     // half, turned to them, so nobody has to lean over the card (Elara 1d222196).
     if (pvp) { el.hud.hidden = true; overlay.dropWords(); }
+    // Alone, the bars stay up but step back, so the card is what reads (Elara 97af5a2d); 重看 brings them back.
+    el.hud.classList.add('dim');
     el.pvpWin.hidden = !pvp;
     el.pvpWin.className = m.winner === null ? 'draw' : m.winner === 1 ? 'blue' : 'lose';
     el.pvpWin.firstChild.textContent = said(1);
     el.pvpWin.lastChild.textContent = `你 ${score[1]} : ${score[0]} 对面`;
     el.result.hidden = false;
+    fitWhy();
     layout_();
     // 回首页 stays over the mute unless the card comes up that far (a first win's unlock and 拍一件 lines): then just above it.
     // The camera eases over to the winner alone, above the card (a draw keeps both in frame).
     stage.setFocusOn(m.winner, el.result.offsetTop);
+  }
+  // The first line never wraps (Elara 97af5a2d, 360 wide): the numbers go first, then the words get smaller.
+  function fitWhy() {
+    const row = el.whyLine.querySelector('.row');
+    el.whyLine.style.fontSize = '';
+    if (!row || row.scrollWidth <= row.clientWidth + 0.5) return;
+    row.querySelector('.nums')?.remove();
+    for (let px = parseFloat(getComputedStyle(el.whyLine).fontSize); px > 12 && row.scrollWidth > row.clientWidth + 0.5; px -= 0.5) el.whyLine.style.fontSize = `${px - 0.5}px`;
   }
   // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个), the first over the last
   // one is the 三个都赢了 ending (随便挑 opens the ladder). Losing, a draw, or ?foe= leave the result as it was.
@@ -1540,40 +1568,59 @@ async function main() {
     renderFoe();
     const last = fought === LADDER.length - 1;
     if (last) return {act: first ? 'pick' : 'again', clear: first};
-    // The first win over 莽牛 points at 拍一件 too (Elara 6b6a3c3b): it is made while they fight the next one.
+    // The first win over 狂冲 points at 拍一件 too (Elara 6b6a3c3b): it is made while they fight the next one.
     return {act: 'next', unlocked: first ? fought + 1 : null, shootNow: first && id === 'mang'};
   }
-  function showOutcome(o) {
+  // One yellow key for what to do next, at most one outlined key under it, the rest a line of small links (远夏 a63667e4
+  // 「我根本就不知道要点哪个」, Elara ee078f5c). Each key's `act` is one of RESULT_ACTS.
+  function showOutcome(o, advice = null) {
     el.result.classList.toggle('clear', Boolean(o.clear));
-    el.resultBuild.hidden = el.statsList.hidden = Boolean(o.clear);
+    el.result.classList.toggle('lost', Boolean(o.lost));
     $('clearTrio').hidden = !o.clear;
     if (o.clear) {
       el.winnerLine.textContent = '三个都赢了';
       $('clearTrio').innerHTML = LADDER.map((f, i) => `<span><span class="tw">${markHtml(i)}<i>${SVG.check}</i></span>${esc(f.name)}</span>`).join('');
-      // All three beaten: point at 拍一件 too, in plain words (Elara 2621157e, bd72b574); a tap opens it when the page has it.
-      el.tipLine.innerHTML = shoot ? '现在三个随便挑。<br>也可以<button type="button" class="tipshoot">拍一件</button>你身边的东西，装上再打'
-        : '现在三个随便挑，换个装法再打一轮';
-      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link', '结算'));
     }
+    // Lost: the tip (how to win next time) in the accent colour, word for word. Won: no tip; all three beaten, just the
+    // three ticks. A first win: what it unlocks on a small card of its own, with a sweep of light (Elara 97af5a2d).
+    el.tipLine.hidden = !o.lost || !el.tipLine.textContent;
     const card = $('unlockCard');
     card.hidden = o.unlocked == null;
     if (o.unlocked != null) {
       const f = LADDER[o.unlocked];
-      card.innerHTML = `${markHtml(o.unlocked)}<span class="txt"><span class="k">${SVG.open}解锁下一个</span><b>${esc(f.name)}</b><span class="play">${esc(f.play)}</span></span>`;
-      el.tipLine.innerHTML = o.shootNow && shoot ? `做好要 3 分钟左右，先去打${esc(f.name)}，回来就能装上` : '';
+      card.innerHTML = `${markHtml(o.unlocked)}<span class="txt"><b><small>新解锁</small>${esc(f.name)}</b><span class="play">${esc(f.play)}</span></span>`;
     }
-    $('shootNowBtn').hidden = !(o.shootNow && shoot);
-    $('againBtn').innerHTML = `<span>${pvp ? '换个装法再打' : o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
-    $('againBtn').dataset.act = o.act;
-    $('sameBtn').textContent = '原样再来';
-    // 结算's way back, beside its main button: the 首页 in both modes when there is one (Pollux, Elara 56506aa2).
+    const shootKey = {act: 'shoot', icon: SVG.camera, label: '拍一件你身边的东西'};
+    let main, second = null;
+    if (pvp) [main, second] = [{act: 'same', label: '再来一局'}, {act: 'again', label: '换个装法再打'}];
+    // Lost: the yellow key follows the tip. One about the build (a heavier piece, 贴着) says 换件再打; one about the way to
+    // play (铁壁's 先挡，再冲 too) says 再打一次, the same build again (Elara 97af5a2d).
+    else if (o.lost) {
+      const same = {act: 'same', label: '再打一次'}, swap = {act: 'swap', label: '换件再打'};
+      [main, second] = advice?.build ? [swap, same] : [same, swap];
+    }
+    else if (o.clear) [main, second] = shoot ? [shootKey, {act: 'pick', label: '随便挑一个再打'}] : [{act: 'pick', label: '随便挑一个再打'}];
+    else if (o.act === 'next') {
+      const f = LADDER[Math.min(fought + 1, LADDER.length - 1)];
+      main = {act: 'next', label: `迎战${f.name}`};
+      // After the first win over 狂冲: 拍一件 under it (Elara 6b6a3c3b). Not how long it takes: said before a photo is taken,
+      // it reads as already being made (Elara d8dd76ce); the wait page says it.
+      if (o.shootNow && shoot) second = shootKey;
+    } else main = {act: 'again', label: '换个装法再打'};
+    const key = (btn, k) => {
+      btn.hidden = !k;
+      if (!k) return;
+      btn.dataset.act = k.act;
+      // One line of words on a key, never two (Elara 97af5a2d).
+      btn.innerHTML = `${k.icon ?? ''}<span>${esc(k.label)}</span>${btn === $('againBtn') ? SVG.arrow : ''}`;
+    };
+    key($('againBtn'), main);
+    key($('altBtn'), second);
+    // The links: 重看 when there is a moment to see again, 原样再来 unless the main key is already it, and the way back:
+    // the 首页 when there is one (Pollux, Elara 56506aa2), else 一机双人's 回单人.
+    $('sameBtn').hidden = main.act === 'same';
     $('soloBtn').hidden = !pvp && !homeOn;
     $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
-    // Lost alone: 换件再打 straight into the 角色库, beside 原样再来 (Elara 1370fb7f). An odd number of keys gives the main
-    // one the whole last row (style.css).
-    $('swapBtn').hidden = !o.lost;
-    const keys = [...el.result.querySelectorAll('.actions button')].filter(b => !b.hidden);
-    el.result.querySelector('.actions').classList.toggle('odd', keys.length % 2 === 1);
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -1581,6 +1628,7 @@ async function main() {
     if (!pb || pb.slowAt === null) return;
     el.result.hidden = el.pvpWin.hidden = true;
     el.hud.hidden = false;
+    el.hud.classList.remove('dim');
     showPads(false);
     stage.clearFx();
     overlay.clear(); lateNums = []; resetHighlights();
@@ -1974,7 +2022,6 @@ async function main() {
     el.shootBtn.onclick = () => shoot.open('library');
     benchShoot.hidden = false;
     benchShoot.onclick = () => shoot.open('link', '组装台');
-    $('shootNowBtn').onclick = () => shoot.open('link', '结算');
     paintBenchShoot();
     if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;
@@ -2189,15 +2236,18 @@ async function main() {
   // 一机双人's bench: 1P's 下一步 hands it to 2P, whose 开打 starts the match.
   el.go.onclick = () => { if (pvp && pick === 0) setPick(1); else start(); };
   $('replayBtn').onclick = () => replaySlow();
-  $('againBtn').onclick = () => {
-    const act = $('againBtn').dataset.act;
-    showBuild();
-    if (act === 'next') pickFoe(Math.min(fought + 1, LADDER.length - 1));
-    else if (act === 'pick') openLadder();
+  // The result's keys by what they say they do (showOutcome). 原样再来 / 再打一次 / 再来一局: the same two builds again at
+  // once (a new seed unless ?seed= fixed it). 换件再打: straight into the 角色库 (Elara 1370fb7f).
+  const RESULT_ACTS = {
+    next: () => { showBuild(); pickFoe(Math.min(fought + 1, LADDER.length - 1)); },
+    pick: () => { showBuild(); openLadder(); },
+    again: () => showBuild(),
+    same: () => { showBuild(); start(); },
+    swap: () => { showBuild(); openLibrary(libSlot); },
+    shoot: () => shoot?.open('link', '结算')
   };
-  // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
-  $('sameBtn').onclick = () => { showBuild(); start(); };
-  $('swapBtn').onclick = () => { showBuild(); openLibrary(libSlot); };
+  for (const id of ['againBtn', 'altBtn']) $(id).onclick = () => RESULT_ACTS[$(id).dataset.act]?.();
+  $('sameBtn').onclick = RESULT_ACTS.same;
   // 一机双人's way back to the three opponents; with an opening page, back to it.
   $('soloBtn').onclick = () => { if (homeOn) goHome(); else setPvp(false); };
 
@@ -2312,6 +2362,8 @@ async function main() {
     async still(id, size, turn) { await loadModels([byId.get(id)]); return turns.shot(id, size, turn); },
     // Fixture for the 结算 layout check: any reasonLine text (e.g. from a stored replay) through the card's own rendering.
     setReason(text) { el.whyLine.innerHTML = reasonHtml(text); },
+    // …and any loss tip, with its kind, through the card's keys (a tip about the build turns the yellow key to 换件再打).
+    setTip(line, build) { el.tipLine.textContent = line; showOutcome(outcome, {line, build}); },
     // The finished replay as JSON (to re-simulate it elsewhere from its recorded presses and compare bytes).
     replayJson: () => replay && JSON.stringify(replay),
     status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1) : null, me: live && !live.done ? live.match.control(0) : null, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),

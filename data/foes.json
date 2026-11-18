@@ -3,8 +3,8 @@
   "foes": [
     {
       "id": "mang",
-      "name": "莽牛",
-      "mark": "莽",
+      "name": "狂冲",
+      "mark": "狂",
       "play": "能冲就冲，从来不挡",
       "build": {
         "parts": [
@@ -34,8 +34,8 @@
     },
     {
       "id": "wen",
-      "name": "老龟",
-      "mark": "稳",
+      "name": "铁壁",
+      "mark": "守",
       "play": "挡得又多又准，等你冲完才冲",
       "build": {
         "parts": [
@@ -66,7 +66,7 @@
     },
     {
       "id": "chang",
-      "name": "长臂猿",
+      "name": "断风",
       "mark": "长",
       "play": "带长家伙，冲得准，也会挡",
       "build": {

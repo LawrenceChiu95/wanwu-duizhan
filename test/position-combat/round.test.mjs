@@ -7,7 +7,7 @@ const build = (parts, spread = 'e180') => ({parts: parts.map((p, i) => ({...p, m
 const mine = build([{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}]);
 
 // A perfect guard flings the foe free and brakes it only once we counter (Elara ad7297c3); the counter must still land
-// every time, the grazing case of 老龟 111323 (Sol 11-15) included. A player who guards on the flash and counters at once.
+// every time, the grazing case of 铁壁 111323 (Sol 11-15) included. A player who guards on the flash and counters at once.
 test('every counter after a perfect guard lands in full', async () => {
  const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
  let counters = 0;
@@ -49,7 +49,7 @@ test('per-foe dash damage and cooldown must be finite and positive when given', 
   await assert.rejects(createV3Match(setup(bad)), /Invalid round separation rules/);
 });
 
-// Stages 2 and 3 got a pace and 长臂猿 a guard share (Elara 2720a2dc). Rules saved before then still replay, and no stage's
+// Stages 2 and 3 got a pace and 断风 a guard share (Elara 2720a2dc). Rules saved before then still replay, and no stage's
 // tight guard may let through more than half of the blow.
 test('round rules without a stage pace still play; a guard share over half is refused', async () => {
  const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
@@ -62,9 +62,9 @@ test('round rules without a stage pace still play; a guard share over half is re
  await assert.rejects(createV3Match(setup({...rules.combatRules.round, changGuard: .6})), /Invalid round separation rules/);
 });
 
-// 老龟 came on a fixed beat (远夏 11-14, Elara 29b5b9b2): its lunges now come unevenly, never while the player's 挡 has more
+// 铁壁 came on a fixed beat (远夏 11-14, Elara 29b5b9b2): its lunges now come unevenly, never while the player's 挡 has more
 // than wenBlockWait to cool down. A player who guards on the flash and lunges whenever 冲 is ready.
-test('老龟 lunges on an uneven beat and waits for the player\'s guard', async () => {
+test('铁壁 lunges on an uneven beat and waits for the player\'s guard', async () => {
  const {foes, judgeBuilds} = JSON.parse(await readFile(new URL('../../data/foes.json', import.meta.url)));
  const foe = foes.find(f => f.id === 'wen'), tuned = judgeBuilds.position.wen;
  const play = async (round, seed) => {

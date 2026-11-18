@@ -21,9 +21,8 @@ for (const [W, H] of [[390, 844], [1440, 900]]) for (const seed of seedArg.split
   await page.waitForTimeout(1500);
   await page.screenshot({path: `${out}/result-${W}-s${seed}.png`});
   const card = await page.evaluate(() => ({
-    meta: document.getElementById('resultMeta').textContent, winner: document.getElementById('winnerLine').textContent,
+    winner: document.getElementById('winnerLine').textContent,
     why: document.getElementById('whyLine').textContent, tip: document.getElementById('tipLine').textContent,
-    stats: [...document.querySelectorAll('#statsList li')].map(li => li.textContent),
     buttons: [...document.querySelectorAll('#result .actions button')].filter(b => !b.hidden).map(b => ({text: b.textContent.trim(), w: Math.round(b.getBoundingClientRect().width), overflow: b.scrollWidth > b.clientWidth}))
   }));
   report.push({W, seed, errors, ...card});

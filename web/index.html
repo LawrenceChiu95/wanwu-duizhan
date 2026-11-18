@@ -123,7 +123,7 @@
     </div>
   </section>
 
-  <!-- 第一关教学 (Elara 534cbd22): a new phone's first 莽牛 stops four times; the screen dark but for what the stop is about,
+  <!-- 第一关教学 (Elara 534cbd22): a new phone's first 狂冲 stops four times; the screen dark but for what the stop is about,
        holes cut in the shade (teachHoles) and rimmed (teachRims), and a card beside them. -->
   <div id="teach" hidden aria-live="polite">
     <svg class="veil" aria-hidden="true"><defs><mask id="teachMask" maskUnits="userSpaceOnUse"><rect class="all" width="100%" height="100%" fill="#fff" /><g id="teachHoles" fill="#000"></g></mask></defs>
@@ -152,25 +152,24 @@
 
   <!-- 一机双人's result for 2P: who won, in the top half, turned to the head of the phone. -->
   <div id="pvpWin" hidden><b></b><span class="score"></span></div>
+  <!-- 结算 (远夏 a63667e4, Elara ee078f5c): who won, one line why, a line of numbers or the tip, then one yellow key, at
+       most one outlined key under it, and the rest as a line of small links. -->
   <section id="result" hidden>
-    <div class="rtop"><span id="resultMeta"></span></div>
     <div class="winner" id="winnerLine"></div>
     <div class="score" id="pvpScore" hidden></div>
-    <div class="rbuild" id="resultBuild"></div>
     <div class="trio" id="clearTrio" hidden></div>
+    <!-- When, why and two numbers in one line (Elara 97af5a2d); then, lost, the tip in the middle; a first win, what it unlocks. -->
     <p class="why" id="whyLine"></p>
-    <!-- 结算 (MVP 规格 §4-7): up to three numbers from this match, then one tip from the rules below. -->
-    <ul class="stats" id="statsList"></ul>
-    <div class="unlock" id="unlockCard" hidden></div>
     <p class="tip" id="tipLine"></p>
-    <!-- After the first win over 莽牛: 拍一件 as a button of its own over 打下一个 (Pollux, Elara 56506aa2). -->
-    <button type="button" class="shootnow" id="shootNowBtn" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件你身边的东西</button>
+    <div class="unlock" id="unlockCard" hidden></div>
     <div class="actions">
-      <button type="button" id="replayBtn" class="ghost" aria-label="重看决胜那一下"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" /><path d="M5 4v5h5" /></svg>重看</button>
-      <button type="button" id="sameBtn" class="ghost">原样再来</button>
-      <button type="button" id="swapBtn" class="ghost" hidden>换件再打</button>
-      <button type="button" id="soloBtn" class="ghost" hidden>回单人</button>
-      <button type="button" id="againBtn" class="primary"><span>换个装法再打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
+      <button type="button" id="againBtn" class="primary"></button>
+      <button type="button" id="altBtn" class="second" hidden></button>
+      <div class="rlinks">
+        <button type="button" id="replayBtn" aria-label="重看决胜那一下">重看</button>
+        <button type="button" id="sameBtn">原样再来</button>
+        <button type="button" id="soloBtn" hidden>回首页</button>
+      </div>
     </div>
   </section>
 
