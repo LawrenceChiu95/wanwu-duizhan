@@ -1,7 +1,6 @@
 import v3Rules from '../../sim/v3-rules.json';
 import * as THREE from 'three';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {FullScreenQuad} from 'three/addons/postprocessing/Pass.js';
 import {instantiate} from './models.js';
 import {KitchenPreview} from './kitchen.js';
 import {BenchKitchen} from './bench-kitchen.js';
@@ -260,45 +259,21 @@ const wallShader = {
 // The player's own top: a thin, half-transparent line hugging the outside of its core (远夏 10-28 89169677: the big
 // bright ring read as a skill or weapon range). No glow, no pulse, no ticks; 「你」 and the orange trail do the work.
 // The line sits at r = 0.9 of the quad and stays about 2 px wide whatever the zoom.
-// The player's floor ring (Elara 5b03a33d, 9c98f16a): a thick line round the top on the floor with a warm glow under it,
-// drawn under the models (depth-tested, the tops hide it), never on them. ME_RING_AT: the line's radius in the quad (-1..1);
-// the glow runs out to the quad's edge. Radius: just outside the pieces as drawn (reachOf: models reach past their hulls,
-// a 贴着 pillow most of all), so the line shows round the top; eased when a piece breaks.
-const ME_RING_AT = 0.62, ME_RING_OUT = 1.08, ME_RING_OPACITY = 0.9, ME_RING_GLOW = 0.55, ME_RING_Y = -0.012;
+// The player's floor ring (Elara 5b03a33d): a line round the top on the floor, drawn under the models (depth-tested, the
+// tops hide it), never on them; about 2 px wide whatever the zoom, no glow under it (远夏 via Elara 6310be92: the thick
+// ring and the outline read as too loud). ME_RING_AT: the line's radius in the quad (-1..1). Radius: just outside the pieces
+// as drawn (reachOf: models reach past their hulls, a 贴着 pillow most of all), so the line shows round the top; eased when
+// a piece breaks.
+const ME_RING_AT = 0.9, ME_RING_OUT = 1.08, ME_RING_OPACITY = 0.9, ME_RING_Y = -0.012;
 const meRingShader = {
-  uniforms: {uColor: {value: new THREE.Color('#ff8a3d')}, uGlowColor: {value: new THREE.Color('#ffb46e')}, uOpacity: {value: ME_RING_OPACITY}, uGlow: {value: ME_RING_GLOW}, uHalf: {value: 0.03}},
+  uniforms: {uColor: {value: new THREE.Color('#ff8a3d')}, uOpacity: {value: ME_RING_OPACITY}},
   vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform vec3 uGlowColor; uniform float uOpacity; uniform float uGlow; uniform float uHalf;
+  fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity;
     void main(){
-      float r = length(vP), px = max(fwidth(r), 1e-5);
-      float line = (1.0 - smoothstep(-0.5, 0.5, (abs(r - ${ME_RING_AT}) - max(uHalf, 1.2 * px)) / px)) * uOpacity;
-      float glow = uGlow * pow(1.0 - smoothstep(0.0, 1.0, r), 1.4);
-      float a = max(line, glow);
-      if (a <= 0.003) discard;
-      gl_FragColor = vec4(mix(uGlowColor, uColor, line / max(a, 1e-5)), a);
-      #include <colorspace_fragment>
-    }`
-};
-// Side outline (Elara 4acf8f51, 38885b61): one line round each whole top's silhouette, in its side's colour, instead of
-// tinting the pieces. Drawn after the frame: each side's core and pieces into a mask (CSS-px resolution; R = side 0, G = side 1,
-// depth-tested so the nearer top wins where they cross), then, laid over the frame, the mask grown by each side's width less
-// the mask itself. Single player: the player 2 px solid, the computer 1 px, half-transparent and paler; 一机双人 both 2 px.
-const OUTLINE_LAYER = 1, OUTLINE_PX = [2, 1], OUTLINE_ALPHA = [1, 0.5], OUTLINE_PALE = 0.4;
-const outlineShader = {
-  uniforms: {uMask: {value: null}, uTexel: {value: new THREE.Vector2()}, uW: {value: new THREE.Vector2(2, 2)}, uC0: {value: new THREE.Color()}, uC1: {value: new THREE.Color()}, uA: {value: new THREE.Vector2(1, 1)}},
-  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
-  fragmentShader: `varying vec2 vUv; uniform sampler2D uMask; uniform vec2 uTexel; uniform vec2 uW; uniform vec3 uC0; uniform vec3 uC1; uniform vec2 uA;
-    void main(){
-      vec2 m = texture2D(uMask, vUv).rg, e = m;
-      for (int k = 0; k < 12; k++) {
-        vec2 d = vec2(cos(float(k) * 0.5235988), sin(float(k) * 0.5235988)) * uTexel;
-        e.r = max(e.r, max(texture2D(uMask, vUv + d * uW.x).r, texture2D(uMask, vUv + d * uW.x * 0.5).r));
-        e.g = max(e.g, texture2D(uMask, vUv + d * uW.y).g);
-      }
-      vec2 o = clamp(e - m, 0.0, 1.0) * uA;
-      float a = max(o.r, o.g);
-      if (a < 0.004) discard;
-      gl_FragColor = vec4(o.r >= o.g ? uC0 : uC1, a);
+      float r = length(vP);
+      float a = (1.0 - smoothstep(0.6, 1.4, abs(r - ${ME_RING_AT}) / max(fwidth(r), 1e-5))) * uOpacity;
+      if (a <= 0.0) discard;
+      gl_FragColor = vec4(uColor, a);
       #include <colorspace_fragment>
     }`
 };
@@ -871,10 +846,9 @@ export class Stage {
       return m;
     });
     this.scene.add(this.meRing);
-    // 一机双人 (showBoth): 2P's top gets the same ring in its own colour, its glow a paler blue.
+    // 一机双人 (showBoth): 2P's top gets the same ring in its own colour.
     const foeU = THREE.UniformsUtils.clone(meRingShader.uniforms);
     foeU.uColor.value.copy(TEAM[1]);
-    foeU.uGlowColor.value.copy(TEAM[1]).lerp(WHITE, 0.35);
     this.foeRing = new THREE.Mesh(this.meRing.geometry, new THREE.ShaderMaterial({...meRingShader, uniforms: foeU, transparent: true, depthWrite: false}));
     this.foeRing.rotation.x = -Math.PI / 2;
     this.foeRing.renderOrder = 0;
@@ -882,10 +856,6 @@ export class Stage {
     this.scene.add(this.foeRing);
     this.showMe = false;
     this.showBoth = false;
-    this.outline = {mask: new THREE.WebGLRenderTarget(1, 1), sides: TEAM.map(() => new THREE.MeshBasicMaterial()),
-      over: new FullScreenQuad(new THREE.ShaderMaterial({...outlineShader, transparent: true, depthTest: false, depthWrite: false})), clear: new THREE.Color(), scissor: new THREE.Vector4()};
-    this.outline.sides[0].color.setRGB(1, 0, 0);
-    this.outline.sides[1].color.setRGB(0, 1, 0);
     // 一机双人's camera (photo-kitchen.js): straight down, this world direction up the screen; null for the usual one.
     this.topDown = null;
     // The player's own trail is always on (orange); 一合一分 keeps it to a lunge or a knock, never while circling.
@@ -1002,8 +972,6 @@ export class Stage {
       return {holder, obj, shell: null, fan, uniforms, flash: 0, strike: 0, damage: 0, alive: true, item: p.item, orient: p.orient, r1: p.r1, reach, y0, y1};
     });
     this.scene.add(root);
-    // The outline's mask (drawOutline): the core and the pieces, not the fans, shield or halo.
-    for (const o of [core, ...parts.map(p => p.holder)]) o.traverse(m => { if (m.isMesh) m.layers.enable(OUTLINE_LAYER + i); });
     const sweep = Math.max(this.coreRadius, ...parts.map(p => p.r1));
     // Manual mode: shield bubble round the core (1 s), wind-up glow and the lunge's streak, all on the sim clock.
     const shield = new THREE.Mesh(this.shieldGeo, new THREE.ShaderMaterial({...shieldShader, uniforms: {uColor: {value: new THREE.Color('#bff4ff').lerp(team, 0.25)}, uOpacity: {value: 0}, uTime: {value: 0}}, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
@@ -1287,8 +1255,6 @@ export class Stage {
     const piece = part.obj.clone(true);
     const m = part.obj.matrixWorld.clone();
     m.decompose(piece.position, piece.quaternion, piece.scale);
-    // No outline once it is off the top (the outline is round the whole top; drawOutline only looks where the tops are).
-    piece.traverse(o => o.layers.set(0));
     this.scene.add(piece);
     const vel = new THREE.Vector3().fromArray(e.velocity);
     // A little extra outward kick so the piece clearly leaves the core.
@@ -1708,7 +1674,7 @@ export class Stage {
       f.coreUniforms.uDim.value = f.dim;
       f.coreUniforms.uDanger.value = danger * (0.5 + 0.5 * Math.sin(this.time * 10));
       f.core.visible = f.dim < 0.98;
-      // Halo behind the core: only the launch flash now (no steady team-colour glow, Elara 9c98f16a; the outline marks the side).
+      // Halo behind the core: only the launch flash now (no steady team-colour glow, Elara 9c98f16a; 「你」 and the floor ring mark the side).
       f.halo.position.copy(f.center).addScaledVector(tmp.subVectors(f.center, this.camera.position).normalize(), this.coreRadius * 1.2);
       // A launch flash (launchFlash) swells the halo in magenta and lets it go in about a quarter of a second.
       const go = f.go = (f.go ?? 0) * Math.exp(-realDt * 9);
@@ -1842,9 +1808,7 @@ export class Stage {
       ring.position.set(me.center.x, ME_RING_Y, me.center.z);
       ring.scale.setScalar(s);
       const u = ring.material.uniforms;
-      u.uHalf.value = Math.max(0.02, r * 0.06) / s;
       u.uOpacity.value = ME_RING_OPACITY * (1 - me.dim);
-      u.uGlow.value = ME_RING_GLOW * (1 - me.dim);
     });
     for (const g of this.ghosts) {
       if (!g.s.visible) continue;
@@ -1874,66 +1838,9 @@ export class Stage {
     this.shards.update(simDt);
     if (this.flight?.busy) this.flight.update(simDt);
     this.rings.update(realDt);
-    if (!this.bench?.draw(this.cam.mode === 'build', realDt)) { this.renderer.render(this.scene, this.camera); this.drawOutline(); }
+    if (!this.bench?.draw(this.cam.mode === 'build', realDt)) this.renderer.render(this.scene, this.camera);
   }
 
-  /** The side outlines over the frame just drawn (see outlineShader); fights only. */
-  drawOutline() {
-    const live = this.fighters.map(f => f.root.visible && f.dim < 0.98 ? 1 - f.dim : 0);
-    if (!this.showMe || this.cam.mode === 'build' || !live.some(Boolean) || this.debugHide) return;
-    const {renderer: r, scene, camera, outline: o} = this, w = Math.max(1, Math.round(this.view.w)), h = Math.max(1, Math.round(this.view.h));
-    if (o.mask.width !== w || o.mask.height !== h) o.mask.setSize(w, h);
-    // Only where the tops are (their swept spans, CSS px), each pass a little wider than the one reading it, so nothing
-    // stale outside the mask's cleared box is ever read: about a fifth of the screen instead of all of it.
-    const box = {left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity}, span = {};
-    this.fighters.forEach((f, i) => {
-      if (!live[i] || !this.screenSpan(f, span)) return;
-      box.left = Math.min(box.left, span.left); box.top = Math.min(box.top, span.top); box.right = Math.max(box.right, span.right); box.bottom = Math.max(box.bottom, span.bottom);
-    });
-    if (!(box.right > box.left)) return;
-    const clip = (t, pad) => {
-      const x = Math.max(0, Math.floor(box.left - pad)), y = Math.max(0, Math.floor(h - box.bottom - pad));
-      t.set(x, y, Math.max(0, Math.min(w, Math.ceil(box.right + pad)) - x), Math.max(0, Math.min(h, Math.ceil(h - box.top + pad)) - y));
-      return t;
-    };
-    clip(o.mask.scissor, 12);
-    o.mask.scissorTest = true;
-    const was = {bg: scene.background, over: scene.overrideMaterial, layers: camera.layers.mask, auto: r.autoClear, alpha: r.getClearAlpha()};
-    r.getClearColor(o.clear);
-    // The frame's render has just brought every matrix up to date.
-    scene.background = null;
-    scene.matrixWorldAutoUpdate = camera.matrixWorldAutoUpdate = false;
-    r.autoClear = false;
-    r.setRenderTarget(o.mask);
-    r.setClearColor(0x000000, 0);
-    r.clear();
-    live.forEach((on, i) => {
-      if (!on) return;
-      scene.overrideMaterial = o.sides[i];
-      camera.layers.set(OUTLINE_LAYER + i);
-      r.render(scene, camera);
-    });
-    scene.background = was.bg;
-    scene.matrixWorldAutoUpdate = camera.matrixWorldAutoUpdate = true;
-    scene.overrideMaterial = was.over;
-    camera.layers.mask = was.layers;
-    const both = this.showBoth, ou = o.over.material.uniforms;
-    r.setRenderTarget(null);
-    const sc = clip(o.scissor, 8);
-    r.setScissor(sc.x, sc.y, sc.z, sc.w);
-    r.setScissorTest(true);
-    ou.uMask.value = o.mask.texture;
-    ou.uTexel.value.set(1 / w, 1 / h);
-    ou.uW.value.set(OUTLINE_PX[0], both ? OUTLINE_PX[0] : OUTLINE_PX[1]);
-    ou.uC0.value.copy(TEAM[0]);
-    ou.uC1.value.copy(TEAM[1]);
-    if (!both) ou.uC1.value.lerp(WHITE, OUTLINE_PALE);
-    ou.uA.value.set(live[0] * OUTLINE_ALPHA[0], live[1] * (both ? OUTLINE_ALPHA[0] : OUTLINE_ALPHA[1]));
-    o.over.render(r);
-    r.setScissorTest(false);
-    r.setClearColor(o.clear, was.alpha);
-    r.autoClear = was.auto;
-  }
 
   /**
    * Test aid: how far (CSS px) any visible core or mounted piece reaches outside the safe area (below the HUD,
@@ -2030,7 +1937,7 @@ const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
-  // No steady team-colour rim (Elara 9c98f16a): the side shows as an outline (drawOutline), the pieces keep their colours.
+  // No steady team-colour rim (Elara 9c98f16a): the pieces keep their colours; 「你」 and the floor ring mark the side.
   totalEmissiveRadiance += mix(vec3(1.6), vec3(1.0, 0.55, 0.24), uWarm) * uFlash;
   totalEmissiveRadiance += uRim * uStrike * rim * mix(1.6, 0.9, uWarm);
   totalEmissiveRadiance += vec3(1.0, 0.12, 0.08) * uDanger * (0.35 + rim);
