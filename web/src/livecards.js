@@ -20,9 +20,9 @@ const TURN = 6; // seconds per turn, as the strips had
 const angle = (rig, turns) => rig.swing ? rig.swing * Math.cos(turns * Math.PI * 2) : turns * Math.PI * 2;
 const FADE = 0.4; // seconds the model takes to fade in over its still (style.css); it holds the still's angle meanwhile
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-// The turntables' tone mapping: Khronos PBR Neutral keeps a model's hues and brightness where the stage's ACES greys and
-// darkens them (Elara b32bfd9a ③). Set only while one is drawn; the stage keeps its own.
-const TURN_TONE = {toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 0.85};
+// The turntables draw as the opening page's pot does, with no tone mapping: the stage's ACES greys and darkens a model's
+// colours (Elara b32bfd9a ③, e3832fa5). Set only while one is drawn; the stage keeps its own.
+const TURN_TONE = {toneMapping: THREE.NoToneMapping, toneMappingExposure: 1};
 // A finger dragged across a view turns the model: a full width is a little over a half turn. Up and down still scroll
 // the page (touch-action: pan-y in style.css).
 function dragTurn(v) {

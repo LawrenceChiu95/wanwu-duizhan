@@ -232,6 +232,11 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .bhead .shoot svg { width: 15px; height: 15px; }
 .bhead .shoot:not([hidden]) + .terminal-led { display: none; }
 .bhead .shoot.first { animation: shootBreathe 1.6s ease-in-out infinite alternate; }
+/* …but not while the first visit's bubble is up over 换件 (Elara 1370fb7f). */
+#build.tipping .bhead .shoot.first { animation: none; filter: none; }
+/* 角色库 beside it, the same size (Elara 1370fb7f): it takes the room, 拍一件 sits right after it. */
+.bhead .lib + .shoot { margin-left: 6px; }
+.bhead .lib em { margin-left: 2px; font-style: normal; font-variant-numeric: tabular-nums; }
 @keyframes shootBreathe { from { filter: drop-shadow(0 0 0 rgba(237, 187, 89, 0)); } to { filter: drop-shadow(0 0 6px rgba(237, 187, 89, 0.85)); } }
 .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .slot { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 9px 8px 8px; min-width: 0;
@@ -243,9 +248,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .item .nm { display: flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; }
 .item b { font-family: var(--display); font-weight: 400; font-size: 23px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-bottom: 2px; }
 .item .facts { display: flex; align-items: center; gap: 6px; }
-.item .spec { font-size: 10.5px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.item .swapchip { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 11px; color: var(--mute); white-space: nowrap; }
-.lux { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.02em; color: #0a0f1c; background: #b8f06a; padding: 1px 3px; white-space: nowrap; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); padding: 1px 5px; }
+.item .spec { font-size: 11px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lux { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; color: #0a0f1c; background: #b8f06a; padding: 1px 3px; white-space: nowrap; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); padding: 1px 5px; }
 .seg { display: flex; height: 40px; background: rgba(0, 0, 0, 0.35); box-shadow: inset 0 0 0 1px var(--line); padding: 3px; gap: 3px; }
 .seg button { flex: 1; min-width: 0; font-family: var(--display); font-size: 16px; color: var(--mute); display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; transition: background 0.15s, color 0.15s; }
 .seg button svg { width: 17px; height: 17px; }
@@ -373,6 +377,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* One row while the three fit; on a narrow phone the orange one takes a row of its own under the other two rather than
    lose its first word under the slant (远夏 20c60db1). */
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* Five keys (lost alone, with 换件再打): 重看 and the way back, then the two 再打 side by side, the main one across. */
+.actions.odd .primary { grid-column: 1 / -1; }
+.actions.odd :is(#sameBtn, #swapBtn) { order: 1; }
+.actions.odd .primary { order: 2; }
 .actions button { height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--display); font-size: 19px; white-space: nowrap; }
 .actions .ghost { flex: 1 0 auto; padding: 0 16px; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px var(--line); clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
 .actions .primary { position: relative; flex: 12 0 auto; padding: 0 22px; overflow: hidden; color: #1a0900; background: linear-gradient(100deg, #ffd0a0, var(--c0) 45%, var(--c0d)); clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
@@ -789,11 +797,22 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .spass:focus { box-shadow: inset 0 0 0 2px var(--c0); }
 /* 好了: the photo and the 3D side by side, then the grade card turning over. The 3D is the reward, so it gets the wider
    column and a square pane its (square) canvas fills edge to edge (Elara 69a1c60d); the photo takes the same height. */
-.spair { flex: none; display: grid; grid-template-columns: 2fr 3fr; gap: 10px; margin: 12px 14px 0; }
-.spair figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+/* 做好了: the 3D is the picture, and the photo it came from a small print laid on its corner, so the one is read as
+   turned into the other (走查 1118 第 18 条, Elara 638936ac). As big as the width allows, short of pushing the keys
+   at the bottom off a short screen. */
+.spair { flex: none; display: grid; width: min(100% - 28px, 100vh - 436px); margin: 12px auto 0; }
+:where(.seen) .spair { width: min(100% - 28px, var(--seen) - 436px); }
+@media (max-height: 720px) { .shead + .spair ~ .sstage .card.sreveal { margin-top: 8px; } .shead + .spair ~ .sdone { margin-top: 4px; } .shead + .spair ~ .sfoot { padding-top: 6px; } }
+:where(.seen-720) .shead + .spair ~ .sstage .card.sreveal { margin-top: 8px; }
+:where(.seen-720) .shead + .spair ~ .sdone { margin-top: 4px; }
+:where(.seen-720) .shead + .spair ~ .sfoot { padding-top: 6px; }
+.spair figure { grid-area: 1 / 1; margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .spair .pane { position: relative; display: block; border-radius: 12px; overflow: hidden; background: #c4c6c0; }
-.spair figure:first-child .pane { flex: 1; }
-.spair figure:last-child .pane { width: min(100%, 42vh); aspect-ratio: 1; align-self: center; }
+.spair figure:first-child { z-index: 1; align-self: start; justify-self: start; width: 30%; margin: 10px 0 0 10px; gap: 3px; padding: 4px 4px 3px;
+  border-radius: 4px; background: #e9e4d6; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5); pointer-events: none; }
+.spair figure:first-child .pane, .spair figure:first-child .pane::after { aspect-ratio: 1; border-radius: 2px; }
+.spair figure:first-child figcaption { font-size: 11px; line-height: 14px; color: #3a3426; }
+.spair figure:last-child .pane { width: 100%; aspect-ratio: 1; }
 .spair .pane::after { content: ""; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
 .spair img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .spair canvas { display: block; width: 100%; aspect-ratio: 1; opacity: 0; transition: opacity 0.4s; }
@@ -854,7 +873,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .call.block b { font-size: 15px; }
   .call u { font-size: 17px; }
   .item b { font-size: 20px; }
-  .item .spec { font-size: 9.5px; }
+  .item .spec { font-size: 11px; }
   .seg button { font-size: 14px; gap: 2px; }
   .seg button svg { width: 15px; height: 15px; }
   .go { font-size: 22px; }
@@ -863,7 +882,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .winner { font-size: 44px; }
   .why { font-size: 14.5px; }
   .actions button { font-size: 17px; }
-  .hint { font-size: 10px; }
+  .hint { font-size: 11px; }
   #foeParts span { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .go::after, .actions .primary::after { animation: none; } .bhead .shoot.first { animation: none; filter: drop-shadow(0 0 4px rgba(237, 187, 89, 0.85)); } }
