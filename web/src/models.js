@@ -13,6 +13,10 @@ export const pictureUrl = path => isUrl(path) ? path : Object.entries(originUrls
 // Each catalog item at the turntable's starting angle (scripts/make-stills.mjs), shown on its card until the model is drawn.
 export const stillUrl = id => stillUrls[`../../data/stills/${id}.webp`] ?? null;
 const urlFor = glb => isUrl(glb) ? glb : Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
+// 拍一件's own models come from its backend with this page's session (shoot-api.js fileUrl): a path there becomes a
+// blob: URL only when the model is needed, so an item is in the 角色库 before its GLB is down (Elara c611b379).
+let fileSource = path => path;
+export const setFileSource = fn => { fileSource = fn; };
 
 const loader = new GLTFLoader();
 // 评委版's models are packed with meshopt (tools/import-item/pack-web-models.mjs); the normal build doesn't load this.
@@ -106,7 +110,8 @@ export function itemThumbnail(itemId, renderer, environment) {
 /** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
 export function loadModels(items) {
   return Promise.all(items.map(item => {
-    if (!loading.has(item.id)) loading.set(item.id, loadOne(item));
+    // One that didn't come (a backend file on a bad connection) is asked for again the next time it is needed.
+    if (!loading.has(item.id)) loading.set(item.id, loadOne(item).catch(e => { loading.delete(item.id); throw e; }));
     return loading.get(item.id);
   }));
 }
@@ -115,7 +120,7 @@ export function loadModels(items) {
  *  time at low priority; loadModels finds them there later. A miss here only means that model downloads when used. */
 export async function prefetchModels(items) {
   for (const item of items) {
-    const url = item && !loading.has(item.id) && urlFor(item.glb);
+    const url = item && !loading.has(item.id) && urlFor(await Promise.resolve(fileSource(item.glb)).catch(() => null));
     if (url) await fetch(url, {priority: 'low'}).then(r => r.arrayBuffer()).catch(() => {});
   }
 }
@@ -123,7 +128,7 @@ export async function prefetchModels(items) {
 /** An item whose GLB is not bundled is an error (no stand-in box: it would look like the import worked). */
 async function loadOne(item) {
   {
-    const url = urlFor(item.glb);
+    const url = urlFor(await fileSource(item.glb));
     if (!url) throw Error(`缺模型文件：${item.name ?? item.id}（${item.glb}）`);
     await decoder;
     const gltf = await loader.loadAsync(url);

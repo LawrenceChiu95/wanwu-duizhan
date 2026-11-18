@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS, COUNTER_CUE_LIT} from '../../sim/v3.js';
 import ladderJson from '../../data/foes.json';
-import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
+import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail, setFileSource} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -530,6 +530,8 @@ async function main() {
     // With an opening page, 回首页 is #homeBtn and this is only 2P's 回 1P; without one, 一机双人's way back to single-player.
     $('pvpBack').hidden = !pvp || !pick && homeOn;
     $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
+    // 2P's turn has one way back, to 1P (Pollux acbd091c): 回首页 comes back with 1P's.
+    $('homeBtn').hidden = !homeOn || pvp && pick === 1;
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
     $('foeLabel').textContent = pick ? '轮到上方 2P 选装' : '轮到下方 1P 选装';
@@ -1285,6 +1287,33 @@ async function main() {
     overlay.dropNudge();
   }
 
+  // A model is fetched only once a card or a build needs it, and can fail: the build changes only once it is here, so the
+  // old one can always fight (Sol f0e85efc). say() puts a short line where 计算中 shows.
+  const fetched = id => loadModels([byId.get(id)]).then(() => true, e => { console.error(e); return false; });
+  // A choice waiting on its model belongs to the screen it was made on (Sol 2622da9b 83f3ed9d, Elara 65e0cee4): any change
+  // of screen drops it — 首页, 拍一件, 看它怎么来的, the 角色库 shut or opened, 开打, the result, the phone passed to 2P —
+  // all caught here as those screens show or hide, so a late model never picks for anyone. Choosing again drops it too.
+  let choiceReq = 0;
+  const SCREENS = ['intro', 'build', 'result', 'library', 'shootView', 'howView', 'pvpReady', 'pvpWin', 'hud'];
+  const flipped = r => r.attributeName === 'hidden' ? (r.oldValue !== null) !== r.target.hidden
+    : (r.oldValue ?? '').split(' ').includes('turned') !== r.target.classList.contains('turned');
+  const screens = new MutationObserver(rs => { if (rs.some(flipped)) choiceReq++; });
+  for (const n of SCREENS.map(k => document.getElementById(k)).filter(Boolean)) screens.observe(n, {attributeFilter: ['hidden'], attributeOldValue: true});
+  screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
+  const choosing = () => {
+    screens.takeRecords(); // the screens this choice closed on its way (装上它 leaves 拍一件) are before it
+    const ask = ++choiceReq, side = pick, slot = libSlot, was = phase;
+    return () => { if (screens.takeRecords().some(flipped)) choiceReq++; return ask === choiceReq && pick === side && libSlot === slot && phase === was; };
+  };
+  let sayTimer = 0;
+  function say(text) {
+    clearTimeout(sayTimer);
+    el.busyText.textContent = text;
+    el.busy.classList.add('say');
+    el.busy.hidden = false;
+    sayTimer = setTimeout(() => { if (el.busy.classList.contains('say')) { el.busy.hidden = true; el.busy.classList.remove('say'); } }, 2600);
+  }
+
   // ---------- match ----------
   let runId = 0;
   async function start() {
@@ -1298,8 +1327,17 @@ async function main() {
     el.foeSheet.hidden = true;
     $('foeBtn').disabled = true;
     el.busyText.textContent = '计算中';
+    el.busy.classList.remove('say');
     el.busy.hidden = false;
-    await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)));
+    // A build only changes once its models are here, so this fails only on a lost connection: back to the build, 开打 lit.
+    try { await loadModels([...mine.parts, ...FOE.parts].map(p => byId.get(p.item))); } catch (e) {
+      console.error(e);
+      if (id !== runId) return;
+      phase = 'build';
+      el.go.disabled = $('foeBtn').disabled = !el.error.hidden;
+      say('3D 没下载下来，再点一次开打');
+      return;
+    }
     await nextPaint();
     const t0 = performance.now();
     let r;
@@ -1475,7 +1513,7 @@ async function main() {
       // All three beaten: point at 拍一件 too, in plain words (Elara 2621157e, bd72b574); a tap opens it when the page has it.
       el.tipLine.innerHTML = shoot ? '现在三个随便挑。<br>也可以<button type="button" class="tipshoot">拍一件</button>你身边的东西，装上再打'
         : '现在三个随便挑，换个装法再打一轮';
-      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link'));
+      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link', '结算'));
     }
     const card = $('unlockCard');
     card.hidden = o.unlocked == null;
@@ -1558,8 +1596,8 @@ async function main() {
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }
-  async function openLibrary(k) {
-    const req = ++libReq;
+  async function openLibrary(k, again = false) {
+    const req = ++libReq, top = el.libGrid.scrollTop;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
@@ -1569,12 +1607,20 @@ async function main() {
     const first = unplaced(), shown = [...first, ...byGrade(OFFER.filter(id => !first.includes(id)), rate)];
     el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
     revealUnseen();
-    el.libGrid.scrollTop = 0;
+    el.libGrid.scrollTop = again ? top : 0;
     el.library.hidden = false;
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
-      card.querySelector('.pick').onclick = () => {
-        if (cur().parts[1 - libSlot].item === id) return;
+      card.querySelector('.pick').onclick = async () => {
+        if (cur().parts[1 - libSlot].item === id || card.classList.contains('wait')) return;
+        // A just-shot item's 3D may still be on its way: the build changes once it is here (Sol f0e85efc).
+        // A new card dealt in meanwhile redraws the grid, not the choice.
+        const still = choosing();
+        card.classList.add('wait');
+        const ok = await fetched(id);
+        card.classList.remove('wait');
+        if (!still() || el.library.hidden) return;
+        if (!ok) { say('它的 3D 没下载下来，再点一次试试'); return; }
         changed(cur().parts[libSlot].item, id);
         cur().parts[libSlot].item = id;
         place(id);
@@ -1590,8 +1636,9 @@ async function main() {
     const turnOf = id => el.libGrid.querySelector(`.card[data-item="${CSS.escape(id)}"] .turn`);
     const onScreen = shown.filter(id => { const r = turnOf(id)?.getBoundingClientRect(); return r && r.top < innerHeight && r.bottom > 0; });
     for (const group of [onScreen, shown.filter(id => !onScreen.includes(id))]) {
+      // One that fails keeps its styled picture and leaves the others turning in.
       await Promise.all(group.map(async id => {
-        await loadModels([byId.get(id)]);
+        if (!await fetched(id)) return;
         if (req !== libReq || el.library.hidden) return;
         const turn = turnOf(id);
         if (turn) turns.show(turn, id);
@@ -1599,41 +1646,23 @@ async function main() {
       if (req !== libReq || el.library.hidden) return;
     }
   }
-  function closeLibrary() { libReq++; revealIo.disconnect(); el.library.hidden = true; }
+  function closeLibrary() { libReq++; el.library.hidden = true; }
 
-  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet is dealt face down and turns over the first time
-  // its card is on screen, one after another, with a sound by grade and gold for an S. Remembered per item and rating
-  // version, so a re-rated item (new scores or score lines) turns over again. ?reveal=again resets it.
+  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over when 拍一件's 好了 shows it, with a sound
+  // by grade and gold for an S. Remembered per item and rating version, so a re-rated item turns over again there.
+  // ?reveal=again resets it.
   const SEEN_KEY = 'wanwu-grades-seen';
   const gradesSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('reveal') === 'again') gradesSeen.clear();
   const seenKey = id => `${id}:${rate(id)?.version}`;
-  const REVEAL_GAP = 260, REVEAL_FACE = 330; // ms between cards; ms into the turn when the face shows
-  let revealAt = 0;
-  const revealIo = new IntersectionObserver(entries => {
-    for (const e of entries.filter(x => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left)) {
-      revealIo.unobserve(e.target);
-      const card = e.target, id = card.dataset.item, wait = Math.max(0, revealAt - performance.now());
-      revealAt = performance.now() + wait + REVEAL_GAP;
-      setTimeout(() => {
-        if (!card.isConnected || el.library.hidden) return; // left before its turn: still face down next time
-        card.classList.replace('down', 'turning');
-        sfx.flip();
-        setTimeout(() => {
-          if (!card.isConnected || el.library.hidden) return; // left mid-turn, before the face showed: turn again next time
-          faceUp(id);
-        }, REVEAL_FACE);
-      }, wait);
-    }
-  }, {threshold: 0.6});
+  const REVEAL_FACE = 330; // ms into the turn when the face shows
+  // In the 角色库 every card is face up from the start (Pollux acbd091c, Elara 0f310068): dealt face down, the ones
+  // scrolled past too fast stayed a row of 「？」. What it shows now counts as seen, so 拍一件's 好了 doesn't turn it again.
   function revealUnseen() {
-    revealIo.disconnect();
-    revealAt = performance.now() + 250; // after the 角色库 has faded in
-    for (const card of el.libGrid.querySelectorAll('.card')) {
-      if (!rate(card.dataset.item) || gradesSeen.has(seenKey(card.dataset.item))) continue;
-      card.classList.add('down');
-      revealIo.observe(card);
-    }
+    const ids = [...el.libGrid.querySelectorAll('.card')].map(c => c.dataset.item).filter(id => rate(id) && !gradesSeen.has(seenKey(id)));
+    if (!ids.length) return;
+    for (const id of ids) gradesSeen.add(seenKey(id));
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
   }
   $('libBack').onclick = closeLibrary;
   // The face showing: its sound by grade, a short buzz for an S (task #55), and remembered.
@@ -1687,15 +1716,23 @@ async function main() {
   // 看它怎么来的: three steps from the item's own record (photo → the styled image → the 3D turning), about ten seconds,
   // each step's real time beside it. 品类 shows only for one of the six; a real item's category is its name (task #84).
   const STEPS = [{key: 'photo', name: '照片', play: 3}, {key: 'styled', name: '改成画风的图', play: 3}, {key: 'model', name: '3D 转起来', play: 4}];
-  // Whole seconds first, so 119.6 reads 2 分 00 秒; a total adds the rounded steps, so the parts add up to it.
+  // Whole seconds first, so 119.6 reads 2 分 00 秒. The total is the real one rounded (保温杯 155.2 s is 2 分 35 秒, as the
+  // report says; Elara 035de2b0), and the steps round so they add up to it: the ones with the most cut off go up first.
   const dur = sec => (sec = Math.round(sec)) >= 60 ? `${Math.floor(sec / 60)} 分 ${String(sec % 60).padStart(2, '0')} 秒` : `${sec} 秒`;
-  const durAll = secs => dur(secs.reduce((a, b) => a + Math.round(b), 0));
+  const wholeSteps = secs => {
+    const out = secs.map(Math.floor);
+    let left = Math.round(secs.reduce((a, b) => a + b, 0)) - out.reduce((a, b) => a + b, 0);
+    for (const i of secs.map((x, i) => i).sort((a, b) => (secs[b] % 1) - (secs[a] % 1))) if (left-- > 0) out[i]++;
+    return out;
+  };
+  const durAll = secs => dur(secs.reduce((a, b) => a + b, 0));
   let howItem = null, howT = 0, howTimer = 0, howReq = 0;
   async function openHow(id) {
     const it = byId.get(id), o = it?.origin;
     if (!o) return;
     howItem = id;
-    const secs = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds);
+    const raw = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds), timed = raw.every(Number.isFinite);
+    const secs = timed ? wholeSteps(raw) : raw;
     el.howTitle.textContent = `${NAMES[id]}是怎么来的`;
     el.howCat.textContent = catLabel(it, NAMES[id]);
     el.howCat.parentElement.hidden = !el.howCat.textContent;
@@ -1703,7 +1740,7 @@ async function main() {
       const pic = st.key === 'model' ? '<canvas class="mini3d"></canvas>' : `<img src="${esc(pictureUrl(st.key === 'photo' ? o.photo : o.styled) ?? '')}" alt="">`;
       return `<li data-step="${i}"><span class="n">${i + 1}</span><b>${st.name}</b>${pic}<span class="sec">${Number.isFinite(secs[i]) ? dur(secs[i]) : '—'}</span></li>`;
     }).join('');
-    el.howTotal.textContent = secs.every(Number.isFinite) ? `实际用时 ${durAll(secs)}` : '';
+    el.howTotal.textContent = timed ? `实际用时 ${durAll(secs)}` : '';
     // 评委版's replayed items: whose photo it is, the other one a tap away, and 装上去打 (back, for one the sim turned down).
     const sample = sampleOf(id), other = cur().parts[1 - libSlot].item === id, stuck = sample && !playable.has(id);
     el.howNote.hidden = !sample;
@@ -1765,12 +1802,16 @@ async function main() {
   // Into the slot the 角色库 was last opened for, from wherever the player is (a 拍一件 tag can be tapped on the result).
   async function equip(id) {
     if (cur().parts[1 - libSlot].item === id) return;
+    shoot?.close();
+    closeLibrary();
+    const still = choosing(), ok = await fetched(id);
+    if (!still()) return;
+    if (!ok) { say('它的 3D 没下载下来，原来的还能打'); return; }
+    if (cur().parts[1 - libSlot].item === id) return;
     changed(cur().parts[libSlot].item, id);
     cur().parts[libSlot].item = id;
     place(id);
-    shoot?.close();
-    closeLibrary();
-    if (phase === 'result') { await loadModels([byId.get(id)]); showBuild(); } else rebuild();
+    if (phase === 'result') showBuild(); else rebuild();
   }
   const equipLabel = id => cur().parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
     : {text: cur().parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
@@ -1802,6 +1843,8 @@ async function main() {
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
     OFFER.splice(0, OFFER.length, ...offerNow());
+    // Open already: the 角色库 is drawn again with them, where it was scrolled to (Elara c611b379: 「以为没存上」).
+    if (!el.library.hidden) openLibrary(libSlot, true);
     takeLate();
     // A finished one not put on yet may be among them: its 「做好了」 shows now (Sol 521149bb).
     shoot?.paintTag();
@@ -1820,6 +1863,7 @@ async function main() {
     }
     if (!s) return;
     const {api} = s;
+    if (api.fileUrl) setFileSource(api.fileUrl);
     if (judge) await addItems(s.items);
     // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
     // doesn't wait for these.
@@ -1845,19 +1889,20 @@ async function main() {
       onChange: () => {
         const s = shoot?.state;
         paintBenchShoot();
-        el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
+        el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed', 'recognition-missed'].includes(s.job.status)));
         el.shootBtn.classList.toggle('new', Boolean(s?.made && !s.stored?.seen));
         // One that failed while the player was elsewhere says so here too (Elara 021f6bf5); 拍一件 then shows it first.
-        const failed = Boolean(s?.stored && !s.stored.seen && s.job?.status === 'failed' && s.job.error?.code !== 'unknown-submit');
+        const missed = Boolean(s?.stored && !s.stored.seen && s.job?.status === 'recognition-missed');
+        const failed = missed || Boolean(s?.stored && !s.stored.seen && s.job?.status === 'failed' && s.job.error?.code !== 'unknown-submit');
         el.shootBtn.classList.toggle('bad', failed);
-        el.shootBtn.lastChild.textContent = failed ? '上一件没做成' : '拍一件';
+        el.shootBtn.lastChild.textContent = missed ? '上一件没认出来' : failed ? '上一件没做成' : '拍一件';
       }
     });
     el.shootBtn.hidden = false;
     el.shootBtn.onclick = () => shoot.open('library');
     benchShoot.hidden = false;
-    benchShoot.onclick = () => shoot.open('link');
-    $('shootNowBtn').onclick = () => shoot.open('link');
+    benchShoot.onclick = () => shoot.open('link', '组装台');
+    $('shootNowBtn').onclick = () => shoot.open('link', '结算');
     paintBenchShoot();
     if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;
