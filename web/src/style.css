@@ -945,15 +945,14 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   background: repeating-linear-gradient(0deg, #12231c 0 2px, #15271f 3px); }
 #intro h2 { margin: 2px 0 9px; font-size: 19px; letter-spacing: 0.05em; }
 /* Photo → design → in a fight, three equal cells across the whole row (远夏 49c5d19e, Elara 52077e70), each picture filling
-   its own (Pollux acbd091c). Wider, never taller: --ks stays the picture height, so the two keys below do not move. */
-.ksamples { --ks: clamp(77px, 12svh, 124px); display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 6px; color: var(--amber); }
+   its own (Pollux acbd091c). Wider, never taller: --ks stays the picture height, so the two keys below do not move. The
+   line under them is gone (远夏 6e7ab7fa, Elara 58ae06ba): the keys follow at the gap it kept above them, the pot taking
+   the room. */
+.ksamples { --ks: clamp(77px, 12svh, 124px); margin-bottom: 12px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 6px; color: var(--amber); }
 :where(.seen) .ksamples { --ks: clamp(77px, calc(var(--seen) * 0.12), 124px); }
 #intro figure { position: relative; min-width: 0; background: #2c352e; border: 1px solid #797961; }
 #intro figure img { display: block; width: 100%; height: calc(var(--ks) - 2px); object-fit: cover; }
 #intro figcaption { padding: 3px 6px; font-size: 12px; color: #dddcc6; background: #101b16; }
-.kfoot p { margin: 11px 0 12px; font-size: 14px; line-height: 1.6; color: #d9ddca; }
-.kfoot p b, .kfoot p .nowrap { white-space: nowrap; }
-.kfoot p b { color: var(--amber); }
 /* 「拍一件试试」 (Elara ee609025 b8d58d49): the bench's cream 拍一件 key, a size under 和电脑打 / 和人打, on the 从厨房到赛场 row
    so the pot and the two keys don't move; straight into 拍一件 (main.js introShoot). */
 .krow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 9px; }
@@ -987,19 +986,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .ksub { font-size: 14px; }
   .kmodel { min-height: 130px; }
   .kcap { margin-bottom: 8px; }
-  .ksamples { --ks: 64px; }
+  .ksamples { --ks: 64px; margin-bottom: 9px; }
   #intro h2 { margin-bottom: 6px; font-size: 17px; }
   .krow { margin-bottom: 6px; }
   .kshoot { height: 30px; margin: -3px 0; font-size: 14px; }
-  .kfoot p { margin: 6px 0 9px; font-size: 13px; line-height: 1.5; }
 }
 :where(.seen-740) .ktitle { padding-top: 14px; }
 :where(.seen-740) #intro h1 { font-size: 40px; }
 :where(.seen-740) .ksub { font-size: 14px; }
 :where(.seen-740) .kmodel { min-height: 130px; }
 :where(.seen-740) .kcap { margin-bottom: 8px; }
-:where(.seen-740) .ksamples { --ks: 64px; }
+:where(.seen-740) .ksamples { --ks: 64px; margin-bottom: 9px; }
 :where(.seen-740) #intro h2 { margin-bottom: 6px; font-size: 17px; }
 :where(.seen-740) .krow { margin-bottom: 6px; }
 :where(.seen-740) .kshoot { height: 30px; margin: -3px 0; font-size: 14px; }
-:where(.seen-740) .kfoot p { margin: 6px 0 9px; font-size: 13px; line-height: 1.5; }
