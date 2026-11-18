@@ -165,7 +165,7 @@ test('judge late damage only increases actual core hits, with a frozen multiplie
  ];
  const seed=196102,aiSeeds=[(seed^0xb7e15162)>>>0,(seed^0x243f6a88)>>>0];
  const {foes}=JSON.parse(await readFile(new URL('../../data/foes.json',import.meta.url),'utf8'));
- const params={fighters,seed,combat:'position',manual:{sides:['ai','ai'],aiSeeds,aiProfiles:[foes[1].ai,null]}};
+ const params={fighters,seed,combat:'position',manual:{sides:['ai','ai'],aiSeeds,aiProfiles:[foes.find(f=>f.id==='wen').ai,null]}};
  const baseline=await simulateV3({...params,combatRules:baselineRules});
  const result=await simulateV3({...params,combatRules:JUDGE_POSITION_COMBAT_RULES});
  assert.deepEqual(result.events.filter(e=>e.t<=34),baseline.events.filter(e=>e.t<=34));

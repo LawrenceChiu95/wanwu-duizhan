@@ -30,18 +30,18 @@ for(const f of foes)test(f.id+' freezes profile and resimulates identical full r
 test('reject invalid profile contract before creating a physics world',async()=>{
  const p=foes[0].ai,invalid=[[],[null],[null,null,null],[null,{}],[null,{...p,id:'code'}],[null,{...p,version:2}],[null,{...p,think:0}],[null,{...p,reactionDelay:NaN}],[null,{...p,reactionJitter:-1}],[null,{...p,blockLead:Infinity}],[null,{...p,dashRange:[3,1]}],[null,{...p,dashRange:[0,11]}],new Array(2)];
  for(const aiProfiles of invalid)await assert.rejects(createV3Match({fighters:[player,foe],seed:1,manual:{sides:['ai','ai'],aiProfiles}}));
- for(const idleDashAfter of [undefined,0,61,NaN])await assert.rejects(createV3Match({fighters:[player,foe],seed:1,manual:{sides:['ai','ai'],aiProfiles:[null,{...foes[1].ai,idleDashAfter}]}}));
+ for(const idleDashAfter of [undefined,0,61,NaN])await assert.rejects(createV3Match({fighters:[player,foe],seed:1,manual:{sides:['ai','ai'],aiProfiles:[null,{...foes.find(f=>f.id==='wen').ai,idleDashAfter}]}}));
  await assert.rejects(createV3Match({fighters:[player,foe],seed:1,manual:{sides:['input','ai'],aiProfiles:[p,null]}}));
 });
 test('mirrored seats keep the explicit AI seed and profile with their role',async()=>{
- const f=foes[2],seeds=[903,904];
+ const f=foes.find(f=>f.id==='chang'),seeds=[903,904];
  for(const mirror of [false,true]){
   const r=await simulateV3({fighters:mirror?[build(f.build),player]:[player,build(f.build)],seed:860002,manual:{sides:['ai','ai'],aiSeeds:mirror?[...seeds].reverse():seeds,aiProfiles:mirror?[f.ai,null]:[null,f.ai]}});
   assert.equal(r.meta.manual.aiSeeds[mirror?0:1],904);assert.equal(r.meta.manual.aiProfiles[mirror?0:1].id,'chang');assert.equal(r.meta.manual.aiProfiles[mirror?1:0],null);
  }
 });
 test('every actual wen dash follows a counter window or eight-second idle rule, including delayed decisions',async()=>{
- const f=foes[1];let accepted=0;
+ const f=foes.find(f=>f.id==='wen');let accepted=0;
  for(const delay of [f.ai.reactionDelay,2])for(const seed of [860000,860001,860002,860003]){
   const r=await simulateV3({fighters:[player,build(f.build)],seed,manual:{sides:['input','ai'],inputs:mash,aiProfiles:[null,{...f.ai,reactionDelay:delay}]}});
   for(const [index,e]of r.events.entries())if(e.type==='press'&&e.side===1&&e.action==='dash'){
@@ -53,7 +53,7 @@ test('every actual wen dash follows a counter window or eight-second idle rule, 
  assert(accepted>0,'Fixture must exercise accepted counter attacks');
 });
 test('wen eventually chooses an ordinary dash against a player who never presses',async()=>{
- const f=foes[1];let idle=0;
+ const f=foes.find(f=>f.id==='wen');let idle=0;
  for(const seed of [860000,860001,860002,860003]){
   const r=await simulateV3({fighters:[player,build(f.build)],seed,manual:{sides:['input','ai'],aiProfiles:[null,f.ai]}});
   let until=-Infinity,lastDash=0;
