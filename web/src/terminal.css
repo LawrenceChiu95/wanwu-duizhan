@@ -551,16 +551,16 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 2P's build step: the whole screen turned to the head of the phone, back for 1P's step and the fight. */
 #app.pvp { transition:transform .4s cubic-bezier(.3,.7,.3,1); }
 #app.pvp.turned { transform:rotate(180deg); }
-/* Turned, the screen's right edge is the build column's left: on a short phone ModelScope's own round button sits on it
-   and hid 接口 01's name and grade (Pollux acbd091c). There the whole column keeps clear of that strip, so the slots, the
-   bench bar and 开打 still line up (走查 1118, 拿不准 2). */
-@media(max-height:700px) { #app.pvp.turned #build { padding-left:54px; } }
-/* 接口 01's grade is the letter nearest that button: a little further in. */
-#app.pvp.turned .slot[data-slot="0"] .item { padding-left:12px; }
+/* Turned, the screen's right edge is the build column's left, where ModelScope's own round button sits (y 180–255) and
+   hid 接口 01's name and grade (Pollux acbd091c, Castor). Only that card's name line keeps clear of the strip: the column
+   stays full width, lined up with the bar under it (Elara 3d42a0c1; it used to step in whole, leaving a black gap). */
+#app.pvp.turned .slot[data-slot="0"] .item { padding-left:54px;padding-right:3px; }
 /* …and a point smaller, so a four-character name (按摩滚筒) still fits the narrower slot whole. */
 @media(max-width:599px) { #app.pvp.turned .item b { font-size:16px; } }
 @media(max-width:599px) and (max-height:740px) { #app.pvp.turned .item b { font-size:14px; } }
 @media(max-width:599px) { :where(.seen-740) #app.pvp.turned .item b { font-size:14px; } }
+/* …and that card's on a narrow phone, whatever its height, so 按摩滚筒 fits beside the strip. */
+@media(max-width:380px) { #app.pvp.turned .slot[data-slot="0"] .item b { font-size:14px; } }
 /* 第二轮 ① 准备 → 开打！: one iron plate to each end of the phone, on that end's half of the table, turned to it. */
 #pvpReady { position:absolute; inset:0; z-index:5; pointer-events:none; }
 #pvpReady b { position:absolute; left:50%; padding:6px 26px 8px; white-space:nowrap; font-size:34px; font-weight:950; letter-spacing:4px; color:var(--ink); text-shadow:1px 2px #000;
