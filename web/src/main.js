@@ -1216,7 +1216,11 @@ async function main() {
     // Over the tops, it also keeps 4 px off 「你」 riding above the player's (走查 1118, 拿不准 6).
     const me = +overlay.me.style.opacity > 0.05 ? overlay.me.getBoundingClientRect().top - box.top - 4 : Infinity;
     const under = Math.max(...tops.map(t => t.y + t.r)) + 14, over = Math.min(me, ...tops.map(t => t.y - t.r - 14)) - h;
-    const y = under + h <= padTop - 12 ? under : Math.max(hudBottom + 10, over);
+    // Step 1 lights no pad, so its card may go over them: under the tops like 2–4, clear of ModelScope's round button at
+    // the top right (Castor, Elara 3d42a0c1).
+    const floor = kind === 'intro' ? box.height - 8 : padTop - 12;
+    const y = under + h <= floor ? under : Math.max(hudBottom + 10, over);
+    el.teach.classList.toggle('over', y + h > padTop); // over the pads: they go under the shade (terminal.css)
     const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, tops.reduce((s, t) => s + t.x, 0) / tops.length));
     el.teachCard.style.transform = `translate(${(x - w / 2).toFixed(1)}px, ${y.toFixed(1)}px)`;
   }
@@ -2243,6 +2247,8 @@ async function main() {
     if (pad.dash.classList.contains('counter') !== counter) {
       pad.dash.classList.toggle('counter', counter);
       pad.dash.word.textContent = counter ? '反打' : '冲';
+      // Its line under it says the same (Elara ee609025).
+      pad.box.querySelector('.say').textContent = counter ? '趁它晕，撞过去' : '撞过去';
       if (counter) sfx.counter();
     }
   }
