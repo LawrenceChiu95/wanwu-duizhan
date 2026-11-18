@@ -955,10 +955,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    so the pot and the two keys don't move; straight into 拍一件 (main.js introShoot). */
 .krow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 9px; }
 #intro .krow h2 { margin: 0; }
-.kshoot { position: relative; flex: none; display: flex; align-items: center; gap: 5px; height: 34px; margin: -4px 0; padding: 0 9px; border: 6px solid transparent;
+.kshoot { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 5px; height: 34px; margin: -4px 0; padding: 0 9px; border: 6px solid transparent;
   border-image: url("./assets/terminal/cream.webp") 80 fill stretch; background: #e7dcb9 padding-box; color: #242c20; font: 800 15px/1 var(--kfont); white-space: nowrap; }
 .kshoot svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
-.kshoot::before { content: ""; position: absolute; inset: -11px -6px; }
+.kshoot::before { content: ""; position: absolute; inset: -17px -12px; } /* from inside its 6 px frame: 52 px tall at least, over the photos' top edge (z-index) */
 .kshoot:disabled { cursor: default; filter: grayscale(1) brightness(0.62); opacity: 0.75; }
 /* 和电脑打 / 和人打: his yellow key; 载入中… until the page is ready (judge.js). */
 .kgo { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1px 10px; border: 11px solid transparent;
