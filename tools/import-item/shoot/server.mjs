@@ -51,7 +51,7 @@ async function jsonBody(req, allowed) {
   catch (error) { if (error.status) throw error; throw apiError('bad-request', 'Invalid JSON'); }
   return fields(parsed, allowed);
 }
-export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, previewAccessCode = null, headerIdentity = false, ...options} = {}) {
+export async function startShootServer({port = 4408, directory, repo = REPO, webRoot = path.join(repo, 'web/dist'), frontendOrigin = null, publicOrigin = null, privateOrigin = null, previewAccessCode = null, headerIdentity = false, resilientPhotos = headerIdentity, ...options} = {}) {
   if (typeof headerIdentity !== 'boolean' || (headerIdentity && (!publicOrigin || privateOrigin || previewAccessCode))) throw Error('Header identity requires a dedicated public API');
   if (!headerIdentity && (options.budget?.limit === null || options.limits?.global?.generation === null)) throw Error('Only the dedicated judge API can disable spend or global generation limits');
   if (privateOrigin !== null) {
@@ -72,7 +72,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
     const u = new URL(frontendOrigin);
     if (u.origin !== frontendOrigin || (publicOrigin ? u.protocol !== 'https:' : u.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname))) throw Error('Frontend origin must be exact HTTPS in public mode, otherwise local HTTP');
   }
-  const jobs = await openJobs({directory, repo, ...options, ...((publicOrigin || privateOrigin) && !options.limits ? {limits: {browser: {generation: privateOrigin ? 20 : 2, recognition: privateOrigin ? 100 : 5}, global: {generation: 20, recognition: privateOrigin ? 100 : 400}}} : {})});
+  const jobs = await openJobs({directory, repo, resilientPhotos, ...options, ...((publicOrigin || privateOrigin) && !options.limits ? {limits: {browser: {generation: privateOrigin ? 20 : 2, recognition: privateOrigin ? 100 : 5}, global: {generation: 20, recognition: privateOrigin ? 100 : 400}}} : {})});
   const server = http.createServer(async (req, res) => {
     const json = (code, value) => { res.writeHead(code, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff'}); res.end(JSON.stringify(value)); };
     try {
@@ -117,6 +117,15 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
         res.setHeader('set-cookie', `${jobs.cookieName}=${identity.token}; Path=${publicOrigin ? '/api/shoot' : '/'}; HttpOnly; SameSite=Strict; Max-Age=31536000${publicOrigin ? '; Secure' : ''}`);
       }
       const owner = identity.owner;
+      const jobResult = job => {
+        if (req.headers['x-shoot-category'] === '1') return {job};
+        // An already-open judge page still understands the old status and quota fields.
+        if (job.status === 'choosing-category') {
+          const {categoryUntil, ...waiting} = job;
+          return {job: {...waiting, status: 'recognizing'}};
+        }
+        return {job};
+      };
       if (req.method === 'GET' && route === '/api/shoot/quota') return json(200, await jobs.quota(owner));
       if (req.method === 'GET' && route === '/api/shoot/items') return json(200, {items: await jobs.items(owner)});
       if (req.method === 'POST' && route === '/api/shoot/jobs') {
@@ -133,15 +142,16 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
           input = {clientKey: data.get('clientKey'), photo: Buffer.from(await file.arrayBuffer())};
         } else if (type.startsWith('application/json')) input = await jsonBody(req, ['clientKey', 'fromJob']);
         else throw apiError('bad-request', 'Expected multipart or JSON', 415);
-        return json(202, {job: await jobs.create(input, owner)});
+        return json(202, jobResult(await jobs.create(input, owner)));
       }
-      const jobRoute = route.match(/^\/api\/shoot\/jobs\/(j_[a-f0-9-]{36})(?:\/(retry|regenerate|retake))?$/);
+      const jobRoute = route.match(/^\/api\/shoot\/jobs\/(j_[a-f0-9-]{36})(?:\/(retry|regenerate|retake|category))?$/);
       if (jobRoute) {
         const [, id, action] = jobRoute;
-        if (req.method === 'GET' && !action) return json(200, {job: await jobs.get(id, owner)});
-        if (req.method === 'POST' && action === 'retry') { await body(req, 0); return json(200, {job: await jobs.retry(id, owner)}); }
-        if (req.method === 'POST' && action === 'retake') { await body(req, 0); return json(200, {job: await jobs.retake(id, owner)}); }
-        if (req.method === 'POST' && action === 'regenerate') return json(202, {job: await jobs.create({...await jsonBody(req, ['confirm', 'clientKey']), regenerateOf: id}, owner)});
+        if (req.method === 'GET' && !action) return json(200, jobResult(await jobs.get(id, owner)));
+        if (req.method === 'POST' && action === 'retry') { await body(req, 0); return json(200, jobResult(await jobs.retry(id, owner))); }
+        if (req.method === 'POST' && action === 'retake') { await body(req, 0); return json(200, jobResult(await jobs.retake(id, owner))); }
+        if (req.method === 'POST' && action === 'category') return json(200, {job: await jobs.chooseCategory(id, (await jsonBody(req, ['category'])).category, owner)});
+        if (req.method === 'POST' && action === 'regenerate') return json(202, jobResult(await jobs.create({...await jsonBody(req, ['confirm', 'clientKey']), regenerateOf: id}, owner)));
       }
       const fileRoute = route.match(/^\/api\/shoot\/files\/(shoot_[a-f0-9-]{36})\/(model\.glb|photo\.jpg|styled\.jpg)$/);
       if (req.method === 'GET' && fileRoute) {
@@ -166,11 +176,14 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let config = {};
   if (values.config) {
     if (!path.isAbsolute(values.config)) throw Error('Config path must be absolute');
-    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'previewAccessCode', 'headerIdentity', 'budget', 'limits']);
+    config = fields(JSON.parse(await fs.readFile(values.config, 'utf8')), ['port', 'directory', 'publicOrigin', 'privateOrigin', 'frontendOrigin', 'previewAccessCode', 'headerIdentity', 'budget', 'limits', 'recognitionPrimary']);
     if (config.port !== (config.headerIdentity === true ? 4331 : 4330) || !path.isAbsolute(config.directory ?? '') || !(config.publicOrigin || config.privateOrigin) || !config.budget) throw Error('Public config requires port 4330 (cookie) or 4331 (header session), absolute private directory, origin and budget');
+    if (config.recognitionPrimary !== undefined && (config.headerIdentity !== true || !['gemini', 'modelscope'].includes(config.recognitionPrimary))) throw Error('Recognition primary is only configurable on the dedicated judge API');
     process.umask(0o077);
   }
-  const instance = await startShootServer({...config, frontendOrigin: values['frontend-origin'] ?? config.frontendOrigin ?? null, mode: values.provider});
+  const serverConfig = {...config};
+  delete serverConfig.recognitionPrimary;
+  const instance = await startShootServer({...serverConfig, frontendOrigin: values['frontend-origin'] ?? config.frontendOrigin ?? null, mode: values.provider});
   console.log(`Local ${values.provider} shoot backend: ${instance.url}`);
   let closing = false;
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => {

@@ -70,17 +70,20 @@ export async function prepareMesh(raw, template, standard) {
   validateGlb(raw);
   const doc = await io().readBinary(new Uint8Array(raw));
   const sourceTriangles = geometry(doc).triangles;
-  // New paid photo models request 12K triangles from the provider. Keep their
-  // geometry and UVs unchanged: local decimation introduced visible atlas blocks.
-  if (standard.preserveUp && sourceTriangles > 15000) throw Error(`Generated photo mesh has ${sourceTriangles} triangles, above 15000; request a low-poly source`);
-  if (!standard.preserveUp) {
+  const recoverPhoto = standard.preserveUp && standard.recoverOversize;
+  const triangleLimit = recoverPhoto ? 20000 : 15000;
+  // Leave photo geometry and UVs intact under the cap. A paid source above it
+  // gets the bounded UV-aware reduction already used for offline imports.
+  if (standard.preserveUp && !recoverPhoto && sourceTriangles > triangleLimit) throw Error(`Generated photo mesh has ${sourceTriangles} triangles, above ${triangleLimit}; request a low-poly source`);
+  if (!standard.preserveUp || recoverPhoto && sourceTriangles > triangleLimit) {
     await MeshoptSimplifier.ready;
-    if (sourceTriangles > 10000) await doc.transform(weld(), simplify({simplifier: MeshoptSimplifier, ratio: 10000 / sourceTriangles, error: .02}));
+    const target = recoverPhoto ? triangleLimit - 100 : 10000;
+    if (sourceTriangles > target) await doc.transform(weld(), simplify({simplifier: MeshoptSimplifier, ratio: target / sourceTriangles, error: .02}));
     // Aholo's pot has many UV seams: topology-only simplification stops at 33K.
     // Permit seam collapses with explicit UV/normal error weights, retaining the
     // original vertex attributes and PBR materials. Do not use simplifySloppy.
     const remaining = geometry(doc).triangles;
-    if (remaining > 15000) for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
+    if (remaining > triangleLimit) for (const mesh of doc.getRoot().listMeshes()) for (const primitive of mesh.listPrimitives()) {
       const positions = primitive.getAttribute('POSITION');
       const attributes = primitive.listSemantics().filter(s => s === 'NORMAL' || s.startsWith('TEXCOORD_') || s.startsWith('COLOR_')).map(s => primitive.getAttribute(s));
       const stride = attributes.reduce((n, a) => n + a.getElementSize(), 0);
@@ -90,8 +93,8 @@ export async function prepareMesh(raw, template, standard) {
         for (const attribute of attributes) { const element = attribute.getElement(i, []); values.set(element, offset); offset += element.length; }
       }
       const indices = primitive.getIndices();
-      const target = Math.max(3, Math.floor(indices.getCount() * 12000 / remaining / 3) * 3);
-      const [result] = MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, values, stride, Array(stride).fill(1), null, target, .03, ['Permissive']);
+      const targetIndices = Math.max(3, Math.floor(indices.getCount() * (recoverPhoto ? target : 12000) / remaining / 3) * 3);
+      const [result] = MeshoptSimplifier.simplifyWithAttributes(new Uint32Array(indices.getArray()), new Float32Array(positions.getArray()), 3, values, stride, Array(stride).fill(1), null, targetIndices, .03, ['Permissive']);
       primitive.setIndices(indices.clone().setArray(result));
       if (indices.listParents().length === 1) indices.dispose();
       compactPrimitive(primitive);
@@ -117,7 +120,7 @@ export async function prepareMesh(raw, template, standard) {
     textureSizes.push([info.width, info.height]);
   }
   const current = geometry(doc);
-  if (current.triangles > 15000) throw Error(`Simplification stopped at ${current.triangles} triangles, above 15000; asset needs manual preparation`);
+  if (current.triangles > triangleLimit) throw Error(`Simplification stopped at ${current.triangles} triangles, above ${triangleLimit}; asset needs manual preparation`);
   const sourceBounds = bounds(current.points), spans = sourceBounds.max.map((v, i) => v - sourceBounds.min[i]);
   const length = Math.max(...spans);
   if (!(length > 0)) throw Error('Degenerate model bounds');
