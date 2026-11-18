@@ -395,7 +395,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .rlinks { display: flex; justify-content: center; flex-wrap: wrap; margin-top: -2px; }
 .rlinks button { min-height: 44px; padding: 0 2px; font-family: var(--body); font-size: 14px; font-weight: 600; color: var(--mute); background: none; }
 .rlinks button[hidden] { display: none; }
-.rlinks button:not([hidden]) ~ button:not([hidden])::before { content: "·"; display: inline-block; margin: 0 10px; color: var(--mute); }
+/* The dot is not read out: a key's name stays 「回首页」 (alt text after the slash). */
+.rlinks button:not([hidden]) ~ button:not([hidden])::before { content: "·" / ""; display: inline-block; margin: 0 10px; color: var(--mute); }
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Sheets ---------- */

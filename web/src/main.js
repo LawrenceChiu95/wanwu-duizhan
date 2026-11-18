@@ -1616,9 +1616,9 @@ async function main() {
     };
     key($('againBtn'), main);
     key($('altBtn'), second);
-    // The links: 重看 when there is a moment to see again, 原样再来 unless the main key is already it, and the way back:
-    // the 首页 when there is one (Pollux, Elara 56506aa2), else 一机双人's 回单人.
-    $('sameBtn').hidden = main.act === 'same';
+    // The links: 重看 when there is a moment to see again, 原样再来 after a win unless a key is already it (not once all
+    // three are beaten), and the way back: the 首页 when there is one (Pollux, Elara 56506aa2), else 一机双人's 回单人.
+    $('sameBtn').hidden = Boolean(o.clear) || main.act === 'same' || second?.act === 'same';
     $('soloBtn').hidden = !pvp && !homeOn;
     $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
   }
@@ -2001,7 +2001,8 @@ async function main() {
       seen: id => gradesSeen.has(seenKey(id)), flip: turnOver, placed: isPlaced,
       libraryOpen: () => !el.library.hidden, openLibrary: () => openLibrary(libSlot),
       goPlay: () => { closeHow(); closeLibrary(); if (phase === 'result') showBuild(); },
-      tagRoom: () => (phase === 'build' || phase === 'result') && el.library.hidden && el.how.hidden && el.foeSheet.hidden,
+      // Not on 一机双人's result: under the top it would sit on 2P's plate (Castor 37da30f9, Elara 3d42a0c1); the build has it.
+      tagRoom: () => (phase === 'build' || phase === 'result' && !pvp) && el.library.hidden && el.how.hidden && el.foeSheet.hidden,
       fightRoom: () => phase === 'play' || phase === 'finale',
       hudBusy: () => Boolean(overlay.hilite),
       // Just under whichever plate is at the top (the build's title or the match's bars), so the tag covers neither.
@@ -2288,7 +2289,8 @@ async function main() {
       stage.resize(w, h, s1.offsetTop + s1.offsetHeight + 6, h - s0.offsetTop + 6);
       return;
     }
-    const top = building ? el.foe.offsetHeight : el.hud.offsetHeight;
+    // 一机双人's result: the winner is framed under 2P's plate, not behind it (Elara ee078f5c).
+    const top = building ? el.foe.offsetHeight : !el.pvpWin.hidden ? el.pvpWin.offsetTop + el.pvpWin.offsetHeight + 6 : el.hud.offsetHeight;
     const bottom = building ? el.build.offsetHeight : el.caption.offsetHeight + 24;
     // Manual: the buttons take the room under the arena (the arena only makes way if that room is not there).
     stage.setPad(building || el.pad.hidden ? 0 : h - el.pad.offsetTop + 8);
