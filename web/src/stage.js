@@ -116,6 +116,9 @@ function coreTextures(color) {
   return {map, emissive};
 }
 
+// The shell behind the fight, muted so the fighters stand out (Elara, 凡朔): its colour keeps this much of its
+// saturation, then this much of its brightness. The 冲中 wave and the amber closing band stay at full strength.
+const SHELL_SAT = 0.7, SHELL_BRIGHT = 0.75;
 const backdropShader = {
   vertexShader: `varying vec3 vP, worldPos, clipXYW; varying vec3 screenXYW;
     void main(){
@@ -129,7 +132,7 @@ const backdropShader = {
       vec2 tilted = mat2(0.848,-0.530,0.530,0.848)*physical;
       clipXYW = vec3(tilted.x/aspect,tilted.y,1.0)*gl_Position.w;
     }`,
-  fragmentShader: `varying vec3 vP, worldPos, clipXYW, screenXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom, fieldFade, fieldHeat, fieldThrob;
+  fragmentShader: `varying vec3 vP, worldPos, clipXYW, screenXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom, fieldFade, fieldHeat, fieldThrob, uSat, uBright;
     void main(){
       // Stereographic projection curves the peripheral grid without distorting the fighters.
       vec2 lens = clipXYW.xy / clipXYW.z * vec2(0.60,0.78) * fieldZoom;
@@ -174,7 +177,7 @@ const backdropShader = {
       light += band*fan*(cyan*(0.022+0.35*fine+0.36*line));
       light += arc*(vec3(1.2,0.015,0.42)*tail + vec3(1.1,0.33,0.76)*head);
       light += vec3(0.46,0.008,0.16)*exp(-arcDist*10.0)*tail;
-      light += vec3(0.95,0.07,0.48)*wave*max(line,trunk);
+      vec3 cue = vec3(0.95,0.07,0.48)*wave*max(line,trunk);
       // Distance from the arena centre to the view ray, in world units.
       vec3 viewRay = normalize(worldPos - cameraPosition);
       vec3 offset = cross(cameraPosition, viewRay);
@@ -188,8 +191,11 @@ const backdropShader = {
       // ... and an amber band behind everything closes in from the picture's edges (a third of the way in at full heat).
       float edge = length(screenXYW.xy / screenXYW.z), inner = mix(1.45, 0.62, fieldHeat);
       float closing = smoothstep(inner, inner + 0.55, edge) * fieldHeat;
-      light += vec3(1.0,0.36,0.05) * closing * (0.30 + 0.35 * fieldThrob);
-      gl_FragColor = vec4(base + light + 0.70 * scattered, fieldFade);
+      cue += vec3(1.0,0.36,0.05) * closing * (0.30 + 0.35 * fieldThrob);
+      // Mute the shell only (grey of the same luminance, in linear light); the cues go on top untouched.
+      vec3 shell = base + light + 0.70 * scattered;
+      shell = mix(vec3(dot(shell, vec3(0.2126,0.7152,0.0722))), shell, uSat) * uBright;
+      gl_FragColor = vec4(shell + cue, fieldFade);
       #include <colorspace_fragment>
     }`
 };
@@ -806,7 +812,7 @@ export class Stage {
       l.target = target;
     }
 
-    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}, fieldFade:{value:1}, fieldHeat:{value:0}, fieldThrob:{value:0}};
+    this.fieldUniforms = {hitPoint:{value:new THREE.Vector3()}, hitAge:{value:2}, hitPower:{value:0}, fieldTime:{value:0}, fieldZoom:{value:1}, fieldFade:{value:1}, fieldHeat:{value:0}, fieldThrob:{value:0}, uSat:{value:SHELL_SAT}, uBright:{value:SHELL_BRIGHT}};
     const fieldMaterial = new THREE.ShaderMaterial({...backdropShader, uniforms:this.fieldUniforms, side: THREE.BackSide, depthWrite: false});
     const back = new THREE.Mesh(new THREE.SphereGeometry(90, 72, 48), new THREE.MeshBasicMaterial({color:0x080d18, side:THREE.BackSide, depthWrite:false}));
     back.renderOrder = -2;
