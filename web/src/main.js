@@ -65,7 +65,8 @@ const SOLO_FOES = [
   {level: '中', rank: 'mid', build: {parts: [{item: 'broom', orient: 'out'}, {item: 'slipper', orient: 'out'}], spread: 'e180'}},
   {level: '弱', rank: 'lo', build: {parts: [{item: 'scissors', orient: 'out'}, {item: 'slipper', orient: 'hug'}], spread: 'e180'}}
 ];
-const SPREAD = {e180: '对面', e90: '挨着'};
+// 两件的位置 (Elara ee609025): 两侧 (180° apart) or 直角 (90°); the icons say the same.
+const SPREAD = {e180: '两侧', e90: '直角'};
 // 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
 // A page built for one set of rules (__COMBAT__, vite.config.js) takes the foe builds tuned for them where there are any
 // (judgeBuilds.<current|position>.<foe id>). A tuned build can override its foe's reaction settings.
@@ -459,6 +460,8 @@ async function main() {
     stage.pose(previewState());
   }
   $('foeBtn').onclick = openFoes;
+  // The whole opponent row opens the list too, as its 0/3 ⌄ does (Elara ee609025); not in 一机双人, where it has no list.
+  el.foe.querySelector('.foe-readout').addEventListener('click', e => { const b = $('foeBtn'); if (!b.hidden && !b.disabled && !e.target.closest('button')) openFoes(); });
   $('foeClose').onclick = () => { el.foeSheet.hidden = true; };
   el.foeSheet.onclick = e => { if (e.target === el.foeSheet) el.foeSheet.hidden = true; };
 
