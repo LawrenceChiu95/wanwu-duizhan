@@ -327,7 +327,7 @@ async function main() {
   // 一机双人 (Elara 1e2c813c): `pvp`, two people at this phone; `pick`, whose build the bench is showing (0 the foot's 1P,
   // 1 the head's 2P, who is FOE meanwhile). The single-player opponent waits in soloFoe.
   let pvp = false, pick = 0, soloFoe = null;
-  // The run of matches the two have played (原样再战 and 重选装备 carry it on, 回单人 and 回首页 start it again), and the
+  // The run of matches the two have played (原样再来 and 换个装法再打 carry it on, 回单人 and 回首页 start it again), and the
   // match last counted, so the result coming back after 重看 counts nothing. readyAge: how far into 准备 → 开打！.
   let score = [0, 0], scored = 0, readyAge = 0;
   const cur = () => pick ? FOE : mine;
@@ -534,7 +534,7 @@ async function main() {
     $('homeBtn').hidden = !homeOn || pvp && pick === 1;
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
-    $('foeLabel').textContent = pick ? '轮到上方 2P 选装' : '轮到下方 1P 选装';
+    $('foeLabel').textContent = pick ? '轮到 2P 选装' : '轮到 1P 选装';
     $('foeBtn').hidden = $('foeMark').hidden = true;
     el.foeParts.innerHTML = '';
   }
@@ -991,7 +991,7 @@ async function main() {
       teachBlocked(e);
       // 老龟's second block of a lunge this match: once, its result card's line beside the player's top (Elara 424f0bcb).
       if (wenHint && e.side === 1 && e.outcome !== 'empty' && ++wenHint.caught === 2) overlay.nudge(WEN_HINT.replace('：', '\n'), 'deflect nudge two', WEN_HINT_TIME);
-      // 「挡住了，点冲反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
+      // 「挡住了，点反打」 only after a 完美: a 勉强 leaves the lunge unstunned, so the 冲 after it is no counter (Elara 4977a695).
       if (nudge && e.side === 0 && e.outcome !== 'empty') { nudge.caught++; nudge.held ||= e.outcome === 'perfect'; }
       // 第 13 版: one result per block window. "empty" only means nothing was caught (not necessarily too early).
       if (e.deflected) deflect(e, point);
@@ -1165,7 +1165,9 @@ async function main() {
     if (!tops.length) return;
     const W = el.app.clientWidth, h = el.teachCard.offsetHeight, w = el.teachCard.offsetWidth;
     const padTop = el.pad.getBoundingClientRect().top - box.top, hudBottom = el.hud.getBoundingClientRect().bottom - box.top;
-    const under = Math.max(...tops.map(t => t.y + t.r)) + 14, over = Math.min(...tops.map(t => t.y - t.r)) - 14 - h;
+    // Over the tops, it also keeps 4 px off 「你」 riding above the player's (走查 1118, 拿不准 6).
+    const me = +overlay.me.style.opacity > 0.05 ? overlay.me.getBoundingClientRect().top - box.top - 4 : Infinity;
+    const under = Math.max(...tops.map(t => t.y + t.r)) + 14, over = Math.min(me, ...tops.map(t => t.y - t.r - 14)) - h;
     const y = under + h <= padTop - 12 ? under : Math.max(hudBottom + 10, over);
     const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, tops.reduce((s, t) => s + t.x, 0) / tops.length));
     el.teachCard.style.transform = `translate(${(x - w / 2).toFixed(1)}px, ${y.toFixed(1)}px)`;
@@ -1274,7 +1276,7 @@ async function main() {
     Object.assign(nudge, {on: true, since: t, caught: 0, shown: nudge.shown + 1});
     el.dashBtn.classList.add('nudge');
     // It says only what happened: 「挡住了」 once a block has caught one (Castor 72baf2c8, Elara ad7297c3).
-    overlay.nudge(nudge.held ? '挡住了，点冲反打' : '点冲，朝它撞过去', 'deflect nudge', NUDGE_TIME);
+    overlay.nudge(nudge.held ? '挡住了，点反打' : '点冲，朝它撞过去', 'deflect nudge', NUDGE_TIME);
   }
   // Out of the match (time up, a core broken, back to the build): nothing of the hint stays (Elara 27b4d4c3).
   function endNudge() { nudge = null; el.dashBtn.classList.remove('nudge'); overlay.dropNudge(); }
@@ -1402,14 +1404,14 @@ async function main() {
     test.highlights = 0;
     layout_();
     stage.pose(pb.state);
-    // The HUD and buttons as they stand at 0 s now, not on the next frame: 原样再战 showed the last match's seconds and
+    // The HUD and buttons as they stand at 0 s now, not on the next frame: 原样再来 showed the last match's seconds and
     // cooldowns for a frame (Castor, Elara a7234eb7).
     updateHud(0, pb.state); updatePad();
     stage.setLookahead(lookahead());
     stage.updateCamera(0, true);
     stage.setHeat(0);
     phase = 'ready';
-    // Back the right way for the fight; 重选装备 afterwards starts again from 1P.
+    // Back the right way for the fight; 换个装法再打 afterwards starts again from 1P.
     if (pvp) { pick = 0; el.app.style.transition = 'none'; el.app.classList.remove('turned'); void el.app.offsetWidth; el.app.style.transition = ''; }
     // 准备 then 开打！ before anything counts, so a hand still on its way is not behind: both ends in 一机双人 (第二轮 ①), the
     // player's alone single-player (第三轮 ①, in place of 开转). The first lesson waits for 开打 (readyStep).
@@ -1523,9 +1525,9 @@ async function main() {
       el.tipLine.innerHTML = o.shootNow && shoot ? `做好要 3 分钟左右，先去打${esc(f.name)}，回来就能装上` : '';
     }
     $('shootNowBtn').hidden = !(o.shootNow && shoot);
-    $('againBtn').innerHTML = `<span>${pvp ? '重选装备' : o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
+    $('againBtn').innerHTML = `<span>${pvp ? '换个装法再打' : o.act === 'next' ? '打下一个' : o.act === 'pick' ? '随便挑' : '换个装法再打'}</span>${SVG.arrow}`;
     $('againBtn').dataset.act = o.act;
-    $('sameBtn').textContent = pvp ? '原样再战' : '原样再来';
+    $('sameBtn').textContent = '原样再来';
     // 结算's way back, beside its main button: the 首页 in both modes when there is one (Pollux, Elara 56506aa2).
     $('soloBtn').hidden = !pvp && !homeOn;
     $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
@@ -1600,7 +1602,7 @@ async function main() {
     const req = ++libReq, top = el.libGrid.scrollTop;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
-    el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
+    el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回组装台`;
     // Collection so far, best grade first (远夏 11-02: collect the S).
     const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
     el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}`;
@@ -1734,6 +1736,8 @@ async function main() {
     const raw = STEPS.map(st => o.steps?.find(x => x.key === st.key)?.seconds), timed = raw.every(Number.isFinite);
     const secs = timed ? wholeSteps(raw) : raw;
     el.howTitle.textContent = `${NAMES[id]}是怎么来的`;
+    // Back goes to what is under it: 拍一件 (its sample card, its 做好了) or the 角色库.
+    $('howBackText').textContent = el.shoot.hidden ? '角色库' : '拍一件';
     el.howCat.textContent = catLabel(it, NAMES[id]);
     el.howCat.parentElement.hidden = !el.howCat.textContent;
     el.howSteps.innerHTML = STEPS.map((st, i) => {
@@ -1754,7 +1758,7 @@ async function main() {
     el.howPick.innerHTML = SAMPLES.map(x => `<button type="button" data-id="${esc(x.item.id)}"${x.item.id === id ? ' aria-current="true"' : ''}><b>${esc(NAMES[x.item.id])}</b><small>${esc(x.tag)}</small></button>`).join('');
     el.howEquip.disabled = !stuck && other;
     el.howEquip.querySelector('span').textContent = stuck ? (el.shoot.hidden ? '回角色库' : '回拍一件') : other ? '另一边已经装着它'
-      : cur().parts[libSlot].item === id ? '装着，回拼装' : sample ? '装上去打' : '装上它';
+      : cur().parts[libSlot].item === id ? '装着，回组装台' : sample ? '装上去打' : '装上它';
     turns.prune();
     turns.show(el.howTurn, id);
     el.how.hidden = false;
@@ -1814,7 +1818,7 @@ async function main() {
     if (phase === 'result') showBuild(); else rebuild();
   }
   const equipLabel = id => cur().parts[1 - libSlot].item === id ? {text: '另一边已经装着它', disabled: true}
-    : {text: cur().parts[libSlot].item === id ? '装着，回拼装' : '装上去打', disabled: false};
+    : {text: cur().parts[libSlot].item === id ? '装着，回组装台' : '装上去打', disabled: false};
 
   // ---------- 拍一件 (task #47) ----------
   // Items made from photos arrive while the page is open: into the 角色库, the names, the stage and the sim, no rebuild.

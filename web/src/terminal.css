@@ -4,7 +4,7 @@
   --line:rgba(172,180,147,.27); --c0:#d0a34a; --c0d:#866422; --c0l:#ecce85;
   --c1:#4fc8bd; --c1d:#24736b; --c1l:#b2e0d4; --hot:#ddbd68;
   --display:"Microsoft YaHei","PingFang SC",sans-serif;
-  --body:"Microsoft YaHei","PingFang SC",sans-serif;
+  --body:"PingFang SC","Microsoft YaHei",sans-serif;
   --slant:polygon(0 0,100% 0,100% 100%,0 100%);
   --case:radial-gradient(circle at 7px 7px,#29312a 0 1px,#85836a 1.5px 2.5px,#111b16 3px 4px,transparent 4.5px),
     radial-gradient(circle at calc(100% - 7px) calc(100% - 7px),#29312a 0 1px,#85836a 1.5px 2.5px,#111b16 3px 4px,transparent 4.5px),
@@ -56,7 +56,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .item b { font-size:18px;font-weight:800;color:#e1ddc6;letter-spacing:0; }
 .item .nm { gap:5px; }
 .item .spec { color:#92b4a1;font:10px/1.4 Consolas,"Microsoft YaHei",sans-serif;margin-top:3px; }
-.item .swapchip { height:20px;padding:0 5px;border-radius:2px;background:#0a1b16;color:var(--c1l);box-shadow:inset 0 0 0 1px #485542;font-size:11px;font-weight:700;line-height:20px;letter-spacing:1px; }
+.item .swapchip { height:20px;padding:0 5px;border-radius:2px;background:#0a1b16;color:var(--c1l);box-shadow:inset 0 0 0 1px #485542;font-size:12px;font-weight:700;line-height:20px;letter-spacing:1px; }
 .lux { font:8px/1.3 Consolas,monospace;clip-path:none;color:#a9c7ae;background:#203e2e;border:1px solid #476649;padding:1px 3px; }
 .seg { border-radius:3px;padding:3px;background:#0d1712;box-shadow:inset 0 0 0 1px #5c6049;gap:4px; }
 .seg button { font-size:14px;font-weight:700;color:#b4b6a1;border-radius:2px;transition:background .12s,color .12s; }
@@ -86,13 +86,13 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .s0 .fill,.s1 .fill { box-shadow:none; }
 .ball { width:7px;height:7px;border-radius:1px; }
 .pc { clip-path:none;border-radius:2px;background:#0e2119;padding:3px 4px;color:#c5d1bb; }
-.pc b { font-size:10px;font-weight:600; }
+.pc b { font-size:12px;font-weight:600; }
 .pc .mini { min-width:7px;height:3px; }
-.pc.long b,.pc.long4 b { font-size:10px; }
+.pc.long b,.pc.long4 b { font-size:11px; }
 .parts { gap:4px;margin-top:6px; }
 .clock { font:700 23px/1 Consolas,monospace;color:var(--ink);background:none;clip-path:none;text-shadow:0 0 6px #4fc8bd22; }
 .mute { border:1px solid #4c5c46;background:#0d2119;border-radius:2px;height:23px;clip-path:none;color:#acbba7; }
-.slowtag { font-size:10px;background:#3b4230;color:var(--c0l); }
+.slowtag { font-size:11px;background:#3b4230;color:var(--c0l); }
 :is(#pad,#pad2) { gap:10px; }
 .pad { border-radius:4px;font-size:29px;font-weight:800;height:73px;letter-spacing:6px; }
 .pad.dash { color:#252819;background:linear-gradient(#d2ad51,#b38a35);clip-path:none;filter:none;border:1px solid #9b7e3c;
@@ -127,7 +127,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .call b { font-weight:800; }
 #banner { font-weight:900;font-size:44px; }
 .kitchen-panel { top:90px;background:#16291ff2;border-color:#5a6950;color:var(--ink); }
-.kitchen-panel summary { font-size:10px;letter-spacing:1px; }
+.kitchen-panel summary { font-size:11px;letter-spacing:1px; }
 .kitchen-panel:not([open]) { opacity:.65; }
 .kitchen-panel:not([open]):hover { opacity:1; }
 .kitchen-panel select { max-width:135px;background:#10251a;color:var(--ink);border:1px solid #627254;font:11px var(--body);padding:4px; }
@@ -152,8 +152,9 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .terminal-brand b { font-size:clamp(22px,6vw,36px);font-weight:950;letter-spacing:2px;color:#e5dfc4;text-shadow:1px 2px #000;
   background:repeating-linear-gradient(175deg,#e5dfc4 0 4px,#bdbb9f 4px 5px,#e5dfc4 6px 12px);background-clip:text;color:transparent; }
 .terminal-brand small { font-size:7px;letter-spacing:1.5px; }
-.foe-readout { grid-column:1/-1;justify-content:center;max-width:none;padding:1px 4px;gap:7px;border:0;background:none;box-shadow:none; }
+.foe-readout { grid-column:1/-1;justify-content:center;max-width:none;padding:4px 4px 1px;gap:7px;border:0;background:none;box-shadow:none; }
 #foeParts span { font-size:9px; }
+#foeParts .grade { font-size:max(11px,1.15em); }
 #foe .label { font-size:9px; }
 #foe .vs { font-size:11px; }
 #build { gap:6px;padding-top:10px;background:linear-gradient(transparent,#111b14ea 5%,#101a13f2 80%); }
@@ -272,13 +273,13 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #foe.ladder .label { font-size:15px;color:var(--ink);font-weight:800;letter-spacing:1px; }
 #foe .ft { width:22px;height:22px;font-size:13px; }
 #foe .swap { height:24px;border-radius:2px;padding:0 7px;background:#0a1b16;color:var(--c1l);box-shadow:inset 0 0 0 1px #485542;font-size:11px; }
-#foe.ladder .swap b { font:700 12px Consolas,monospace;color:var(--ink); }
+#foe.ladder .swap b { font:700 12px var(--body);font-variant-numeric:tabular-nums;color:var(--ink); }
 .pips { gap:3px; }
 .pips i { width:6px;height:6px;border-radius:0;box-shadow:inset 0 0 0 1px #4a6a5e; }
 .pips i.won { background:var(--c1); }
 .pips i.now { box-shadow:inset 0 0 0 1px var(--c1),0 0 5px #4fc8bd88; }
 /* 三个对手 sheet: one cassette screen per opponent, joined by a wire. */
-.head .prog { font:700 12px Consolas,monospace;color:var(--c1l); }
+.head .prog { font:700 12px var(--body);font-variant-numeric:tabular-nums;color:var(--c1l); }
 .head.clear b { background:none;color:var(--c0l); }
 .fsub { color:#a3af98; }
 .rung { border-radius:1px;background:var(--screen);box-shadow:inset 0 0 0 1px var(--screen-edge),inset 0 2px 6px #0008; }
@@ -288,7 +289,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .rung .play { color:#a9b6a7; }
 .rung .rparts { color:#c5d1bb; }
 .rung .rparts span { font-size:15px; }
-.rung .st { border-radius:1px;line-height:20px;font-size:11px; }
+.rung .st { border-radius:1px;line-height:20px;font-size:12px; }
 .rung .st.won { color:#0c1d17;background:var(--c1); }
 .rung .st.now { color:var(--c1l);box-shadow:inset 0 0 0 1px var(--c1); }
 .rung[aria-checked="true"] { background:repeating-linear-gradient(0deg,transparent 0 3px,#81c4a209 3px 4px),#0f2b23;box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
@@ -329,7 +330,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .card,.card .cover { border-radius:0; }
 .card { border:11px solid transparent;border-image:var(--hardware) 70 stretch;background:repeating-linear-gradient(0deg,#92c7ac06 0 1px,transparent 1px 4px),#10221b;background-clip:padding-box;box-shadow:0 4px 10px #0009; }
 .card .media { background:repeating-linear-gradient(0deg,transparent 0 11px,#74997a12 11px 12px),repeating-linear-gradient(90deg,transparent 0 11px,#74997a12 11px 12px),#0b2118;box-shadow:inset 0 0 0 1px #405843,inset 0 2px 8px #000b; }
-.card .pick { padding:4px 4px 4px; }
+.card .pick { padding:8px 10px 6px; }
 .card.own { box-shadow:inset 0 0 0 2px var(--c0),0 4px 10px #0009;background-color:#1a2416; }
 .card.gradeS { --restS:inset 0 0 0 1px #edbb5999,0 0 18px -6px #edbb59aa;box-shadow:var(--restS),0 4px 10px #0009; }
 .card.gradeS.own { --restS:inset 0 0 0 2px var(--c0),0 0 18px -6px #edbb59aa; }
@@ -345,6 +346,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .card .cover i { color:#edbb5988; }
 .card.turning.gradeS::after,.card.turning.gradeA::after { border-radius:0; }
 .hstage { border-radius:0;border:12px solid transparent;border-image:var(--hardware) 70 stretch;background:repeating-linear-gradient(0deg,#92c7ac06 0 1px,transparent 1px 4px),#10221b;background-clip:padding-box;box-shadow:0 4px 10px #0009; }
+.hfoot { background:linear-gradient(transparent,#101915 14px); }
 .hstage .hreplay { border-radius:1px;box-shadow:inset 0 0 0 1px #476649;background:#0b1c15;color:#a8e9cb; }
 .hbar i { border-radius:0;height:5px;background:linear-gradient(90deg,var(--c0) calc(var(--fill, 0) * 100%),#1d2a22 0);box-shadow:inset 0 0 0 1px #2c3a2f; }
 .hsteps li { border-bottom-color:#2f3d33; }
@@ -500,7 +502,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #app.infight #foe .hkey { visibility:hidden; }
 /* Narrow phones: the chips keep saying where they go back to (the 换个对手 one alone goes down to its icon); 回首页 drops
    its arrow to fit beside the name. */
-@media (max-width:380px) { #foe :is(#homeBtn,#pvpBack) span { display:inline; } #foe #homeBtn { padding:0 3px; font-size:10.5px; } #foe #homeBtn svg { display:none; } }
+@media (max-width:380px) { #foe :is(#homeBtn,#pvpBack) span { display:inline; } #foe #homeBtn { padding:0 3px; font-size:11px; } #foe #homeBtn svg { display:none; } }
 #foe .terminal-brand b { font-size:clamp(22px,6.6vw,27px); }
 #app.pvp #camSeg, #app.pvp #caption, #app.pvp #fx .me, #app.pvp #coach { display:none; }
 #pvpTip { position:absolute; inset:0; z-index:5; pointer-events:none; }
@@ -526,10 +528,13 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 2P's build step: the whole screen turned to the head of the phone, back for 1P's step and the fight. */
 #app.pvp { transition:transform .4s cubic-bezier(.3,.7,.3,1); }
 #app.pvp.turned { transform:rotate(180deg); }
-/* Turned, the screen's right edge is the slots' left: ModelScope's own round button sits on it a third of the way down
-   and hid 接口 01's name and grade (Pollux acbd091c). The two slots keep clear of that strip. */
-#app.pvp.turned .slots { padding-left:40px; }
+/* Turned, the screen's right edge is the build column's left: on a short phone ModelScope's own round button sits on it
+   and hid 接口 01's name and grade (Pollux acbd091c). There the whole column keeps clear of that strip, so the slots, the
+   bench bar and 开打 still line up (走查 1118, 拿不准 2). */
+@media(max-height:700px) { #app.pvp.turned #build { padding-left:54px; } }
 #app.pvp.turned .item { padding-right:36px; }
+/* 360 wide: a four-character name (按摩滚筒) still whole beside 换件 (走查 1118 第 14 条). */
+@media(max-width:380px) { #app.pvp.turned .item { padding-right:28px; } }
 #app.pvp.turned .item .swapchip { right:3px; padding:0 4px; letter-spacing:0; }
 /* 接口 01's grade is the letter nearest that button: a little further in. */
 #app.pvp.turned .slot[data-slot="0"] .item { padding-left:12px; }
@@ -564,8 +569,10 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
    rimmed in light; a card on the 准备 plate beside them. The shade takes every tap (a tap there makes the lit button
    hop). The buttons stand over it anyway (#pad's z-index): the one to press as it is, the other as dark and out of reach. */
 #teach { position:absolute; inset:0; z-index:3; touch-action:none; }
+/* The pads (4) stay over the veil to be pressed; a word stamped while a card is up goes under it, off the card's lines (走查 1118 第 1 条). */
+#app:has(#teach:not([hidden])) #fx .stamp { z-index:2; }
 #teach .veil { position:absolute; inset:0; width:100%; height:100%; animation:teachIn .2s ease-out both; }
-#teach .shade { fill:rgba(3,7,6,.72); }
+#teach .shade { fill:rgba(3,7,6,.72); stroke:none; }
 #teachRims { fill:none; stroke:#fff1c2; stroke-width:2.5; filter:drop-shadow(0 0 6px #ffe39acc) drop-shadow(0 0 14px #ffd76688); animation:teachRim 1s ease-in-out infinite; }
 #teachCard { position:absolute; left:0; top:0; width:min(356px, calc(100% - 16px)); box-sizing:border-box; padding:8px 8px 10px; text-align:center;
   border:12px solid transparent; border-image:var(--hardware) 70 stretch; background:#10221b; background-clip:padding-box; box-shadow:0 6px 16px #000b; animation:teachIn .2s ease-out both; }
@@ -575,7 +582,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #teachOk { display:block; margin:9px auto 0; min-width:150px; height:50px; font:900 20px/1 var(--display); letter-spacing:4px; color:#242617; text-shadow:0 1px #f6d87166;
   border:12px solid transparent; border-image:url('./assets/terminal/yellow.webp') 73 fill stretch; background:none; box-shadow:0 4px 4px #0009, 0 0 18px #ffe39a88; }
 #teachOk[hidden] { display:none; }
-#teachSkip { position:absolute; right:-4px; top:-4px; padding:6px 8px; font:700 13px/1 var(--display); letter-spacing:.1em; color:#a1afa4; background:none; border:0; }
+#teachSkip { position:absolute; right:0; top:0; padding:6px 8px; font:700 13px/1 var(--display); letter-spacing:.1em; color:#a1afa4; background:none; border:0; }
 @keyframes teachIn { from { opacity:0; } }
 @keyframes teachRim { 50% { stroke-opacity:.55; } }
 #pad[data-lit] { pointer-events:none; }
@@ -589,3 +596,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 @keyframes teachHop { 35% { translate:0 -9px; } 70% { translate:0 2px; } }
 /* The lesson's 挡 taken while the fight stands still: held in with a gold edge till the shield is up. */
 #pad .pad.block.armed { z-index:1; transform:translateY(4px) scale(.965); outline:3px solid var(--c0l); outline-offset:1px; filter:brightness(1.15) drop-shadow(0 0 14px #ecce85cc); }
+/* Small keys keep their look but take a finger (走查 1118 第 12 条): a clear square of at least 44 px around each that still counts as it. */
+:where(.mute,#foe .swap,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot) { position:relative; }
+:is(.mute,#foe .swap,#foe .hkey,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot,#teachSkip,.hreplay,#shootTag)::before { content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%); }
+/* The slanted tag's cut runs on 4 px past its top and bottom, the same slope, so that margin isn't cut off. */
+#shootTag { clip-path:polygon(11.1px -4px,calc(100% + 1.1px) -4px,calc(100% - 11.1px) calc(100% + 4px),-1.1px calc(100% + 4px)); }

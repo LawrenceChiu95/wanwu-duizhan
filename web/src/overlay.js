@@ -262,9 +262,12 @@ export class Overlay {
       s.age += dt;
       const t = s.age / s.dur;
       if (t >= 1 || !stage.project(s.at, p)) { s.el.remove(); this.stamps.splice(k, 1); continue; }
-      s.x = Math.min(W - 6 - s.w / 2, Math.max(6 + s.w / 2, p.x));
       const rise = ease(Math.min(1, t * 1.5)) * 8, punch = t < 0.12 ? 1.35 - 0.35 * ease(t / 0.12) : 1;
       s.y = s.flip ? Math.min(stage.view.h - stage.safeBottom() - s.h - 6, p.y + s.lift) + rise : Math.max(stage.view.top + s.h + 6, p.y - s.lift) - rise;
+      // On a short phone ModelScope's round button sits on the right edge 40% down: a line level with it keeps 56 px off
+      // that edge (走查 1118 第 13 条).
+      const H = this.layer.clientHeight, top = s.flip ? s.y : s.y - s.h, ball = H <= 700 && top < H * 0.4 + 30 && top + s.h > H * 0.4 - 30;
+      s.x = Math.min(W - (ball ? 56 : 6) - s.w / 2, Math.max(6 + s.w / 2, p.x));
       s.el.style.opacity = t > 0.6 ? (1 - t) / 0.4 : 1;
       s.el.style.transform = s.flip ? `translate(${s.x}px, ${s.y}px) translate(-50%, 0) scale(${punch}) rotate(180deg)`
         : `translate(${s.x}px, ${s.y}px) translate(-50%, -100%) scale(${punch})`;
