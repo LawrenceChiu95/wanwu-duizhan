@@ -153,6 +153,16 @@ const SOUNDS = {
     v.tone(t + 0.07, 0.07, 0.12, 'triangle', 2350, 2350, 0.06, 0.002);
     v.noise(t, 0.02, 0.08, 'highpass', 5000);
   },
+  // 反打 lit (Elara b32bfd9a): a quick rising zip into one bright note, saw and square where the 挡's sounds are bells and
+  // the 冲's air. A beat late, so it is heard clear of the 完美 clang it follows.
+  counter(v) {
+    const t = v.t + 0.1;
+    v.tone(t, 0.14, 0.08, 'sawtooth', 220, 880, 0.1, 0.004);
+    v.tone(t, 0.14, 0.04, 'square', 440, 1760, 0.1, 0.004);
+    v.noise(t, 0.1, 0.08, 'bandpass', 600, 3000, 1.5, 0.01);
+    v.tone(t + 0.1, 0.2, 0.13, 'triangle', 1175, 1175, 0.2, 0.002);
+    v.tone(t + 0.1, 0.14, 0.03, 'square', 2350, 2350, 0.14, 0.002);
+  },
   // 勉强 (挡分两档): caught, but early. A dull knock, low and muffled, short, no ring: the opposite of 完美's bright bell.
   thud(v) {
     const t = v.t;
@@ -344,7 +354,7 @@ export const sfx = {
     }
   },
   hit: live('hit'), dashHit: live('dashHit'), charge: live('charge'), whoosh: live('whoosh'), ting: live('ting'),
-  clang: live('clang'), clank: live('clank'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
+  clang: live('clang'), clank: live('clank'), perfect: live('perfect'), thud: live('thud'), cue: live('cue'), counter: live('counter'), fizzle: live('fizzle'), whiff: live('whiff'), crunch: live('crunch'), porcelain: live('porcelain'), chink: live('chink'), ko: live('ko'), click: live('click'), deny: live('deny'),
   flip: live('flip'), reveal: live('reveal'), go: live('go'),
   /** Test hook: the BGM as it stands (null until it plays). */
   _music() { return music.gain && {level: music.gain.gain.value, ducked: music.ducked, loop: [music.src.loopStart, music.src.loopEnd], length: music.src.buffer.duration, ctx: R.ctx.state, master: R.master.gain.value}; },

@@ -1977,11 +1977,13 @@ async function main() {
       if (state === 'ready' && (btn.dataset.state === 'cooling' || btn.dataset.state === 'locked')) replay_(btn, 'pop');
       btn.dataset.state = state;
     }
-    // 反打 (Elara b32bfd9a ①): 冲 lights up and says so while a 冲 pressed now lands as the counter.
+    // 反打 (Elara b32bfd9a ①): 冲 lights up and says so while a 冲 pressed now lands as the counter. The eyes are on the
+    // 完美 in the arena then (Elara fa80d1bb), so it comes on with a sound of its own as well as a pop and a ring.
     const counter = !live.done && (c.counterIn ?? 0) + 1e-9 >= COUNTER_CUE_LIT && c.dashIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0);
     if (pad.dash.classList.contains('counter') !== counter) {
       pad.dash.classList.toggle('counter', counter);
       pad.dash.word.textContent = counter ? '反打' : '冲';
+      if (counter) sfx.counter();
     }
   }
   // 一机双人's bench: 1P's 下一步 hands it to 2P, whose 开打 starts the match.
