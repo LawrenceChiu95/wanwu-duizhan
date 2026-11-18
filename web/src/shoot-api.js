@@ -76,7 +76,8 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     let res;
     try {
       res = await fetch(base + path, {method, body: body instanceof FormData ? body : body && JSON.stringify(body),
-        headers: {'X-Shoot-Pass': getPass(), ...who, ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
+        // X-Shoot-Category: this page knows choosing-category; a page from before it is never sent one (Sol ff68c10b).
+        headers: {'X-Shoot-Pass': getPass(), 'X-Shoot-Category': '1', ...who, ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
     } catch { throw new ShootError('offline'); }
     const data = await res.json().catch(() => null);
     // No such path or method, and not in the backend's own JSON: this address has no 拍一件 backend behind it (task #62).
@@ -121,6 +122,8 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     retry: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retry`)).job,
     // 不是它，重拍 between 认物 and generation (task #85; the route is Sol's to settle).
     retake: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retake`)).job,
+    // 认物 didn't make it out (choosing-category, Elara 9699c50e): the player's pick of the six; Sol c6bbf915.
+    category: async (id, category) => (await call('POST', `/jobs/${encodeURIComponent(id)}/category`, {category})).job,
     regenerate: async (id, clientKey) => (await call('POST', `/jobs/${encodeURIComponent(id)}/regenerate`, {confirm: true, clientKey})).job,
     quota: () => call('GET', '/quota'),
     // The player chose to start again after 401 session: forget the old token; the next call asks for a new one.

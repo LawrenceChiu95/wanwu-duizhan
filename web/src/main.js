@@ -1554,7 +1554,7 @@ async function main() {
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
-        <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span>
+        <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<span class="nmt"><b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span></span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }
@@ -2018,7 +2018,10 @@ async function main() {
     // lunge ends, a lunge charging as the shield runs out empty): that keeps going, but the button no longer lights as if
     // a tap would count (Sol e0535c0d). A tap shakes it as in cooling.
     const stun = c.stunIn ?? 0, dashLock = Math.max(stun, c.dashLockIn ?? 0);
-    for (const [btn, cool, total, on, lock] of [[pad.dash, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [pad.block, c.blockIn, M.blockCooldown, c.shield, stun]]) {
+    for (const [btn, due, total, on, lock] of [[pad.dash, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [pad.block, c.blockIn, M.blockCooldown, c.shield, stun]]) {
+      // Ready as press() counts it: a tap now is taken at the next step, so its last step of cooling shows no 「1」 (Wren
+      // 3b937043: 「1反打」, the digit under a lit 反打, which a tap at that moment does land).
+      const cool = due > rules.dt + 1e-9 ? due : 0;
       const state = lock > 0 ? (lock >= cool - rules.dt ? 'locked' : 'cooling') : on ? 'on' : cool > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
       const left = state === 'locked' ? lock : cool;
       if (state === 'locked' && btn.dataset.state !== 'locked') btn.lockTotal = lock;

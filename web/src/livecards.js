@@ -23,6 +23,20 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 // The turntables' tone mapping: Khronos PBR Neutral keeps a model's hues and brightness where the stage's ACES greys and
 // darkens them (Elara b32bfd9a ③). Set only while one is drawn; the stage keeps its own.
 const TURN_TONE = {toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 0.85};
+// A finger dragged across a view turns the model: a full width is a little over a half turn. Up and down still scroll
+// the page (touch-action: pan-y in style.css).
+function dragTurn(v) {
+  const c = v.canvas;
+  c.classList.add('drag');
+  c.addEventListener('pointerdown', e => { v.held = {id: e.pointerId, x: e.clientX}; c.setPointerCapture?.(e.pointerId); });
+  c.addEventListener('pointermove', e => {
+    if (v.held?.id !== e.pointerId) return;
+    v.offset += (e.clientX - v.held.x) / Math.max(1, c.clientWidth) * Math.PI * 1.2;
+    v.held.x = e.clientX;
+    v.done = false;
+  });
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) c.addEventListener(type, e => { if (v.held?.id === e.pointerId) v.held = null; });
+}
 function turnTone(r) {
   const was = {toneMapping: r.toneMapping, toneMappingExposure: r.toneMappingExposure};
   Object.assign(r, TURN_TONE);
@@ -42,16 +56,18 @@ export class LiveTurns {
 
   /**
    * Turns `itemId` in `canvas`, or holds one angle if `still`. Call again once the model has loaded. `zoom` > 1 brings
-   * the camera closer than the card fit (拍一件's 好了, where the 3D is the reward and should fill its pane).
+   * the camera closer than the card fit (拍一件's 好了, where the 3D is the reward and should fill its pane). `drag`: a
+   * finger across it turns it too, and it stops turning by itself while held (好了, Elara 9e197c2f).
    */
-  show(canvas, itemId, {still = false, zoom = 1} = {}) {
+  show(canvas, itemId, {still = false, zoom = 1, drag = false} = {}) {
     let v = this.views.get(canvas);
     if (!v) {
-      v = {canvas, ctx: canvas.getContext('2d'), seen: false};
+      v = {canvas, ctx: canvas.getContext('2d'), seen: false, turned: 0, at: null, offset: 0, held: null};
       this.views.set(canvas, v);
       this.io.observe(canvas);
+      if (drag) dragTurn(v);
     }
-    if (v.id !== itemId) { v.id = itemId; v.rig = null; v.t0 = null; v.ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.removeAttribute('data-drawn'); }
+    if (v.id !== itemId) { v.id = itemId; v.rig = null; v.t0 = null; v.turned = 0; v.at = null; v.offset = 0; v.ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.removeAttribute('data-drawn'); }
     v.rig ??= turnRig(itemId, this.environment, zoom);
     v.still = still;
     v.done = false;
@@ -122,12 +138,15 @@ export class LiveTurns {
       // The canvas has no alpha: clear to the colour the card shows behind the model.
       r.setClearColor(v.bg ??= backdrop(v.canvas), 1);
       v.t0 ??= t;
-      v.rig.spin.rotation.y = v.rig.yaw + angle(v.rig, v.still || reduced.matches ? 0 : Math.max(0, t - v.t0 - FADE) / TURN);
+      // Turns by itself after the fade, not while a finger holds it; a drag adds its own angle on top.
+      if (v.at !== null && v.held === null && t - v.t0 > FADE) v.turned += (t - v.at) / TURN;
+      v.at = t;
+      v.rig.spin.rotation.y = v.rig.yaw + v.offset + angle(v.rig, v.still || reduced.matches ? 0 : v.turned);
       r.render(v.rig.scene, v.rig.camera);
       v.ctx.drawImage(gl, 0, gl.height - size, size, size, 0, 0, size, size);
       // The card fades the model in over its outline only once there is a picture to show (task #37).
       v.canvas.setAttribute('data-drawn', '');
-      v.done = v.still || reduced.matches;
+      v.done = (v.still || reduced.matches) && v.held === null;
       this.drawn++;
     }
     if (!saved) return;

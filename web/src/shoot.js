@@ -29,6 +29,8 @@ const SAY = {
   pass: '口令不对',
   quota: '今天的生成名额用完了，明天再来',
   busy: '生成的人太多，稍等再提交',
+  // Every retry spent, today's photo given back (Elara d597a68a: say it straight, nothing about counting).
+  'photo-failed': '这次没成功，再拍一次',
   'step-failed': '这次没生成出来，可以重新生成（会多算一次）',
   expired: '结果过期了，可以重新生成（会多算一次）',
   download: '模型没取回来，再试一次',
@@ -111,11 +113,15 @@ const dur = sec => sec >= 60 ? `${Math.floor(sec / 60)} 分 ${String(Math.round(
 const about = sec => sec > 75 ? `${Math.round(sec / 60)} 分钟左右` : sec > 45 ? '1 分钟左右' : sec > 10 ? `${Math.ceil(sec / 10) * 10} 秒左右` : '几秒';
 // task #84: the real 认物 names the thing as the model says it (name, no inSix); only the fake backend still sorts
 // every photo into the six and says which one it counts as.
-const catOf = r => r?.name ?? CAT[r?.category] ?? '东西';
+// Nobody picked one of the six in time: no name of a thing it isn't (Elara 258971dd).
+const NAMELESS = '无名之物';
+const catOf = r => r?.chosen === 'timeout' ? NAMELESS : r?.name ?? CAT[r?.category] ?? '东西';
 const countAs = r => !('inSix' in (r ?? {})) ? catOf(r) : r.inSix ? `按${catOf(r)}算` : `不在六类里，按最像的${catOf(r)}算`;
 const matOf = r => r?.materialName ?? MATERIAL[r?.material] ?? '';
 /** The tag beside an item's name: one of the six, or nothing when the category is just the name again (task #84). */
-export const catLabel = (it, name) => CAT[it?.category] ?? (it?.category && it.category !== name ? it.category : '');
+// One the player picked says so, one nobody picked says what it counts as (Elara 258971dd; item.chosen, Sol).
+export const catLabel = (it, name) => it?.chosen === 'player' ? '你选的' : it?.chosen === 'timeout' ? '按枕头算'
+  : (c => c !== name ? c : '')(CAT[it?.category] ?? it?.category ?? '');
 
 /** A small JPEG data URL of the photo for this page's own screens (the backend keeps the original). */
 async function thumbOf(blob, side = 480) {
@@ -183,6 +189,11 @@ export function mountShoot(ctx) {
   // anything is paid for; null when there is no such moment (a job made from an earlier one's 认物).
   const retakeLeft = () => job?.status === 'generating' && job.retakeUntil && !job.steps.some(s => s.startedAt)
     ? Math.max(0, (ms(job.retakeUntil) - api.now()) / 1000) : 0;
+  // Seconds left to pick one of the six before the backend takes the pillow (Elara 9699c50e).
+  const chooseLeft = () => job?.status === 'choosing-category' && job.categoryUntil ? Math.max(0, (ms(job.categoryUntil) - api.now()) / 1000) : 0;
+  // The pick for one job (Sol c25acdf8): {id, cat} on its way or taken (shown till a poll moves on), or {id, say} when it
+  // went wrong. Another job never sees it.
+  let pick = null;
   // After 不是它 was tapped: what 认物 says, whether the call is still out, and when the backend said too late. 认物 stays
   // up until the answer is in and a moment after a 「已经开始生成了」, so the tap is never just swallowed.
   let retakeSay = '', retaking = false, lateAt = -Infinity;
@@ -292,13 +303,15 @@ export function mountShoot(ctx) {
     if (!stored) return pending ? 'confirm' : quotaOut() ? 'out:' + quotaOut() : 'pick';
     if (!job) return 'wait';
     if (ahead() && job.status === 'recognizing') return 'qrecog';
+    if (job.status === 'choosing-category') return 'choose';
     if (job.status === 'recognizing' || (job.status === 'generating' && (retakeLeft() > 0 || retaking || performance.now() - lateAt < LATE_HOLD || performance.now() - recogAt < RECOG_HOLD))) return 'recog';
     if (ahead()) return 'qgen';
     if (job.status === 'generating') return 'gen';
-    if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + job.error.code;
+    // A failure whose photo was given back reads as the last word, whatever its code (Sol c6bbf915).
+    if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + (job.error.refunded ? 'photo-failed' : job.error.code);
     return fetching() ? 'fetch' : refused() ? 'lost:refused' : 'done:' + job.itemId;
   }
-  const STEP_OF = {pick: 0, out: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
+  const STEP_OF = {pick: 0, out: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, choose: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
   function paintSteps(key) {
     // An error lights the step the job stopped at (task #70), the first one if there is no job; a job that failed before
     // anything was recognised, or a request turned down by 认物, stopped at 认物 (Elara fa35bf76).
@@ -331,7 +344,8 @@ export function mountShoot(ctx) {
   // A long name (up to 12 characters) gets smaller rather than cut; a long material goes under it.
   const idFace = r => `<span class="sid-head"><i></i>鉴定单</span><span class="sid-row"><b class="sid-name" style="--n:${Array.from(catOf(r)).length}">${esc(catOf(r))}</b>
     ${matOf(r) ? `<span class="sid-mat"><small>材质</small>${esc(matOf(r))}</span>` : ''}</span>${r.verdict ? `<p class="sid-say">${esc(r.verdict)}</p>` : ''}
-    ${'inSix' in r && !r.inSix ? `<small class="sid-as">${esc(countAs(r))}</small>` : ''}<i class="sid-seal" aria-hidden="true">已鉴定</i>`;
+    ${'inSix' in r && !r.inSix ? `<small class="sid-as">${esc(countAs(r))}</small>` : ''}${r.chosen ? `<small class="sid-as">${r.chosen === 'timeout' ? '没选，就按枕头来做' : '你选的，就按它来做'}</small>` : ''}
+    <i class="sid-seal" aria-hidden="true">${r.chosen ? (r.chosen === 'timeout' ? '默认' : '你选的') : '已鉴定'}</i>`;
   function idCard() {
     const r = job?.recognition;
     if (!r) return '<div class="sid wait" data-live="id"><span class="sid-head"><i></i>鉴定单</span><span class="sid-row"><b class="sid-name"></b><span class="sid-scan">正在认是什么</span></span></div>';
@@ -391,6 +405,13 @@ export function mountShoot(ctx) {
         ${idCard()}${api.kind === 'fake' ? `<div class="sfines"><p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p></div>` : ''}
         <div class="sfoot"><button type="button" class="sghost sretake" data-act="nothis" hidden>${ICON.retry}<span>不是它，重拍</span></button>
           <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么</span></p></div>`;
+    } else if (kind === 'choose') {
+      // 认物 made nothing of it (Elara 9699c50e): no failure, the six to pick from, the pillow if nobody does.
+      html = `${frame('scan got', '<span class="stag ask">没认出来</span>')}
+        <div class="schoose"><b>没认出来，挑一个最像的吧</b><small>按你挑的那类来做，大小、轻重照这类算</small>
+          <div>${Object.entries(CAT).map(([k, c]) => `<button type="button" data-act="pick" data-cat="${k}">${c}</button>`).join('')}</div></div>
+        <p class="serr" data-live="send"></p>
+        <div class="sfoot"><p class="snext"><span data-live="next"></span></p></div>`;
     } else if (kind === 'gen') {
       // The photo, then the styled picture over it as soon as there is one (Elara 207a725b); the 鉴定卡 under it.
       html = `${frame('gen', `<img class="sstyled" data-live="styled" alt="改成游戏画风的图" hidden><i class="sedge"></i><i class="ssweep"></i>
@@ -405,10 +426,12 @@ export function mountShoot(ctx) {
       // Whether this one took one of today's photos (Elara 5027aa74: every failure screen says so). A job's own word
       // (charged: paid generation began), or a photo 认物 could not make out: only the photo's own fault is the player's
       // (Elara 7235d89f); a request turned down made no job.
-      const count = kind === 'lost' || (kind === 'fail' && (job.error.charged === true || code === 'photo-unclear')) ? (retry === 'same' ? '这次算了一次，再试不另算' : '这次算了一次')
+      const count = kind === 'fail' && code === 'photo-failed' ? '这次没算次数' : kind === 'lost' || (kind === 'fail' && (job.error.charged === true || code === 'photo-unclear')) ? (retry === 'same' ? '这次算了一次，再试不另算' : '这次算了一次')
         // 认物 breaking is always our fault, whatever the job says about retrying (Elara 139c00fb).
         : (kind === 'fail' && (job.error.charged === false || code.startsWith('recognition-'))) || (kind === 'err' && lastSend && code !== 'pass') ? '这次没算次数' : '';
       const btns = code === 'pass' ? [go('pass', '确定')]
+        // The last word: one way on, a new photo (Elara d597a68a).
+        : code === 'photo-failed' ? [go('fresh', '再拍一次')]
         // Again after 认物 broke is a new go: it takes one of today's photos once made (Elara 704b790a). After a paid stage
         // broke, today's photo is taken already.
         : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', code.startsWith('recognition-') ? '做成才算' : '不算次数')]
@@ -436,15 +459,16 @@ export function mountShoot(ctx) {
       html = `${frame('held', `<span class="sbadge">${ICON.wait}核实中</span>`)}<div class="smsg held"><b>这件还在核实，不会多扣</b></div>${foot(ghost('lib', '回角色库'))}`;
     } else if (kind === 'done') {
       const id = code, r = ctx.grade(id), it = ctx.item(id), eq = ctx.equipLabel(id);
-      const line = [it.materialName ?? MATERIAL[it.material], ctx.spec(id), WEAR[it.condition]].filter(Boolean).join(' · ');
+      // Broken only between its parts, never inside one (Elara 258971dd: 「完好」 split over two lines).
+      const line = [it.materialName ?? MATERIAL[it.material], ...ctx.spec(id).split(' · '), WEAR[it.condition]].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join(' · ');
       const end = Math.max(...job.steps.map(s => ms(s.endedAt) ?? 0)), took = end ? (end - ms(job.createdAt)) / 1000 : null;
       // A page reopened in another browser has no photo of its own; the item carries the one the backend kept (Elara cf1366e6).
       const shot = photo() || it.origin?.photo || '';
       html = `<h2 class="shead">做好了</h2><div class="spair"><figure><span class="pane">${shot ? `<img src="${esc(shot)}" alt="">` : ''}</span><figcaption>你拍的</figcaption></figure>
-          <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D</figcaption></figure></div>
+          <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D · 拖着转</figcaption></figure></div>
         <div class="sstage"><div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
           ${r ? `<i class="big g${r.grade}">${r.grade}</i>` : ''}
-          <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, ctx.name(id)))}</span><small>${esc(line)}</small></div>
+          <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, ctx.name(id)))}</span><small>${line}</small></div>
           ${r ? `<span class="rates">${[['attack', '攻击'], ['range', '范围'], ['durability', '耐久']].map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : ''}
           <span class="cover" aria-hidden="true"><i>?</i></span></div></div><i class="sdim" aria-hidden="true"></i>
         <p class="sdone">${ICON.check}<span>已经放进角色库${took ? `，用时 ${dur(took)}` : ''}</span>${it.origin ? `<button type="button" data-act="how">${ICON.play}看它怎么来的</button>` : ''}</p>
@@ -460,7 +484,7 @@ export function mountShoot(ctx) {
     if (ctx.grade(id) && !ctx.seen(id)) ctx.flip(card, id, 500, card.parentElement);
     if (!stored.seen) { stored.seen = true; keep(); paintTag(); }
     await ctx.loadModels([ctx.item(id)]);
-    if (canvas.isConnected) ctx.turns.show(canvas, id, {zoom: 1.3});
+    if (canvas.isConnected) ctx.turns.show(canvas, id, {zoom: 1.3, drag: true});
   }
   // The parts of a screen that move: 认物's result, 生成中's steps, times and bar, the connection and slow notices.
   function update() {
@@ -471,6 +495,12 @@ export function mountShoot(ctx) {
       const left = Math.ceil(retakeLeft()), btn = el.body.querySelector('[data-act="nothis"]');
       btn.hidden = (!left && !retaking) || retakeLate();
       live('next').textContent = retakeLate() ? retakeSay : !left ? '认好了，马上开始生成' : retakeSay ? `${retakeSay}（还剩 ${left} 秒）` : `${left} 秒后开始生成`;
+    }
+    if (shown === 'choose') {
+      const left = Math.ceil(chooseLeft()), mine = pick?.id === job.id ? pick : null, cat = mine?.cat;
+      live('next').textContent = cat ? `好，按${CAT[cat]}来做…` : left ? `不选的话，${left} 秒后按枕头来做` : '按枕头来做';
+      live('send').textContent = mine?.say ?? '';
+      for (const b of el.body.querySelectorAll('[data-act="pick"]')) { b.disabled = !!cat; b.classList.toggle('on', b.dataset.cat === cat); }
     }
     const queued = shown === 'qrecog' || shown === 'qgen';
     // Waiting for generation: when theirs is done, about 3 minutes for each one ahead (the one being made counts) and 3
@@ -540,6 +570,7 @@ export function mountShoot(ctx) {
       : state === 'done' ? `<b>${what}做好了</b><span class="sgo">装上去打</span>${ICON.arrow}`
       : state === 'bad' ? `<b>${stopped() ? (startError === 'session' ? '拍照记录找不到了，去看看' : '拍一件连错了后台，去看看') : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
+      : job.status === 'choosing-category' ? `<b>没认出来，去挑一个</b><small>${Math.ceil(chooseLeft())} 秒后按枕头</small>${ICON.arrow}`
       : ahead() ? `<i class="ring" style="--fill:0.02"></i><b>${job.recognition ? what : '新的一件'}排队中</b><small>${job.status === 'recognizing' ? `前面还有 ${ahead()} 人` : `前面 ${ahead()} 件，做好约 ${(ahead() + 1) * 3} 分钟`}</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
@@ -654,6 +685,22 @@ export function mountShoot(ctx) {
         else { btn.disabled = false; retakeSay = e.code === 'offline' ? '没连上，再点一次' : '没成功，再点一次'; }
         sync();
       }
+    },
+    // One of the six while choosing-category: the job goes on to 生成中 once the backend has it. Too late (the pillow was
+    // taken), the next poll shows it going on anyway. The reply can come late, after a poll has moved on or another photo
+    // was taken (Sol 886c3a95): it never replaces the job, the poll for the job still shown does.
+    pick: async b => {
+      const id = job.id, cat = b.dataset.cat;
+      pick = {id, cat};
+      sync();
+      try {
+        await api.category(id, cat);
+        if (stored?.id === id) poll();
+      } catch (e) {
+        if (pick?.id !== id) return;
+        if (e.code === 'not-allowed') { pick = null; if (stored?.id === id) poll(); }
+        else pick = {id, say: e.code === 'offline' ? '没连上，再点一次' : '没成功，再点一次'};
+      } finally { sync(); }
     },
     again: () => lastSend && send(lastSend),
     refresh: () => { startError = null; poll(); },

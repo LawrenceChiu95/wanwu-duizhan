@@ -513,6 +513,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .card .media:has(> .photo) > .lux { top: calc(26% + 6px); }
 .card .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .card .nm b { font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Name and tag: the tag goes under the name when both don't fit (「无名之物」「按枕头算」 at 360), the grade stays beside. */
+.card .nmt { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .card .cat { flex: none; font-size: 11px; line-height: 17px; padding: 0 5px; border-radius: 4px; color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
 .card .spec { font-size: 12px; color: var(--mute); }
 .card .how, .card .src { margin: 2px 10px 0; padding: 7px 0 9px; border-top: 1px solid var(--line); font-size: 12.5px; }
@@ -700,6 +702,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .sframe.got::after { opacity: 0; }
 @keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(240%); } }
 .stag { position: absolute; left: 10px; top: 10px; z-index: 2; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 10px; color: #1a0900; background: var(--c0); clip-path: var(--slant); }
+/* 认物 made nothing of it (Elara 9699c50e): not a failure, so no red; the photo stays as it is and the six are big
+   enough to hit with a thumb, the one tapped lit while the backend takes it. */
+.stag.ask { color: #241700; background: #ffc94d; }
+.schoose { flex: none; margin: 16px 16px 0; }
+.schoose > b { display: block; font-size: 19px; font-weight: 700; line-height: 1.4; }
+.schoose > small { display: block; margin-top: 4px; font-size: 13px; color: var(--mute); }
+.schoose > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.schoose button { height: 50px; font-family: var(--display); font-size: 21px; letter-spacing: 0.06em; color: var(--ink); background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1.5px var(--line); clip-path: var(--slant); transition: transform 0.1s, background 0.15s, color 0.15s; -webkit-tap-highlight-color: transparent; }
+.schoose button:active { transform: translateY(1px); background: rgba(255, 138, 61, 0.2); }
+.schoose button.on { color: #1a0900; background: linear-gradient(100deg, var(--c0l), var(--c0)); box-shadow: none; }
+.schoose button:disabled:not(.on) { opacity: 0.35; }
 /* 鉴定卡 (Elara 207a725b): a slip pushed out over the bottom of the photo, name and material, its one line, 已鉴定. */
 .sid { position: relative; z-index: 2; flex: none; margin: -22px 20px 0; padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 2px;
   background: var(--plate); box-shadow: inset 0 0 0 1px var(--line), 0 10px 24px rgba(0, 0, 0, 0.55); transform: rotate(-1.2deg); }
@@ -774,12 +788,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .spair img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .spair canvas { display: block; width: 100%; aspect-ratio: 1; opacity: 0; transition: opacity 0.4s; }
 .spair canvas[data-drawn] { opacity: 1; }
+.spair canvas.drag { touch-action: pan-y; cursor: grab; }
+.spair canvas.drag:active { cursor: grabbing; }
 .spair figcaption { font-size: 12px; color: var(--mute); text-align: center; }
 .card.sreveal { flex: none; margin: 14px 14px 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; padding: 14px 16px; }
 .sreveal .big { font-size: 70px; line-height: 0.85; padding-right: 4px; }
 .sreveal .sname { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .sreveal .nm b { font-family: var(--display); font-weight: 400; font-size: 24px; letter-spacing: 0.02em; }
+/* A tag that doesn't fit beside the name goes under it rather than cutting the name (「无名之物」 at 360). */
+.sreveal .nm { flex-wrap: wrap; row-gap: 4px; }
 .sreveal .sname small { font-size: 13px; color: #c7d2ea; font-variant-numeric: tabular-nums; }
+.sreveal .sname small span { white-space: nowrap; }
 .card.sreveal .rates { margin: 0; padding-left: 14px; border-left: 1px solid var(--line); }
 .sdone { flex: none; margin: 12px 16px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 13px; color: var(--mute); }
 .sdone > svg { width: 15px; height: 15px; color: #8ee6a8; stroke-width: 3; }
@@ -866,14 +885,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .khead small, .kcap span:last-child { margin-left: auto; color: var(--teal); }
 .khead .kmute { flex: none; width: 32px; height: 28px; margin: -4px -8px -4px 2px; clip-path: none; color: #c9d6c2; background: #0d2119; box-shadow: inset 0 0 0 1px #4c5c46; }
 .khead .kmute svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-.khead small, .kloc, .kcap { font: 700 12px/1.5 var(--kmono); letter-spacing: 0.08em; }
+.khead small, .kcap { font: 700 12px/1.5 var(--kmono); letter-spacing: 0.08em; }
 .kbench { flex: 1; min-height: 0; isolation: isolate; position: relative; display: flex; flex-direction: column; overflow: hidden; background: #172520; }
 .kbench::before { content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg, #08160eb8, transparent 35%, #07150fc9), linear-gradient(90deg, #0c1e18aa, #26392f22 66%, #0b1a1555), url("./assets/kitchen-bench.webp") center 54% / cover; }
 .ktitle { position: relative; z-index: 1; padding: 22px 22px 0; pointer-events: none; }
-.kloc { color: #a8e9cb; }
 #intro h1 { margin-top: 4px; font-size: clamp(40px, 12vw, 66px); font-weight: 900; line-height: 1.1; letter-spacing: -0.055em; text-shadow: 0 3px #101612; }
 #intro h1 span { color: var(--amber); }
+/* What it is, under the name: the pot below is only the example (Elara 0e4694bd). */
+.ksub { margin-top: 2px; font-size: 16px; font-weight: 700; line-height: 1.45; letter-spacing: 0.04em; color: #e3e5d2; text-shadow: 0 2px #101612; }
 .kmodel { position: relative; flex: 1; min-height: 170px; cursor: grab; touch-action: none; background: radial-gradient(ellipse at center, #68797070, transparent 66%); }
 .kmodel img, .kmodel canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .kcap { padding: 6px 10px; margin: 0 20px 12px; border-left: 2px solid var(--teal); background: #0d201bea; }
@@ -904,6 +924,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @media (max-height: 740px) {
   .ktitle { padding-top: 14px; }
   #intro h1 { font-size: 40px; }
+  .ksub { font-size: 14px; }
   .kmodel { min-height: 130px; }
   .kcap { margin-bottom: 8px; }
   #intro figure img { height: 64px; }
@@ -912,6 +933,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 }
 :where(.seen-740) .ktitle { padding-top: 14px; }
 :where(.seen-740) #intro h1 { font-size: 40px; }
+:where(.seen-740) .ksub { font-size: 14px; }
 :where(.seen-740) .kmodel { min-height: 130px; }
 :where(.seen-740) .kcap { margin-bottom: 8px; }
 :where(.seen-740) #intro figure img { height: 64px; }
