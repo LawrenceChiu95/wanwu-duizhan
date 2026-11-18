@@ -1651,9 +1651,9 @@ async function main() {
     el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}`;
     const first = unplaced(), shown = [...first, ...byGrade(OFFER.filter(id => !first.includes(id)), rate)];
     el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
-    revealUnseen();
     el.libGrid.scrollTop = again ? top : 0;
     el.library.hidden = false;
+    revealUnseen();
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
       card.querySelector('.pick').onclick = async () => {
@@ -1693,21 +1693,36 @@ async function main() {
   }
   function closeLibrary() { libReq++; el.library.hidden = true; }
 
-  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over when 拍一件's 好了 shows it, with a sound
-  // by grade and gold for an S. Remembered per item and rating version, so a re-rated item turns over again there.
-  // ?reveal=again resets it.
+  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over, with a sound by grade and gold for an S:
+  // in the 角色库 and when 拍一件's 好了 shows it. Remembered per item and rating version, so a re-rated item turns over
+  // again. ?reveal=again resets it.
   const SEEN_KEY = 'wanwu-grades-seen';
   const gradesSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('reveal') === 'again') gradesSeen.clear();
   const seenKey = id => `${id}:${rate(id)?.version}`;
   const REVEAL_FACE = 330; // ms into the turn when the face shows
-  // In the 角色库 every card is face up from the start (Pollux acbd091c, Elara 0f310068): dealt face down, the ones
-  // scrolled past too fast stayed a row of 「？」. What it shows now counts as seen, so 拍一件's 好了 doesn't turn it again.
+  // In the 角色库 (远夏 a63667e4 「翻」, Elara ee078f5c) only the cards on screen as it opens turn over, all within about a
+  // second (style.css .quick), each with a light flip sound and no buzz: dealt face down as they were scrolled to, the
+  // ones gone past too fast stayed a row of 「？」 (Pollux acbd091c). The rest are face up at once and count as seen.
+  // Only the twelve: a shot item is face up here and left unseen, so its first 做好了 still turns it.
+  // Left before its turn, a card is still face down next time.
+  const QUICK_START = 250, QUICK_GAP = 80, QUICK_FACE = 150; // ms: after the 角色库 has faded in; between cards; into a turn
   function revealUnseen() {
-    const ids = [...el.libGrid.querySelectorAll('.card')].map(c => c.dataset.item).filter(id => rate(id) && !gradesSeen.has(seenKey(id)));
-    if (!ids.length) return;
-    for (const id of ids) gradesSeen.add(seenKey(id));
-    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+    const cards = [...el.libGrid.querySelectorAll('.card')].filter(c => ROSTER.includes(c.dataset.item) && rate(c.dataset.item) && !gradesSeen.has(seenKey(c.dataset.item)));
+    if (!cards.length) return;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const turn = cards.filter(c => { const r = c.getBoundingClientRect(); return !still && r.top < innerHeight && r.bottom > 0; });
+    const seen = id => { gradesSeen.add(seenKey(id)); try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ } };
+    for (const c of cards) if (!turn.includes(c)) seen(c.dataset.item);
+    const go = (card, ms, step) => setTimeout(() => { if (card.isConnected && !el.library.hidden) step(); }, ms);
+    turn.forEach((card, n) => {
+      card.classList.add('down', 'quick');
+      go(card, QUICK_START + n * QUICK_GAP, () => {
+        card.classList.replace('down', 'turning');
+        sfx.flip(0.55);
+        go(card, QUICK_FACE, () => seen(card.dataset.item));
+      });
+    });
   }
   $('libBack').onclick = closeLibrary;
   // The face showing: its sound by grade, a short buzz for an S (task #55), and remembered.

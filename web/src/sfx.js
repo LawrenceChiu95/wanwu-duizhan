@@ -223,12 +223,12 @@ const SOUNDS = {
     v.tone(v.t, 0.03, 0.1, 'triangle', 2200, 1500, 0.02, 0.001);
     v.noise(v.t, 0.012, 0.07, 'highpass', 5000);
   },
-  // A 角色库 card turning over: a short papery swish and the soft tap of it landing.
-  flip(v) {
-    const t = v.t, f = v.noise(t, 0.16, 0.12, 'bandpass', 1200, 1200, 1.1, 0.03);
+  // A card turning over: a short papery swish and the soft tap of it landing; quieter (k) when a screenful turns together.
+  flip(v, k = 1) {
+    const t = v.t, f = v.noise(t, 0.16, 0.12 * k, 'bandpass', 1200, 1200, 1.1, 0.03);
     f.frequency.exponentialRampToValueAtTime(3800, t + 0.12);
-    v.noise(t + 0.17, 0.03, 0.12, 'lowpass', 1800);
-    v.tone(t + 0.17, 0.06, 0.08, 'triangle', 300, 180, 0.05);
+    v.noise(t + 0.17, 0.03, 0.12 * k, 'lowpass', 1800);
+    v.tone(t + 0.17, 0.06, 0.08 * k, 'triangle', 300, 180, 0.05);
   },
   // Its grade showing (Elara 11-02: the draw has to feel like something). A rising run of bell notes, more of them and
   // brighter the better the grade; an S adds a low bloom and a sparkle that rings on.
