@@ -1074,9 +1074,9 @@ async function main() {
     teach = null;
     if (!live || pvp || !round || fought === null || LADDER[fought].id !== 'mang') return;
     try { if (q.get('coach') !== 'again' && localStorage.getItem(TEACH_KEY) === '1') return; localStorage.setItem(TEACH_KEY, '1'); } catch { /* no storage here: every first 莽牛 */ }
-    // lesson: 0 waits for the tops to close, 1 for a lunge to wind up, 2 for the block's 完美, 3 done. hold: the sim
-    // step stop 4 waits at.
-    teach = {intro: false, lesson: 0, stop: null, args, blockAt: null, armed: false, lit: false, hold: null};
+    // lesson: 0 waits for the tops to close (or a 冲 already taken: dashed), 1 for a lunge to wind up, 2 for the block's
+    // 完美, 3 done. hold: the sim step stop 4 waits at.
+    teach = {intro: false, lesson: 0, stop: null, args, blockAt: null, armed: false, lit: false, hold: null, dashed: false};
   }
   function endTeach() {
     teach = null;
@@ -1137,7 +1137,8 @@ async function main() {
       } else if (teach.lesson === 0) {
         const c = live.match.control(0), d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
         teach.d0 ??= d;
-        if (c.dashIn <= rules.dt && !c.charging && !c.dashing && !(c.stunIn > 0) && teach.d0 - d >= TEACH_NEAR) teachStop('dash');
+        // A 冲 already taken (Sol f06c02c1): stop 2 as soon as it is ready again, so its line on the wait is still read.
+        if (c.dashIn <= rules.dt && !c.charging && !c.dashing && !(c.stunIn > 0) && (teach.dashed || teach.d0 - d >= TEACH_NEAR)) teachStop('dash');
       } else if (teach.hold !== null && pb.t >= teach.hold - rules.dt) teachStop('counter');
     }
     if (!el.teach.hidden) teachLayout();
@@ -1178,13 +1179,9 @@ async function main() {
     const stop = teach.stop, t = teach, m0 = live.match;
     const at = await teachPlan(e.t).catch(err => { console.warn('教学: 影子对局失败', err); return null; });
     if (teach !== t || t.stop !== stop || live?.match !== m0) return;
-    if (at === null) {
-      t.stop = null;
-      if (t.armed) { t.armed = false; t.lesson = 3; el.blockBtn.classList.remove('armed'); m0.press(0, 'block'); }
-      return;
-    }
+    // No 完美 to be had on this lunge: no stop, the next lunge with 挡 ready brings it.
+    if (at === null) { t.stop = null; return; }
     t.blockAt = at;
-    if (t.armed) { t.stop = null; return; }
     teachShow('block');
   }
   // The presses the live match took from the player so far, at the steps it took them.
@@ -1883,8 +1880,9 @@ async function main() {
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action, side = 0) {
     if (!live || live.done || phase !== 'play' || side && !pvp) { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
-    // 第一关教学: in a stop only the lit button goes on; the other (or 1, where the card's is) makes it hop.
-    if (teach?.stop && !side && TEACH_PRESS[teach.stop.kind] !== action) { teachNudge(); diag.tap(action, '教学停住'); return; }
+    // 第一关教学: in a stop only the lit button goes on, once its card is up (the 挡 stop's waits a moment for the shadow,
+    // Sol f06c02c1); the other (or 1, where the card's is) makes it hop.
+    if (teach?.stop && !side && (el.teach.hidden || TEACH_PRESS[teach.stop.kind] !== action)) { teachNudge(); diag.tap(action, '教学停住'); return; }
     // A 冲 tap, taken or not, is what the hint asks for.
     if (action === 'dash' && !side) nudgeOff(pb.t);
     // 冲挡加重: a top bounced off a block (or a heavy one after a lunge that met nothing) is stunned, both buttons with it.
@@ -1897,10 +1895,16 @@ async function main() {
       test.denied++; sfx.deny(); diag.tap(action, `冷却 ${left.toFixed(1)}s`); return;
     }
     diag.tap(action, '收下');
-    // 第一关教学: a 冲 before stop 2 needs no stop 2; the lesson's 挡 waits for its step (teachStep); the lit button's press
-    // ends its stop.
+    // 第一关教学: every stop comes, whatever is pressed before it (Elara 8b471471, d2999ce8). A 冲 before stop 2 goes out and
+    // stop 2 comes once 冲 is ready again. 反打 lit before stop 4 (the picture coming up to the 完美's bounce): stop 4 at
+    // once, the sim held at this lit step, and the 冲 sent from its card, since a 反打 spent now could not be taught. The
+    // lesson's 挡 waits for its step (teachStep); a 冲 meanwhile would spoil its 完美. The lit button's press ends its stop.
     if (teach && !side) {
-      if (teach.lesson === 0 && action === 'dash') teach.lesson = 1;
+      if (teach.lesson === 0 && action === 'dash') teach.dashed = true;
+      if (teach.lesson === 2 && action === 'dash' && !teach.stop) {
+        if (teach.blockAt !== null || teach.hold !== null) { diag.tap(action, '教学等挡'); return; }
+        if (counterLit(c)) { teach.hold = live.match.t; diag.tap(action, '教学第四步'); return; }
+      }
       // The 挡 stop: taken at the 完美 step, the card up or not yet (then the stop holds till the shadow is done).
       if (teach.lesson === 1 && action === 'block' && (teach.stop?.kind === 'block' || teach.blockAt !== null)) {
         teach.armed = true; teach.lesson = 2; sfx.click();

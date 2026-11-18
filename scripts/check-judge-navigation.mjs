@@ -98,10 +98,47 @@ try {
     await page.evaluate(() => window.__top.release());report.push({width,screen,homeHidden:true,handlerRefused:true});
    };
    const fight=async pvp => {
-    await page.locator('#goBtn').tap();await phase('play');await noFightHome(pvp?'pvp-fight':'solo-fight');
-    // A fresh phone's first 莽牛 opens with the lesson (Elara 534cbd22), which waits for its lit button: 跳过 ends it.
-    if(!pvp){const skip=page.locator('#teachSkip');await skip.waitFor({state:'visible'});await skip.tap();await page.locator('#teach').waitFor({state:'hidden'});report.push({width,screen:'solo-teach-skip'});}
+    await page.locator('#goBtn').tap();await phase('play');
+    // A fresh phone's first 莽牛 opens with the lesson (Elara 534cbd22), four stops each waiting for its lit button. At
+    // 390 it is gone through with the button each card is about pressed once just before it (Elara 8b471471, d2999ce8):
+    // 冲 at the start and after 知道了, 挡 after stop 2, 反打 as soon as it lights; all four cards must still come.
+    if(!pvp&&width===390) {
+     const cards=await page.evaluate(() => new Promise(resolve => {
+      const $=id => document.getElementById(id),teach=$('teach'),order=['intro','dash','block','counter'],early=[],seen=[];
+      const tap=el => {el.dispatchEvent(new PointerEvent('pointerdown',{pointerId:9,bubbles:true}));setTimeout(() => el.dispatchEvent(new PointerEvent('pointerup',{pointerId:9,bubbles:true})),60);};
+      const key=kind => kind==='intro'?$('teachOk'):kind==='block'?$('blockBtn'):$('dashBtn');
+      let next=0,busy=false;
+      const tick=() => {
+       const kind=teach.hidden?null:teach.dataset.kind,s=window.__top.status();
+       if(!s.teach||s.phase!=='play'||next===order.length) {resolve({seen,early});return;}
+       if(kind&&!busy) {
+        if(kind!==order[next]) {seen.push(kind);resolve({seen,early});return;}
+        seen.push(kind);busy=true;
+        setTimeout(() => {const k=key(kind);if(kind==='intro') k.click();else tap(k);next++;busy=false;},250);
+       } else if(!kind&&!busy&&!early[next]) {
+        const want=order[next];
+        if(want!=='counter'||$('dashBtn').classList.contains('counter')) {tap(want==='block'?$('blockBtn'):$('dashBtn'));early[next]=true;}
+       }
+       requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+     }));
+     assert.deepEqual(cards.seen,['intro','dash','block','counter'],`${width}px: every stop of the lesson after an early press`);
+     assert.equal(cards.early.filter(Boolean).length,4,`${width}px: an early press before each card`);
+     report.push({width,screen:'solo-teach-early',cards:cards.seen});
+    }
+    await noFightHome(pvp?'pvp-fight':'solo-fight');
+    if(!pvp&&width!==390){const skip=page.locator('#teachSkip');await skip.waitFor({state:'visible'});await skip.tap();await page.locator('#teach').waitFor({state:'hidden'});report.push({width,screen:'solo-teach-skip'});}
     await page.evaluate(() => window.__top.trackSafe(14));await phase('result');
+    if(!pvp&&width===390) {
+     // Stop 4's 反打 lands as the counter: our next 冲 blow inside the lesson 完美's stun (guardStun, 1 s).
+     const landed=await page.evaluate(() => {
+      const ev=window.__top.events(),perfect=ev.find(e => e.type==='blockResult'&&e.side===0&&e.outcome==='perfect');
+      const blow=perfect&&ev.find(e => e.t>perfect.t&&e.role==='attack'&&e.attacker===0&&e.damage>0);
+      return Boolean(blow?.dash&&blow.t-perfect.t<1-1e-6);
+     });
+     assert(landed,`${width}px: stop 4's 反打 lands as the counter`);
+    }
     const replay=page.locator('#replayBtn');assert(await replay.isVisible(),'A replayable collision');
     await replay.tap();await phase('replay');await noFightHome(pvp?'pvp-replay':'solo-replay');await phase('result');
     await goHome(pvp?'pvp-result':'solo-result');
