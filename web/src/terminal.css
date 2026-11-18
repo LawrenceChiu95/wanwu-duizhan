@@ -62,13 +62,15 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .swapkey svg { width:14px;height:14px;stroke:#8ff0dc;stroke-width:2.4; }
 @media(max-height:740px) { .swapkey { height:22px;font-size:12px; } }
 :where(.seen-740) .swapkey { height:22px;font-size:12px; }
-/* The bench's bubbles, under 拍一件 or the left 换件 (over it, it hid 「组装台」, Elara 6cdfe227 7efbda7b): cream like 拍一件, its tail
-   up to the key; taps go through it. */
+/* The bench's bubbles, under 拍一件 or on the left slot's 3D window (Elara 6cdfe227 7efbda7b 17d98c59): cream like 拍一件, the
+   first with its tail up to the key; taps go through them. */
 .swaptip { position:absolute;z-index:4;margin:0;padding:6px 10px 7px;white-space:pre-line;pointer-events:none;
   font:700 13px/1.4 var(--body);color:#20291f;background:#f0e4c0;border-radius:3px;box-shadow:0 0 0 1px #8b7a4c,0 4px 10px #000a;
   animation:tipIn .25s ease-out both; }
 .swaptip::after { content:"";position:absolute;bottom:100%;left:calc(var(--tail, 50%) - 6px);border:6px solid transparent;border-bottom-color:#f0e4c0;border-top:0; }
 .swaptip[hidden] { display:none; }
+.swaptip.flat::after { display:none; }
+.swaptip.tight { font-size:12px;padding:5px 8px 6px; }
 @keyframes tipIn { from { opacity:0;transform:translateY(4px); } }
 .lux { font:700 11px/1.3 var(--body);clip-path:none;color:#a9c7ae;background:#203e2e;border:1px solid #476649;padding:1px 3px; }
 .seg { border-radius:3px;padding:3px;background:#0d1712;box-shadow:inset 0 0 0 1px #5c6049;gap:4px; }

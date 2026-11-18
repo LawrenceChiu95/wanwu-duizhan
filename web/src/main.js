@@ -342,9 +342,10 @@ async function main() {
   let setUp;
   const whenSetUp = new Promise(ok => { setUp = ok; });
   // 「拍一件试试」 there: onto the bench, then 拍一件 as its own key opens it (Elara ee609025); with no backend, the sample.
-  // Back on 首页 before 拍一件 is ready drops it (Sol 038683a4): homeTrips counts the trips back.
+  // Back on 首页 before 拍一件 is ready drops it (Sol 038683a4): homeTrips counts the trips back, noted at the tap on
+  // 「拍一件试试」 and not once the bench is set up, which waits on the opponent's 3D (Sol f143b0e8).
   let homeTrips = 0;
-  const introShoot = () => { const trip = homeTrips; return shootUp.then(() => { if (trip !== homeTrips || phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); }); };
+  const introShoot = () => { const trip = homeTrips; return () => shootUp.then(() => { if (trip !== homeTrips || phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); }); };
   if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two)), introShoot); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
   // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
   // if it fails the bench just keeps the usual backdrop.
@@ -1364,15 +1365,15 @@ async function main() {
   screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
   // Two bubbles on the bench, each once (Elara 7efbda7b): the first visit's under 拍一件, its body pulled left so only the
   // tail reaches the key, off ModelScope's ball at the right edge (Elara aa489e4f); then, back from the first match against
-  // the computer (won or lost), one under the left 换件 for the 角色库. Under their keys, so 「组装台」 stays clear (Elara
-  // 6cdfe227). Taps go through (拍一件 still opens); any tap puts it away for good, and 拍一件 holds its breath while the
+  // the computer (won or lost), one for the left 换件 and the 角色库. Neither over 「组装台」 (Elara 6cdfe227); the second sits
+  // on the left slot's 3D window with no tail, since under its key it hid the name, trait and size (Elara 17d98c59). Taps go through (拍一件 still opens); any tap puts it away for good, and 拍一件 holds its breath while the
   // 换件 one is up (style.css). New keys: old phones have 'wanwu-swap-tip' set from the first bubble.
   const swapTip = $('swapTip'), again = q.get('swaptip') === 'again';
   const TIPS = [
     {key: 'wanwu-bubble-shoot', chip: () => $('benchShoot'), ready: () => true, text: () => '拍一件你身边的东西，它替你上场\n也可以先用这套直接开打',
       left: (c, w) => c.left + c.width / 2 - w + 24},
-    {key: 'wanwu-bubble-swap', chip: () => el.build.querySelector('[data-swap="0"]'), ready: () => soloDone, text: () => `库里还有 ${OFFER.length} 件现成的，\n点这儿换一件`, hush: true,
-      left: (c, w) => c.right - w + 6},
+    {key: 'wanwu-bubble-swap', chip: () => el.build.querySelector('[data-swap="0"]'), ready: () => soloDone, text: () => `库里还有 ${OFFER.length} 件现成的，\n点上面的「换件」换一件`, hush: true,
+      over: () => el.build.querySelector('.slot[data-slot="0"] .module-display')},
   ];
   for (const t of TIPS) t.done = !again && (() => { try { return localStorage.getItem(t.key) === '1'; } catch { return false; } })();
   let soloDone = false, tipUp = null; // soloDone: a match against the computer came to its result on this page
@@ -1385,12 +1386,23 @@ async function main() {
     swapTip.textContent = t.text();
     swapTip.hidden = false;
     el.build.classList.toggle('tipping', Boolean(t.hush));
+    swapTip.classList.toggle('flat', Boolean(t.over));
     placeSwapTip();
     addEventListener('pointerdown', dropSwapTip, {capture: true, once: true});
   }
   function placeSwapTip() {
     if (!tipUp) return;
-    const chip = tipUp.chip().getBoundingClientRect(), box = el.build.getBoundingClientRect();
+    const box = el.build.getBoundingClientRect();
+    if (tipUp.over) { // centred on the window, kept inside its card (a size smaller on a narrow one)
+      const win = tipUp.over(), at = win.getBoundingClientRect(), card = win.closest('.slot').getBoundingClientRect();
+      swapTip.classList.remove('tight');
+      swapTip.classList.toggle('tight', swapTip.offsetWidth > card.width - 12);
+      const w = swapTip.offsetWidth, h = swapTip.offsetHeight;
+      swapTip.style.left = `${(Math.max(card.left + 6, Math.min(card.right - 6 - w, at.left + (at.width - w) / 2)) - box.left).toFixed(1)}px`;
+      swapTip.style.top = `${(at.top + (at.height - h) / 2 - box.top).toFixed(1)}px`;
+      return;
+    }
+    const chip = tipUp.chip().getBoundingClientRect();
     const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, tipUp.left(chip, w) - box.left));
     swapTip.style.left = `${left.toFixed(1)}px`;
     swapTip.style.top = `${(chip.bottom - box.top + 9).toFixed(1)}px`;

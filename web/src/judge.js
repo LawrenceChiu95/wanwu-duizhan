@@ -24,7 +24,8 @@ export const showcases = [
 
 /** The opening page (index.html, put in by vite.config.js): its 和电脑打 and 和人打 wait for the page to be ready, and the
  *  pot's 3D (potview.js) loads only after that, so it never holds up the first screen. onPick(pvp) gets the choice;
- *  「拍一件试试」 is 和电脑打 with onShoot() after it (Elara ee609025). */
+ *  「拍一件试试」 is 和电脑打 with onShoot()'s answer after it (Elara ee609025): onShoot is called at the tap itself, so
+ *  whatever it notes then holds for the wait (Sol f143b0e8). */
 let closePot = () => {};
 // The pot's 3D into its box, once per showing of the page: let go when the page closes, built again when it comes back
 // (Castor, Elara 3d42a0c1: back from a match it stayed the still).
@@ -44,7 +45,7 @@ export function readyIntro(onPick, onShoot) {
     key.onclick = () => { onPick?.(two); leave(); };
   }
   const shoot = document.getElementById('introShoot');
-  if (shoot) { shoot.disabled = false; shoot.onclick = () => { onPick?.(false)?.then?.(onShoot); leave(); }; }
+  if (shoot) { shoot.disabled = false; shoot.onclick = () => { const then = onShoot?.(); onPick?.(false)?.then?.(then); leave(); }; }
   loadPot();
 }
 
