@@ -342,9 +342,12 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .card .badge { border-radius:1px;background:#203e2e;color:#c5d1bb;box-shadow:inset 0 0 0 1px #476649; }
 /* 「右边在用 · 点了对调」: teal like 换件, the key it stands for. */
 .card.used .badge { background:#0b2620;color:#e9f3e4;box-shadow:inset 0 0 0 1.5px #6fdcc6; }
+/* On two lines (the dot only for screen readers), so its end stays off ModelScope's ball over the right column (Castor). */
+.card.used .badge { padding:2px 6px;line-height:16px; }
+.card.used .badge i { display:block;height:0;overflow:hidden; }
 /* 左边 / 右边 at the 角色库's top (Elara 6cdfe227): two tabs, the side being filled lit. */
 .lsides { flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px 0; }
-.lsides button { min-width:0;height:38px;padding:0 8px;border-radius:2px;background:#0b1c15;color:#a3af98;box-shadow:inset 0 0 0 1px #405843;
+.lsides button { min-width:0;height:44px;padding:0 8px;border-radius:2px;background:#0b1c15;color:#a3af98;box-shadow:inset 0 0 0 1px #405843;
   font:700 14px/1 var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .lsides button b { font-weight:800;color:#d8d6c2; }
 .lsides button[aria-selected="true"] { background:#1d3a2c;color:#e9f3e4;box-shadow:inset 0 0 0 2px #6fdcc6,0 0 8px #4fc8bd44; }

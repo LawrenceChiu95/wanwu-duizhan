@@ -1719,7 +1719,7 @@ async function main() {
     const it = byId.get(id), other = cur().parts[1 - k].item === id, own = cur().parts[k].item === id;
     // Which side each tag means, not 已装/装着 (same word to a player, Elara 08bbe423).
     const side = j => j ? '右边' : '左边';
-    const badge = other ? `<span class="badge">${side(1 - k)}在用 · 点了对调</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
+    const badge = other ? `<span class="badge">${side(1 - k)}在用<i> · </i>点了对调</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
     const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
