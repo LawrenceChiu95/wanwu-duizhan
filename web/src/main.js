@@ -30,7 +30,8 @@ const el = {
   howSrc: $('howSrc'), howPick: $('howPick'),
   shoot: $('shootView'), shootBtn: $('shootBtn'),
   busy: $('busy'), busyText: $('busyText'), error: $('error'),
-  teach: $('teach'), teachText: $('teachText'), teachRing: $('teachRing'),
+  teach: $('teach'), teachCard: $('teachCard'), teachTitle: $('teachTitle'), teachLine: $('teachLine'), teachOk: $('teachOk'), teachSkip: $('teachSkip'),
+  teachHoles: $('teachHoles'), teachRims: $('teachRims'),
   pad: $('pad'), dashBtn: $('dashBtn'), blockBtn: $('blockBtn'), dashNope: $('dashNope'), blockNope: $('blockNope'), mute: $('muteBtn'), camSeg: $('camSeg'),
   pad2: $('pad2'), pvpTip: $('pvpTip'), pvpWin: $('pvpWin'), pvpReady: $('pvpReady'), pvpScore: $('pvpScore')
 };
@@ -1038,97 +1039,138 @@ async function main() {
   }
 
   // ---------- 第一关教学 ----------
-  // A new phone's first 莽牛 (Elara 6b6a3c3b, after Pollux's plan): twice the fight stops dead, the button to press lights
-  // up, the other goes into shade and one big line by the tops says what to do. First as the tops close in: 冲. Then the
-  // first lunge 莽牛 flashes for while 挡 is ready: the flash ringed, 挡. The sim never runs more than LIVE_LEAD past the
-  // picture, so it stops with it, not one step on (Elara d308f7b8): a press any time in the stop is the same press. The
-  // lesson's 挡 is taken at the physics step a shadow match has shown to be a 完美 (it replays the live presses and tries
-  // the step), so the lesson ends in the bounce it promised, and 冲 flashes for the counter. A stop waits TEACH_WAIT s of
-  // real time at most (4.5: a first look reads the line and finds the button in about 3, Castor 9329c4e0), then the fight
-  // carries on as it would; a 挡 pressed after that, before its step comes, still goes in at it. Not again on this phone,
-  // nor in 一机双人 or a replay; ?coach=again brings it back.
-  const TEACH_KEY = 'wanwu-teach-seen', TEACH_WAIT = 4.5, TEACH_COUNTER = 1.6;
+  // A new phone's first 莽牛 (Elara 534cbd22, from Altair's plan): four times the fight stops dead and the screen goes dark
+  // but for what the stop is about, with a card beside it (a title, two lines at most). Only the lit button goes on, with
+  // no time-out; a tap anywhere else does nothing but make it hop; 跳过 on the card ends the lesson.
+  // 1 the tops come on: both tops and the bars, 知道了. 2 they close in: 冲 and your top. 3 莽牛 flashes for a lunge with 挡
+  // ready: 莽牛 and 挡. The lesson's 挡 is taken at the physics step a shadow match has shown to be a 完美 (it replays the
+  // live presses and tries the step), so it gets the bounce it promised. 4 莽牛 bounced off and reeling, 冲 lit as 反打:
+  // 莽牛 and 反打, and a 冲 then lands as the counter (counterLit, the light ①).
+  // The sim never runs more than LIVE_LEAD past the picture, so it stops with it (Elara d308f7b8): a press any time in a
+  // stop is the same press. For 4 the sim waits at the lit step (teachStep) and the picture comes up to it. Not again on
+  // this phone, nor in 一机双人 or a replay; ?coach=again brings it back.
+  const TEACH_KEY = 'wanwu-teach-seen';
+  // Stop 1 this far into the fight (s): the tops are in and not yet close (stop 2 comes at about .55).
+  const TEACH_INTRO = 0.2;
   // How far ahead (s of fight) the shadow looks for the lunge's touch.
   const TEACH_LOOK = 2.5;
-  // How far the tops close in (metres between cores from the start) before the first stop; the 挡 goes in this many
-  // physics steps before the lunge touches, well inside the 完美 window.
+  // How far the tops close in (metres between cores from the start) before stop 2; the 挡 goes in this many physics steps
+  // before the lunge touches, well inside the 完美 window.
   const TEACH_NEAR = 0.35, TEACH_EARLY = 8;
-  const TEACH_LINE = {dash: '点冲，撞它', block: '它一闪光，点挡', counter: '点冲，反打'};
+  // Stop 4 once this much of the counter window is left (a fifth gone: 莽牛 seen bounced off).
+  const TEACH_REEL = 0.8;
+  // The card at each stop, its two lines broken where the sentence breaks (20 characters at most: one line at 360 wide);
+  // the words are the sim's (counterDamage 5.2 to a 冲's 1.9; a 完美 stuns the lunger).
+  const TEACH_CARD = {
+    intro: ['撞碎它的核心就赢', '陀螺自己转、自己撞。外面挂的是你的东西，\n中间是核心，先把对面核心撞碎的赢。'],
+    dash: ['冲', '点「冲」朝它撞过去。\n冲完要等一会儿才能再冲。'],
+    block: ['它一闪光，点挡', '闪光就是它要冲过来了。\n这时挡住，能把它弹开、撞晕。'],
+    counter: ['挡住了，反打', '它晕着的时候，「冲」会亮成「反打」，\n这时冲过去伤害最重。']
+  };
+  // The press each stop waits for.
+  const TEACH_PRESS = {dash: 'dash', block: 'block', counter: 'dash'};
   let teach = null;
   function teachStart(args) {
     teach = null;
     if (!live || pvp || !round || fought === null || LADDER[fought].id !== 'mang') return;
     try { if (q.get('coach') !== 'again' && localStorage.getItem(TEACH_KEY) === '1') return; localStorage.setItem(TEACH_KEY, '1'); } catch { /* no storage here: every first 莽牛 */ }
-    // lesson: 0 waits for the tops to close, 1 for a lunge to wind up, 2 for the block's result, 3 done.
-    teach = {lesson: 0, stop: null, args, blockAt: null, armed: false, counterUntil: 0};
+    // lesson: 0 waits for the tops to close (or a 冲 already taken: dashed), 1 for a lunge to wind up, 2 for the block's
+    // 完美, 3 done. hold: the sim step stop 4 waits at.
+    teach = {intro: false, lesson: 0, stop: null, args, blockAt: null, armed: false, lit: false, hold: null, dashed: false};
   }
   function endTeach() {
-    if (teach) teach.stop = null;
     teach = null;
-    el.teach.hidden = true;
-    el.pad.classList.remove('teach-dash', 'teach-block');
+    teachHide();
     el.blockBtn.classList.remove('armed');
   }
+  el.teachSkip.onclick = () => { if (teach) { diag.tap('teach', '跳过'); endTeach(); } };
+  el.teachOk.onclick = () => { if (teach?.stop?.kind === 'intro') teachGo(); };
+  el.teachOk.addEventListener('animationend', () => el.teachOk.classList.remove('hop'));
+  // A tap in the shade: the lit button hops.
+  el.teach.addEventListener('pointerdown', ev => { if (!el.teachCard.contains(ev.target)) teachNudge(); });
+  function teachNudge() {
+    const kind = teach?.stop?.kind;
+    if (!kind || el.teach.hidden) return;
+    replay_(kind === 'intro' ? el.teachOk : kind === 'block' ? el.blockBtn : el.dashBtn, 'hop');
+  }
   function teachShow(kind) {
+    const [title, line] = TEACH_CARD[kind];
     el.teach.dataset.kind = kind;
-    el.teachText.textContent = TEACH_LINE[kind];
+    el.teachTitle.textContent = title;
+    el.teachLine.textContent = line;
+    el.teachOk.hidden = kind !== 'intro';
     el.teach.hidden = false;
-    el.pad.classList.toggle('teach-dash', kind !== 'block');
-    el.pad.classList.toggle('teach-block', kind === 'block');
+    // Only the button to press (if one is) lit and in reach.
+    el.pad.dataset.lit = TEACH_PRESS[kind] ?? 'none';
+    teachLayout();
   }
-  function teachHide() { el.teach.hidden = true; el.pad.classList.remove('teach-dash', 'teach-block'); }
-  // since: when the line went up (the wait counts from there); null while the shadow match is still working out the 挡.
+  function teachHide() {
+    el.teach.hidden = true;
+    delete el.pad.dataset.lit;
+  }
+  // The block stop's card waits for the shadow match (teachFlash).
   function teachStop(kind) {
-    teach.stop = {kind, since: kind === 'dash' ? performance.now() : null};
-    if (kind === 'dash') teachShow(kind);
+    teach.stop = {kind};
+    if (kind !== 'block') teachShow(kind);
   }
-  // The stop ends: a press, or TEACH_WAIT s gone. Full speed at once.
+  // The stop ends: the lit button pressed. Full speed at once.
   function teachGo() {
     const s = teach?.stop;
     if (!s) return;
     teach.stop = null;
     teachHide();
     if (s.kind === 'dash') teach.lesson = 1;
-    // The 挡 stop let go unpressed: the lunge comes on as it would. Its step stays the lesson's till it comes (teachStep),
-    // for a 挡 pressed late.
+    if (s.kind === 'counter') { teach.hold = null; teach.lesson = 3; }
+    // The 挡 stop let go unpressed (跳过 aside, only by a shadow that found no 完美): the lunge comes on as it would.
   }
-  // The speed the picture (and the sim behind it) runs at: 0 in a stop, full again at once.
-  function teachScale() {
-    const s = teach?.stop;
-    if (!s) return 1;
-    if (s.since !== null && performance.now() - s.since >= TEACH_WAIT * 1000) { teachGo(); return 1; }
-    return 0;
-  }
-  // Each frame of play: the first stop once the tops have closed in with 冲 ready; the line and the ring follow the tops.
+  // The speed the picture (and the sim behind it) runs at: 0 in a stop.
+  function teachScale() { return teach?.stop ? 0 : 1; }
+  // Each frame of play: stops 1 and 2 when their moment comes, 4 once the picture is up to the step the sim waits at; the
+  // holes follow the tops.
   function teachTick() {
     if (!teach) return;
     if (!live || live.done) { endTeach(); return; }
-    const [a, b] = pb.state.fighters;
-    if (teach.lesson === 0 && !teach.stop) {
-      const c = live.match.control(0), d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
-      teach.d0 ??= d;
-      if (c.dashIn <= rules.dt && !c.charging && !c.dashing && !(c.stunIn > 0) && teach.d0 - d >= TEACH_NEAR) teachStop('dash');
+    if (!teach.stop) {
+      const [a, b] = pb.state.fighters;
+      if (!teach.intro) {
+        if (pb.t >= TEACH_INTRO) { teach.intro = true; teachStop('intro'); }
+      } else if (teach.lesson === 0) {
+        const c = live.match.control(0), d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
+        teach.d0 ??= d;
+        // A 冲 already taken (Sol f06c02c1): stop 2 as soon as it is ready again, so its line on the wait is still read.
+        if (c.dashIn <= rules.dt && !c.charging && !c.dashing && !(c.stunIn > 0) && (teach.dashed || teach.d0 - d >= TEACH_NEAR)) teachStop('dash');
+      } else if (teach.hold !== null && pb.t >= teach.hold - rules.dt) teachStop('counter');
     }
-    if (teach.lesson === 2 && teach.counterUntil && performance.now() > teach.counterUntil) { teach.lesson = 3; teachHide(); }
-    if (el.teach.hidden) return;
-    const fa = stage.fighters[0], fb = stage.fighters[1], p = {x: 0, y: 0}, q2 = {x: 0, y: 0};
-    if (!fa || !fb || !stage.project(fa.center, p) || !stage.project(fb.center, q2)) return;
-    // Beside the two tops, never over them (the flash has to be seen): under both if it fits above the buttons, else
-    // over both, clear of the top bar.
-    const h = el.teachText.offsetHeight, w = el.teachText.offsetWidth, W = el.app.clientWidth, ra = stage.screenRadius(fa.center, stage.reachOf(fa) + 0.1), rb = stage.screenRadius(fb.center, stage.reachOf(fb) + 0.1);
-    const under = Math.max(p.y + ra, q2.y + rb) + 14, over = Math.min(p.y - ra, q2.y - rb) - 14 - h;
-    const y = under + h <= el.pad.offsetTop - 12 ? under : Math.max(stage.view.top + 8, over);
-    const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, (p.x + q2.x) / 2));
-    el.teachText.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translateX(-50%)`;
-    if (el.teach.dataset.kind === 'block') {
-      const r = Math.max(28, stage.screenRadius(fb.center, stage.reachOf(fb) + 0.15));
-      el.teachRing.style.width = el.teachRing.style.height = `${(2 * r).toFixed(1)}px`;
-      el.teachRing.style.transform = `translate(${q2.x.toFixed(1)}px, ${q2.y.toFixed(1)}px) translate(-50%, -50%)`;
-    }
+    if (!el.teach.hidden) teachLayout();
   }
-  // 莽牛 flashes for a lunge: the second stop, if 挡 is ready. The fight stops at once; the line comes up when the shadow
-  // match has found a 挡 step that makes a 完美. No such step (the lunge would miss, or the shadow has not kept to the
-  // live match): the fight goes on and the next flash is tried. A 挡 pressed before the line is up waits for it.
+  // The holes over what the stop is about, rimmed, and the card beside them: under the tops if it fits above the
+  // buttons, else over them under the bars, never on a hole.
+  function teachLayout() {
+    const kind = el.teach.dataset.kind, fa = stage.fighters[0], fb = stage.fighters[1], box = el.app.getBoundingClientRect();
+    const holes = [], tops = [];
+    for (const [n, f] of [[0, fa], [1, fb]]) {
+      const p = {x: 0, y: 0};
+      if (!f || !stage.project(f.center, p)) continue;
+      const r = Math.max(30, stage.screenRadius(f.center, stage.reachOf(f) + 0.12));
+      tops.push({x: p.x, y: p.y, r});
+      if (kind === 'intro' || (n === 0) === (kind === 'dash')) holes.push({x: p.x, y: p.y, r});
+    }
+    const lit = kind === 'intro' ? el.hud : kind === 'block' ? el.blockBtn : el.dashBtn, rb = lit.getBoundingClientRect(), pad = kind === 'intro' ? 4 : 6;
+    holes.push({x: rb.left - box.left - pad, y: rb.top - box.top - pad, w: rb.width + 2 * pad, h: rb.height + 2 * pad});
+    const shape = h => h.r ? `<circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="${h.r.toFixed(1)}" />` : `<rect x="${h.x.toFixed(1)}" y="${h.y.toFixed(1)}" width="${h.w.toFixed(1)}" height="${h.h.toFixed(1)}" rx="9" />`;
+    const svg = holes.map(shape).join('');
+    if (el.teachHoles.dataset.svg !== svg) { el.teachHoles.innerHTML = el.teachRims.innerHTML = svg; el.teachHoles.dataset.svg = svg; }
+    if (!tops.length) return;
+    const W = el.app.clientWidth, h = el.teachCard.offsetHeight, w = el.teachCard.offsetWidth;
+    const padTop = el.pad.getBoundingClientRect().top - box.top, hudBottom = el.hud.getBoundingClientRect().bottom - box.top;
+    const under = Math.max(...tops.map(t => t.y + t.r)) + 14, over = Math.min(...tops.map(t => t.y - t.r)) - 14 - h;
+    const y = under + h <= padTop - 12 ? under : Math.max(hudBottom + 10, over);
+    const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, tops.reduce((s, t) => s + t.x, 0) / tops.length));
+    el.teachCard.style.transform = `translate(${(x - w / 2).toFixed(1)}px, ${y.toFixed(1)}px)`;
+  }
+  // 莽牛 flashes for a lunge: stop 3, if 挡 is ready. The fight stops at once; the card comes up when the shadow match has
+  // found a 挡 step that makes a 完美. No such step (the lunge would miss, or the shadow has not kept to the live match):
+  // the fight goes on and the next flash is tried. A 挡 pressed before the card is up waits for it.
   async function teachFlash(e) {
     if (!teach || teach.lesson !== 1 || teach.stop || !live || live.done) return;
     const c = live.match.control(0);
@@ -1137,14 +1179,9 @@ async function main() {
     const stop = teach.stop, t = teach, m0 = live.match;
     const at = await teachPlan(e.t).catch(err => { console.warn('教学: 影子对局失败', err); return null; });
     if (teach !== t || t.stop !== stop || live?.match !== m0) return;
-    if (at === null) {
-      t.stop = null;
-      if (t.armed) { t.armed = false; t.lesson = 3; el.blockBtn.classList.remove('armed'); m0.press(0, 'block'); }
-      return;
-    }
+    // No 完美 to be had on this lunge: no stop, the next lunge with 挡 ready brings it.
+    if (at === null) { t.stop = null; return; }
     t.blockAt = at;
-    if (t.armed) { t.stop = null; return; }
-    stop.since = performance.now();
     teachShow('block');
   }
   // The presses the live match took from the player so far, at the steps it took them.
@@ -1193,21 +1230,31 @@ async function main() {
     }
     return null;
   }
-  // Before each live physics step: the armed 挡 goes in at its step.
+  // Before each live physics step: the armed 挡 goes in at its step. After its 完美 the sim waits (true) at the first step
+  // 反打 is lit with TEACH_REEL of the window left, for stop 4; its light out before that (it stays out, updateSidePad)
+  // or the window over: no stop 4.
   function teachStep(m) {
-    if (teach?.blockAt === null || teach?.blockAt === undefined || m.step + 1 < teach.blockAt || teach.stop) return;
+    if (!teach) return false;
+    if (teach.hold !== null) return true;
+    if (teach.lesson === 2 && teach.blockAt === null) {
+      const c = m.control(0), lit = counterLit(c);
+      if (teach.lit && !lit) teach.lesson = 3;
+      else if (lit && c.counterIn <= TEACH_REEL + 1e-9) { teach.hold = m.t; return true; }
+      teach.lit ||= lit;
+      return false;
+    }
+    if (teach.blockAt === null || m.step + 1 < teach.blockAt || teach.stop) return false;
     teach.blockAt = null;
-    if (!teach.armed) { teach.lesson = 3; return; }
+    if (!teach.armed) { teach.lesson = 3; return false; }
     teach.armed = false;
     el.blockBtn.classList.remove('armed');
     m.press(0, 'block');
+    return false;
   }
-  // The lesson's 挡 landed: a 完美 lights 冲 for the counter; anything else ends it there.
+  // The lesson's 挡 landed: anything but a 完美 ends the lesson there (a 完美 brings stop 4, teachStep).
   function teachBlocked(e) {
-    if (!teach || teach.lesson !== 2 || e.side !== 0 || teach.counterUntil) return;
-    if (e.outcome !== 'perfect' || !e.deflected) { teach.lesson = 3; return; }
-    teach.counterUntil = performance.now() + TEACH_COUNTER * 1000;
-    teachShow('counter');
+    if (!teach || teach.lesson !== 2 || e.side !== 0) return;
+    if (e.outcome !== 'perfect' || !e.deflected) teach.lesson = 3;
   }
 
   // ---------- 提示出手 ----------
@@ -1833,6 +1880,9 @@ async function main() {
   // 冲 / 挡: taken on press (not release); the sim decides at its next step whether it is ready.
   function press(action, side = 0) {
     if (!live || live.done || phase !== 'play' || side && !pvp) { diag.tap(action, phase === 'play' ? '已结束' : `不在对局 ${phase}`); return; }
+    // 第一关教学: in a stop only the lit button goes on, once its card is up (the 挡 stop's waits a moment for the shadow,
+    // Sol f06c02c1); the other (or 1, where the card's is) makes it hop.
+    if (teach?.stop && !side && (el.teach.hidden || TEACH_PRESS[teach.stop.kind] !== action)) { teachNudge(); diag.tap(action, '教学停住'); return; }
     // A 冲 tap, taken or not, is what the hint asks for.
     if (action === 'dash' && !side) nudgeOff(pb.t);
     // 冲挡加重: a top bounced off a block (or a heavy one after a lunge that met nothing) is stunned, both buttons with it.
@@ -1845,11 +1895,17 @@ async function main() {
       test.denied++; sfx.deny(); diag.tap(action, `冷却 ${left.toFixed(1)}s`); return;
     }
     diag.tap(action, '收下');
-    // 第一关教学: a 冲 before the first stop needs no stop; the lesson's 挡 waits for its step (teachStep); any press ends
-    // a stop.
+    // 第一关教学: every stop comes, whatever is pressed before it (Elara 8b471471, d2999ce8). A 冲 before stop 2 goes out and
+    // stop 2 comes once 冲 is ready again. 反打 lit before stop 4 (the picture coming up to the 完美's bounce): stop 4 at
+    // once, the sim held at this lit step, and the 冲 sent from its card, since a 反打 spent now could not be taught. The
+    // lesson's 挡 waits for its step (teachStep); a 冲 meanwhile would spoil its 完美. The lit button's press ends its stop.
     if (teach && !side) {
-      if (teach.lesson === 0 && action === 'dash') teach.lesson = 1;
-      // The 挡 stop: taken at the 完美 step, the line up or not yet (then the stop holds till the shadow is done).
+      if (teach.lesson === 0 && action === 'dash') teach.dashed = true;
+      if (teach.lesson === 2 && action === 'dash' && !teach.stop) {
+        if (teach.blockAt !== null || teach.hold !== null) { diag.tap(action, '教学等挡'); return; }
+        if (counterLit(c)) { teach.hold = live.match.t; diag.tap(action, '教学第四步'); return; }
+      }
+      // The 挡 stop: taken at the 完美 step, the card up or not yet (then the stop holds till the shadow is done).
       if (teach.lesson === 1 && action === 'block' && (teach.stop?.kind === 'block' || teach.blockAt !== null)) {
         teach.armed = true; teach.lesson = 2; sfx.click();
         // The press shows at once (Pollux, Elara 56506aa2): 挡 stays in, gold-edged, till its shield goes up.
@@ -1882,7 +1938,7 @@ async function main() {
     btn.addEventListener('pointerdown', ev => { ev.preventDefault(); fingers.add(ev.pointerId); btn.classList.add('down'); press(action, side); });
     for (const type of ['pointerup', 'pointercancel', 'pointerleave']) btn.addEventListener(type, ev => { fingers.delete(ev.pointerId); if (!fingers.size) btn.classList.remove('down'); });
     btn.addEventListener('pointercancel', () => diag.cancel());
-    btn.addEventListener('animationend', ev => { if (ev.animationName === 'padDeny') btn.classList.remove('deny'); else if (ev.animationName === 'padPop') btn.classList.remove('pop'); });
+    btn.addEventListener('animationend', ev => { if (ev.animationName === 'padDeny') btn.classList.remove('deny'); else if (ev.animationName === 'padPop') btn.classList.remove('pop'); else if (ev.animationName === 'teachHop') btn.classList.remove('hop'); });
   }
   // A thumb held down or rocked on a button opens no menu and selects nothing (远夏's Android, task 5ee99454).
   for (const {box} of pads) box.addEventListener('contextmenu', ev => ev.preventDefault());
@@ -2194,7 +2250,7 @@ async function main() {
       if (phase === 'play' && live && !live.done) {
         // Keep the live sim just ahead of the picture; once it is over, the replay is complete.
         const m = live.match;
-        while (!m.done && m.t < pb.t + dt + LIVE_LEAD) { teachStep(m); if (bot) botStep(m); m.advance(); }
+        while (!m.done && m.t < pb.t + dt + LIVE_LEAD && !teachStep(m)) { if (bot) botStep(m); m.advance(); }
         if (m.done) { live.done = true; replay = m.result(); pb.r = replay; setCaption(false, reasonLine(replay)); }
         pb.sync(live.done);
       }

@@ -360,15 +360,16 @@ export function mountShoot(ctx) {
   function draw(key) {
     const [kind, code] = key.split(':');
     let html = '';
+    // The big frame is a tap target too, the same as the button under it (远夏 865a85a3, Elara 14b23d0e: many tap it first).
     if (kind === 'pick') {
-      html = `<div class="sframe pick"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一次拍一样，让它占满画面</small></span></div>
+      html = `<div class="sframe pick" data-act="camera" role="button" tabindex="0" aria-label="拍照"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一次拍一样，让它占满画面</small></span></div>
         ${api.kind === 'fake' && !api.named ? `<div class="ssix"><span>拍什么都行，会按最像的一类算攻守</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>`
           : '<div class="ssix"><span>拍的是什么就认成什么，大小、轻重、软硬看照片估</span></div>'}${SAMPLE}
         ${foot(ghost('album', '从相册选', ICON.album), go('camera', '拍照'))}`;
     } else if (kind === 'out') {
       // Used up for today: 拍照 greyed, and the way on is a game with the characters already there (Elara 6dee70f7).
       const [line, after] = QUOTA_SAY[code].split('，');
-      html = `<div class="sframe pick out"><span class="sview">${ICON.camera}<b>${line}</b><small>${after}</small></span></div>
+      html = `<div class="sframe pick out"${code === 'session' ? ' data-act="renew" role="button" tabindex="0" aria-label="重新开始拍"' : ''}><span class="sview">${ICON.camera}<b>${line}</b><small>${after}</small></span></div>
         <div class="ssix"><span>角色库里现成的角色随时能打</span></div>${SAMPLE}
         ${foot(code === 'session' ? ghost('renew', '重新开始拍', ICON.retry) : `<button type="button" class="sghost" disabled>${ICON.camera}<span>拍照</span></button>`, go('play', '先去打一局'))}`;
     } else if (kind === 'qrecog' || kind === 'qgen') {
@@ -671,6 +672,7 @@ export function mountShoot(ctx) {
     equip: () => { const id = job.itemId; close(); ctx.equip(id); }
   };
   el.body.onclick = e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled) acts[b.dataset.act]?.(b); };
+  el.body.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.sframe[data-act]')) { e.preventDefault(); e.target.click(); } };
 
   // ---------- open / close ----------
   function open(from) {
