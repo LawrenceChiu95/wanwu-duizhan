@@ -8,7 +8,7 @@ import {random} from '../../sim/math.js';
 // COUNTER_CUE_LIT and control().counterLands, and a 冲 pressed while it is lit must land as the counter (Elara 66cd3fe0:
 // every lit step, so the last one too). Scripted players block a reaction after each cue; after a 完美 the light is read
 // step by step with nothing pressed, then the 冲 goes in at the first and the last lit step, on the three stages and in
-// 一机双人, with the stock builds, random ones (out and hug) and Sol's 长臂猿 fights that lit too long (0fe8da0c).
+// 一机双人, with the stock builds, random ones (out and hug) and Sol's 断风 fights that lit too long (0fe8da0c).
 // A wider sweep (40 random fights a mode): /private/tmp/claude-501/counter/sweep.mjs, numbers in #131.
 const {foes, judgeBuilds} = JSON.parse(readFileSync(new URL('../../data/foes.json', import.meta.url)));
 const build = (parts, spread = 'e180') => ({parts: parts.map((p, i) => ({...p, mount: i ? spread : 'e0'}))});
@@ -112,7 +112,7 @@ for (const mode of ['mang', 'wen', 'chang', 'pvp']) {
  });
 }
 
-// Sol 0fe8da0c: 长臂猿, the player on a chair out and a feather duster hugged at 90°; the 冲 Sol pressed 35 steps after
+// Sol 0fe8da0c: 断风, the player on a chair out and a feather duster hugged at 90°; the 冲 Sol pressed 35 steps after
 // the 完美 (0.71 s left, lit by counterIn alone) flew short. Now 反打 is off by then, and its last lit step lands.
 const SOL = {fighters: [build([{item: 'fanshuo-chair', orient: 'out'}, {item: 'fanshuo-feather', orient: 'hug'}], 'e90'), foeBuild('chang')], fights: [
  {seed: 155, perfect: 3393, presses: '15d,357b,805d,822b,958d,1335b,1539d,1916b,2106d,2472b,2723d,2932b,3300d,3373b'},

@@ -124,9 +124,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #result.win .winner { color:var(--c0l);background:none;filter:none; }
 #result.lose .winner { color:var(--ink); }
 .why { color:#c2cbb8;font-size:14px; }
-.actions .ghost { clip-path:none;border:1px solid #6c7056;background:#15271e;color:var(--ink); }
 .actions .primary { clip-path:none;border:1px solid #9d813d;background:linear-gradient(#d2ad51,#b58c38);color:#242719;box-shadow:inset 0 -3px #7d622e; }
-.actions button { font-weight:700;font-size:16px;border-radius:3px; }
+.actions > button { font-weight:700;border-radius:3px; }
 .panel { background:var(--case);box-shadow:var(--case-shadow);border-radius:5px 5px 0 0;color:var(--ink); }
 .head b { font-weight:800;color:var(--ink);font-size:21px; }
 .grid button { clip-path:none;background:#11271e;border:1px solid #4a6149;box-shadow:inset 0 1px #69775a;border-radius:3px; }
@@ -208,7 +207,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .pad.dash.cooling {background:#16251c;}
 .orient button { border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;color:#242c20;box-shadow:none;opacity:.58;font-weight:800; }
 .orient button[aria-checked="true"] {border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;box-shadow:0 1px 0 #4bc8ad;opacity:1;}
-.pad.block,.actions .ghost {border:12px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;color:#253c2d;box-shadow:0 4px 4px #0009;}
+.pad.block {border:12px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;color:#253c2d;box-shadow:0 4px 4px #0009;}
 .pad.block svg {color:#234d3a;}
 .terminal-brand b {background:none;color:#e6dec1;font-size:30px;text-shadow:1px 2px #020905;letter-spacing:2px;}
 .orient {height:44px;}
@@ -310,18 +309,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .frow[aria-checked="true"] { background:#0f2b23;box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
 .frow .lvl { border-radius:1px; }
 /* 结算: this match's numbers on small screens, the next opponent on a lit cassette. */
-.rbuild .rw { color:#a3af98; }
-.stats li { border-radius:1px;background:repeating-linear-gradient(0deg,transparent 0 11px,#74997a12 11px 12px),repeating-linear-gradient(90deg,transparent 0 11px,#74997a12 11px 12px),#0b2118;
-  box-shadow:inset 0 0 0 1px #405843,inset 0 2px 8px #000b; }
-.stats b { font-weight:800;color:#e1ddc6; }
-.stats span { color:#92b4a1; }
 .tip { color:var(--c0l); }
-.unlock { border-radius:1px;background:var(--screen);box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
-.unlock::after { background:linear-gradient(100deg,transparent,#9ee6d522,transparent); }
-.unlock .k { color:var(--c1); }
-.unlock b { font-weight:800;color:#e1ddc6; }
-.unlock .play { color:#a9b6a7; }
-.unlock .ft { width:44px;height:44px;font-size:26px; }
 /* Coach hints: the field labels' plate, a teal bar down the left, pointing at its button. */
 #coach { border-radius:2px;background:linear-gradient(170deg,#1d302d,#0c1918);box-shadow:inset 0 0 0 1px #637870,inset 3px 0 #83e1d7,0 4px 10px #000a;padding:6px 14px 7px 16px; }
 #coach::after { background:#0c1918;box-shadow:1px 1px 0 #637870; }
@@ -419,7 +407,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 提示出手 (Elara af9e8542): the same plate, under the player's top and riding with it, a size down for its longer words;
    冲 beats in its own brass while it is up. */
 #fx .hilite.nudge { left:0;font-size:16px;letter-spacing:.06em;padding:4px 10px; }
-/* 老龟's hint in two lines, 它专防先冲 over what to do, so it is never wider than the phone (Castor 9329c4e0). */
+/* 铁壁's hint in two lines, 它专防先冲 over what to do, so it is never wider than the phone (Castor 9329c4e0). */
 #fx .hilite.nudge.two { flex-direction:column;align-items:center;gap:0;white-space:pre-line;text-align:center;line-height:1.35;padding:4px 12px 5px; }
 :is(#pad,#pad2) .pad.dash.nudge:not(.deny):not(.pop):not(.down) { animation:padNudge .8s ease-in-out infinite; }
 /* 反打 (Elara b32bfd9a ①): lit for about half a second while the eyes are on the arena, so all at once, no fade. The
@@ -470,17 +458,18 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #hud.newfeel .core .bar.jolt { animation:coreJolt .28s ease-out; }
 @keyframes coreJolt { 0% { translate:5px 0; } 16% { translate:-4px 0; } 34% { translate:3px 0; } 54% { translate:-2px 0; } 76% { translate:1px 0; } 100% { translate:0 0; } }
 
-/* 三个都赢了: 拍一件 inside the tip, a word you can tap (Elara 2621157e). */
-/* 拍一件 after the first 莽牛 win: a cream plate of its own over the result's buttons, the 组装台's 拍一件 made wide. */
-.shootnow { display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:46px;margin:0 0 10px;padding:0 10px;
-  border:8px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:none;color:#242c20;
-  font:400 18px/1 var(--display);letter-spacing:1px;box-shadow:0 3px 4px #0008;cursor:pointer; }
-.shootnow svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round; }
-.shootnow[hidden] { display:none; }
-.shootnow:active { transform:translateY(1px); }
-.tip .tipshoot { all:unset;cursor:pointer;margin:0 2px;padding:0 1px;color:inherit;font-weight:800;
-  border-bottom:1.5px solid currentColor; }
-.tip .tipshoot:focus-visible { outline:2px solid var(--c1);outline-offset:2px; }
+/* 结算's outlined key (Elara ee078f5c): cream line on the dark case, a size shorter than the yellow one. */
+.actions .second { border-radius:3px;background:#10201a;color:#e6dec1;box-shadow:inset 0 0 0 1.5px #c9c3a0,0 3px 4px #0008; }
+.actions .second svg { width:20px;height:20px;stroke-width:2; }
+.unlock { border-radius:1px;background:var(--screen);box-shadow:inset 0 0 0 1px var(--c1),inset 3px 0 var(--c1); }
+.unlock::after { background:linear-gradient(100deg,transparent,#9ee6d522,transparent); }
+.unlock b { font-weight:800;color:#e1ddc6; }
+.unlock b small { color:var(--c1); }
+.unlock .play { color:#a9b6a7; }
+.unlock .ft { width:34px;height:34px;font-size:20px; }
+.why .nums { color:#8fa596; }
+.rlinks button { color:#a9b6a7; }
+.rlinks button:not([hidden]) ~ button:not([hidden])::before { color:#6c7864; }
 
 /* ---------- 一机双人 (Elara 1e2c813c): one phone flat between two people, 1P at the foot, 2P at the head ----------
    2P's buttons and bars are 1P's turned 180°, so each reads them the right way up: 冲 left, 挡 right. The bars sit just

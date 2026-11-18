@@ -118,23 +118,32 @@ export function pickStats(s, winner) {
 }
 
 // Not won against a ladder opponent whose stage only asks for more tries: the tip encourages without pointing a way, since
-// no build is shown to beat it (Elara 803193e6; Sol 2b411bc5: 长臂猿 is only harder than 老龟).
-const FOE_TIP = {chang: '长臂猿是最后也是最难的一关，多打几局试试'};
+// no build is shown to beat it (Elara 803193e6; Sol 2b411bc5: 断风 is only harder than 铁壁).
+const FOE_TIP = {chang: '断风是最后也是最难的一关，多打几局试试'};
 // Lost to a ladder opponent whose build makes it read tougher than its hp: say why and how to get through, ahead of any
-// other tip (凡朔's 对象 took 老龟 for having more hp: both its pieces hug and it blocks a lot; Elara b9d6e779, 2621157e).
-// The line beside the top in a match against it says the same (Elara 424f0bcb): 老龟 guards the first lunge, and its own
+// other tip (凡朔's 对象 took 铁壁 for having more hp: both its pieces hug and it blocks a lot; Elara b9d6e779, 2621157e).
+// The line beside the top in a match against it says the same (Elara 424f0bcb): 铁壁 guards the first lunge, and its own
 // lunge after that is the opening.
 export const WEN_HINT = '它专防先冲：等它冲过来，先挡，再冲';
-const FOE_WHY = {wen: `老龟两件都贴着，${WEN_HINT.slice(1)}`};
+const FOE_WHY = {wen: `铁壁两件都贴着，${WEN_HINT.slice(1)}`};
 
 /** One tip, by fixed rules, for the next match. `foe`: the ladder opponent's id, when it was one. */
-export function tipLine(s, winner, foe = null) {
+export const tipLine = (s, winner, foe = null) => tipAdvice(s, winner, foe).line;
+// A tip that asks for another build (a heavier one, a piece turned to 贴着) rather than another way to play: losing, the
+// result's yellow key follows it, 换件再打 for these, 再打一次 for the rest (Elara 97af5a2d).
+const build = line => ({line, build: true});
+/** The tip and whether it is about the build (`build: true`) or about how to play. */
+export function tipAdvice(s, winner, foe = null) {
+  const t = tipOf(s, winner, foe);
+  return typeof t === 'string' ? {line: t, build: false} : t;
+}
+function tipOf(s, winner, foe) {
   const mine = s.firstBroken[0];
   if (winner === 0) return s.perfect ? `完美挡了 ${s.perfect} 次，换个装法试试别的打法` : '赢了。试试换个装法，看能不能赢得更快';
   if (s.presses === 0 && s.blocks === 0) return '按冲朝它扑过去，它冲过来时按挡';
   // Lost stage 1 on time without a single 冲 (Sol a8851e63: its turtle runs out the clock 99 times in 100): say so plainly.
   // Only there, new feel, never pressed: telling a player who did lunge 「没出手」 is worse than saying nothing (Elara 27b4d4c3).
-  // Anyone else losing stage 1 on time hears they lunged too little, never the 莽牛 line on blocking (Castor 72baf2c8, Elara ad7297c3).
+  // Anyone else losing stage 1 on time hears they lunged too little, never the 狂冲 line on blocking (Castor 72baf2c8, Elara ad7297c3).
   // No clock loss (第三轮 ④): what taught it is the arena closing in after a minute, so that is what the line says.
   // The silent backstop (HP left at 120 s) says 拖得太久, not 撞碎: each line follows how the match really ended (Sol 11f8fe0f).
   if (winner === 1 && foe === 'mang' && s.squeezed && !s.timeout && !s.oldFeel) return s.presses === 0 ? '一直在挡没出手，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血' : '出手太少，拖到场地收紧被撞碎了。挡住后点冲，才打得掉它的血';
@@ -143,27 +152,27 @@ export function tipLine(s, winner, foe = null) {
     return s.presses === 0 ? `${T}：你一直在挡，没出手。挡住后点冲，才打得掉它的血` : `${T}：出手太少。挡住后点冲，才打得掉它的血`;
   }
   if (winner === 1 && FOE_WHY[foe]) return FOE_WHY[foe];
-  // Ahead of the 长臂猿 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
+  // Ahead of the 断风 encouragement: a photo too light to win should hear so at any stage (Elara 365a2667).
   const o = winner === 1 && s.outmatched;
   if (o) {
     // An item still named for what it was taken as (「我拍的拖鞋」) loses the 我拍的: the line says 你拍的 already.
     const mine = (NAMES[o.item] ?? '那件').replace(/^我拍的/, ''), foe = NAMES[o.foe] ?? '那件';
-    return o.by === 'mass' ? `你拍的${mine}比对面的${foe}轻，换一件更重、更硬的再来`
+    return build(o.by === 'mass' ? `你拍的${mine}比对面的${foe}轻，换一件更重、更硬的再来`
       // A grade can come from attack as much as durability, so a lower one says nothing about which is harder (Elara 07c3c82a).
-      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${o.foeGrade} 级，换一件等级更高的再来`;
+      : `你拍的${mine}是 ${GRADE[o.item]} 级，对面的${foe}是 ${o.foeGrade} 级，换一件等级更高的再来`);
   }
   if (FOE_TIP[foe]) return FOE_TIP[foe];
-  if (winner === 1 && s.hugAttacker) return `${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`;
+  if (winner === 1 && s.hugAttacker) return build(`${NAMES[s.hugAttacker] ?? '这件'}适合伸出，换另一件贴着`);
   if (mine?.orient === 'out') {
-    if (PREFERRED_ORIENT[mine.item] === 'hug') return `先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`;
+    if (PREFERRED_ORIENT[mine.item] === 'hug') return build(`先碎的是伸出的${NAMES[mine.item] ?? '那件'}，试试把它改成贴着`);
     if (s.perfect < 2) return `${NAMES[mine.item] ?? '伸出的件'}先碎了，试试在对手冲来时按挡`;
   }
   if (s.missed >= 3 && s.missed >= s.presses / 2) return '冲空多，等它靠近再冲';
   if (s.blocked >= 2) return '冲进了它的挡，等它挡完再冲';
   if (s.landed === 0) return '一次没冲中，离近一点再按冲';
   if (s.blocks === 0) return '它冲过来时按挡，能把它弹开';
-  if (mine?.orient === 'hug') return `贴着的${NAMES[mine.item] ?? '那件'}被打碎了，换一件更结实的贴着`;
+  if (mine?.orient === 'hug') return build(`贴着的${NAMES[mine.item] ?? '那件'}被打碎了，换一件更结实的贴着`);
   // Older replays keep their line, whatever the draw (Sol 11f8fe0f).
   if (winner === null) return s.timeout || !s.overtime ? `${s.overtime ? ENOUGH : '时间到'}按剩血判，多冲中几下就能赢` : '两边同时碎了，多冲中几下就能先打碎它';
-  return '换个装法再打一局';
+  return build('换个装法再打一局');
 }

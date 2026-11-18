@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {setNames, matchStats, tipLine, NAMES, reasonLine, endLine} from '../../web/src/reason.js';
+import {setNames, matchStats, tipLine, tipAdvice, NAMES, reasonLine, endLine, WEN_HINT} from '../../web/src/reason.js';
 import {ratingOf, GRADES} from '../../web/src/rating.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../data/catalog.json', import.meta.url)));
@@ -197,11 +197,11 @@ test('the two real six-point boundary items retain opposite orientation preferen
   assert.equal(tipLine(stats(lamp.id), 1), '台灯先碎了，试试在对手冲来时按挡');
 });
 
-test('not won against 长臂猿 only encourages, pointing no way (Elara 803193e6)', () => {
+test('not won against 断风 only encourages, pointing no way (Elara 803193e6)', () => {
   const s = stats('pillow');
   for (let i = 0; i < 4; i++) s.missed++, s.presses++;
-  assert.equal(tipLine(s, 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
-  assert.equal(tipLine(s, null, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  assert.equal(tipLine(s, 1, 'chang'), '断风是最后也是最难的一关，多打几局试试');
+  assert.equal(tipLine(s, null, 'chang'), '断风是最后也是最难的一关，多打几局试试');
   assert.equal(tipLine(s, 1, 'mang'), tipLine(s, 1));
   assert.equal(tipLine(s, 0, 'chang'), tipLine(s, 0));
   s.presses = 0;
@@ -219,9 +219,9 @@ test('a lost photo lighter or graded below the opponent says to bring a heavier,
   assert.equal(tipLine(s, 1), tipLine(s, 1, 'chang'), 'any stage, not only the last');
   // Not lost, or no photo in the build: the tips stay as they were.
   assert.equal(tipLine(s, 0, 'chang'), tipLine(lost(['fanshuo-cup'], chang, () => false), 0, 'chang'));
-  assert.equal(tipLine(s, null, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  assert.equal(tipLine(s, null, 'chang'), '断风是最后也是最难的一关，多打几局试试');
   assert.equal(lost(['fanshuo-cup', 'fanshuo-pot'], chang, () => false).outmatched, null);
-  assert.equal(tipLine(lost(['fanshuo-cup'], chang, () => false), 1, 'chang'), '长臂猿是最后也是最难的一关，多打几局试试');
+  assert.equal(tipLine(lost(['fanshuo-cup'], chang, () => false), 1, 'chang'), '断风是最后也是最难的一关，多打几局试试');
   // Not pressing anything still hears how to play first.
   s.presses = 0;
   assert.equal(tipLine(s, 1, 'chang'), '按冲朝它扑过去，它冲过来时按挡');
@@ -311,4 +311,23 @@ test('a stage 1 loss that went past the tightening says the arena closed in; 时
   ]}, [{parts: []}, {parts: []}], () => false);
   assert.equal(tipLine(draw('double-ko', 45), null), '两边同时碎了，多冲中几下就能先打碎它');
   assert.equal(tipLine(draw('timeout', 120), null), '拖得太久按剩血判，多冲中几下就能赢');
+});
+
+// Lost, the result's yellow key follows the tip (Elara 97af5a2d): 换件再打 for a tip about the build, 再打一次 for one about
+// the way to play, 铁壁's included.
+test('each loss tip says whether it is about the build or the way to play', () => {
+  const build = (s, foe) => tipAdvice(s, 1, foe);
+  const chang = {parts: [{item: 'fanshuo-feather', orient: 'out'}, {item: 'fanshuo-chair', orient: 'hug'}]};
+  const heavy = matchStats({events: [{type: 'dash', phase: 'end', side: 0, quality: 'full'}]}, [{parts: [{item: 'fanshuo-cup', orient: 'out'}]}, chang], id => id === 'fanshuo-cup');
+  assert.deepEqual(build(heavy, 'chang'), {line: '你拍的金属杯比对面的椅子轻，换一件更重、更硬的再来', build: true});
+  const broom = catalog.items.find(it => it.category === 'broom' && it.rating);
+  assert.deepEqual(build(stats(broom.id, 'hug')), {line: `${broom.name}适合伸出，换另一件贴着`, build: true});
+  assert.deepEqual(build(stats('pillow')), {line: '先碎的是伸出的枕头，试试把它改成贴着', build: true});
+  assert.equal(build(stats('pillow'), 'wen').build, false, '铁壁\'s tip is about the way to play');
+  assert.ok(build(stats('pillow'), 'wen').line.includes(WEN_HINT.slice(1)));
+  assert.equal(build(stats('pillow'), 'chang').build, false);
+  const idle = stats('pillow'); idle.presses = 0; idle.blocks = 0;
+  assert.deepEqual(build(idle), {line: '按冲朝它扑过去，它冲过来时按挡', build: false});
+  // Every line tipLine gives is the same words.
+  for (const foe of [null, 'mang', 'wen', 'chang']) assert.equal(tipLine(stats('pillow'), 1, foe), build(stats('pillow'), foe).line);
 });
