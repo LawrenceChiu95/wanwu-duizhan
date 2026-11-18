@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS, COUNTER_CUE_LIT} from '../../sim/v3.js';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
 import {LiveTurns} from './livecards.js';
@@ -1875,6 +1875,7 @@ async function main() {
   function replay_(btn, cls) { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); }
   for (const [side, pad] of pads.entries()) for (const [btn, action] of [[pad.dash, 'dash'], [pad.block, 'block']]) {
     btn.left = btn.querySelector('.left');
+    btn.word = btn.querySelector('span');
     // Real press state on touchdown: the button goes down and lights up until the finger lifts. Each button keeps its own
     // fingers by pointerId (一机双人: four thumbs at once), so one lifting never lets go of another's press.
     const fingers = new Set();
@@ -1975,6 +1976,12 @@ async function main() {
       // Back from cooling: one pop so the thumb knows without looking twice.
       if (state === 'ready' && (btn.dataset.state === 'cooling' || btn.dataset.state === 'locked')) replay_(btn, 'pop');
       btn.dataset.state = state;
+    }
+    // 反打 (Elara b32bfd9a ①): 冲 lights up and says so while a 冲 pressed now lands as the counter.
+    const counter = !live.done && (c.counterIn ?? 0) + 1e-9 >= COUNTER_CUE_LIT && c.dashIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0);
+    if (pad.dash.classList.contains('counter') !== counter) {
+      pad.dash.classList.toggle('counter', counter);
+      pad.dash.word.textContent = counter ? '反打' : '冲';
     }
   }
   // 一机双人's bench: 1P's 下一步 hands it to 2P, whose 开打 starts the match.
@@ -2131,7 +2138,7 @@ async function main() {
     cam: CAM,
     start,
     music: () => sfx._music(),
-    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, target: e.target, targetPart: e.targetPart, damage: e.damage, side: e.side, phase: e.phase, outcome: e.outcome})) ?? []
+    events: () => replay?.events.filter(e => e.type !== 'contact' && e.type !== 'recoil').map(e => ({t: e.t, type: e.type, role: e.role, attacker: e.attacker, dash: e.dash, target: e.target, targetPart: e.targetPart, damage: e.damage, side: e.side, phase: e.phase, outcome: e.outcome})) ?? []
   };
 
   // ---------- loop ----------

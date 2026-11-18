@@ -187,10 +187,15 @@ export function turnRig(itemId, environment, zoom = 1) {
   if (!src) return null;
   const scene = new THREE.Scene();
   scene.environment = environment ?? null;
-  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x20242e, 1.6));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  // Lit brighter than the stage (Elara b32bfd9a ③: dark and dirty beside the styled picture it fades in over): a
+  // lighter sky and ground, and a soft light from the camera's side so the front the card shows is never in shade.
+  // livecards.js draws it with TURN_TONE, not the stage's ACES, so its colours stay those of the picture.
+  scene.add(new THREE.HemisphereLight(0xf4f6ff, 0x5d5a55, 1.5));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
   keyLight.position.set(2, 3, 2.5);
-  scene.add(keyLight);
+  const frontLight = new THREE.DirectionalLight(0xfff7ee, 1.3);
+  frontLight.position.set(-0.4, 0.5, 1);
+  scene.add(keyLight, frontLight);
   const obj = src.clone(true), spin = new THREE.Group(), {pose, yaw, swing} = poses.get(itemId);
   obj.applyMatrix4(pose);
   spin.add(obj);

@@ -103,6 +103,11 @@ export const PVP_COMBAT_OPTIONS=Object.freeze({
  ...ROUND_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,pvp:Object.freeze({charge:.22,pace:1.5})})
 });
+// 反打 (Elara b32bfd9a ①): the 冲 button lights as 「反打」 while control().counterIn is at least this (s). The counter
+// window runs the whole stun (guardStun, 1 s), but the foe flies on all that time: in 6,080 scripted tries after a 完美 on
+// the three stages and in 一机双人, no 冲 pressed with under 0.65 s left reached it in time. The 0.05 over that is for the
+// frame between the light and the tap. Lit, it lands as the counter (test/position-combat/counter-cue.test.mjs).
+export const COUNTER_CUE_LIT=.7;
 export const MATERIAL_JUDGE_COMBAT_OPTIONS=Object.freeze({
  ...ROUND_JUDGE_COMBAT_OPTIONS,
  combatRules:Object.freeze({...ROUND_JUDGE_COMBAT_OPTIONS.combatRules,
@@ -1058,7 +1063,9 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   /** Queue a press for an 'input' side; it is taken at the start of the next step (or ignored on cooldown). */
   press(side,action){if(!M||manual.sides[side]!=='input'||!ACTIONS.includes(action))throw Error('press needs a manual input side and dash | block');if(!done)queued[side].push(action);},
   /** Button state for a side: seconds until ready, and what it is doing now. */
-  control(side){const k=fs[side].ctl,f=fs[side];return {dashIn:Math.max(0,Math.max(k.dashReady,k.dashLockedUntil)-step)*r.dt,blockIn:Math.max(0,k.blockReady-step)*r.dt,charging:charging(f),dashing:dashing(f),shield:shielded(f),...(impact&&{stunIn:Math.max(0,k.stunUntil-step+1)*r.dt,dashLockIn:Math.max(0,k.dashLockedUntil-step)*r.dt})};},
+  control(side){const k=fs[side].ctl,f=fs[side];return {dashIn:Math.max(0,Math.max(k.dashReady,k.dashLockedUntil)-step)*r.dt,blockIn:Math.max(0,k.blockReady-step)*r.dt,charging:charging(f),dashing:dashing(f),shield:shielded(f),...(impact&&{stunIn:Math.max(0,k.stunUntil-step+1)*r.dt,dashLockIn:Math.max(0,k.dashLockedUntil-step)*r.dt}),
+   // How long a 冲 pressed now (taken next step) still meets countering(): the foe stunned by our 完美 and the window open.
+   ...(round&&{counterIn:Math.max(0,Math.min(k.counterUntilRound??-Infinity,fs[1-side].ctl.stunUntil)-step)*r.dt})};},
   advance,
   result(){if(!done)throw Error('match not finished');return result;},
   /** Abandon a match before its end (frees the physics world). */
