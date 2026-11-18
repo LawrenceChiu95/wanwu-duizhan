@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 
 // The phone-sized GLBs in data/models (catalog `glb` paths are relative to the repo root); which ones, model-files.js.
 // data/lux3d holds the 17–20 MB originals and is deliberately not bundled.
@@ -46,11 +47,40 @@ function cardPose(item) {
 
 const thumbnails = new Map();
 
+// How a model looks off the arena (Elara e3832fa5: 做好了 was dark and grey beside the styled picture, the opening page's
+// pot bright and like it): that pot viewer's light (potview.js) — the model's own materials, a sharp room to reflect,
+// one warm sky light, no tone mapping — for 做好了, 看它怎么来的, the 角色库's cards and the 组装台's slots. The arena keeps
+// its darker light and the toy-look materials, which the fight is read by.
+const LOOK_SKY = [0xffefda, 0x687a77, 1.3];
+export function lookEnvironment(renderer) {
+  const pmrem = new THREE.PMREMGenerator(renderer), room = new RoomEnvironment();
+  const texture = pmrem.fromScene(room).texture;
+  room.dispose(); pmrem.dispose();
+  return texture;
+}
+const lookLight = () => new THREE.HemisphereLight(...LOOK_SKY);
+// One copy of each material as it was made, shared by every view.
+const asMade = new WeakMap();
+function madeLook(obj) {
+  const made = m => {
+    if (!m.userData.made) return m;
+    if (!asMade.has(m)) {
+      const c = m.clone(), {color, roughness} = m.userData.made;
+      if (color) c.color.fromArray(color);
+      if (roughness !== undefined) c.roughness = roughness;
+      asMade.set(m, c);
+    }
+    return asMade.get(m);
+  };
+  obj.traverse(o => { if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(made) : made(o.material); });
+  return obj;
+}
+
 /** Render loaded equipment once using the existing renderer, without another WebGL context. */
 export function itemThumbnail(itemId, renderer, environment) {
   if (thumbnails.has(itemId)) return thumbnails.get(itemId);
   if (!cache.has(itemId)) return null;
-  const object = cache.get(itemId).clone(true), scene = new THREE.Scene();
+  const object = madeLook(cache.get(itemId).clone(true)), scene = new THREE.Scene();
   const bounds = new THREE.Box3().setFromObject(object), center = bounds.getCenter(new THREE.Vector3());
   const size = bounds.getSize(new THREE.Vector3()), span = size.length();
   const camera = new THREE.PerspectiveCamera(35, 1.6, span / 100, span * 10);
@@ -76,12 +106,9 @@ export function itemThumbnail(itemId, renderer, environment) {
   camera.position.copy(center).addScaledVector(direction, distance);
   camera.updateMatrixWorld(true);
   scene.environment = environment;
-  scene.environmentIntensity = 0.65;
-  scene.add(object, new THREE.HemisphereLight('#fff5eb', '#344d42', 1));
-  const light = new THREE.DirectionalLight('#fff8ea', 1.6);
-  light.position.copy(camera.position);
-  scene.add(light);
-  const target = new THREE.WebGLRenderTarget(256, 160);
+  scene.add(object, lookLight());
+  // Encoded as on screen: a render target is left linear otherwise, and the picture read back from it comes out dark.
+  const target = new THREE.WebGLRenderTarget(256, 160, {colorSpace: THREE.SRGBColorSpace});
   const oldTarget = renderer.getRenderTarget(), oldColor = renderer.getClearColor(new THREE.Color());
   const oldAlpha = renderer.getClearAlpha(), viewport = renderer.getViewport(new THREE.Vector4());
   try {
@@ -135,8 +162,10 @@ async function loadOne(item) {
     gltf.scene.traverse(o => {
       if (!o.isMesh) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
-      // Toy look: lift near-black albedo so silhouettes stay readable on the dark stage.
+      // Toy look: lift near-black albedo so silhouettes stay readable on the dark stage. The model as it was made is
+      // kept for the views off the arena (madeLook).
       for (const m of mats) {
+        m.userData.made = {color: m.color?.toArray(), roughness: m.roughness};
         if (m.color) m.color.setRGB(0.05 + m.color.r * 0.95, 0.05 + m.color.g * 0.95, 0.055 + m.color.b * 0.95);
         if ('roughness' in m) m.roughness = Math.max(m.roughness, 0.45);
       }
@@ -191,17 +220,10 @@ export function turnRig(itemId, environment, zoom = 1) {
   const src = cache.get(itemId);
   if (!src) return null;
   const scene = new THREE.Scene();
+  // The opening page's light (lookEnvironment above); livecards.js draws it without the stage's tone mapping.
   scene.environment = environment ?? null;
-  // Lit brighter than the stage (Elara b32bfd9a ③: dark and dirty beside the styled picture it fades in over): a
-  // lighter sky and ground, and a soft light from the camera's side so the front the card shows is never in shade.
-  // livecards.js draws it with TURN_TONE, not the stage's ACES, so its colours stay those of the picture.
-  scene.add(new THREE.HemisphereLight(0xf4f6ff, 0x5d5a55, 1.5));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-  keyLight.position.set(2, 3, 2.5);
-  const frontLight = new THREE.DirectionalLight(0xfff7ee, 1.3);
-  frontLight.position.set(-0.4, 0.5, 1);
-  scene.add(keyLight, frontLight);
-  const obj = src.clone(true), spin = new THREE.Group(), {pose, yaw, swing} = poses.get(itemId);
+  scene.add(lookLight());
+  const obj = madeLook(src.clone(true)), spin = new THREE.Group(), {pose, yaw, swing} = poses.get(itemId);
   obj.applyMatrix4(pose);
   spin.add(obj);
   scene.add(spin);

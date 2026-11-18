@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS, COUNTER_CUE_LIT} from '../../sim/v3.js';
 import ladderJson from '../../data/foes.json';
-import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail, setFileSource} from './models.js';
+import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail, setFileSource, lookEnvironment} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -227,7 +227,9 @@ async function main() {
   // A broken piece's slot goes dark with a crack across it (terminal.css .newfeel); ?feel=old keeps its red 碎 slot.
   el.hud.classList.toggle('newfeel', !oldFx);
   stage.jolts = !oldFx;
-  const turns = new LiveTurns(stage.renderer, stage.scene.environment);
+  // Off the arena (cards, 做好了, the 组装台's slots) a model is lit as on the opening page, not as in the fight.
+  const lookEnv = lookEnvironment(stage.renderer);
+  const turns = new LiveTurns(stage.renderer, lookEnv);
   const overlay = new Overlay(stage, el);
 
   const mode = q.get('mode') === 'B' ? 'B' : 'A';
@@ -456,7 +458,7 @@ async function main() {
       const thumb = slot.querySelector('.module-thumb');
       thumb.dataset.modelId = part.item;
       thumb.dataset.modelPath = byId.get(part.item).glb;
-      const url = itemThumbnail(part.item, stage.renderer, stage.scene.environment);
+      const url = itemThumbnail(part.item, stage.renderer, lookEnv);
       thumb.hidden = !url;
       if (url) { thumb.src = url; thumb.alt = NAMES[part.item]; }
       for (const b of slot.querySelectorAll('[data-orient]')) b.setAttribute('aria-checked', String(b.dataset.orient === part.orient));
