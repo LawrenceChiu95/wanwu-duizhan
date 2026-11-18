@@ -31,7 +31,7 @@ let closePot = () => {};
 // (Castor, Elara 3d42a0c1: back from a match it stayed the still).
 function loadPot() {
   const intro = document.getElementById('intro'), hint = document.getElementById('introHint'), req = closePot = () => {};
-  import('./potview.js').then(m => m.showPot(document.getElementById('introModel'), hint)).then(close => {
+  import('./potview.js').then(m => m.showPot(document.getElementById('introModel'), hint, document.getElementById('introHull'))).then(close => {
     if (intro.hidden || closePot !== req) close(); else closePot = close;
   }).catch(() => { hint.textContent = '3D 未载入 · 显示改装参考图'; });
 }
