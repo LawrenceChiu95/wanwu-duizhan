@@ -836,7 +836,8 @@ async function main() {
     // hint, never a white-out (Elara 2065efad).
     stage.deflect(e.side, at, e.attacker);
     overlay.screenFlash(0.1);
-    stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
+    // It starts as the deflect's freeze ends (the camera holds through it) and reads about 0.12 s above half its peak, either kind.
+    stage.shake(perfect ? 9 : 6, 0.26);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
     if (perfect || tiered) { sfx.perfect(); dip(0.5); }
@@ -2418,7 +2419,8 @@ async function main() {
     }
     const slowNow = pb && (phase === 'play' || phase === 'replay' ? pb.slowFactor(pb.t) < 0.99 : phase === 'finale' && pb.slowFactor(pb.end + finaleSim) < 0.99);
     sfx.duck(Boolean(slowNow) || performance.now() < dipUntil);
-    stage.updateCamera(dt, false);
+    // Hit-stop holds the camera too: a 冲中's push and any shake wait for the freeze to end (Elara).
+    stage.updateCamera(dt, false, (phase === 'play' || phase === 'replay') && pb ? pb.held : 0);
     if (test.safe && dt > 0 && phase !== 'build' && phase !== 'computing') {
       const o = stage.safeOverflow(), cur = test.safe[phase];
       if (!cur || o.px > cur.px) test.safe[phase] = {...o, t: +(pb?.t ?? 0).toFixed(2), w: el.app.clientWidth};

@@ -95,8 +95,8 @@ export class KitchenPreview {
     }
   }
 
-  updateBattleCamera(dt = 0) {
-    if (this.mode === 'photo') { this.photo.update(dt); return; }
+  updateBattleCamera(dt = 0, held = 0) {
+    if (this.mode === 'photo') { this.photo.update(dt, held); return; }
     // Preserve the source panorama's observation point; translation exposes reconstruction gaps.
     const {camera, fighters, view} = this.stage;
     const bottom = this.stage.safeBottom();

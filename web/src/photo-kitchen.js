@@ -45,9 +45,12 @@ export class PhotoKitchen {
 
   noteCollision() { this.collisionAge = 0; }
 
-  update(dt) {
+  update(dt, held = 0) {
     const {camera, view} = this.stage;
-    if (this.stage.topDown && document.getElementById('build').hidden) { this.updateTopDown(dt); return; }
+    // A hit-stop holds the camera with the picture (Elara): its zoom and jolts run on the real seconds the picture moved
+    // (`held`, Playback.held, is the rest), so a 冲中's push and any shake start as the freeze ends.
+    const run = Math.max(0, dt - held), still = dt > 0 && run <= 0;
+    if (this.stage.topDown && document.getElementById('build').hidden) { this.updateTopDown(dt, run, still); return; }
     if (this.plate) this.plate.visible = this.enabled;
     if (this.texture && (this.lastW !== view.w || this.lastH !== view.h)) {
       this.lastW = view.w;
@@ -81,7 +84,7 @@ export class PhotoKitchen {
     this.maxFov = THREE.MathUtils.radToDeg(2 * Math.atan(nominal * 2));
     const building = !document.getElementById('build').hidden;
     const [a, b] = this.stage.fighters;
-    let tangent = nominal * THREE.MathUtils.clamp(this.zoomStep(dt, building), 1, 2);
+    let tangent = nominal * THREE.MathUtils.clamp(this.zoomStep(run, building), 1, 2);
     if (!this.enabled && !building && a && b) {
       tangent /= 2.15;
       const halfHeight = Math.max(1, Math.min(y - view.top, view.h - this.stage.safeBottom() - y));
@@ -94,7 +97,7 @@ export class PhotoKitchen {
           (Math.abs(pos.y)+radius)*view.h/(2*halfHeight*depthToFront*0.9));
       }
     }
-    const [sx, sy, push] = this.jolt(dt, building);
+    const [sx, sy, push] = this.jolt(run, building, still);
     tangent /= push;
     const desired = THREE.MathUtils.radToDeg(2 * Math.atan(tangent));
     camera.fov = desired;
@@ -140,8 +143,10 @@ export class PhotoKitchen {
   }
 
   /** The picture's jolts this frame: [x px, y px, how much the push-in tightens the view (1 = none)]. */
-  jolt(dt, building) {
+  jolt(dt, building, still = false) {
     const {view} = this.stage, c = this.stage.cam;
+    // Held: the picture stands where it was (no new jitter), nothing ages.
+    if (still && !building && this.lastJolt) return this.lastJolt;
     let sx = 0, sy = 0, push = 1;
     if (!building && dt > 0) {
       if (c.push) {
@@ -175,11 +180,11 @@ export class PhotoKitchen {
         }
       }
     } else if (building) { c.push = null; c.shake4 = 0; c.punch = null; c.shakeAge = Infinity; }
-    return [sx, sy, push];
+    return this.lastJolt = [sx, sy, push];
   }
 
   /** 一机双人: straight down on the arena, stage.topDown up the screen, its centre in the middle of the band between the bars. */
-  updateTopDown(dt) {
+  updateTopDown(dt, run = dt, still = false) {
     const {camera, view} = this.stage, fighters = this.stage.fighters;
     if (this.plate) this.plate.visible = false;
     const fresh = !(dt > 0) || this.topTan == null || this.topFor !== this.stage.topDown;
@@ -188,7 +193,7 @@ export class PhotoKitchen {
     for (const f of live) mid.add(f.center);
     if (live.length) mid.divideScalar(live.length).setY(0);
     const centre = this.topCentre ??= new THREE.Vector3();
-    if (fresh) centre.copy(mid); else centre.lerp(mid, 1 - Math.exp(-dt * TOP_FOLLOW));
+    if (fresh) centre.copy(mid); else centre.lerp(mid, 1 - Math.exp(-run * TOP_FOLLOW));
     camera.position.set(centre.x, TOP_HEIGHT, centre.z);
     camera.up.copy(this.stage.topDown);
     camera.lookAt(centre.x, 0, centre.z);
@@ -197,10 +202,10 @@ export class PhotoKitchen {
     const halfH = Math.max(40, (bottom - view.top) / 2), halfW = view.w / 2 - 6, k = view.h / 2;
     // The tangent of half the vertical field of view: the zoom's TOP_NEAR..TOP_FAR m across the narrower half of the band,
     // and, under it, the floor that keeps every top's swept circle inside the band.
-    const half = THREE.MathUtils.lerp(TOP_NEAR, TOP_FAR, THREE.MathUtils.clamp(this.zoomStep(dt, false, TOP_GIVE), 1, 2) - 1);
+    const half = THREE.MathUtils.lerp(TOP_NEAR, TOP_FAR, THREE.MathUtils.clamp(this.zoomStep(run, false, TOP_GIVE), 1, 2) - 1);
     const zoomed = half / TOP_HEIGHT * k / Math.min(halfW, halfH);
     // The floor leaves room for this frame's shake, so a jolt never pushes a top over the band's edge.
-    const [sx, sy, push] = this.jolt(dt, false), roomW = Math.max(20, halfW - Math.abs(sx)), roomH = Math.max(20, halfH - Math.abs(sy));
+    const [sx, sy, push] = this.jolt(run, false, still), roomW = Math.max(20, halfW - Math.abs(sx)), roomH = Math.max(20, halfH - Math.abs(sy));
     let floor = 0;
     for (const f of live) {
       const p = (this.fitPoint ??= new THREE.Vector3()).copy(f.center).applyMatrix4(camera.matrixWorldInverse);
@@ -209,7 +214,7 @@ export class PhotoKitchen {
     }
     // As single-player's fit: at once when a top needs more room, then giving way slowly.
     if (fresh || floor > this.topTan) this.topTan = floor;
-    else this.topTan += (floor - this.topTan) * (1 - Math.exp(-dt * TOP_GIVE));
+    else this.topTan += (floor - this.topTan) * (1 - Math.exp(-run * TOP_GIVE));
     this.topFor = this.stage.topDown;
     // An impact's push-in tightens the zoom, never past the floor: both tops stay whole through it.
     const tangent = Math.max(zoomed / push, this.topTan);

@@ -1556,9 +1556,10 @@ export class Stage {
     }
     return D;
   }
-  updateCamera(dt, snap) {
+  /** `held`: real seconds of `dt` the picture stood still on a hit-stop (Playback.held); the fixed camera holds with it. */
+  updateCamera(dt, snap, held = 0) {
     if (this.kitchen?.inspection) { this.kitchen.controls.update(); return; }
-    if (this.kitchen) { this.kitchen.updateBattleCamera(dt); return; }
+    if (this.kitchen) { this.kitchen.updateBattleCamera(dt, held); return; }
     const [a, b] = this.fighters;
     if (!a || !b) return;
     const c = this.cam;
