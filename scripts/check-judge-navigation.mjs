@@ -105,6 +105,25 @@ try {
     await goHome(pvp?'pvp-result':'solo-result');
    };
    await choose(false);await fight(false);
+   // Won on a 反打, then 打下一个 and 开打 (Wren b7e0e2df): the match ends with the counter window open and the result
+   // screen still reads its buttons; the next foe's fight must start, page error free.
+   console.log(JSON.stringify({width,checkpoint:'solo-counter-win'}));
+   await choose(false);const foe=await page.locator('#foeLabel').innerText();
+   await page.evaluate(() => {window.__top.counterBot();window.__top.trackSafe(14);});
+   await page.locator('#goBtn').tap();await phase('play');await phase('result');await page.evaluate(() => window.__top.counterBot(false));
+   const end=await page.evaluate(() => {
+    const ev=window.__top.events(),{winner}=window.__top.status().meta;
+    const blow=ev.findLast(e => e.role==='attack'&&e.damage>0&&e.target===1&&e.targetPart==='core'),perfect=ev.findLast(e => e.type==='blockResult'&&e.side===0&&e.outcome==='perfect'&&e.t<=blow?.t);
+    // countering(): the foe still stunned by our 完美 (guardStun, 1 s).
+    return {winner,counter:Boolean(blow?.attacker===0&&blow.dash&&perfect&&blow.t-perfect.t<1-1e-6)};
+   });
+   assert.deepEqual(end,{winner:0,counter:true},`${width}px: the scripted fight must be won on a 反打 (pick another seed if the ladder changed)`);
+   const again=page.locator('#againBtn');assert.equal(await again.innerText(),'打下一个');await again.tap();await phase('build');
+   await page.waitForFunction(() => !document.querySelector('#goBtn').disabled);
+   const next=await page.locator('#foeLabel').innerText();assert.notEqual(next,foe,'打下一个 brings the next foe');
+   await page.locator('#goBtn').tap();await phase('play');await noFightHome('solo-next-fight');
+   report.push({width,screen:'solo-counter-next',foe,next});
+   await page.evaluate(() => window.__top.trackSafe(14));await phase('result');await goHome('solo-next-result');
    await choose(true);await goHome('pvp-1p-build');
    await choose(true);await page.locator('[data-pick="0"]').tap();await page.locator('#library').waitFor({state:'visible'});
    await goHome('pvp-1p-library',() => page.locator('#libBack'));
