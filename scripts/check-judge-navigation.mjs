@@ -99,6 +99,8 @@ try {
    };
    const fight=async pvp => {
     await page.locator('#goBtn').tap();await phase('play');await noFightHome(pvp?'pvp-fight':'solo-fight');
+    // A fresh phone's first 莽牛 opens with the lesson (Elara 534cbd22), which waits for its lit button: 跳过 ends it.
+    if(!pvp){const skip=page.locator('#teachSkip');await skip.waitFor({state:'visible'});await skip.tap();await page.locator('#teach').waitFor({state:'hidden'});report.push({width,screen:'solo-teach-skip'});}
     await page.evaluate(() => window.__top.trackSafe(14));await phase('result');
     const replay=page.locator('#replayBtn');assert(await replay.isVisible(),'A replayable collision');
     await replay.tap();await phase('replay');await noFightHome(pvp?'pvp-replay':'solo-replay');await phase('result');

@@ -121,8 +121,13 @@
     </div>
   </section>
 
-  <!-- 第一关教学 (Elara 6b6a3c3b): a new phone's first 莽牛 stops twice; one line between the tops, a ring on 莽牛's flash. -->
-  <div id="teach" hidden aria-live="polite"><i class="veil"></i><i id="teachRing"></i><b id="teachText"></b></div>
+  <!-- 第一关教学 (Elara 534cbd22): a new phone's first 莽牛 stops four times; the screen dark but for what the stop is about,
+       holes cut in the shade (teachHoles) and rimmed (teachRims), and a card beside them. -->
+  <div id="teach" hidden aria-live="polite">
+    <svg class="veil" aria-hidden="true"><defs><mask id="teachMask" maskUnits="userSpaceOnUse"><rect class="all" width="100%" height="100%" fill="#fff" /><g id="teachHoles" fill="#000"></g></mask></defs>
+      <rect class="shade" width="100%" height="100%" mask="url(#teachMask)" /><g id="teachRims"></g></svg>
+    <div id="teachCard"><button type="button" id="teachSkip">跳过</button><b id="teachTitle"></b><p id="teachLine"></p><button type="button" id="teachOk">知道了</button></div>
+  </div>
   <div id="pad" hidden>
     <button type="button" class="pad dash" id="dashBtn" aria-label="冲"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M2.5 8h5M1.5 12h7M2.5 16h5" /><path d="M11 5l7 7-7 7" /><path d="M16 5l7 7-7 7" /></svg><b class="left" aria-hidden="true"></b><span>冲</span></button>
     <button type="button" class="pad block" id="blockBtn" aria-label="挡"><i class="cd"></i><i class="press"></i><svg viewBox="0 0 24 24"><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.3-7.5 10-4.4-1.7-7.5-5.4-7.5-10V5.8z" /><path d="M12 7v9" /></svg><b class="left" aria-hidden="true"></b><span>挡</span></button>

@@ -547,19 +547,32 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #pad2 { top:calc(env(safe-area-inset-top) + 8px); }
 #app.pvp { --pvp-pad:calc(8px + 73px + 20px + 8px); }
 :is(#pad,#pad2) .say { text-align:center; font:700 12px/1.2 var(--display); letter-spacing:.12em; color:#d8d6c2; opacity:.8; text-shadow:0 1px 2px #000; pointer-events:none; }
-/* 第一关教学 (Elara 6b6a3c3b ②): the fight all but stopped, the arena in shade, one line on the 准备 plate between the tops;
-   the button to press lit and large, the other dark; 莽牛's flash ringed. */
-#teach { position:absolute; inset:0; z-index:3; pointer-events:none; }
-#teach .veil { position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 46%, rgba(4,9,7,.15) 20%, rgba(4,9,7,.62)); animation:teachIn .2s ease-out both; }
-#teach[data-kind="counter"] .veil { display:none; }
-#teachText { position:absolute; left:0; top:0; padding:5px 22px 7px; white-space:nowrap; font-size:30px; font-weight:950; letter-spacing:4px; color:var(--ink); text-shadow:1px 2px #000;
-  border:12px solid transparent; border-image:var(--hardware) 70 stretch; background:#10221b; background-clip:padding-box; box-shadow:0 5px 12px #0009; animation:teachIn .2s ease-out both; }
-#teachRing { display:none; position:absolute; left:0; top:0; border-radius:50%; border:3px solid #fff8dc; box-shadow:0 0 0 2px #0009, 0 0 22px 4px #fff3c4aa, inset 0 0 16px #fff3c466; animation:teachRing .7s ease-in-out infinite; }
-#teach[data-kind="block"] #teachRing { display:block; }
+/* 第一关教学 (Elara 534cbd22): the fight stopped, the screen dark (about 70%) but for holes over what the stop is about,
+   rimmed in light; a card on the 准备 plate beside them. The shade takes every tap (a tap there makes the lit button
+   hop). The buttons stand over it anyway (#pad's z-index): the one to press as it is, the other as dark and out of reach. */
+#teach { position:absolute; inset:0; z-index:3; touch-action:none; }
+#teach .veil { position:absolute; inset:0; width:100%; height:100%; animation:teachIn .2s ease-out both; }
+#teach .shade { fill:rgba(3,7,6,.72); }
+#teachRims { fill:none; stroke:#fff1c2; stroke-width:2.5; filter:drop-shadow(0 0 6px #ffe39acc) drop-shadow(0 0 14px #ffd76688); animation:teachRim 1s ease-in-out infinite; }
+#teachCard { position:absolute; left:0; top:0; width:min(356px, calc(100% - 16px)); box-sizing:border-box; padding:8px 8px 10px; text-align:center;
+  border:12px solid transparent; border-image:var(--hardware) 70 stretch; background:#10221b; background-clip:padding-box; box-shadow:0 6px 16px #000b; animation:teachIn .2s ease-out both; }
+#teachTitle { display:block; padding:0 34px; font:950 25px/1.25 var(--display); letter-spacing:3px; color:var(--ink); text-shadow:1px 2px #000; }
+/* Two lines as written (TEACH_CARD), each one line at 360 wide. */
+#teachLine { margin:5px 0 0; font:700 min(15px, 4.1vw)/1.5 var(--display); color:#d8d6c2; white-space:pre-line; }
+#teachOk { display:block; margin:9px auto 0; min-width:150px; height:50px; font:900 20px/1 var(--display); letter-spacing:4px; color:#242617; text-shadow:0 1px #f6d87166;
+  border:12px solid transparent; border-image:url('./assets/terminal/yellow.webp') 73 fill stretch; background:none; box-shadow:0 4px 4px #0009, 0 0 18px #ffe39a88; }
+#teachOk[hidden] { display:none; }
+#teachSkip { position:absolute; right:-4px; top:-4px; padding:6px 8px; font:700 13px/1 var(--display); letter-spacing:.1em; color:#a1afa4; background:none; border:0; }
 @keyframes teachIn { from { opacity:0; } }
-@keyframes teachRing { 50% { opacity:.45; border-width:5px; } }
-#pad.teach-dash .pad.block, #pad.teach-block .pad.dash { filter:brightness(.38) saturate(.4); }
-#pad.teach-dash .pad.dash:not(.deny):not(.pop), #pad.teach-block .pad.block:not(.deny):not(.pop) { z-index:1; animation:teachLit .8s ease-in-out infinite; }
+@keyframes teachRim { 50% { stroke-opacity:.55; } }
+#pad[data-lit] { pointer-events:none; }
+#pad[data-lit="dash"] .pad.dash, #pad[data-lit="block"] .pad.block { pointer-events:auto; }
+#pad[data-lit]:not([data-lit="dash"]) .pad.dash, #pad[data-lit]:not([data-lit="block"]) .pad.block { filter:brightness(.3) saturate(.3); }
+#pad[data-lit]:not([data-lit="dash"]) .say:nth-of-type(1), #pad[data-lit]:not([data-lit="block"]) .say:nth-of-type(2) { opacity:.25; }
+/* A tap in the shade: the lit button hops (translate, so it adds to what transform is doing). */
+.hop { animation:teachHop .32s ease-out; }
+:is(#pad,#pad2) .pad.hop:not(.deny) { animation:teachHop .32s ease-out; }
+:is(#pad,#pad2) .pad.dash.counter.hop:not(.deny):not(.pop):not(.down) { animation:teachHop .32s ease-out, counterPop .24s ease-out both; }
+@keyframes teachHop { 35% { translate:0 -9px; } 70% { translate:0 2px; } }
 /* The lesson's 挡 taken while the fight stands still: held in with a gold edge till the shield is up. */
 #pad .pad.block.armed { z-index:1; transform:translateY(4px) scale(.965); outline:3px solid var(--c0l); outline-offset:1px; filter:brightness(1.15) drop-shadow(0 0 14px #ecce85cc); }
-@keyframes teachLit { 0%,100% { transform:scale(1.07); filter:brightness(1.1) drop-shadow(0 0 8px #ffeeb0); } 50% { transform:scale(1.12); filter:brightness(1.28) drop-shadow(0 0 16px #ffeeb0); } }
