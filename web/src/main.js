@@ -1675,7 +1675,7 @@ async function main() {
 
   // ---------- controls ----------
   // 角色库: every item a card (3D turning, name, category, size and weight, where it came from at the foot). The other slot's item
-  // is tagged with its side (「右边在用」) and can't be picked; this slot's own says its side too (「左边在用」). Photo-made items with a saved generation record get
+  // is tagged with its side and a tap on it swaps the two (「右边在用 · 点了对调」, Elara 6cdfe227); this slot's own says its side too (「左边在用」). Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
   const sourceLine = it => {
     if (isLux(it.id)) return `来源：照片 → Lux3D 生成${LUX[it.id] ? ' · ' + LUX[it.id] : ''}`;
@@ -1700,7 +1700,7 @@ async function main() {
     const it = byId.get(id), other = cur().parts[1 - k].item === id, own = cur().parts[k].item === id;
     // Which side each tag means, not 已装/装着 (same word to a player, Elara 08bbe423).
     const side = j => j ? '右边' : '左边';
-    const badge = other ? `<span class="badge">${side(1 - k)}在用</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
+    const badge = other ? `<span class="badge">${side(1 - k)}在用 · 点了对调</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
     const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
@@ -1713,7 +1713,7 @@ async function main() {
       : path ? `<svg class="ghost" viewBox="0 0 100 100" aria-hidden="true"><path d="${path}" /></svg>` : '';
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
-      <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
+      <button type="button" class="pick" aria-label="${other ? `和${side(1 - k)}对调：` : '装上'}${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
         <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<span class="nmt"><b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}${traitTags(id)}</span></span>
         ${rows}<small class="spec">${spec(id)}</small>
@@ -1723,6 +1723,7 @@ async function main() {
     const req = ++libReq, top = el.libGrid.scrollTop;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
+    paintSides(k);
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回组装台`;
     // Collection so far, best grade first (远夏 11-02: collect the S).
     const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
@@ -1735,7 +1736,8 @@ async function main() {
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
       card.querySelector('.pick').onclick = async () => {
-        if (cur().parts[1 - libSlot].item === id || card.classList.contains('wait')) return;
+        if (cur().parts[1 - libSlot].item === id) { swapSides(); return; }
+        if (card.classList.contains('wait')) return;
         // A just-shot item's 3D may still be on its way: the build changes once it is here (Sol f0e85efc).
         // A new card dealt in meanwhile redraws the grid, not the choice.
         const still = choosing();
@@ -1770,6 +1772,20 @@ async function main() {
     }
   }
   function closeLibrary() { libReq++; el.library.hidden = true; }
+  // The two sides at the top, each named by what it has on; a tap fills the other side instead.
+  const libSides = [...$('libSides').querySelectorAll('[data-side]')];
+  function paintSides(k) {
+    for (const [j, b] of libSides.entries()) { b.lastChild.textContent = NAMES[cur().parts[j].item]; b.setAttribute('aria-selected', String(j === k)); }
+  }
+  for (const b of libSides) b.onclick = () => { const k = Number(b.dataset.side); if (k !== libSlot && !el.library.hidden) openLibrary(k, true); };
+  // The other side's card: the two items change sides (each side keeps how it is put on), back to the bench.
+  function swapSides() {
+    const [a, b] = cur().parts;
+    changed(a.item, b.item);
+    [a.item, b.item] = [b.item, a.item];
+    closeLibrary();
+    rebuild();
+  }
 
   // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over, with a sound by grade and gold for an S:
   // in the 角色库 and when 拍一件's 好了 shows it. Remembered per item and rating version, so a re-rated item turns over
@@ -2000,10 +2016,9 @@ async function main() {
   // the catalog and no job kept on this phone.
   const benchShoot = $('benchShoot');
   const paintBenchShoot = () => benchShoot.classList.toggle('first', !shoot?.state.stored && items.every(it => shipped.has(it.id) || sampleIds.has(it.id)));
-  // …and the 角色库 beside it, saying how many it holds (Elara 1370fb7f).
+  // …and the bar says how many the 角色库 holds (Elara 6cdfe227): 「组装台 · 12 件可选」.
   const paintBenchLib = () => { $('benchLibN').textContent = OFFER.length; };
   paintBenchLib();
-  $('benchLib').onclick = () => { if (phase === 'build') openLibrary(libSlot); };
   shoot0.then(async s => {
     // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how the two real items were made.
     if (!s && judge) {

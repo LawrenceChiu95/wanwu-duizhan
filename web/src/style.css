@@ -234,9 +234,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .bhead .shoot.first { animation: shootBreathe 1.6s ease-in-out infinite alternate; }
 /* …but not while the first visit's bubble is up over 换件 (Elara 1370fb7f). */
 #build.tipping .bhead .shoot.first { animation: none; filter: none; }
-/* 角色库 beside it, the same size (Elara 1370fb7f): it takes the room, 拍一件 sits right after it. */
-.bhead .lib + .shoot { margin-left: 6px; }
-.bhead .lib em { margin-left: 2px; font-style: normal; font-variant-numeric: tabular-nums; }
+/* 「组装台 · 12 件可选」 (Elara 6cdfe227): the count beside the title, 拍一件 alone on the right. */
+.bhead span em { font-style: normal; font-variant-numeric: tabular-nums; }
 @keyframes shootBreathe { from { filter: drop-shadow(0 0 0 rgba(237, 187, 89, 0)); } to { filter: drop-shadow(0 0 6px rgba(237, 187, 89, 0.85)); } }
 .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .slot { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 9px 8px 8px; min-width: 0;
@@ -499,7 +498,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @media (max-height: 700px) { .lgrid { padding-right: 56px; } #app.pvp.turned .lgrid { padding: 4px 14px calc(env(safe-area-inset-bottom) + 24px) 56px; } #foeHead { padding-right: 56px; } }
 .card { position: relative; display: flex; flex-direction: column; border-radius: 12px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); }
 .card.own { box-shadow: inset 0 0 0 2px var(--c0); background: rgba(255, 138, 61, 0.08); }
-.card.used { opacity: 0.45; }
+/* The other side's card at full strength: a tap on it swaps the two (Elara 6cdfe227). */
 .card .pick { display: flex; flex-direction: column; align-items: stretch; text-align: left; padding: 8px 10px 6px; gap: 2px; }
 .card .pick:disabled { cursor: default; }
 .card.wait .pick { opacity: 0.6; cursor: progress; }
@@ -523,6 +522,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .card .media:has(> .photo) > :is(.turn, .ghost) { inset: auto 0 0 auto; width: 92%; height: 92%; }
 .card .badge { position: absolute; right: 0; top: 0; font-size: 12px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); }
 .card .badge.own { background: var(--c0); color: #1a0900; font-weight: 700; }
+/* Which side has it on, at the top left, away from ModelScope's round button on the right edge (Castor, Elara 3d42a0c1);
+   under the original photo when the card has one. */
+.card .badge:not(.new) { left: 0; right: auto; }
+.card .media:has(> .photo) > .badge:not(.new) { top: calc(26% + 6px); }
 .card .lux { position: absolute; left: 0; top: 0; font-size: 11px; line-height: 18px; padding: 0 7px; }
 .card .media:has(> .photo) > .lux { top: calc(26% + 6px); }
 .card .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
