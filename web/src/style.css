@@ -976,6 +976,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .kmodes .kgo { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 6px; padding: 2px 8px 3px; }
 .kmodes .kgo small { grid-row: 2; justify-self: start; margin-bottom: 2px; padding: 0 5px; border-radius: 2px; font-size: 12px; font-weight: 700; line-height: 17px; letter-spacing: 0; color: #2a2616; background: rgba(255, 238, 190, 0.5); white-space: nowrap; }
 .kmodes .kgo b { grid-row: 1 / 3; grid-column: 2; }
+/* 「和电脑打」 on one line (Elara 6d992dbd): narrow phones take the two keys' words a little smaller; the keys keep the
+   height they had with it on two lines, so nothing on the page moves. */
+.kmodes .kgo span { white-space: nowrap; }
+@media (max-width: 380px) { .kmodes .kgo span { font-size: 18px; } .kmodes .kgo { min-height: 116px; } }
 /* Short phones (iPhone SE, 667 tall): a smaller pot and samples, so the two keys are on screen without scrolling. */
 @media (max-height: 740px) {
   .ktitle { padding-top: 14px; }

@@ -342,7 +342,9 @@ async function main() {
   let setUp;
   const whenSetUp = new Promise(ok => { setUp = ok; });
   // 「拍一件试试」 there: onto the bench, then 拍一件 as its own key opens it (Elara ee609025); with no backend, the sample.
-  const introShoot = () => shootUp.then(() => { if (phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); });
+  // Back on 首页 before 拍一件 is ready drops it (Sol 038683a4): homeTrips counts the trips back.
+  let homeTrips = 0;
+  const introShoot = () => { const trip = homeTrips; return shootUp.then(() => { if (trip !== homeTrips || phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); }); };
   if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two)), introShoot); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
   // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
   // if it fails the bench just keeps the usual backdrop.
@@ -586,6 +588,7 @@ async function main() {
   $('homeBtn').hidden = !homeOn;
   function goHome() {
     if (phase !== 'build' && phase !== 'result' && phase !== 'loading') return;
+    homeTrips++;
     score = [0, 0];
     el.hud.hidden = true; // single-player's result keeps it up
     // The opening page is inside #app: turn 2P's screen back first, at once, so it is never shown upside down.
@@ -1796,7 +1799,8 @@ async function main() {
   function paintSides(k) {
     for (const [j, b] of libSides.entries()) { b.lastChild.textContent = NAMES[cur().parts[j].item]; b.setAttribute('aria-selected', String(j === k)); }
   }
-  for (const b of libSides) b.onclick = () => { const k = Number(b.dataset.side); if (k !== libSlot && !el.library.hidden) openLibrary(k, true); };
+  // Changing sides drops a pick still waiting on its model, even if the player comes back to this side (Sol 038683a4).
+  for (const b of libSides) b.onclick = () => { const k = Number(b.dataset.side); if (k !== libSlot && !el.library.hidden) { choiceReq++; openLibrary(k, true); } };
   // The other side's card: the two items change sides (each side keeps how it is put on), back to the bench.
   function swapSides() {
     const [a, b] = cur().parts;
