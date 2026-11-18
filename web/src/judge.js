@@ -2,7 +2,7 @@
  * 评委版 (task #4, Elara 51c72819): `npm run build:judge` builds this page with __JUDGE__ on. A judge opens a link on a
  * phone and plays with the default items, and 拍一件 shoots through the backend at the same origin (Elara edd90212);
  * when it can't now, those still play. Beside 拍照 is one real generation to replay and to play with (Elara 9e17f724,
- * 9c352da4): the thermos 远夏 shot on 11-10 (job j_ad9f97af). The flip-flop made from a public photo went with 素材署名
+ * 9c352da4): the thermos Wren shot on the live link on 11-18 (job j_9a023f5d, Elara 615e1aa1). The flip-flop made from a public photo went with 素材署名
  * (远夏 51af182b, Elara 17ed7f8b): without the credits, nothing under someone else's licence ships. A build kept on a
  * phone that names it waits like a photo item that has not come in: the default stands in and the kept one stays until
  * the player changes that side. With ?shoot=off nothing calls a backend and 拍一件 is the thermos only.
@@ -19,7 +19,7 @@ const bundle = (json, glb, photo, styled, extra = {}) => ({...json, ...extra, gl
 // tag says whose photo it is, beside the replay; credit is the line under it (Elara 9c352da4).
 export const showcases = [
   {item: bundle(thermosJson, thermosGlb, thermosPhoto, thermosStyled), tag: '我们真拍', own: true,
-    credit: '我们用手机真拍的照片，已裁切；认物、改图和建模都是真跑的'}
+    credit: '我们用手机真拍的照片；认物、改图和建模都是真跑的'}
 ];
 
 /** The opening page (index.html, put in by vite.config.js): its 和电脑打 and 和人打 wait for the page to be ready, and the

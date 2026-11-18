@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
 import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS, COUNTER_CUE_LIT} from '../../sim/v3.js';
 import ladderJson from '../../data/foes.json';
-import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail} from './models.js';
+import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail, setFileSource} from './models.js';
 import {LiveTurns} from './livecards.js';
 import {GRADES, STATS, ratingOf, byGrade} from './rating.js';
 import {Stage, TEAM, CORE_TRAVEL, CORE_RISE, CAM} from './stage.js';
@@ -530,6 +530,8 @@ async function main() {
     // With an opening page, 回首页 is #homeBtn and this is only 2P's 回 1P; without one, 一机双人's way back to single-player.
     $('pvpBack').hidden = !pvp || !pick && homeOn;
     $('pvpBack').querySelector('span').textContent = pick ? '回 1P' : '回首页';
+    // 2P's turn has one way back, to 1P (Pollux acbd091c): 回首页 comes back with 1P's.
+    $('homeBtn').hidden = !homeOn || pvp && pick === 1;
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
     $('foeLabel').textContent = pick ? '轮到上方 2P 选装' : '轮到下方 1P 选装';
@@ -1475,7 +1477,7 @@ async function main() {
       // All three beaten: point at 拍一件 too, in plain words (Elara 2621157e, bd72b574); a tap opens it when the page has it.
       el.tipLine.innerHTML = shoot ? '现在三个随便挑。<br>也可以<button type="button" class="tipshoot">拍一件</button>你身边的东西，装上再打'
         : '现在三个随便挑，换个装法再打一轮';
-      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link'));
+      el.tipLine.querySelector('.tipshoot')?.addEventListener('click', () => shoot?.open('link', '结算'));
     }
     const card = $('unlockCard');
     card.hidden = o.unlocked == null;
@@ -1558,8 +1560,8 @@ async function main() {
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }
-  async function openLibrary(k) {
-    const req = ++libReq;
+  async function openLibrary(k, again = false) {
+    const req = ++libReq, top = el.libGrid.scrollTop;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回拼装页`;
@@ -1569,7 +1571,7 @@ async function main() {
     const first = unplaced(), shown = [...first, ...byGrade(OFFER.filter(id => !first.includes(id)), rate)];
     el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
     revealUnseen();
-    el.libGrid.scrollTop = 0;
+    el.libGrid.scrollTop = again ? top : 0;
     el.library.hidden = false;
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
@@ -1599,41 +1601,23 @@ async function main() {
       if (req !== libReq || el.library.hidden) return;
     }
   }
-  function closeLibrary() { libReq++; revealIo.disconnect(); el.library.hidden = true; }
+  function closeLibrary() { libReq++; el.library.hidden = true; }
 
-  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet is dealt face down and turns over the first time
-  // its card is on screen, one after another, with a sound by grade and gold for an S. Remembered per item and rating
-  // version, so a re-rated item (new scores or score lines) turns over again. ?reveal=again resets it.
+  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over when 拍一件's 好了 shows it, with a sound
+  // by grade and gold for an S. Remembered per item and rating version, so a re-rated item turns over again there.
+  // ?reveal=again resets it.
   const SEEN_KEY = 'wanwu-grades-seen';
   const gradesSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('reveal') === 'again') gradesSeen.clear();
   const seenKey = id => `${id}:${rate(id)?.version}`;
-  const REVEAL_GAP = 260, REVEAL_FACE = 330; // ms between cards; ms into the turn when the face shows
-  let revealAt = 0;
-  const revealIo = new IntersectionObserver(entries => {
-    for (const e of entries.filter(x => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left)) {
-      revealIo.unobserve(e.target);
-      const card = e.target, id = card.dataset.item, wait = Math.max(0, revealAt - performance.now());
-      revealAt = performance.now() + wait + REVEAL_GAP;
-      setTimeout(() => {
-        if (!card.isConnected || el.library.hidden) return; // left before its turn: still face down next time
-        card.classList.replace('down', 'turning');
-        sfx.flip();
-        setTimeout(() => {
-          if (!card.isConnected || el.library.hidden) return; // left mid-turn, before the face showed: turn again next time
-          faceUp(id);
-        }, REVEAL_FACE);
-      }, wait);
-    }
-  }, {threshold: 0.6});
+  const REVEAL_FACE = 330; // ms into the turn when the face shows
+  // In the 角色库 every card is face up from the start (Pollux acbd091c, Elara 0f310068): dealt face down, the ones
+  // scrolled past too fast stayed a row of 「？」. What it shows now counts as seen, so 拍一件's 好了 doesn't turn it again.
   function revealUnseen() {
-    revealIo.disconnect();
-    revealAt = performance.now() + 250; // after the 角色库 has faded in
-    for (const card of el.libGrid.querySelectorAll('.card')) {
-      if (!rate(card.dataset.item) || gradesSeen.has(seenKey(card.dataset.item))) continue;
-      card.classList.add('down');
-      revealIo.observe(card);
-    }
+    const ids = [...el.libGrid.querySelectorAll('.card')].map(c => c.dataset.item).filter(id => rate(id) && !gradesSeen.has(seenKey(id)));
+    if (!ids.length) return;
+    for (const id of ids) gradesSeen.add(seenKey(id));
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
   }
   $('libBack').onclick = closeLibrary;
   // The face showing: its sound by grade, a short buzz for an S (task #55), and remembered.
@@ -1802,6 +1786,8 @@ async function main() {
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
     OFFER.splice(0, OFFER.length, ...offerNow());
+    // Open already: the 角色库 is drawn again with them, where it was scrolled to (Elara c611b379: 「以为没存上」).
+    if (!el.library.hidden) openLibrary(libSlot, true);
     takeLate();
     // A finished one not put on yet may be among them: its 「做好了」 shows now (Sol 521149bb).
     shoot?.paintTag();
@@ -1820,6 +1806,7 @@ async function main() {
     }
     if (!s) return;
     const {api} = s;
+    if (api.fileUrl) setFileSource(api.fileUrl);
     if (judge) await addItems(s.items);
     // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
     // doesn't wait for these.
@@ -1845,19 +1832,20 @@ async function main() {
       onChange: () => {
         const s = shoot?.state;
         paintBenchShoot();
-        el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed'].includes(s.job.status)));
+        el.shootBtn.classList.toggle('run', Boolean(s?.job && !s.stopped && !['succeeded', 'failed', 'recognition-missed'].includes(s.job.status)));
         el.shootBtn.classList.toggle('new', Boolean(s?.made && !s.stored?.seen));
         // One that failed while the player was elsewhere says so here too (Elara 021f6bf5); 拍一件 then shows it first.
-        const failed = Boolean(s?.stored && !s.stored.seen && s.job?.status === 'failed' && s.job.error?.code !== 'unknown-submit');
+        const missed = Boolean(s?.stored && !s.stored.seen && s.job?.status === 'recognition-missed');
+        const failed = missed || Boolean(s?.stored && !s.stored.seen && s.job?.status === 'failed' && s.job.error?.code !== 'unknown-submit');
         el.shootBtn.classList.toggle('bad', failed);
-        el.shootBtn.lastChild.textContent = failed ? '上一件没做成' : '拍一件';
+        el.shootBtn.lastChild.textContent = missed ? '上一件没认出来' : failed ? '上一件没做成' : '拍一件';
       }
     });
     el.shootBtn.hidden = false;
     el.shootBtn.onclick = () => shoot.open('library');
     benchShoot.hidden = false;
-    benchShoot.onclick = () => shoot.open('link');
-    $('shootNowBtn').onclick = () => shoot.open('link');
+    benchShoot.onclick = () => shoot.open('link', '组装台');
+    $('shootNowBtn').onclick = () => shoot.open('link', '结算');
     paintBenchShoot();
     if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;

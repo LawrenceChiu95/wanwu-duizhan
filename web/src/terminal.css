@@ -485,7 +485,9 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #app.pvp #hud .s1 .bar i { left:0; right:auto; transform-origin:left center; }
 #app.pvp #hud .mid { position:absolute; left:4px; top:50%; z-index:3; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; gap:6px;
   padding:7px 4px; background:#10221bd9; box-shadow:inset 0 0 0 1px #4b5942,0 4px 10px #0009; }
-#app.pvp #hud .mid .clock { font-size:19px; }
+/* No clock in 一机双人 (第三轮 ④): the sound key alone, a small one at the edge (Pollux 1566a16f acbd091c). */
+#app.pvp #hud .mid { padding:3px; gap:0; }
+#app.pvp #hud .mid .clock { display:none; }
 #app.pvp #hud .mid .slowtag { writing-mode:vertical-rl; }
 /* 回首页 and the sound off the fight: a pair of the plate's own chips either side of 万物对战 (Pollux, Elara 56506aa2). */
 #foe .terminal-brand { position:relative; }
@@ -524,6 +526,17 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 2P's build step: the whole screen turned to the head of the phone, back for 1P's step and the fight. */
 #app.pvp { transition:transform .4s cubic-bezier(.3,.7,.3,1); }
 #app.pvp.turned { transform:rotate(180deg); }
+/* Turned, the screen's right edge is the slots' left: ModelScope's own round button sits on it a third of the way down
+   and hid 接口 01's name and grade (Pollux acbd091c). The two slots keep clear of that strip. */
+#app.pvp.turned .slots { padding-left:40px; }
+#app.pvp.turned .item { padding-right:36px; }
+#app.pvp.turned .item .swapchip { right:3px; padding:0 4px; letter-spacing:0; }
+/* 接口 01's grade is the letter nearest that button: a little further in. */
+#app.pvp.turned .slot[data-slot="0"] .item { padding-left:12px; }
+/* …and a point smaller, so a four-character name (按摩滚筒) still fits the narrower slot whole. */
+@media(max-width:599px) { #app.pvp.turned .item b { font-size:16px; } }
+@media(max-width:599px) and (max-height:740px) { #app.pvp.turned .item b { font-size:14px; } }
+@media(max-width:599px) { :where(.seen-740) #app.pvp.turned .item b { font-size:14px; } }
 /* 第二轮 ① 准备 → 开打！: one iron plate to each end of the phone, on that end's half of the table, turned to it. */
 #pvpReady { position:absolute; inset:0; z-index:5; pointer-events:none; }
 #pvpReady b { position:absolute; left:50%; padding:6px 26px 8px; white-space:nowrap; font-size:34px; font-weight:950; letter-spacing:4px; color:var(--ink); text-shadow:1px 2px #000;

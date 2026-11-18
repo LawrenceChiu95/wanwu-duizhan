@@ -68,11 +68,13 @@ try {
     if(button) {await button.tap();await welcome();report.push({width,screen,home:true});}
     else {
      assert(fallback,`${width}px ${screen}: no direct route home`);
-     // A child page uses its real visible back key, then the bench's home: at most two taps.
-     const backKey=fallback();assert(await backKey.isVisible(),screen+' visible back key');await backKey.tap();
+     // A child page uses its real visible back key, then the bench's home: at most two taps. 2P's turn has only 回 1P
+     // (Pollux acbd091c, Elara 0f310068), so there home is one tap more: each fallback is a back key in turn.
+     const keys=[fallback].flat();
+     for(const key of keys) {const backKey=key();assert(await backKey.isVisible(),screen+' visible back key');await backKey.tap();await settledApp();}
      await waitHome();
      const back=await reachable();assert(back,screen+': back must expose home in one tap');
-     await back.tap();await welcome();report.push({width,screen,home:true,taps:2});
+     await back.tap();await welcome();report.push({width,screen,home:true,taps:keys.length+1});
     }
    };
    await welcome();report.push({width,screen:'welcome',modes:true});
@@ -166,10 +168,10 @@ try {
    await choose(true);await goHome('pvp-1p-build');
    await choose(true);await page.locator('[data-pick="0"]').tap();await page.locator('#library').waitFor({state:'visible'});
    await goHome('pvp-1p-library',() => page.locator('#libBack'));
-   await choose(true);await page.locator('#goBtn').tap();await page.waitForFunction(() => window.__top.status().pick===1);await goHome('pvp-2p-build');
+   await choose(true);await page.locator('#goBtn').tap();await page.waitForFunction(() => window.__top.status().pick===1);await goHome('pvp-2p-build',() => page.locator('#pvpBack'));
    await choose(true);await page.locator('#goBtn').tap();await page.waitForFunction(() => window.__top.status().pick===1);
    await page.locator('[data-pick="0"]').tap();await page.locator('#library').waitFor({state:'visible'});
-   await goHome('pvp-2p-library',() => page.locator('#libBack'));
+   await goHome('pvp-2p-library',[() => page.locator('#libBack'),() => page.locator('#pvpBack')]);
    await choose(true);await page.locator('#goBtn').tap();await page.waitForFunction(() => window.__top.status().pick===1);await fight(true);
    await choose(false);assert.equal((await state()).pvp,false);await goHome('solo-again');
    assert.deepEqual(api,[],'Fake album path makes zero backend/external requests');assert.deepEqual(errors,[],'No page errors');

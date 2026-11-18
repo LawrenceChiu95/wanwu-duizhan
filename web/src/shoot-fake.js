@@ -16,8 +16,8 @@
  *                         gets a server error), offline-create (sending the photo never gets through), forbidden-poll (polls get forbidden for ten seconds, as a backend
  *                         started for another page address would answer), refused (the first item made comes out in a form
  *                         the game's registerItems turns down: scale 2; photos after it come out fine),
- *                         choose (认物 makes nothing of it: choosing-category, the player picks one of the six, or after
- *                         30 s on the fake clock it is a pillow; Elara 9699c50e, Sol c6bbf915), photo-failed (the last word
+ *                         choose (认物 makes nothing of it: recognition-missed, held there until the player picks one of
+ *                         the six or takes a new photo; Elara a68613bb, Sol 9fc357dd), photo-failed (the last word
  *                         once every retry is spent: today's photo given back, refunded: true).
  *   ?shootItemsSlow=15000 item fetches don't answer until that many ms after the page loaded (main.js waits 5 s at start).
  *   ?shootItemsNull=1     item fetches carry a null and an entry with no id among the items.
@@ -60,8 +60,6 @@ const STEP_KEYS = ['styled', 'model', 'download', 'process'];
 const ESTIMATE = 90;
 // After a new photo's 认物, this long (ms, on the fake clock) to say 不是它，重拍 before generation starts (task #85).
 const RETAKE_MS = 5000;
-// After a 认物 that made nothing of the photo, this long (ms, fake clock) to pick one of the six before it is a pillow.
-const CHOOSE_MS = 30000;
 // What each category becomes: an item already in the repo.
 // 评委版 bundles the twelve's models only (model-files.judge.js), so there each category copies one of those instead.
 const SOURCE = __JUDGE__ ? {pot: 'fanshuo-pot', scissors: 'fanshuo-knife', broom: 'fanshuo-feather', lamp: 'fanshuo-cup', slipper: 'fanshuo-cushion', pillow: 'fanshuo-rabbit'}
@@ -79,6 +77,7 @@ const FAIL_AT = {
   'photo-read': [0, 0.2], 'photo-upload': [1, 0.1], 'process-corrupt': [4, 0.5], 'process-too-large': [4, 0.5],
   ...Object.fromEntries(['service', 'network', 'interrupted', 'invalid', 'auth', 'limit'].map(k => [`recognition-${k}`, [0, 1]]))
 };
+const MISSED = {code: 'recognition-missed', message: '', retry: 'none', charged: false, refunded: true};
 const RETRY = {'photo-failed': 'none', 'photo-invalid': 'none', 'photo-unclear': 'none', pass: 'none', quota: 'none', busy: 'resubmit', 'step-failed': 'regenerate', expired: 'regenerate',
   download: 'same', process: 'same', 'process-unfixable': 'regenerate', 'unknown-submit': 'none', 'key-conflict': 'none', 'active-job': 'none', server: 'same',
   // 真模式任务错误; 认物 failing on the service's side can be tried again on the same photo (Elara 1572a214, Sol 3afa412e).
@@ -150,12 +149,10 @@ export async function fakeApi(q) {
       if (now < t + d) return;
       rec.times[s][1] = t += d;
       // A new photo's 认物 is in: nothing is paid for until the moment to say 不是它 has passed (task #85).
-      // 认物 made nothing of it: the player picks one of the six, or it is a pillow once the time is up; then straight on,
-      // with no 不是它 moment (they chose it).
+      // 认物 made nothing of it: held, no clock, until the player picks one of the six; then straight on, with no 不是它
+      // moment (they chose it).
       if (s === 0 && rec.choose) {
-        rec.categoryUntil ??= t + CHOOSE_MS;
-        if (!rec.picked && now < rec.categoryUntil) return;
-        if (!rec.picked) pick(rec, 'pillow', 'timeout', rec.categoryUntil);
+        if (!rec.picked) return;
         rec.genAt = t = rec.picked.at;
         continue;
       }
@@ -176,7 +173,7 @@ export async function fakeApi(q) {
     rec.done = {status: 'succeeded', error: null};
     rec.itemId = `shot-${n}`;
   }
-  // The six's 认物 for a category the player picked (or the pillow when time ran out): its name is the category's.
+  // The six's 认物 for a category the player picked: its name is the category's.
   function pick(rec, cat, chosen, at) {
     const {inSix: _, ...r} = recognise(cat);
     Object.assign(rec, {cat, picked: {at}, recognition: {...r, name: CAT_NAME[cat], chosen}});
@@ -191,14 +188,13 @@ export async function fakeApi(q) {
       : rec.genAt && now >= rec.retakeUntil && now < rec.genAt ? Math.ceil((rec.genAt - now) / PER) : 0;
     return {
       id: rec.id, clientKey: rec.clientKey, createdAt: iso(rec.createdAt),
-      status: rec.done?.status ?? (choosing(rec) ? 'choosing-category' : stage === 0 || (rec.from === 0 && !rec.times[0]) ? 'recognizing' : 'generating'), queuePosition,
+      status: rec.done?.status ?? (choosing(rec) ? 'recognition-missed' : stage === 0 || (rec.from === 0 && !rec.times[0]) ? 'recognizing' : 'generating'), queuePosition,
       recognition: choosing(rec) ? null : rec.times[0]?.[1] != null || rec.from > 0 ? rec.recognition : null, retakeUntil: iso(rec.retakeUntil),
-      categoryUntil: choosing(rec) ? iso(rec.categoryUntil) : null,
       steps: STEP_KEYS.map((key, i) => ({key, startedAt: iso(rec.times[i + 1]?.[0]), endedAt: iso(rec.times[i + 1]?.[1])})),
       // The real one's styled.jpg once 改画风 is done (PR #103); here a real one for the pot (the showcase pan's), the
       // still of the item it will copy for the rest.
       styledUrl: rec.times[1]?.[1] != null ? (rec.cat === 'pot' ? potStyled : stillUrl(SOURCE[rec.cat])) : null,
-      estimateSeconds: ESTIMATE, error: rec.done?.error ?? null, itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
+      estimateSeconds: ESTIMATE, error: rec.done?.error ?? (choosing(rec) ? MISSED : null), itemId: rec.itemId ?? null, regenerateOf: rec.regenerateOf ?? null
     };
   }
   const get = id => { const rec = st.jobs[id]; if (!rec) throw new ShootError('not-found'); return rec; };
@@ -217,7 +213,8 @@ export async function fakeApi(q) {
     if (old.done?.error?.retry !== retry || old.child) throw new ShootError('not-allowed');
     return old;
   }
-  const active = () => Object.values(st.jobs).find(r => (advance(r), !r.done));
+  // A missed one holds nothing (Sol 9fc357dd): a new photo goes ahead beside it.
+  const active = () => Object.values(st.jobs).find(r => (advance(r), !r.done && !choosing(r)));
   // What is left today: a running job not yet charged holds one generation.
   const held = () => { const r = active(); return r && !r.charged ? 1 : 0; };
   const left = (limit, spent) => limit == null ? null : Math.max(0, limit - spent);
@@ -327,14 +324,18 @@ export async function fakeApi(q) {
       save();
       return view(rec);
     },
-    // The player's pick while choosing-category; once picked (or past the time), not-allowed.
+    // The player's pick for a missed one; picked already, the job as it is; otherwise not-allowed. It takes one of
+    // today's generations then, and waits for one running.
     async category(id, category) {
       await tick(300);
       down(null);
       const rec = get(id);
       advance(rec);
       if (!CAT_NAME[category]) throw new ShootError('bad-request');
+      if (rec.picked) return view(rec);
       if (!choosing(rec)) throw new ShootError('not-allowed');
+      if (active()) throw new ShootError('active-job', {activeJobId: active().id});
+      mayStart(false);
       pick(rec, category, 'player', vnow());
       save();
       return view(rec);

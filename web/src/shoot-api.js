@@ -76,8 +76,9 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     let res;
     try {
       res = await fetch(base + path, {method, body: body instanceof FormData ? body : body && JSON.stringify(body),
-        // X-Shoot-Category: this page knows choosing-category; a page from before it is never sent one (Sol ff68c10b).
-        headers: {'X-Shoot-Pass': getPass(), 'X-Shoot-Category': '1', ...who, ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
+        // X-Shoot-Category 2: this page knows recognition-missed (Sol 9fc357dd); a page from before it sends 1 or nothing
+        // and gets a failure it can retake from.
+        headers: {'X-Shoot-Pass': getPass(), 'X-Shoot-Category': '2', ...who, ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
     } catch { throw new ShootError('offline'); }
     const data = await res.json().catch(() => null);
     // No such path or method, and not in the backend's own JSON: this address has no 拍一件 backend behind it (task #62).
@@ -99,11 +100,14 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     })().catch(e => { files.delete(path); throw e; }));
     return files.get(path);
   }
+  // The two pictures come with the item, so its card has a face at once; the model stays a path, fetched once the game
+  // needs it (models.js setFileSource) and started now in the background (Elara c611b379).
   const withFiles = async it => {
     if (!it || typeof it !== 'object') return it;
     const o = it.origin && typeof it.origin === 'object' ? it.origin : null;
-    const [glb, photo, styled] = await Promise.all([file(it.glb), o && file(o.photo), o && file(o.styled)]);
-    return {...it, glb, ...(o ? {origin: {...o, photo, styled}} : {})};
+    const [photo, styled] = await Promise.all([o && file(o.photo), o && file(o.styled)]);
+    Promise.resolve(file(it.glb)).catch(() => {});
+    return {...it, ...(o ? {origin: {...o, photo, styled}} : {})};
   };
   return {
     kind: 'real',
@@ -122,7 +126,7 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     retry: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retry`)).job,
     // 不是它，重拍 between 认物 and generation (task #85; the route is Sol's to settle).
     retake: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retake`)).job,
-    // 认物 didn't make it out (choosing-category, Elara 9699c50e): the player's pick of the six; Sol c6bbf915.
+    // 认物 made nothing of it (recognition-missed, Elara a68613bb): the player's pick of the six starts it; Sol 9fc357dd.
     category: async (id, category) => (await call('POST', `/jobs/${encodeURIComponent(id)}/category`, {category})).job,
     regenerate: async (id, clientKey) => (await call('POST', `/jobs/${encodeURIComponent(id)}/regenerate`, {confirm: true, clientKey})).job,
     quota: () => call('GET', '/quota'),
