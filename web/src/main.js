@@ -1706,13 +1706,18 @@ async function main() {
   // ones gone past too fast stayed a row of 「？」 (Pollux acbd091c). The rest are face up at once and count as seen.
   // Only the twelve: a shot item is face up here and left unseen, so its first 做好了 still turns it.
   // Left before its turn, a card is still face down next time.
+  // Its own record under a new key (Elara 344e50b5): a phone that opened the 角色库 before still sees it once. 做好了's
+  // record (SEEN_KEY) is left as it was.
   const QUICK_START = 250, QUICK_GAP = 80, QUICK_FACE = 150; // ms: after the 角色库 has faded in; between cards; into a turn
+  const DEALT_KEY = 'wanwu-library-dealt-v2';
+  const dealt = (() => { try { return new Set(JSON.parse(localStorage.getItem(DEALT_KEY) ?? '[]')); } catch { return new Set(); } })();
+  if (q.get('reveal') === 'again') dealt.clear();
   function revealUnseen() {
-    const cards = [...el.libGrid.querySelectorAll('.card')].filter(c => ROSTER.includes(c.dataset.item) && rate(c.dataset.item) && !gradesSeen.has(seenKey(c.dataset.item)));
+    const cards = [...el.libGrid.querySelectorAll('.card')].filter(c => ROSTER.includes(c.dataset.item) && rate(c.dataset.item) && !dealt.has(seenKey(c.dataset.item)));
     if (!cards.length) return;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const turn = cards.filter(c => { const r = c.getBoundingClientRect(); return !still && r.top < innerHeight && r.bottom > 0; });
-    const seen = id => { gradesSeen.add(seenKey(id)); try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ } };
+    const seen = id => { dealt.add(seenKey(id)); try { localStorage.setItem(DEALT_KEY, JSON.stringify([...dealt])); } catch { /* no storage here */ } };
     for (const c of cards) if (!turn.includes(c)) seen(c.dataset.item);
     const go = (card, ms, step) => setTimeout(() => { if (card.isConnected && !el.library.hidden) step(); }, ms);
     turn.forEach((card, n) => {
