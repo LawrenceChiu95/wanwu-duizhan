@@ -110,12 +110,14 @@ async function open(t, options = {}) {
  t.after(close); return {jobs, g, directory, close};
 }
 
-test('judge photo picks support old pages and stay owner-scoped after both recognition providers fail', async t => {
- const g = gateway({visionTimeout: true});
+test('both providers failing parks a free photo, old pages can retake, and another owner can finish before the pick', async t => {
+ const visionFailures = ['timeout', 'timeout'];
+ const g = gateway({visionFailures});
  const primary = {...env, SHOOT_RECOGNITION_PRIMARY: 'modelscope', MODELSCOPE_API_TOKEN: 'fixture-scope-key'};
  let primaryCalls = 0;
  const app = await startServer({port: 0, directory: await dir(), mode: 'real', env: primary, headerIdentity: true,
   publicOrigin: 'https://judge.example', budget: {stage: 'test', limit: 39},
+  limits: {browser: {generation: 1, recognition: 5}, global: {generation: 20, recognition: 400}},
   realOptions: {fetch: g.fetch, backupFetch: async () => {primaryCalls++; return new Response('', {status: 429});},
    pause: async () => {}, timeoutMs: 25}});
  t.after(() => app.close());
@@ -123,19 +125,44 @@ test('judge photo picks support old pages and stay owner-scoped after both recog
  const who = async () => (await (await globalThis.fetch(api + '/session', {method: 'POST'})).json()).token;
  const [owner, other] = await Promise.all([who(), who()]);
  const fetchAs = (route, token, options = {}) => globalThis.fetch(api + route, {...options, headers: {...options.headers, 'x-shoot-session': token}});
- const upload = new FormData();
- upload.append('clientKey', 'choose-timeout-real-001'); upload.append('photo', new Blob([image], {type: 'image/png'}), 'item.png');
- const {job: j} = await (await fetchAs('/jobs', owner, {method: 'POST', body: upload})).json();
+ const openPhoto = async (token, key) => {
+  const upload = new FormData();
+  upload.append('clientKey', key); upload.append('photo', new Blob([image], {type: 'image/png'}), 'item.png');
+  const response = await fetchAs('/jobs', token, {method: 'POST', body: upload});
+  assert.equal(response.status, 202);
+  return (await response.json()).job;
+ };
+ const j = await openPhoto(owner, 'shoot-missed-owner-001');
  const route = '/jobs/' + j.id;
- const read = async (headers = {'x-shoot-category': '1'}) => (await (await fetchAs(route, owner, {headers})).json()).job;
- const choose = (token, category) => fetchAs(route + '/category', token, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({category})});
- const waiting = await until(read, job => job.status === 'choosing-category');
- assert.equal(waiting.recognition, null); assert.equal(primaryCalls, 1); assert.equal(g.visionCalls(), 2); assert.deepEqual(g.creates, []);
- assert.ok(Date.parse(waiting.categoryUntil) - Date.now() > 28000);
- const oldPage = await read({});
- assert.equal(oldPage.status, 'recognizing'); assert.equal(oldPage.categoryUntil, undefined);
+ const read = async (headers = {'x-shoot-category': '2'}) => (await (await fetchAs(route, owner, {headers})).json()).job;
+ const choose = (token, category) => fetchAs(route + '/category', token, {method: 'POST', headers: {'content-type': 'application/json', 'x-shoot-category': '2'}, body: JSON.stringify({category})});
+ const waiting = await until(read, job => job.status === 'recognition-missed');
+ assert.equal(waiting.recognition, null); assert.equal(waiting.itemId, null);
+ assert.equal(waiting.categoryUntil, undefined); assert.equal(waiting.queuePosition, null);
+ assert.equal(primaryCalls, 1); assert.equal(g.visionCalls(), 2); assert.deepEqual(g.creates, []);
+ const quota = async token => (await (await fetchAs('/quota', token)).json());
+ const free = await quota(owner);
+ assert.equal(free.activeJobId, null); assert.equal(free.used, 0);
+ assert.equal(free.remaining, free.limit); assert.equal(free.recognition.remaining, free.recognition.limit);
+ assert.equal(free.global.remaining, free.global.limit); assert.equal(free.global.recognition.remaining, free.global.recognition.limit - 1);
+ assert.equal(free.budget.remaining, 39);
+ for (const headers of [{}, {'x-shoot-category': '1'}]) {
+  const oldPage = await read(headers);
+  assert.equal(oldPage.status, 'failed'); assert.equal(oldPage.itemId, null);
+  assert.deepEqual(oldPage.error, {code: 'photo-failed', message: '这次没成功，再拍一次', retry: 'none', charged: false, refunded: true});
+ }
  assert.equal((await choose(other, 'pot')).status, 404);
  assert.equal((await choose(owner, '__proto__')).status, 400);
+ const next = await openPhoto(other, 'shoot-missed-other-001');
+ const otherDone = await until(async () => (await (await fetchAs('/jobs/' + next.id, other)).json()).job, job => job.status === 'succeeded');
+ assert.ok(otherDone.itemId);
+ assert.equal((await read()).status, 'recognition-missed');
+ assert.deepEqual(g.creates, ['image', 'mesh']);
+ visionFailures.push(503, 503);
+ const another = await openPhoto(owner, 'shoot-missed-owner-002');
+ const anotherRoute = '/jobs/' + another.id;
+ const readAnother = async () => (await (await fetchAs(anotherRoute, owner, {headers: {'x-shoot-category': '2'}})).json()).job;
+ await until(readAnother, job => job.status === 'recognition-missed');
  const selected = (await (await choose(owner, 'slipper')).json()).job;
  assert.equal(selected.recognition.name, '拖鞋'); assert.equal(selected.recognition.chosen, 'player');
  assert.equal((await (await choose(owner, 'pillow')).json()).job.recognition.category, 'slipper');
@@ -143,29 +170,60 @@ test('judge photo picks support old pages and stay owner-scoped after both recog
  const {items} = await (await fetchAs('/items', owner)).json();
  assert.equal(items[0].id, done.itemId); assert.equal(items[0].name, '拖鞋'); assert.equal(items[0].chosen, 'player');
  assert.equal(items[0].material, 'rubber');
- assert.deepEqual(g.creates, ['image', 'mesh']);
+ assert.deepEqual(g.creates, ['image', 'mesh', 'image', 'mesh']);
+ const paid = await quota(owner);
+ assert.equal(paid.remaining, paid.limit - 1); assert.equal(paid.recognition.remaining, paid.recognition.limit);
+ const overQuota = await fetchAs(anotherRoute + '/category', owner, {
+  method: 'POST', headers: {'content-type': 'application/json', 'x-shoot-category': '2'}, body: JSON.stringify({category: 'pot'})
+ });
+ assert.equal(overQuota.status, 429);
+ assert.equal((await readAnother()).status, 'recognition-missed');
+ assert.deepEqual(g.creates, ['image', 'mesh', 'image', 'mesh']);
  validateRuntimeItem(items[0], catalog);
 });
 
-test('a no-subject choice survives restart and its expired deadline creates the unnamed pillow-based item', async t => {
+test('a missed photo stays unqueued after restart and elapsed time, and the same owner can take a new photo', async t => {
  const noSubject = Object.fromEntries(Object.keys(result).map(key => [key, null]));
  Object.assign(noSubject, {clear: true, recognizable: false, basis: '没有单个物件'});
  let now = Date.now();
  const first = await open(t, {recognition: noSubject, resilientPhotos: true, clock: () => now});
- const j = await first.jobs.create({photo: image, clientKey: 'choose-restart-real-001'});
- const waiting = await until(() => first.jobs.get(j.id), job => job.status === 'choosing-category');
- assert.equal(Date.parse(waiting.categoryUntil) - now, 30000);
+ const j = await first.jobs.create({photo: image, clientKey: 'missed-restart-001'});
+ await until(() => first.jobs.get(j.id), job => job.status === 'recognition-missed');
  await first.close();
- now += 30000;
+ const stateFile = path.join(first.directory, 'state.json');
+ const saved = (await readJson(stateFile)).jobs[j.id];
+ assert.equal(saved.job.status, 'failed'); assert.equal(saved.job.itemId, null);
+ assert.equal(saved.allowance.generation, undefined); assert.equal(saved.budget, undefined);
+ now += 60000;
  const next = await open(t, {directory: first.directory, resilientPhotos: true, clock: () => now});
- const done = await finish(next.jobs, j.id);
- assert.equal(done.status, 'succeeded');
- assert.equal(done.recognition.category, 'pillow'); assert.equal(done.recognition.chosen, 'timeout');
- assert.equal((await next.jobs.chooseCategory(j.id, 'pot')).recognition.category, 'pillow');
- const [item] = await next.jobs.items();
- assert.equal(item.name, '无名之物'); assert.equal(item.material, 'cloth'); assert.equal(item.chosen, 'timeout');
- assert.equal(next.g.visionCalls(), 0); assert.deepEqual(next.g.creates, ['image', 'mesh']);
- validateRuntimeItem(item, catalog);
+ assert.equal((await next.jobs.get(j.id)).status, 'recognition-missed');
+ assert.equal((await next.jobs.quota()).activeJobId, null);
+ assert.equal(next.g.visionCalls(), 0); assert.deepEqual(next.g.creates, []);
+ const retake = await next.jobs.create({photo: image, clientKey: 'missed-restart-retake-001'});
+ assert.notEqual(retake.id, j.id);
+ assert.equal(retake.status, 'recognizing');
+ await assert.rejects(next.jobs.chooseCategory(j.id, 'pot'), {code: 'active-job'});
+ const recognized = await until(() => next.jobs.get(retake.id), job => job.retakeUntil);
+ assert.equal(recognized.recognition.name, result.name);
+ assert.equal(next.g.visionCalls(), 1);
+ assert.deepEqual(next.g.creates, []);
+ await next.jobs.retake(retake.id);
+ await next.close();
+
+ // A waiting record from the deployed version also gets parked, even if its old deadline passed.
+ const legacy = await readJson(stateFile);
+ const record = legacy.jobs[j.id];
+ record.job.status = 'choosing-category';
+ record.job.categoryUntil = new Date(now - 1000).toISOString();
+ record.job.error = null;
+ record.recognitionAttempts.at(-1).refunded = false;
+ await fs.writeFile(stateFile, JSON.stringify(legacy));
+ const migrated = await open(t, {directory: first.directory, resilientPhotos: true, clock: () => now});
+ const restored = await migrated.jobs.get(j.id);
+ assert.equal(restored.status, 'recognition-missed');
+ assert.equal(restored.categoryUntil, undefined);
+ assert.equal((await migrated.jobs.quota()).activeJobId, null);
+ assert.deepEqual(migrated.g.creates, []);
 });
 
 test('generation failures refund the player after a known charge, but keep the spend ceiling and the supplier IDs', async t => {
