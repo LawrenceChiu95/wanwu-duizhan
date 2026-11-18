@@ -88,9 +88,9 @@
   <div id="caption" aria-live="polite"><span class="tag">决胜</span><p id="captionText"></p></div>
 
   <section id="build">
-    <!-- Elara 6b6a3c3b: 拍一件 one tap from here (shown when a shoot backend is on, like #shootBtn); beside it the 角色库,
-         the same size (Elara 1370fb7f). -->
-    <div class="bhead"><b>组装台</b><button type="button" class="shoot lib" id="benchLib"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" /></svg>角色库<em id="benchLibN"></em></button><button type="button" class="shoot" id="benchShoot" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button><i class="terminal-led" aria-hidden="true"></i></div>
+    <!-- Elara 6b6a3c3b: 拍一件 one tap from here (shown when a shoot backend is on, like #shootBtn), the bar's only key; the
+         角色库 opens from each slot's 换件 (Elara 6cdfe227), so the bar just says how many there are. -->
+    <div class="bhead"><b>组装台</b><span>· <em id="benchLibN"></em> 件可选</span><button type="button" class="shoot" id="benchShoot" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button><i class="terminal-led" aria-hidden="true"></i></div>
     <p class="swaptip" id="swapTip" hidden></p>
     <div class="slots">
       <div class="slot" data-slot="0">
@@ -116,8 +116,8 @@
     </div>
     <div class="row">
       <div class="seg spread" role="radiogroup" aria-label="两件的位置">
-        <button type="button" data-spread="e180" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M15.5 12H22" /></svg>对面</button>
-        <button type="button" data-spread="e90" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M12 15.5V22" /></svg>挨着</button>
+        <button type="button" data-spread="e180" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M15.5 12H22" /></svg>两侧</button>
+        <button type="button" data-spread="e90" role="radio"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" /><path d="M2 12h6.5M12 15.5V22" /></svg>直角</button>
       </div>
       <button type="button" class="go" id="goBtn" disabled><span>开打</span><svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg></button>
     </div>
@@ -174,7 +174,7 @@
   </section>
 
 
-  <!-- 角色库 (MVP 规格 §4-3): full screen, opened from a slot; tap a card to install it there. -->
+  <!-- 角色库 (MVP 规格 §4-3): full screen, opened from a slot; tap a card to install it there (the other side's swaps the two). -->
   <section id="library" hidden aria-label="角色库">
     <header class="lhead">
       <button type="button" class="back" id="libBack"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg>组装台</button>
@@ -183,6 +183,8 @@
       <button type="button" class="shoot" id="shootBtn" hidden><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>拍一件</button>
     </header>
     <!-- Castor 第 2 条 / Elara ef254bd5: the big letter reads only 攻击 and 耐久 (reach comes from the shape), so say so. -->
+    <!-- Which side it fills, the two named as they are now (Elara 6cdfe227): opened from a slot's 换件 on that side. -->
+    <div class="lsides" id="libSides" role="tablist" aria-label="装到哪边"><button type="button" role="tab" data-side="0">左边：<b></b></button><button type="button" role="tab" data-side="1">右边：<b></b></button></div>
     <div class="lsub"><b id="libTitle"></b><span id="libCount"></span><span>总等级看攻击、耐久里较好的一项，范围不算</span></div>
     <div class="lgrades" id="libGrades"></div>
     <div class="lgrid" id="libGrid"></div>

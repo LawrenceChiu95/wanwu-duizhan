@@ -65,7 +65,8 @@ const SOLO_FOES = [
   {level: '中', rank: 'mid', build: {parts: [{item: 'broom', orient: 'out'}, {item: 'slipper', orient: 'out'}], spread: 'e180'}},
   {level: '弱', rank: 'lo', build: {parts: [{item: 'scissors', orient: 'out'}, {item: 'slipper', orient: 'hug'}], spread: 'e180'}}
 ];
-const SPREAD = {e180: '对面', e90: '挨着'};
+// 两件的位置 (Elara ee609025): 两侧 (180° apart) or 直角 (90°); the icons say the same.
+const SPREAD = {e180: '两侧', e90: '直角'};
 // 三个对手 (task #86, Elara 2a3c7171): one harder than the last, each won unlocks the next. Progress stays on this phone.
 // A page built for one set of rules (__COMBAT__, vite.config.js) takes the foe builds tuned for them where there are any
 // (judgeBuilds.<current|position>.<foe id>). A tuned build can override its foe's reaction settings.
@@ -340,7 +341,12 @@ async function main() {
   // 首页's 和电脑打 / 和人打 (远夏 06bec9f5): a pick before the page below is set up waits for it.
   let setUp;
   const whenSetUp = new Promise(ok => { setUp = ok; });
-  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two))); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
+  // 「拍一件试试」 there: onto the bench, then 拍一件 as its own key opens it (Elara ee609025); with no backend, the sample.
+  // Back on 首页 before 拍一件 is ready drops it (Sol 038683a4): homeTrips counts the trips back, noted at the tap on
+  // 「拍一件试试」 and not once the bench is set up, which waits on the opponent's 3D (Sol f143b0e8).
+  let homeTrips = 0;
+  const introShoot = () => { const trip = homeTrips; return () => shootUp.then(() => { if (trip !== homeTrips || phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); }); };
+  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two)), introShoot); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
   // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
   // if it fails the bench just keeps the usual backdrop.
   if (stage.bench) prefetched.finally(() => stage.bench.want());
@@ -459,6 +465,8 @@ async function main() {
     stage.pose(previewState());
   }
   $('foeBtn').onclick = openFoes;
+  // The whole opponent row opens the list too, as its 0/3 ⌄ does (Elara ee609025); not in 一机双人, where it has no list.
+  el.foe.querySelector('.foe-readout').addEventListener('click', e => { const b = $('foeBtn'); if (!b.hidden && !b.disabled && !e.target.closest('button')) openFoes(); });
   $('foeClose').onclick = () => { el.foeSheet.hidden = true; };
   el.foeSheet.onclick = e => { if (e.target === el.foeSheet) el.foeSheet.hidden = true; };
 
@@ -581,6 +589,7 @@ async function main() {
   $('homeBtn').hidden = !homeOn;
   function goHome() {
     if (phase !== 'build' && phase !== 'result' && phase !== 'loading') return;
+    homeTrips++;
     score = [0, 0];
     el.hud.hidden = true; // single-player's result keeps it up
     // The opening page is inside #app: turn 2P's screen back first, at once, so it is never shown upside down.
@@ -1216,7 +1225,11 @@ async function main() {
     // Over the tops, it also keeps 4 px off 「你」 riding above the player's (走查 1118, 拿不准 6).
     const me = +overlay.me.style.opacity > 0.05 ? overlay.me.getBoundingClientRect().top - box.top - 4 : Infinity;
     const under = Math.max(...tops.map(t => t.y + t.r)) + 14, over = Math.min(me, ...tops.map(t => t.y - t.r - 14)) - h;
-    const y = under + h <= padTop - 12 ? under : Math.max(hudBottom + 10, over);
+    // Step 1 lights no pad, so its card may go over them: under the tops like 2–4, clear of ModelScope's round button at
+    // the top right (Castor, Elara 3d42a0c1).
+    const floor = kind === 'intro' ? box.height - 8 : padTop - 12;
+    const y = under + h <= floor ? under : Math.max(hudBottom + 10, over);
+    el.teach.classList.toggle('over', y + h > padTop); // over the pads: they go under the shade (terminal.css)
     const x = Math.min(W - 8 - w / 2, Math.max(8 + w / 2, tops.reduce((s, t) => s + t.x, 0) / tops.length));
     el.teachCard.style.transform = `translate(${(x - w / 2).toFixed(1)}px, ${y.toFixed(1)}px)`;
   }
@@ -1350,31 +1363,55 @@ async function main() {
   const screens = new MutationObserver(rs => { if (rs.some(flipped)) { choiceReq++; swapTipNow(); } });
   for (const n of SCREENS.map(k => document.getElementById(k)).filter(Boolean)) screens.observe(n, {attributeFilter: ['hidden'], attributeOldValue: true});
   screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
-  // The first time on the bench (Elara 1370fb7f): a small bubble over the left 换件 saying the 角色库 has more. It covers
-  // nothing that can be pressed; any tap puts it away for good, and 拍一件 holds its breath while it is up (terminal.css).
-  const TIP_KEY = 'wanwu-swap-tip', swapTip = $('swapTip');
-  let tipDone = q.get('swaptip') !== 'again' && (() => { try { return localStorage.getItem(TIP_KEY) === '1'; } catch { return false; } })();
+  // Two bubbles on the bench, each once (Elara 7efbda7b): the first visit's under 拍一件, its body pulled left so only the
+  // tail reaches the key, off ModelScope's ball at the right edge (Elara aa489e4f); then, back from the first match against
+  // the computer (won or lost), one for the left 换件 and the 角色库. Neither over 「组装台」 (Elara 6cdfe227); the second sits
+  // on the left slot's 3D window with no tail, since under its key it hid the name, trait and size (Elara 17d98c59). Taps go through (拍一件 still opens); any tap puts it away for good, and 拍一件 holds its breath while the
+  // 换件 one is up (style.css). New keys: old phones have 'wanwu-swap-tip' set from the first bubble.
+  const swapTip = $('swapTip'), again = q.get('swaptip') === 'again';
+  const TIPS = [
+    {key: 'wanwu-bubble-shoot', chip: () => $('benchShoot'), ready: () => true, text: () => '拍一件你身边的东西，它替你上场\n也可以先用这套直接开打',
+      left: (c, w) => c.left + c.width / 2 - w + 24},
+    {key: 'wanwu-bubble-swap', chip: () => el.build.querySelector('[data-swap="0"]'), ready: () => soloDone, text: () => `库里还有 ${OFFER.length} 件现成的，\n点上面的「换件」换一件`, hush: true,
+      over: () => el.build.querySelector('.slot[data-slot="0"] .module-display')},
+  ];
+  for (const t of TIPS) t.done = !again && (() => { try { return localStorage.getItem(t.key) === '1'; } catch { return false; } })();
+  let soloDone = false, tipUp = null; // soloDone: a match against the computer came to its result on this page
   function swapTipNow() {
     const off = id => document.getElementById(id)?.hidden ?? true;
     const room = phase === 'build' && !pvp && !el.build.hidden && ['library', 'howView', 'shootView', 'foeSheet', 'intro'].every(off);
-    if (tipDone || !room || !swapTip.hidden) return;
-    swapTip.textContent = `库里还有 ${OFFER.filter(id => shipped.has(id)).length} 件现成的，\n点这儿换一件`;
+    const t = TIPS.find(t => !t.done && t.ready() && !t.chip()?.hidden);
+    if (!room || !t || tipUp) return;
+    tipUp = t;
+    swapTip.textContent = t.text();
     swapTip.hidden = false;
-    el.build.classList.add('tipping');
+    el.build.classList.toggle('tipping', Boolean(t.hush));
+    swapTip.classList.toggle('flat', Boolean(t.over));
     placeSwapTip();
     addEventListener('pointerdown', dropSwapTip, {capture: true, once: true});
   }
   function placeSwapTip() {
-    if (swapTip.hidden) return;
-    const chip = el.build.querySelector('[data-swap="0"]').getBoundingClientRect(), box = el.build.getBoundingClientRect();
-    const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, chip.right - box.left - w + 6));
+    if (!tipUp) return;
+    const box = el.build.getBoundingClientRect();
+    if (tipUp.over) { // centred on the window, kept inside its card (a size smaller on a narrow one)
+      const win = tipUp.over(), at = win.getBoundingClientRect(), card = win.closest('.slot').getBoundingClientRect();
+      swapTip.classList.remove('tight');
+      swapTip.classList.toggle('tight', swapTip.offsetWidth > card.width - 12);
+      const w = swapTip.offsetWidth, h = swapTip.offsetHeight;
+      swapTip.style.left = `${(Math.max(card.left + 6, Math.min(card.right - 6 - w, at.left + (at.width - w) / 2)) - box.left).toFixed(1)}px`;
+      swapTip.style.top = `${(at.top + (at.height - h) / 2 - box.top).toFixed(1)}px`;
+      return;
+    }
+    const chip = tipUp.chip().getBoundingClientRect();
+    const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, tipUp.left(chip, w) - box.left));
     swapTip.style.left = `${left.toFixed(1)}px`;
-    swapTip.style.top = `${(chip.top - box.top - swapTip.offsetHeight - 9).toFixed(1)}px`;
+    swapTip.style.top = `${(chip.bottom - box.top + 9).toFixed(1)}px`;
     swapTip.style.setProperty('--tail', `${(mid - left).toFixed(1)}px`);
   }
   function dropSwapTip() {
-    tipDone = true;
-    try { localStorage.setItem(TIP_KEY, '1'); } catch { /* no storage here: it shows once per page load */ }
+    tipUp.done = true;
+    try { localStorage.setItem(tipUp.key, '1'); } catch { /* no storage here: it shows once per page load */ }
+    tipUp = null;
     swapTip.hidden = true;
     el.build.classList.remove('tipping');
   }
@@ -1523,6 +1560,7 @@ async function main() {
       stage.pose(pb.state);
     }
     phase = 'result';
+    if (!pvp) soloDone = true;
     const m = replay.meta;
     stage.setCameraMode('result');
     stage.showMe = false;
@@ -1671,7 +1709,7 @@ async function main() {
 
   // ---------- controls ----------
   // 角色库: every item a card (3D turning, name, category, size and weight, where it came from at the foot). The other slot's item
-  // is tagged with its side (「右边在用」) and can't be picked; this slot's own says its side too (「左边在用」). Photo-made items with a saved generation record get
+  // is tagged with its side and a tap on it swaps the two (「右边在用 · 点了对调」, Elara 6cdfe227); this slot's own says its side too (「左边在用」). Photo-made items with a saved generation record get
   // 「看它怎么来的」 (item.origin, written by the generation script); the rest say where they came from instead.
   const sourceLine = it => {
     if (isLux(it.id)) return `来源：照片 → Lux3D 生成${LUX[it.id] ? ' · ' + LUX[it.id] : ''}`;
@@ -1696,7 +1734,7 @@ async function main() {
     const it = byId.get(id), other = cur().parts[1 - k].item === id, own = cur().parts[k].item === id;
     // Which side each tag means, not 已装/装着 (same word to a player, Elara 08bbe423).
     const side = j => j ? '右边' : '左边';
-    const badge = other ? `<span class="badge">${side(1 - k)}在用</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
+    const badge = other ? `<span class="badge">${side(1 - k)}在用<i> · </i>点了对调</span>` : own ? `<span class="badge own">${side(k)}在用</span>` : isNew ? '<span class="badge new">新</span>' : '';
     const corner = it.origin?.photo ? `<img class="photo" src="${esc(pictureUrl(it.origin.photo) ?? '')}" alt="原照">` : '';
     const foot = it.origin ? '<button type="button" class="how" data-how><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" /></svg>看它怎么来的</button>' : `<small class="src">${esc(sourceLine(it))}</small>`;
     // Top to bottom (Elara 11-02 444752f6): the grade, biggest; the three letters; centimetres and kilograms, small.
@@ -1709,7 +1747,7 @@ async function main() {
       : path ? `<svg class="ghost" viewBox="0 0 100 100" aria-hidden="true"><path d="${path}" /></svg>` : '';
     const rows = r ? `<span class="rates">${STATS.map(([k, label]) => `<span>${label}</span><i class="g${r.letters[k]}">${r.letters[k]}</i>`).join('')}</span>` : '';
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
-      <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
+      <button type="button" class="pick" aria-label="${other ? `和${side(1 - k)}对调：` : '装上'}${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
         <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<span class="nmt"><b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}${traitTags(id)}</span></span>
         ${rows}<small class="spec">${spec(id)}</small>
@@ -1719,6 +1757,7 @@ async function main() {
     const req = ++libReq, top = el.libGrid.scrollTop;
     libSlot = k;
     el.libTitle.textContent = `挑一件，装到${k ? '右边' : '左边'}`;
+    paintSides(k);
     el.libCount.textContent = `${OFFER.length} 件 · 点卡片就装上，回组装台`;
     // Collection so far, best grade first (远夏 11-02: collect the S).
     const count = g => OFFER.filter(id => rate(id)?.grade === g).length;
@@ -1731,7 +1770,8 @@ async function main() {
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
       card.querySelector('.pick').onclick = async () => {
-        if (cur().parts[1 - libSlot].item === id || card.classList.contains('wait')) return;
+        if (cur().parts[1 - libSlot].item === id) { swapSides(); return; }
+        if (card.classList.contains('wait')) return;
         // A just-shot item's 3D may still be on its way: the build changes once it is here (Sol f0e85efc).
         // A new card dealt in meanwhile redraws the grid, not the choice.
         const still = choosing();
@@ -1766,6 +1806,21 @@ async function main() {
     }
   }
   function closeLibrary() { libReq++; el.library.hidden = true; }
+  // The two sides at the top, each named by what it has on; a tap fills the other side instead.
+  const libSides = [...$('libSides').querySelectorAll('[data-side]')];
+  function paintSides(k) {
+    for (const [j, b] of libSides.entries()) { b.lastChild.textContent = NAMES[cur().parts[j].item]; b.setAttribute('aria-selected', String(j === k)); }
+  }
+  // Changing sides drops a pick still waiting on its model, even if the player comes back to this side (Sol 038683a4).
+  for (const b of libSides) b.onclick = () => { const k = Number(b.dataset.side); if (k !== libSlot && !el.library.hidden) { choiceReq++; openLibrary(k, true); } };
+  // The other side's card: the two items change sides (each side keeps how it is put on), back to the bench.
+  function swapSides() {
+    const [a, b] = cur().parts;
+    changed(a.item, b.item);
+    [a.item, b.item] = [b.item, a.item];
+    closeLibrary();
+    rebuild();
+  }
 
   // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over, with a sound by grade and gold for an S:
   // in the 角色库 and when 拍一件's 好了 shows it. Remembered per item and rating version, so a re-rated item turns over
@@ -1991,15 +2046,16 @@ async function main() {
     // A finished one not put on yet may be among them: its 「做好了」 shows now (Sol 521149bb).
     shoot?.paintTag();
   }
-  let shoot = null;
+  let shoot = null, mounted;
+  // Settled once 拍一件 is mounted, or known to be off.
+  const shootUp = new Promise(ok => { mounted = ok; });
   // The build's own 拍一件 (Elara 6b6a3c3b) breathes until the player has shot something: none of their photo items in
   // the catalog and no job kept on this phone.
   const benchShoot = $('benchShoot');
   const paintBenchShoot = () => benchShoot.classList.toggle('first', !shoot?.state.stored && items.every(it => shipped.has(it.id) || sampleIds.has(it.id)));
-  // …and the 角色库 beside it, saying how many it holds (Elara 1370fb7f).
+  // …and the bar says how many the 角色库 holds (Elara 6cdfe227): 「组装台 · 12 件可选」.
   const paintBenchLib = () => { $('benchLibN').textContent = OFFER.length; };
   paintBenchLib();
-  $('benchLib').onclick = () => { if (phase === 'build') openLibrary(libSlot); };
   shoot0.then(async s => {
     // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how the two real items were made.
     if (!s && judge) {
@@ -2007,7 +2063,7 @@ async function main() {
       el.shootBtn.hidden = false;
       el.shootBtn.onclick = () => openHow(SAMPLES[0].item.id);
     }
-    if (!s) return;
+    if (!s) { mounted(); return; }
     const {api} = s;
     if (api.fileUrl) setFileSource(api.fileUrl);
     if (judge) await addItems(s.items);
@@ -2052,13 +2108,14 @@ async function main() {
     paintBenchShoot();
     if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;
+    mounted();
     // ?capture=1 opens 拍一件 as soon as it is there: 凡朔's private link goes straight to the camera (Sol 2779c0dc).
     // A one-off like shootReset, dropped from the address so a reload lands on the build screen.
     if (q.get('capture') === '1') {
       try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('capture=')).join('&')}`); } catch { /* sandboxed viewer */ }
       shoot.open('link');
     }
-  }).catch(showError);
+  }).catch(showError).finally(() => mounted());
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('[data-swap]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.swap)); }; });
   // The whole slot opens its 角色库, not only its name plate (Elara 1370fb7f); 伸出 and 贴着 keep their own taps.
@@ -2243,6 +2300,8 @@ async function main() {
     if (pad.dash.classList.contains('counter') !== counter) {
       pad.dash.classList.toggle('counter', counter);
       pad.dash.word.textContent = counter ? '反打' : '冲';
+      // Its line under it says the same (Elara ee609025).
+      pad.box.querySelector('.say').textContent = counter ? '趁它晕，撞过去' : '撞过去';
       if (counter) sfx.counter();
     }
   }

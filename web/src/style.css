@@ -232,11 +232,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .bhead .shoot svg { width: 15px; height: 15px; }
 .bhead .shoot:not([hidden]) + .terminal-led { display: none; }
 .bhead .shoot.first { animation: shootBreathe 1.6s ease-in-out infinite alternate; }
-/* …but not while the first visit's bubble is up over 换件 (Elara 1370fb7f). */
+/* …but not while the bubble is up under 换件 (Elara 1370fb7f). */
 #build.tipping .bhead .shoot.first { animation: none; filter: none; }
-/* 角色库 beside it, the same size (Elara 1370fb7f): it takes the room, 拍一件 sits right after it. */
-.bhead .lib + .shoot { margin-left: 6px; }
-.bhead .lib em { margin-left: 2px; font-style: normal; font-variant-numeric: tabular-nums; }
+/* 「组装台 · 12 件可选」 (Elara 6cdfe227): the count beside the title, 拍一件 alone on the right. */
+.bhead span em { font-style: normal; font-variant-numeric: tabular-nums; }
 @keyframes shootBreathe { from { filter: drop-shadow(0 0 0 rgba(237, 187, 89, 0)); } to { filter: drop-shadow(0 0 6px rgba(237, 187, 89, 0.85)); } }
 .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .slot { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 9px 8px 8px; min-width: 0;
@@ -499,7 +498,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @media (max-height: 700px) { .lgrid { padding-right: 56px; } #app.pvp.turned .lgrid { padding: 4px 14px calc(env(safe-area-inset-bottom) + 24px) 56px; } #foeHead { padding-right: 56px; } }
 .card { position: relative; display: flex; flex-direction: column; border-radius: 12px; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px var(--line); }
 .card.own { box-shadow: inset 0 0 0 2px var(--c0); background: rgba(255, 138, 61, 0.08); }
-.card.used { opacity: 0.45; }
+/* The other side's card at full strength: a tap on it swaps the two (Elara 6cdfe227). */
 .card .pick { display: flex; flex-direction: column; align-items: stretch; text-align: left; padding: 8px 10px 6px; gap: 2px; }
 .card .pick:disabled { cursor: default; }
 .card.wait .pick { opacity: 0.6; cursor: progress; }
@@ -523,6 +522,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .card .media:has(> .photo) > :is(.turn, .ghost) { inset: auto 0 0 auto; width: 92%; height: 92%; }
 .card .badge { position: absolute; right: 0; top: 0; font-size: 12px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); }
 .card .badge.own { background: var(--c0); color: #1a0900; font-weight: 700; }
+/* Which side has it on, at the top left, away from ModelScope's round button on the right edge (Castor, Elara 3d42a0c1);
+   under the original photo when the card has one. */
+.card .badge:not(.new) { left: 0; right: auto; }
+.card .media:has(> .photo) > .badge:not(.new) { top: calc(26% + 6px); }
 .card .lux { position: absolute; left: 0; top: 0; font-size: 11px; line-height: 18px; padding: 0 7px; }
 .card .media:has(> .photo) > .lux { top: calc(26% + 6px); }
 .card .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -636,6 +639,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .hfoot { flex: 1; display: flex; align-items: flex-end; position: sticky; bottom: 0; z-index: 1; padding: 14px 14px calc(env(safe-area-inset-bottom) + 18px); background: linear-gradient(transparent, var(--bg) 14px); }
 .hfoot .go { width: 100%; }
 .hfoot .go:disabled { opacity: 0.45; }
+/* Short phones (390×664, 360×640): tighter rows and a stage a little lower (重放 stays under ModelScope's ball), so
+   「实际用时」 is above 装上去打 without a scroll (Castor, Elara 6cdfe227). */
+@media (max-height: 740px) { .hstage { max-height: calc(46vh - 24px); } .hsteps li { padding: 5px 0; } .hsteps img, .hsteps .mini3d { width: 36px; height: 36px; } .htotal { margin-top: 6px; } }
+:where(.seen-740) .hstage { max-height: calc(var(--seen) * 0.46 - 24px); }
+:where(.seen-740) .hsteps li { padding: 5px 0; }
+:where(.seen-740) :is(.hsteps img, .hsteps .mini3d) { width: 36px; height: 36px; }
+:where(.seen-740) .htotal { margin-top: 6px; }
 /* ---------- 拍一件 (task #47) ---------- */
 /* Under 看它怎么来的 (same layer, earlier in the page), over the 角色库. */
 #shootView { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; background: var(--bg); animation: fade 0.18s ease-out both; }
@@ -944,6 +954,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .kfoot p { margin: 11px 0 12px; font-size: 14px; line-height: 1.6; color: #d9ddca; }
 .kfoot p b, .kfoot p .nowrap { white-space: nowrap; }
 .kfoot p b { color: var(--amber); }
+/* 「拍一件试试」 (Elara ee609025 b8d58d49): the bench's cream 拍一件 key, a size under 和电脑打 / 和人打, on the 从厨房到赛场 row
+   so the pot and the two keys don't move; straight into 拍一件 (main.js introShoot). */
+.krow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 9px; }
+#intro .krow h2 { margin: 0; }
+.kshoot { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 5px; height: 34px; margin: -4px 0; padding: 0 9px; border: 6px solid transparent;
+  border-image: url("./assets/terminal/cream.webp") 80 fill stretch; background: #e7dcb9 padding-box; color: #242c20; font: 800 15px/1 var(--kfont); white-space: nowrap; }
+.kshoot svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.kshoot::before { content: ""; position: absolute; inset: -17px -12px; } /* from inside its 6 px frame: 52 px tall at least, over the photos' top edge (z-index) */
+.kshoot:disabled { cursor: default; filter: grayscale(1) brightness(0.62); opacity: 0.75; }
 /* 和电脑打 / 和人打: his yellow key; 载入中… until the page is ready (judge.js). */
 .kgo { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1px 10px; border: 11px solid transparent;
   border-image: url("./assets/terminal/yellow.webp") 73 fill stretch; color: #222519; font-family: var(--kfont); font-size: 21px; font-weight: 900; text-align: left;
@@ -957,6 +976,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .kmodes .kgo { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 6px; padding: 2px 8px 3px; }
 .kmodes .kgo small { grid-row: 2; justify-self: start; margin-bottom: 2px; padding: 0 5px; border-radius: 2px; font-size: 12px; font-weight: 700; line-height: 17px; letter-spacing: 0; color: #2a2616; background: rgba(255, 238, 190, 0.5); white-space: nowrap; }
 .kmodes .kgo b { grid-row: 1 / 3; grid-column: 2; }
+/* 「和电脑打」 on one line (Elara 6d992dbd): narrow phones take the two keys' words a little smaller; the keys keep the
+   height they had with it on two lines, so nothing on the page moves. */
+.kmodes .kgo span { white-space: nowrap; }
+@media (max-width: 380px) { .kmodes .kgo span { font-size: 18px; } .kmodes .kgo { min-height: 116px; } }
 /* Short phones (iPhone SE, 667 tall): a smaller pot and samples, so the two keys are on screen without scrolling. */
 @media (max-height: 740px) {
   .ktitle { padding-top: 14px; }
@@ -966,6 +989,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .kcap { margin-bottom: 8px; }
   .ksamples { --ks: 64px; }
   #intro h2 { margin-bottom: 6px; font-size: 17px; }
+  .krow { margin-bottom: 6px; }
+  .kshoot { height: 30px; margin: -3px 0; font-size: 14px; }
   .kfoot p { margin: 6px 0 9px; font-size: 13px; line-height: 1.5; }
 }
 :where(.seen-740) .ktitle { padding-top: 14px; }
@@ -975,4 +1000,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 :where(.seen-740) .kcap { margin-bottom: 8px; }
 :where(.seen-740) .ksamples { --ks: 64px; }
 :where(.seen-740) #intro h2 { margin-bottom: 6px; font-size: 17px; }
+:where(.seen-740) .krow { margin-bottom: 6px; }
+:where(.seen-740) .kshoot { height: 30px; margin: -3px 0; font-size: 14px; }
 :where(.seen-740) .kfoot p { margin: 6px 0 9px; font-size: 13px; line-height: 1.5; }
