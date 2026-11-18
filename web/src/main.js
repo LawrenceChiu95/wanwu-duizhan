@@ -341,7 +341,9 @@ async function main() {
   // 首页's 和电脑打 / 和人打 (远夏 06bec9f5): a pick before the page below is set up waits for it.
   let setUp;
   const whenSetUp = new Promise(ok => { setUp = ok; });
-  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two))); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
+  // 「拍一件试试」 there: onto the bench, then 拍一件 as its own key opens it (Elara ee609025); with no backend, the sample.
+  const introShoot = () => shootUp.then(() => { if (phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); });
+  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two)), introShoot); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
   // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
   // if it fails the bench just keeps the usual backdrop.
   if (stage.bench) prefetched.finally(() => stage.bench.want());
@@ -2028,7 +2030,9 @@ async function main() {
     // A finished one not put on yet may be among them: its 「做好了」 shows now (Sol 521149bb).
     shoot?.paintTag();
   }
-  let shoot = null;
+  let shoot = null, mounted;
+  // Settled once 拍一件 is mounted, or known to be off.
+  const shootUp = new Promise(ok => { mounted = ok; });
   // The build's own 拍一件 (Elara 6b6a3c3b) breathes until the player has shot something: none of their photo items in
   // the catalog and no job kept on this phone.
   const benchShoot = $('benchShoot');
@@ -2043,7 +2047,7 @@ async function main() {
       el.shootBtn.hidden = false;
       el.shootBtn.onclick = () => openHow(SAMPLES[0].item.id);
     }
-    if (!s) return;
+    if (!s) { mounted(); return; }
     const {api} = s;
     if (api.fileUrl) setFileSource(api.fileUrl);
     if (judge) await addItems(s.items);
@@ -2088,13 +2092,14 @@ async function main() {
     paintBenchShoot();
     if (more) more.then(paintBenchShoot);
     window.__top.shoot = shoot;
+    mounted();
     // ?capture=1 opens 拍一件 as soon as it is there: 凡朔's private link goes straight to the camera (Sol 2779c0dc).
     // A one-off like shootReset, dropped from the address so a reload lands on the build screen.
     if (q.get('capture') === '1') {
       try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('capture=')).join('&')}`); } catch { /* sandboxed viewer */ }
       shoot.open('link');
     }
-  }).catch(showError);
+  }).catch(showError).finally(() => mounted());
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
   document.querySelectorAll('[data-swap]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.swap)); }; });
   // The whole slot opens its 角色库, not only its name plate (Elara 1370fb7f); 伸出 and 贴着 keep their own taps.

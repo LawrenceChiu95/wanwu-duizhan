@@ -947,6 +947,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .kfoot p { margin: 11px 0 12px; font-size: 14px; line-height: 1.6; color: #d9ddca; }
 .kfoot p b, .kfoot p .nowrap { white-space: nowrap; }
 .kfoot p b { color: var(--amber); }
+/* 「拍一件试试」 (Elara ee609025 b8d58d49): the bench's cream 拍一件 key, a size under 和电脑打 / 和人打, on the 从厨房到赛场 row
+   so the pot and the two keys don't move; straight into 拍一件 (main.js introShoot). */
+.krow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 9px; }
+#intro .krow h2 { margin: 0; }
+.kshoot { position: relative; flex: none; display: flex; align-items: center; gap: 5px; height: 34px; margin: -4px 0; padding: 0 9px; border: 6px solid transparent;
+  border-image: url("./assets/terminal/cream.webp") 80 fill stretch; background: #e7dcb9 padding-box; color: #242c20; font: 800 15px/1 var(--kfont); white-space: nowrap; }
+.kshoot svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.kshoot::before { content: ""; position: absolute; inset: -11px -6px; }
+.kshoot:disabled { cursor: default; filter: grayscale(1) brightness(0.62); opacity: 0.75; }
 /* 和电脑打 / 和人打: his yellow key; 载入中… until the page is ready (judge.js). */
 .kgo { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1px 10px; border: 11px solid transparent;
   border-image: url("./assets/terminal/yellow.webp") 73 fill stretch; color: #222519; font-family: var(--kfont); font-size: 21px; font-weight: 900; text-align: left;
@@ -969,6 +978,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .kcap { margin-bottom: 8px; }
   .ksamples { --ks: 64px; }
   #intro h2 { margin-bottom: 6px; font-size: 17px; }
+  .krow { margin-bottom: 6px; }
+  .kshoot { height: 30px; margin: -3px 0; font-size: 14px; }
   .kfoot p { margin: 6px 0 9px; font-size: 13px; line-height: 1.5; }
 }
 :where(.seen-740) .ktitle { padding-top: 14px; }
@@ -978,4 +989,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 :where(.seen-740) .kcap { margin-bottom: 8px; }
 :where(.seen-740) .ksamples { --ks: 64px; }
 :where(.seen-740) #intro h2 { margin-bottom: 6px; font-size: 17px; }
+:where(.seen-740) .krow { margin-bottom: 6px; }
+:where(.seen-740) .kshoot { height: 30px; margin: -3px 0; font-size: 14px; }
 :where(.seen-740) .kfoot p { margin: 6px 0 9px; font-size: 13px; line-height: 1.5; }
