@@ -83,6 +83,8 @@ const LADDER_N = '零一二三四五六七八九十'[ladderJson.foes.length] ?? 
 // A phone that played the three before 连环 and 双刃 came between them (save without `open`): each of the three it had
 // opened stays open, so beating 铁壁 there still has 断风 open (Elara 3ac182a6: no one loses a stage they had).
 const OLD_LADDER = ['mang', 'wen', 'chang'];
+// A computer with a mouse (and so a keyboard): 冲 and 挡 show their keys there (Elara 82e87ad7), not on a phone or a pad.
+const KEYBOARD = matchMedia('(hover: hover) and (pointer: fine)');
 const SVG = {
   lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>',
   open: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.6-1.8" /></svg>',
@@ -1133,6 +1135,11 @@ async function main() {
     block: ['它一闪光，点挡', '闪光就是它要冲过来了。\n这时挡住，能把它弹开、撞晕。'],
     counter: ['挡住了，反打', '它晕着的时候，「冲」会亮成「反打」，\n这时冲过去伤害最重。']
   };
+  // With a keyboard and mouse (KEYBOARD) 冲 and 挡's cards say their key too (远夏 cda1c88e, Elara 82e87ad7).
+  const TEACH_KEYED = {
+    dash: '点「冲」朝它撞过去，电脑上按 J。\n冲完要等一会儿才能再冲。',
+    block: '闪光就是它要冲过来了，电脑上按 K 挡。\n这时挡住，能把它弹开、撞晕。'
+  };
   // The press each stop waits for.
   const TEACH_PRESS = {dash: 'dash', block: 'block', counter: 'dash'};
   let teach = null;
@@ -1163,7 +1170,7 @@ async function main() {
     const [title, line] = TEACH_CARD[kind];
     el.teach.dataset.kind = kind;
     el.teachTitle.textContent = title;
-    el.teachLine.textContent = line;
+    el.teachLine.textContent = KEYBOARD.matches && TEACH_KEYED[kind] || line;
     el.teachOk.hidden = kind !== 'intro';
     el.teach.hidden = false;
     // Only the button to press (if one is) lit and in reach.
@@ -2210,7 +2217,8 @@ async function main() {
   // A thumb held down or rocked on a button opens no menu and selects nothing (远夏's Android, task 5ee99454).
   for (const {box} of pads) box.addEventListener('contextmenu', ev => ev.preventDefault());
   for (const n of pads.flatMap(x => [x.dashNope, x.blockNope])) n.addEventListener('animationend', () => n.classList.remove('show'));
-  // Keys for a computer: 1P J (or space) and K (or shift), 一机双人's 2P A and S.
+  // Keys for a computer: 1P J (or space) and K (or shift), 一机双人's 2P A and S. Printed on the buttons (.key) only where
+  // there is a mouse to point with (KEYBOARD, the same test in style.css), never on a phone.
   const KEYS = {KeyJ: [0, 'dash'], Space: [0, 'dash'], KeyK: [0, 'block'], ShiftLeft: [0, 'block'], ShiftRight: [0, 'block'], KeyA: [1, 'dash'], KeyS: [1, 'block']};
   const keyOf = ev => { const k = KEYS[ev.code]; return k && (!k[0] || pvp) ? {side: k[0], action: k[1], btn: pads[k[0]][k[1]]} : null; };
   addEventListener('keydown', ev => { if (ev.repeat) return; const k = keyOf(ev); if (!k) return; if (ev.code === 'Space') ev.preventDefault(); k.btn.classList.add('down'); press(k.action, k.side); });

@@ -288,6 +288,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   font-family: var(--display); font-size: 36px; line-height: 1; letter-spacing: 0.04em; transition: filter 0.2s, transform 0.08s; }
 .pad svg { position: relative; width: 32px; height: 32px; stroke-width: 2.4; }
 .pad span { position: relative; }
+/* The key for 冲 / 挡 on a computer (main.js KEYBOARD, the same test): a small keycap after the word, never on a phone. */
+.pad .key { display: none; position: relative; min-width: 24px; height: 24px; padding: 0 5px; place-items: center; font: 700 14px/1 ui-monospace, Menlo, monospace; letter-spacing: 0; border-radius: 4px; box-shadow: inset 0 0 0 1.5px currentColor, inset 0 -2px 0 currentColor; opacity: 0.62; }
+@media (hover: hover) and (pointer: fine) { .pad .key { display: inline-grid; } }
 .pad.dash { color: #1a0900; background: linear-gradient(100deg, #ffd9b0, var(--c0) 48%, var(--c0d)); clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 100%, 0 100%);
   filter: drop-shadow(0 0 16px rgba(255, 120, 40, 0.45)); }
 .pad.block { color: #04121f; background: linear-gradient(100deg, #effcff, #9fe6ff 50%, #3db4ff); clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%);
