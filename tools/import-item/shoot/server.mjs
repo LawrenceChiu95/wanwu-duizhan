@@ -118,11 +118,9 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
       }
       const owner = identity.owner;
       const jobResult = job => {
-        if (req.headers['x-shoot-category'] === '1') return {job};
-        // An already-open judge page still understands the old status and quota fields.
-        if (job.status === 'choosing-category') {
-          const {categoryUntil, ...waiting} = job;
-          return {job: {...waiting, status: 'recognizing'}};
+        // Already-open pages understand a refunded terminal failure.
+        if (job.status === 'recognition-missed' && req.headers['x-shoot-category'] !== '2') {
+          return {job: {...job, status: 'failed', error: {...job.error, code: 'photo-failed'}}};
         }
         return {job};
       };
@@ -150,7 +148,7 @@ export async function startShootServer({port = 4408, directory, repo = REPO, web
         if (req.method === 'GET' && !action) return json(200, jobResult(await jobs.get(id, owner)));
         if (req.method === 'POST' && action === 'retry') { await body(req, 0); return json(200, jobResult(await jobs.retry(id, owner))); }
         if (req.method === 'POST' && action === 'retake') { await body(req, 0); return json(200, jobResult(await jobs.retake(id, owner))); }
-        if (req.method === 'POST' && action === 'category') return json(200, {job: await jobs.chooseCategory(id, (await jsonBody(req, ['category'])).category, owner)});
+        if (req.method === 'POST' && action === 'category') return json(200, jobResult(await jobs.chooseCategory(id, (await jsonBody(req, ['category'])).category, owner)));
         if (req.method === 'POST' && action === 'regenerate') return json(202, jobResult(await jobs.create({...await jsonBody(req, ['confirm', 'clientKey']), regenerateOf: id}, owner)));
       }
       const fileRoute = route.match(/^\/api\/shoot\/files\/(shoot_[a-f0-9-]{36})\/(model\.glb|photo\.jpg|styled\.jpg)$/);

@@ -22,7 +22,7 @@ const keyValid = key => typeof key === 'string' && /^[A-Za-z0-9_-]{8,128}$/.test
 const LOCAL = 'local'; // Trusted in-process tools only; never accepted from HTTP.
 const DEFAULT_LIMITS = {browser: {generation: 2, recognition: 5}, global: {generation: 160, recognition: 400}};
 const recognitionRetry = r => !r.job.recognition && !r.providerId && !r.pending && !r.providerState?.pending && !Object.keys(r.providerState?.tasks ?? {}).length && ['recognition-network', 'recognition-service'].includes(r.job.error?.code);
-const activeStatus = r => ['recognizing', 'choosing-category', 'generating'].includes(r.job.status);
+const activeStatus = r => ['recognizing', 'generating'].includes(r.job.status);
 const categoryNames = {pot: '锅', lamp: '台灯', scissors: '刀剪', broom: '扫把', slipper: '拖鞋', pillow: '枕头'};
 const choiceErrors = new Set(['photo-unclear', 'recognition-network', 'recognition-service', 'recognition-auth', 'recognition-limit', 'recognition-invalid', 'recognition-interrupted']);
 const dayAt = time => new Date(time + 8 * 3600000).toISOString().slice(0, 10);
@@ -105,7 +105,6 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
   let recognitionRunner = Promise.resolve(), generationRunner = Promise.resolve();
   const abort = new AbortController();
   const retakeWaits = new Map();
-  const categoryWaits = new Map();
   const now = () => new Date(clock()).toISOString();
   const save = async () => {
     try { await saveJson(path.join(directory, 'state.json'), store, {mode: 0o600}); }
@@ -125,6 +124,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     return Math.max(0, queue.indexOf(record));
   };
   const publicJob = record => copy({retakeUntil: null, ...record.job,
+    ...(record.job.error?.code === 'recognition-missed' ? {status: 'recognition-missed'} : {}),
     styledUrl: styledReady(record) ? `/api/shoot/files/shoot_${record.job.id.slice(2)}/styled.jpg` : null,
     queuePosition: queuePosition(record)});
   const get = (id, owner) => { const r = store.jobs[id]; if (!Object.hasOwn(store.jobs, id) || (owner !== undefined && r.owner !== owner)) throw apiError('not-found', 'No such job', 404); return r; };
@@ -198,7 +198,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       const receipt = record.recognitionAttempts?.at(-1);
       if (receipt) receipt.refunded = true;
       if (!paid) delete record.budget;
-      record.job.error = {code: 'photo-failed', message: '这次没成功，再拍一次', retry: 'none', charged: false, refunded: true};
+      record.job.error = {code: 'photo-failed', message: '这次没成功，再拍一次', retry: 'none', charged: false, refunded: true, ...details};
     } else record.job.error = {code, message: code, retry: retryFor[code] ?? 'same', charged: paid, ...details};
     await save();
     if (provider.real) console.error('Shoot job failed:', JSON.stringify({time: now(), jobId: record.job.id, code, charged: paid}));
@@ -212,42 +212,19 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
     await save(); // Persist session identity and legacy ownership before serving requests.
     for (const record of Object.values(store.jobs)) {
       if (record.pending || record.providerState?.pending) await fail(record, 'unknown-submit');
+      else if (record.job.status === 'choosing-category') await missRecognition(record, 'recognition-interrupted');
       else if (record.providerState?.recognitionPending && !record.job.recognition && record.job.status === 'recognizing') {
-        if (record.resilientPhoto) await requestCategory(record);
+        if (record.resilientPhoto) await missRecognition(record, 'recognition-interrupted');
         else await fail(record, 'recognition-interrupted');
       }
     }
   }
   catch (error) { await release(); throw error; }
-  async function requestCategory(record) {
-    delete record.providerState.recognitionPending;
-    record.job.status = 'choosing-category';
-    record.job.categoryUntil = new Date(clock() + 30000).toISOString();
-    await save();
-  }
-  async function acceptCategory(record, category) {
-    const job = record.job;
-    const timedOut = clock() >= Date.parse(job.categoryUntil);
-    job.recognition = {...categoryDefaults.get(timedOut ? 'pillow' : category), chosen: timedOut ? 'timeout' : 'player'};
-    job.status = 'generating';
-    job.categoryUntil = null;
-    await save();
-    categoryWaits.get(job.id)?.abort();
-  }
-  async function waitForCategory(record) {
-    const job = record.job;
-    if (closed || job.status !== 'choosing-category') return;
-    const wait = new AbortController();
-    categoryWaits.set(job.id, wait);
-    try {
-      const signal = AbortSignal.any([abort.signal, wait.signal]);
-      while (clock() < Date.parse(job.categoryUntil)) await pause(Date.parse(job.categoryUntil) - clock(), undefined, {signal});
-      await serial(async () => {
-        if (!closed && job.status === 'choosing-category') await acceptCategory(record, 'pillow');
-      });
-    } catch (error) {
-      if (error.name !== 'AbortError') throw error;
-    } finally { categoryWaits.delete(job.id); }
+  async function missRecognition(record, cause) {
+    if (record.providerState) delete record.providerState.recognitionPending;
+    delete record.job.categoryUntil;
+    // Saved as a terminal failure so rolling back cannot restart or pay it.
+    await fail(record, cause, {code: 'recognition-missed'});
   }
   async function waitForRetake(record) {
     const j = record.job;
@@ -353,7 +330,7 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       // Interrupted photo uploads finish here so shutdown refunds the unused slot.
       const rejectedStage = error.creationRejected && error.creationRejected === record.providerState?.pending;
       if ((!closed || !j.recognition || rejectedStage || error.uploadInterrupted) && !storageError) await serial(async () => {
-        if (phase === 'recognition' && record.resilientPhoto && choiceErrors.has(error.code)) { await requestCategory(record); return; }
+        if (phase === 'recognition' && record.resilientPhoto && choiceErrors.has(error.code)) { await missRecognition(record, error.code); return; }
         if (!j.recognition && record.providerState) delete record.providerState.recognitionPending;
         if (rejectedStage) delete record.providerState.pending;
         if (error.code === 'quota') { await fail(record, 'quota', {message: error.message, retry: 'none', kind: error.kind, scope: error.scope, resetsAt: error.resetsAt}); return; }
@@ -372,11 +349,10 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       recognitionRunner = recognitionRunner.then(() => runnable() ? work(record, 'recognition') : undefined).catch(stopRunner);
       recognized = recognitionRunner;
     }
-    const categoryChosen = Promise.resolve(recognized).then(() => runnable() ? waitForCategory(record) : undefined).catch(stopRunner);
     // Preserve generation's original order. A manual retry gets a new order
     // and supersedes any queued continuation from the failed recognition.
     generationRunner = generationRunner.then(async () => {
-      await categoryChosen;
+      await recognized;
       if (runnable()) await work(record, 'generation');
     }).catch(stopRunner);
   }
@@ -454,8 +430,18 @@ export async function openJobs({directory, repo = REPO, generator, fakeOptions, 
       const record = get(id, owner);
       if (!categoryDefaults.has(category)) throw apiError('bad-request', 'Unknown photo category');
       if (record.job.recognition?.chosen) return publicJob(record);
-      if (record.job.status !== 'choosing-category') throw apiError('not-allowed', 'No category choice is open', 409);
-      await acceptCategory(record, category);
+      if (record.job.error?.code !== 'recognition-missed') throw apiError('not-allowed', 'No category choice is open', 409);
+      const current = active(record.owner);
+      if (current) throw apiError('active-job', 'A job is still active', 409, {activeJobId: current.job.id});
+      checkBudget();
+      reserve(record, 'generation');
+      if (budget) record.budget = {stage: budget.stage, credits: 13};
+      record.job.recognition = {...categoryDefaults.get(category), chosen: 'player'};
+      record.job.error = null;
+      record.job.status = 'generating';
+      record.queueOrder = ++store.sequence;
+      await save();
+      start(record);
       return publicJob(record);
     }),
     retake: (id, owner) => serial(async () => {
