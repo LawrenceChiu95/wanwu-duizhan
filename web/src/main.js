@@ -687,9 +687,10 @@ async function main() {
     const whom = targetPart ? partName(targetPart, targetItem) : '';
     const spot = at ?? stage.fighters[target]?.center;
     if (tiered && spot) {
-      // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」.
+      // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」. 冲中 rides over the struck top's head, not the
+      // contact point between the two (Elara 5b03a33d), so it never lands on 「你」.
       const short = broke ? whom && {who: whom, verb: '碎了', whom: '', side: target, whomSide: target} : {who, verb, whom: '', side, whomSide: target};
-      overlay.stampLine(spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME, faces2P(side));
+      overlay.stampLine(verb === '冲中' && stage.fighters[target] || spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME, faces2P(side));
       return true;
     }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
@@ -904,6 +905,8 @@ async function main() {
       // piece hit now that no word plate does (凡朔 11-11, Elara 207a725b b2bd14f1); position combat edges every touch.
       if (!caught && !plain && (positionCombat(e) || e.damage > 0)) stage.strike(e.attacker, e.part, point);
       if (!plain) stage.flashPart(e.target, e.targetPart, caught ? 0.3 : (core ? 1 : 0.75) * (dash && !oldFx ? 0.6 : 1));
+      // A landed 冲: the struck top lights up whole, clearly, in the same warm light (Elara 5b03a33d).
+      if (dash && !oldFx && e.damage > 0) stage.flashTop(e.target, 1);
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);

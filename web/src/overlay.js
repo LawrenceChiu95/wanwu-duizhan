@@ -120,6 +120,7 @@ export class Overlay {
    * The big-moment line (「锅 冲中 金属杯！」) in the same spot as a block's word, its plate and colours as under the HUD
    * (Elara 4efa6f73). Too wide for the screen, it says the `short` words instead (「锅 冲中！」, 「马克杯 碎了！」).
    */
+  /** `point`: a world point, or a stage fighter to ride over (see place). */
   stampLine(point, words, short, dur = 1.2, flip = false) {
     let el = this.lineEl(words);
     el.classList.add('at');
@@ -128,7 +129,7 @@ export class Overlay {
     const wide = el.offsetWidth > this.layer.clientWidth - 16;
     el.style.maxWidth = '';
     if (short && wide) { el.remove(); el = this.lineEl(short); el.classList.add('at'); }
-    this.place(el, point, dur, flip);
+    if (point.isVector3) this.place(el, point, dur, flip); else this.place(el, point.center, dur, flip, point);
   }
   lineEl({who, verb, whom, side, whomSide}) {
     const el = document.createElement('div'), b = document.createElement('b'), v = document.createElement('span'), u = document.createElement('u');
@@ -142,11 +143,12 @@ export class Overlay {
     if (whom) el.append(b, v, u); else { v.textContent += '！'; el.append(b, v); }
     return el;
   }
-  // Puts a word (or line) over the contact point, clear of the tops, in place of the one up now.
-  place(el, point, dur, flip = false) {
+  // Puts a word (or line) over the contact point, clear of the tops, in place of the one up now; over a top's head and
+  // riding with it when `follow` (a stage fighter) is given.
+  place(el, point, dur, flip = false, follow = null) {
     for (const s of this.stamps) s.el.remove();
     if (!el.isConnected) this.layer.append(el);
-    const {stage} = this, at = new THREE.Vector3().copy(point), p = stage.project(at, {x: 0, y: 0}), span = {};
+    const {stage} = this, at = new THREE.Vector3().copy(follow?.center ?? point), p = stage.project(at, {x: 0, y: 0}), span = {};
     const w = el.offsetWidth, h = el.offsetHeight;
     let lift = 10;
     // Above everything either top can sweep under it while it is up, a big piece's (抱枕, 椅子) included (Castor 27158a5f).
@@ -154,7 +156,7 @@ export class Overlay {
       if (!f?.core.visible || !stage.screenSpan(f, span)) continue;
       if (span.left < p.x + w / 2 && span.right > p.x - w / 2) lift = Math.max(lift, flip ? span.bottom - p.y + 6 : p.y - span.top + 6);
     }
-    this.stamps = [{el, at, age: 0, dur, w, h, lift, flip}];
+    this.stamps = [{el, at, follow, age: 0, dur, w, h, lift, flip}];
   }
   /**
    * A big moment, said once at a fixed spot (`top` px from the top of the layer) instead of over the tops: 「拖鞋 撞碎了
@@ -261,13 +263,16 @@ export class Overlay {
       const s = this.stamps[k];
       s.age += dt;
       const t = s.age / s.dur;
-      if (t >= 1 || !stage.project(s.at, p)) { s.el.remove(); this.stamps.splice(k, 1); continue; }
+      if (t >= 1 || !stage.project(s.follow?.center ?? s.at, p)) { s.el.remove(); this.stamps.splice(k, 1); continue; }
       const rise = ease(Math.min(1, t * 1.5)) * 8, punch = t < 0.12 ? 1.35 - 0.35 * ease(t / 0.12) : 1;
       s.y = s.flip ? Math.min(stage.view.h - stage.safeBottom() - s.h - 6, p.y + s.lift) + rise : Math.max(stage.view.top + s.h + 6, p.y - s.lift) - rise;
       // On a short phone ModelScope's round button sits on the right edge 40% down: a line level with it keeps 56 px off
       // that edge (走查 1118 第 13 条).
       const H = this.layer.clientHeight, top = s.flip ? s.y : s.y - s.h, ball = H <= 700 && top < H * 0.4 + 30 && top + s.h > H * 0.4 - 30;
       s.x = Math.min(W - (ball ? 56 : 6) - s.w / 2, Math.max(6 + s.w / 2, p.x));
+      // Clear of 「你」 (last frame's box), with room to spare: the word goes up over it, so the two never read as a pair of tags.
+      const m = this.meBox, sTop = s.flip ? s.y : s.y - s.h;
+      if (m && Math.abs(s.x - m.x) < (s.w + m.w) / 2 + 8 && sTop < m.y + 6 && sTop + s.h > m.y - m.h - 6) s.y = s.flip ? m.y - m.h - 6 - s.h : m.y - m.h - 6;
       s.el.style.opacity = t > 0.6 ? (1 - t) / 0.4 : 1;
       s.el.style.transform = s.flip ? `translate(${s.x}px, ${s.y}px) translate(-50%, 0) scale(${punch}) rotate(180deg)`
         : `translate(${s.x}px, ${s.y}px) translate(-50%, -100%) scale(${punch})`;
@@ -319,22 +324,11 @@ export class Overlay {
       }
       this.meDx = (this.meDx ?? 0) + (x - p.x - (this.meDx ?? 0)) * (1 - Math.exp(-dt * 14));
       x = Math.min(W - 22, Math.max(22, p.x + this.meDx));
-      // A hit's plate wins over the marker for the moment it is up: the marker steps out of the way entirely (a faint one
-      // behind a plate still read as two labels on top of each other, Elara 11-02 a788037f). Boxes with 6 px to spare.
-      const mw = (this.meW ??= this.me.offsetWidth || 40) / 2 + 6, mh = (this.meH ??= this.me.offsetHeight || 32) + 6;
-      let under = false;
-      for (const c of this.calls) {
-        if (!stage.project(c.at, q)) continue;
-        const cx = Math.min(W - 6 - c.w / 2, Math.max(6 + c.w / 2, q.x)), cy = q.y - c.base - c.lift;
-        if (Math.abs(cx - x) < c.w / 2 + mw && cy > y - mh && cy - c.h < y + 6) { under = true; break; }
-      }
-      // A block's word steps 「你」 aside while it is up, with room to spare, so the two never read as a pair of tags.
-      for (const s of this.stamps) if (s.x !== undefined && Math.abs(s.x - x) < s.w / 2 + mw + 24 && s.y > y - mh - 48 && s.y - s.h < y + 22) under = true;
-      // Out of the way at once; back in over a few frames.
-      this.meCovered = under ? 1 : (this.meCovered ?? 0) * Math.exp(-dt * 16);
-      this.me.style.opacity = (this.meShown * (1 - this.meCovered)).toFixed(3);
+      // Always shown now (Elara 5b03a33d): the words step round it instead (the stamps above, from this box).
+      this.meBox = {x, y, w: (this.meW ??= this.me.offsetWidth || 40), h: (this.meH ??= this.me.offsetHeight || 32)};
+      this.me.style.opacity = this.meShown.toFixed(3);
       this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
-    } else this.me.style.opacity = 0;
+    } else { this.me.style.opacity = 0; this.meBox = null; }
     // Life ring around each core: the core is the thing that must not break.
     this.rings.forEach((r, i) => {
       const f = stage.fighters[i];
