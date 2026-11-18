@@ -55,11 +55,13 @@ function rejectStatus(response) {
   // A failed error-body cleanup must not turn a known 4xx into a network failure.
   response.body?.cancel?.().catch(() => {});
   const status = response.status;
-  throw failure([401, 403].includes(status) ? 'recognition-auth' : status === 429 ? 'recognition-limit' : 'recognition-service');
+  throw failure([401, 403].includes(status) ? 'recognition-auth' : [402, 429].includes(status) ? 'recognition-limit' : 'recognition-service');
 }
+const recognitionCode = error => ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code)
+  ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
 // This recognition-only path needs no Aholo key and cannot create 3D jobs.
 // One deadline includes preprocessing, both providers, response reads and pauses.
-export async function recognizePhoto({photo, key, fetch: request = globalThis.fetch, timeoutMs = 15000, pause = sleep, backup = null, backupFetch = directQwenRequest, totalTimeoutMs = 55000, diagnose = event => console.error('Shoot recognition attempt:', JSON.stringify(event))}) {
+export async function recognizePhoto({photo, key, fetch: request = globalThis.fetch, timeoutMs = 15000, pause = sleep, backup = null, backupFetch = directQwenRequest, totalTimeoutMs = 55000, tryBackupOnUnclear = false, diagnose = event => console.error('Shoot recognition attempt:', JSON.stringify(event))}) {
   if (!key?.trim()) throw Error('Recognition requires GEMINI_API_KEY');
   const controller = new AbortController(), signal = controller.signal;
   const pipeline = sharp(photo, {limitInputPixels: 64000000}).rotate().resize({width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true}).jpeg({quality: 82});
@@ -71,10 +73,37 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
       reject(failure(deadlineCode));
     }, Math.min(55000, totalTimeoutMs));
   });
+  async function runQwen(input) {
+    signal.throwIfAborted();
+    const attemptSignal = AbortSignal.any([signal, AbortSignal.timeout(Math.min(15000, timeoutMs))]);
+    const started = Date.now(), modelscope = backup.provider === 'modelscope';
+    let status = null, code = null;
+    try {
+      const response = await backupFetch(backup.url, {method: 'POST', redirect: 'error', signal: attemptSignal,
+        headers: {Authorization: `Bearer ${backup.key}`, 'Content-Type': 'application/json'},
+        body: JSON.stringify({model: backup.model, ...backup.requestOptions, stream: true, max_tokens: 1024,
+          messages: [{role: 'user', content: [{type: 'text', text: recognitionPrompt + '\n只使用下述JSON schema中的字段，required字段必须提供：' + JSON.stringify(recognitionSchema)}, {type: 'image_url', image_url: {url: `data:image/jpeg;base64,${input.toString('base64')}`}}]}]})});
+      status = response.status;
+      if (!response.ok) rejectStatus(response);
+      return parseRecognition(JSON.parse(qwenText(qwenStream(await replyJson(response, text => text, 262144), {modelscope}))));
+    } catch (error) {
+      code = recognitionCode(error);
+      throw failure(code);
+    } finally {
+      diagnose({provider: backup.provider, attempt: 1, status, elapsedMs: Date.now() - started, error: code, timedOut: attemptSignal.aborted, inputBytes: input.length});
+    }
+  }
   const run = async () => {
     let input;
     try { input = await pipeline.toBuffer(); }
     catch { throw failure('recognition-invalid'); }
+    if (backup?.primary) {
+      try { return await runQwen(input); }
+      catch (error) {
+        signal.throwIfAborted();
+        deadlineCode = error.code;
+      }
+    }
     // Keep a full attempt available for the backup inside the shared deadline.
     const attemptLimit = backup ? 2 : 3;
     for (let attempt = 0; attempt < attemptLimit; attempt++) {
@@ -99,32 +128,15 @@ export async function recognizePhoto({photo, key, fetch: request = globalThis.fe
         const recognized = parseRecognition(JSON.parse(content[0].text));
         report(null); return recognized;
       } catch (error) {
-        const code = ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(error.code) ? error.code : error instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
+        const code = recognitionCode(error);
         report(error, code);
         signal.throwIfAborted();
         const temporary = code === 'recognition-network' || code === 'recognition-service' && status >= 500 && status <= 599;
         if (attempt < attemptLimit - 1 && temporary) { await pause(2000, undefined, {signal}); continue; }
-        if (backup && (temporary || status === 429)) {
-          signal.throwIfAborted();
+        if (backup && !backup.primary && (temporary || status === 429 || (tryBackupOnUnclear && code === 'photo-unclear'))) {
           deadlineCode = code;
-          const backupSignal = AbortSignal.any([signal, AbortSignal.timeout(Math.min(15000, timeoutMs))]), backupStarted = Date.now();
-          let backupStatus = null;
-          try {
-            const response = await backupFetch(backup.url, {method: 'POST', redirect: 'error', signal: backupSignal,
-              headers: {Authorization: `Bearer ${backup.key}`, 'Content-Type': 'application/json'},
-              body: JSON.stringify({model: 'qwen3.5-omni-plus', modalities: ['text'], stream: true, stream_options: {include_usage: true}, max_tokens: 1024,
-                messages: [{role: 'user', content: [{type: 'text', text: recognitionPrompt + '\n只使用下述JSON schema中的字段，required字段必须提供：' + JSON.stringify(recognitionSchema)}, {type: 'image_url', image_url: {url: `data:image/jpeg;base64,${input.toString('base64')}`}}]}]})});
-            backupStatus = response.status;
-            if (!response.ok) rejectStatus(response);
-            const recognized = parseRecognition(JSON.parse(qwenText(qwenStream(await replyJson(response, text => text, 262144)))));
-            diagnose({provider: 'qwen', attempt: 1, status: backupStatus, elapsedMs: Date.now() - backupStarted, error: null, timedOut: backupSignal.aborted, inputBytes: input.length});
-            return recognized;
-          } catch (backupError) {
-            const backupCode = ['photo-unclear', 'recognition-invalid', 'recognition-auth', 'recognition-limit', 'recognition-service'].includes(backupError.code) ? backupError.code : backupError instanceof SyntaxError ? 'recognition-invalid' : 'recognition-network';
-            diagnose({provider: 'qwen', attempt: 1, status: backupStatus, elapsedMs: Date.now() - backupStarted, error: backupCode, timedOut: backupSignal.aborted, inputBytes: input.length});
-            // Preserve the primary error's retry policy if the fallback cannot recognize the photo.
-            throw failure(backupCode === 'photo-unclear' ? backupCode : code);
-          }
+          try { return await runQwen(input); }
+          catch (backupError) { throw failure(backupError.code === 'photo-unclear' ? backupError.code : code); }
         }
         throw failure(code);
       }

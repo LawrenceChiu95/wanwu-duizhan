@@ -61,3 +61,33 @@ test('photo sources keep their topology and UV seam attributes; oversized source
   mesh.addPrimitive(primitive.clone());const oversized=Buffer.from(await new NodeIO().writeBinary(d));
   await assert.rejects(prepareMesh(oversized,template,standard),/above 15000; request a low-poly source/);
 });
+
+test('judge photo imports reduce a textured source above 20K and keep its material and upright dimensions', async () => {
+ const d = new Document(), buffer = d.createBuffer(), vertices = [], uvs = [], indices = [];
+ const side = 106;
+ for (let z = 0; z < side; z++) for (let x = 0; x < side; x++) {
+  const u = x / (side - 1), v = z / (side - 1);
+  vertices.push(u, Math.sin(u * Math.PI) * Math.sin(v * Math.PI) * .2, v);
+  uvs.push(u, v);
+  if (z < side - 1 && x < side - 1) {
+   const i = z * side + x;
+   indices.push(i, i + side, i + 1, i + 1, i + side, i + side + 1);
+  }
+ }
+ const position = d.createAccessor().setType('VEC3').setArray(new Float32Array(vertices)).setBuffer(buffer);
+ const texture = d.createAccessor().setType('VEC2').setArray(new Float32Array(uvs)).setBuffer(buffer);
+ const index = d.createAccessor().setType('SCALAR').setArray(new Uint16Array(indices)).setBuffer(buffer);
+ const material = d.createMaterial().setBaseColorTexture(d.createTexture().setImage(photo).setMimeType('image/jpeg'));
+ const surface = d.createPrimitive().setAttribute('POSITION', position).setAttribute('TEXCOORD_0', texture).setIndices(index).setMaterial(material);
+ d.getRoot().setDefaultScene(d.createScene().addChild(d.createNode().setMesh(d.createMesh().addPrimitive(surface))));
+ const raw = Buffer.from(await new NodeIO().writeBinary(d));
+ const output = await prepareMesh(raw, {id: 'photo', weakPoint: {radius: .01}}, {longSideMeters: .4, massKg: 1, preserveUp: true, recoverOversize: true});
+ assert.equal(output.report.sourceTriangles, 22050);
+ assert.ok(output.report.triangles <= 20000);
+ assert.equal(output.shape.normalization.orientation.sourceUpAxis, 'Y');
+ assert.ok(Math.abs(output.report.longSideMeters - .4) < 1e-5);
+ const model = await new NodeIO().readBinary(output.bytes);
+ const target = model.getRoot().listMeshes()[0].listPrimitives()[0];
+ assert.ok(target.getAttribute('TEXCOORD_0').getCount() > 0);
+ assert.ok(target.getMaterial().getBaseColorTexture().getImage().length > 0);
+});

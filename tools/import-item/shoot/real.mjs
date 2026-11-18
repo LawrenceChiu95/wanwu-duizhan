@@ -31,14 +31,14 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
     health: () => recognitionProxyHealth(env),
     waitingForPaidId: () => submitting,
     async recognize(_template, context) {
-      const {state, save, folder, jobId, now} = context;
+      const {state, save, folder, jobId, now, resilientPhoto} = context;
       if (state.recognitionPending) throw failure('recognition-interrupted');
       state.recognitionPending = true; await save();
-      return recognizePhoto({photo: await readPhoto(folder, jobId, now), key: geminiKey, fetch: request, timeoutMs, pause, backup, backupFetch, totalTimeoutMs, diagnose: event => console.error('Shoot recognition attempt:', JSON.stringify({...event, time: now(), jobId}))});
+      return recognizePhoto({photo: await readPhoto(folder, jobId, now), key: geminiKey, fetch: request, timeoutMs, pause, backup, backupFetch, totalTimeoutMs, tryBackupOnUnclear: resilientPhoto, diagnose: event => console.error('Shoot recognition attempt:', JSON.stringify({...event, time: now(), jobId}))});
     },
     charged: state => Boolean(state?.pending || Object.keys(state?.tasks ?? {}).length),
     async step(step, jobId, context, catalog) {
-      const {state, folder, save, recognition, allowCreate, signal, mountRules, checkFailedCredits, now} = context;
+      const {state, folder, save, recognition, allowCreate, signal, mountRules, checkFailedCredits, now, resilientPhoto, resumeOnly} = context;
       if (step !== 'process') {
         // Only a stage without an accepted ID or pending submission may submit;
         // free resume can finish that first submission (Elara 0e7833a1).
@@ -47,7 +47,7 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
           const prompt = photoPrompt(recognition.name ?? recognition.category);
           for (;;) {
             try {
-              await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate, allowFirstSubmit: !allowCreate, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
+              await photoToGlb({photo, key: aholoKey, prompt, folder, state, save, fetch: request, pause, now, stopAfter: step, allowCreate: allowCreate && !resumeOnly, allowFirstSubmit: !allowCreate && !resumeOnly, signal, checkFailedCredits, onCreate: value => { submitting = value; }});
               break;
             } catch (error) {
               if (!error.uploadStep) throw error;
@@ -71,7 +71,9 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
           if (state.pending) throw failure('unknown-submit');
           if (error.code === 'step-failed') throw Object.assign(error, {retryable: Boolean(error.retryTask)});
           if (error.code === 'busy') throw failure(hasTask ? 'download' : 'busy');
-          throw Object.assign(failure(hasTask ? 'download' : 'photo-upload'), {uploadInterrupted: Boolean(error.uploadStep && signal?.aborted)});
+          const task = state.tasks[step === 'styled' ? 'multimodal-to-image' : 'img-to-3d'];
+          const transient = ['timeout', 'transport', 'response-read'].includes(error.reason) || error.reason === 'http' && (error.status === 429 || error.status >= 500);
+          throw Object.assign(failure(hasTask ? 'download' : 'photo-upload'), {uploadInterrupted: Boolean(error.uploadStep && signal?.aborted), resumeTask: Boolean(task && transient && !signal?.aborted)});
         }
         return;
       }
@@ -105,14 +107,15 @@ export function realGenerator({env = process.env, fetch: request = globalThis.fe
         }
         const raw = await readGlb(source);
         if (sha256(raw) !== state.downloadSha256) throw failure('process-corrupt');
-        const prepared = await prepareMesh(raw, {...template, outEnd: mountRules.top.outEnd[template.id] ?? 1}, {longSideMeters: lengthMeters, massKg, preserveUp: unrestricted});
+        const prepared = await prepareMesh(raw, {...template, outEnd: mountRules.top.outEnd[template.id] ?? 1}, {longSideMeters: lengthMeters, massKg, preserveUp: unrestricted, recoverOversize: resilientPhoto});
         if (!unrestricted) {
           const templateLength = Math.max(...template.bounds.max.map((v, i) => v - template.bounds.min[i]));
           prepared.shape.weakPoint.radius *= lengthMeters / templateLength;
         }
         state.orientation = prepared.shape.normalization.orientation; await save();
         await fs.writeFile(path.join(folder, 'model.glb'), prepared.bytes);
-        return {name: recognition.name ?? `我拍的${({scissors:"剪刀",pot:"锅",broom:"扫把",lamp:"台灯",slipper:"拖鞋",pillow:"枕头"})[recognition.category]}`, category: recognition.category, ...(unrestricted ? {materialName: recognition.materialName, photoPhysics: {hardness: recognition.hardness,
+        const name = recognition.chosen === 'timeout' ? '无名之物' : recognition.name ?? `我拍的${({scissors:"剪刀",pot:"锅",broom:"扫把",lamp:"台灯",slipper:"拖鞋",pillow:"枕头"})[recognition.category]}`;
+        return {name, category: recognition.chosen ? name : recognition.category, ...(recognition.chosen ? {chosen: recognition.chosen} : {}), ...(unrestricted ? {materialName: recognition.materialName, photoPhysics: {hardness: recognition.hardness,
             ...(recognition.impactHardness === undefined ? {} : {hasBladeOrPoint: recognition.hasBladeOrPoint, impactHardness: recognition.impactHardness})}} : {templateId: template.id}),
           generated: true, scale: 1, outEnd: 1, tag: unrestricted ? 'photo' : template.tag, stats: unrestricted ? {hp: 60, attack: 11, defense: 4} : structuredClone(template.stats),
           material: recognition.material, condition: recognition.condition, mass: massKg,

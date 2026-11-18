@@ -34,6 +34,86 @@ test('all eight demo texts decode only after whole-fence removal',()=>{
  assert.equal(fixtures.length,8);
  for(const f of fixtures){assert.throws(()=>JSON.parse(f.text));assert.deepEqual(JSON.parse(qwenText(f.text)),f.expected);assert.doesNotThrow(()=>parseRecognition(currentReply(f.expected)));}
 });
+const modelScopeEnv = {
+ SHOOT_RECOGNITION_BACKUP: 'modelscope', MODELSCOPE_API_TOKEN: 'TEST-MODELSCOPE',
+};
+test('ModelScope requires an explicit opt-in and sends its token only to the fixed inference origin', () => {
+ assert.equal(qwenBackup({MODELSCOPE_API_TOKEN: 'TEST-MODELSCOPE'}), null);
+ const configured = qwenBackup({...modelScopeEnv, DASHSCOPE_BASE_URL: 'https://other.invalid'});
+ assert.equal(configured.url, 'https://api-inference.modelscope.cn/v1/chat/completions');
+ assert.equal(configured.model, 'Qwen/Qwen3.5-35B-A3B');
+ for (const token of ['', 'token\r\nHeader', 'split token']) {
+  assert.throws(() => qwenBackup({...modelScopeEnv, MODELSCOPE_API_TOKEN: token}), /MODELSCOPE_API_TOKEN/);
+ }
+ for (const model of ['', 'https://test.invalid/route', 'Qwen/path/more']) {
+  assert.throws(() => qwenBackup({...modelScopeEnv, MODELSCOPE_RECOGNITION_MODEL: model}), /namespace\/model/);
+ }
+ const other = qwenBackup({...modelScopeEnv, MODELSCOPE_RECOGNITION_MODEL: 'OpenGVLab/InternVL3_5-8B'});
+ assert.equal(other.model, 'OpenGVLab/InternVL3_5-8B');
+ assert.deepEqual(other.requestOptions, {});
+});
+test('ModelScope sends the same photo with its own request options and parses bounded SSE', async () => {
+ const events = [];
+ let primary = 0;
+ const configured = qwenBackup(modelScopeEnv);
+ const value = await recognizePhoto({
+  ...base, backup: configured, diagnose: event => events.push(event),
+  fetch: async () => { primary++; return new Response('', {status: 503}); },
+  backupFetch: async (url, request) => {
+   assert.equal(url, configured.url);
+   assert.deepEqual(request.headers, {Authorization: 'Bearer TEST-MODELSCOPE', 'Content-Type': 'application/json'});
+   assert.equal(request.redirect, 'error');
+   const body = JSON.parse(request.body);
+   assert.equal(body.model, configured.model);
+   assert.equal(body.stream, true);
+   assert.equal(body.max_tokens, 1024);
+   assert.deepEqual(body.chat_template_kwargs, {enable_thinking: false});
+   assert.equal(body.modalities, undefined);
+   assert.equal(body.messages[0].content[0].text, recognitionPrompt + '\n只使用下述JSON schema中的字段，required字段必须提供：' + JSON.stringify(recognitionSchema));
+   const imageUrl = body.messages[0].content[1].image_url.url;
+   assert.deepEqual(Buffer.from(imageUrl.split(',')[1], 'base64'), await sharp(image).jpeg({quality: 82}).toBuffer());
+   return qwen(sampleReply);
+  },
+ });
+ assert.equal(value.name, result.name);
+ assert.equal(primary, 2);
+ assert.equal(events.at(-1).provider, 'modelscope');
+ assert.equal(events.at(-1).status, 200);
+});
+test('ModelScope quota exhaustion makes one backup attempt and preserves the retryable primary failure', async () => {
+ const events = [];
+ await assert.rejects(recognizePhoto({
+  ...base, backup: qwenBackup(modelScopeEnv), fetch: broken,
+  diagnose: event => events.push(event), backupFetch: async () => new Response('', {status: 429}),
+ }), {code: 'recognition-network'});
+ assert.equal(events.filter(event => event.provider === 'modelscope').length, 1);
+ assert.equal(events.at(-1).error, 'recognition-limit');
+});
+const modelScopePrimary = qwenBackup({...modelScopeEnv, SHOOT_RECOGNITION_BACKUP: 'off', SHOOT_RECOGNITION_PRIMARY: 'modelscope'});
+test('ModelScope primary accepts empty tool metadata and never calls Gemini after a match', async () => {
+ const text = sse(sampleReply)
+  .replace('"role":"assistant"', '"role":null,"tool_calls":[],"function_calls":[]')
+  .replace('"delta":{}', '"delta":{"role":null,"tool_calls":[],"function_calls":null,"reasoning_content":null}');
+ const value = await recognizePhoto({...base, backup: modelScopePrimary, backupFetch: async () => new Response(text), fetch: async () => assert.fail()});
+ assert.equal(value.name, result.name);
+ assert.throws(() => qwenStream(text.replace('"tool_calls":[]', '"tool_calls":[{}]'), {modelscope: true}), {code: 'recognition-invalid'});
+ assert.throws(() => qwenStream(text.replace('data: [DONE]\n\n', ''), {modelscope: true}), {code: 'recognition-invalid'});
+});
+for (const status of [401, 402, 429, 503]) test(`ModelScope primary HTTP ${status} falls back to Gemini`, async () => {
+ const seen = [];
+ const value = await recognizePhoto({...base, backup: modelScopePrimary,
+  backupFetch: async () => { seen.push('modelscope'); return new Response('', {status}); },
+  fetch: async () => { seen.push('gemini'); return google(result); }});
+ assert.equal(value.name, result.name);
+ assert.deepEqual(seen, ['modelscope', 'gemini']);
+});
+test('ModelScope and Gemini combined stop within three attempts and classify each upstream failure', async () => {
+ const events = [];
+ await assert.rejects(recognizePhoto({...base, backup: modelScopePrimary, diagnose: e => events.push(e),
+  backupFetch: broken, fetch: broken}), {code: 'recognition-network'});
+ assert.deepEqual(events.map(e => e.provider ?? 'gemini'), ['modelscope', 'gemini', 'gemini']);
+ assert.deepEqual(events.map(e => e.error), ['recognition-network', 'recognition-network', 'recognition-network']);
+});
 test('default path allows two retries, while normal primary success never calls backup',async()=>{
  let primary=0,secondary=0;await assert.rejects(recognizePhoto({...base,fetch:async()=>{primary++;return broken();},backupFetch:async()=>{secondary++;assert.fail();}}),{code:'recognition-network'});assert.equal(primary,3);assert.equal(secondary,0);
  assert.equal((await recognizePhoto({...base,backup,fetch:async()=>google(result),backupFetch:async()=>assert.fail()})).name,result.name);

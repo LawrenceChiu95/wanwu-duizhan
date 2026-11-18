@@ -12,6 +12,7 @@ import {setTimeout as pause} from 'node:timers/promises';
 import {keychainEnvironment, startReal} from '../shoot/start-real.mjs';
 import {realGenerator, parseRecognition, recognitionPrompt, recognitionSchema} from '../shoot/real.mjs';
 import {startShootServer, browserFetch as fetch} from './http-client.mjs';
+import {startShootServer as startServer} from '../shoot/server.mjs';
 import {openJobs, REPO} from '../shoot/jobs.mjs';
 import {readJson} from '../state.mjs';
 import {rateItem, photoMassLimit, currentItemRating} from '../../../sim/item-rating.js';
@@ -102,11 +103,105 @@ async function until(read, accept) { for (let i = 0; i < 1500; i++) { const valu
 const finish = (jobs, id) => until(() => jobs.get(id), j => ['succeeded', 'failed'].includes(j.status));
 async function open(t, options = {}) {
  const directory = options.directory ?? await dir(), g = gateway({...options, directory});
- const jobs = await openJobs({directory, mode: 'real', env, realOptions: {fetch: g.fetch, pause: options.pause ?? (async () => {}), timeoutMs: options.visionTimeout ? 10 : 10000}});
+ const jobs = await openJobs({directory, mode: 'real', env, resilientPhotos: options.resilientPhotos, clock: options.clock, budget: options.budget,
+  realOptions: {fetch: g.fetch, pause: options.pause ?? (async () => {}), timeoutMs: options.visionTimeout ? 10 : 10000}});
  let closing;
  const close = () => closing ??= jobs.close();
  t.after(close); return {jobs, g, directory, close};
 }
+
+test('judge photo picks support old pages and stay owner-scoped after both recognition providers fail', async t => {
+ const g = gateway({visionTimeout: true});
+ const primary = {...env, SHOOT_RECOGNITION_PRIMARY: 'modelscope', MODELSCOPE_API_TOKEN: 'fixture-scope-key'};
+ let primaryCalls = 0;
+ const app = await startServer({port: 0, directory: await dir(), mode: 'real', env: primary, headerIdentity: true,
+  publicOrigin: 'https://judge.example', budget: {stage: 'test', limit: 39},
+  realOptions: {fetch: g.fetch, backupFetch: async () => {primaryCalls++; return new Response('', {status: 429});},
+   pause: async () => {}, timeoutMs: 25}});
+ t.after(() => app.close());
+ const api = app.url + '/api/shoot';
+ const who = async () => (await (await globalThis.fetch(api + '/session', {method: 'POST'})).json()).token;
+ const [owner, other] = await Promise.all([who(), who()]);
+ const fetchAs = (route, token, options = {}) => globalThis.fetch(api + route, {...options, headers: {...options.headers, 'x-shoot-session': token}});
+ const upload = new FormData();
+ upload.append('clientKey', 'choose-timeout-real-001'); upload.append('photo', new Blob([image], {type: 'image/png'}), 'item.png');
+ const {job: j} = await (await fetchAs('/jobs', owner, {method: 'POST', body: upload})).json();
+ const route = '/jobs/' + j.id;
+ const read = async (headers = {'x-shoot-category': '1'}) => (await (await fetchAs(route, owner, {headers})).json()).job;
+ const choose = (token, category) => fetchAs(route + '/category', token, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({category})});
+ const waiting = await until(read, job => job.status === 'choosing-category');
+ assert.equal(waiting.recognition, null); assert.equal(primaryCalls, 1); assert.equal(g.visionCalls(), 2); assert.deepEqual(g.creates, []);
+ assert.ok(Date.parse(waiting.categoryUntil) - Date.now() > 28000);
+ const oldPage = await read({});
+ assert.equal(oldPage.status, 'recognizing'); assert.equal(oldPage.categoryUntil, undefined);
+ assert.equal((await choose(other, 'pot')).status, 404);
+ assert.equal((await choose(owner, '__proto__')).status, 400);
+ const selected = (await (await choose(owner, 'slipper')).json()).job;
+ assert.equal(selected.recognition.name, '拖鞋'); assert.equal(selected.recognition.chosen, 'player');
+ assert.equal((await (await choose(owner, 'pillow')).json()).job.recognition.category, 'slipper');
+ const done = await until(read, job => job.status === 'succeeded');
+ const {items} = await (await fetchAs('/items', owner)).json();
+ assert.equal(items[0].id, done.itemId); assert.equal(items[0].name, '拖鞋'); assert.equal(items[0].chosen, 'player');
+ assert.equal(items[0].material, 'rubber');
+ assert.deepEqual(g.creates, ['image', 'mesh']);
+ validateRuntimeItem(items[0], catalog);
+});
+
+test('a no-subject choice survives restart and its expired deadline creates the unnamed pillow-based item', async t => {
+ const noSubject = Object.fromEntries(Object.keys(result).map(key => [key, null]));
+ Object.assign(noSubject, {clear: true, recognizable: false, basis: '没有单个物件'});
+ let now = Date.now();
+ const first = await open(t, {recognition: noSubject, resilientPhotos: true, clock: () => now});
+ const j = await first.jobs.create({photo: image, clientKey: 'choose-restart-real-001'});
+ const waiting = await until(() => first.jobs.get(j.id), job => job.status === 'choosing-category');
+ assert.equal(Date.parse(waiting.categoryUntil) - now, 30000);
+ await first.close();
+ now += 30000;
+ const next = await open(t, {directory: first.directory, resilientPhotos: true, clock: () => now});
+ const done = await finish(next.jobs, j.id);
+ assert.equal(done.status, 'succeeded');
+ assert.equal(done.recognition.category, 'pillow'); assert.equal(done.recognition.chosen, 'timeout');
+ assert.equal((await next.jobs.chooseCategory(j.id, 'pot')).recognition.category, 'pillow');
+ const [item] = await next.jobs.items();
+ assert.equal(item.name, '无名之物'); assert.equal(item.material, 'cloth'); assert.equal(item.chosen, 'timeout');
+ assert.equal(next.g.visionCalls(), 0); assert.deepEqual(next.g.creates, ['image', 'mesh']);
+ validateRuntimeItem(item, catalog);
+});
+
+test('generation failures refund the player after a known charge, but keep the spend ceiling and the supplier IDs', async t => {
+ const budget = {stage: 'test', limit: 26};
+ const {jobs, g, directory} = await open(t, {resilientPhotos: true, statuses: {mesh: [4]}, budget});
+ const j = await jobs.create({photo: image, clientKey: 'paid-failure-refund-001'});
+ const done = await finish(jobs, j.id);
+ assert.deepEqual(done.error, {code: 'photo-failed', message: '这次没成功，再拍一次', retry: 'none', charged: false, refunded: true});
+ const quota = await jobs.quota();
+ assert.equal(quota.remaining, quota.limit); assert.equal(quota.recognition.remaining, quota.recognition.limit);
+ assert.equal(quota.global.remaining, quota.global.limit - 1);
+ assert.equal(quota.global.recognition.remaining, quota.global.recognition.limit - 1);
+ assert.equal(quota.budget.remaining, 13);
+ assert.deepEqual(g.creates, ['image', 'mesh']); assert.deepEqual(await jobs.items(), []);
+ const saved = (await readJson(path.join(directory, 'state.json'))).jobs[j.id];
+ assert.equal(saved.allowance.generation, undefined);
+ assert.ok(saved.refundedGeneration.day);
+ assert.deepEqual(saved.providerState.tasks, {'multimodal-to-image': 'image-id', 'img-to-3d': 'mesh-id'});
+ await assert.rejects(jobs.retry(j.id), {code: 'not-allowed'});
+ assert.notEqual((await jobs.create({photo: image, clientKey: 'paid-failure-retake-001'})).id, j.id);
+});
+
+test('new photo jobs retry the existing model download once and hold uncertain paid creation without retry or refund', async t => {
+ const recover = await open(t, {resilientPhotos: true, downloadFailure: true});
+ const hold = await open(t, {resilientPhotos: true, unknown: 'mesh'});
+ const [j, uncertain] = await Promise.all([
+  recover.jobs.create({photo: image, clientKey: 'resume-download-001'}),
+  hold.jobs.create({photo: image, clientKey: 'hold-unknown-mesh-001'})
+ ]);
+ const [done, held] = await Promise.all([finish(recover.jobs, j.id), finish(hold.jobs, uncertain.id)]);
+ assert.equal(done.status, 'succeeded'); assert.deepEqual(recover.g.creates, ['image', 'mesh']);
+ assert.equal(recover.g.seen.filter(row => row.route === '/model.glb').length, 2);
+ assert.equal(held.error.code, 'unknown-submit'); assert.equal(held.error.refunded, undefined);
+ const quota = await hold.jobs.quota(); assert.equal(quota.remaining, quota.limit - 1);
+ assert.deepEqual(hold.g.creates, ['image', 'mesh']); await assert.rejects(hold.jobs.retry(uncertain.id), {code: 'not-allowed'});
+});
 
 test('retake real provider cancels after recognition with no upload, paid creation or quota use', async t => {
  const {jobs, g, directory} = await open(t);

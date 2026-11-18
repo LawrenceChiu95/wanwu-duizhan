@@ -48,19 +48,22 @@ async function download(url, file, request, cancelled) {
   let current = https(url), response;
   for (let hop = 0; hop <= 5; hop++) {
     try { response = await request(current, {method: 'GET', headers: {}, redirect: 'manual', credentials: 'omit', signal}); }
-    catch { throw Error('Asset download failed. Existing tasks and received .part bytes are kept; rerun only downloads again.'); }
+    catch (error) { throw Object.assign(Error('Asset download failed. Existing tasks and received .part bytes are kept; rerun only downloads again.'), {reason: error.name === 'TimeoutError' ? 'timeout' : 'transport'}); }
     if (![301, 302, 303, 307, 308].includes(response.status)) break;
     const location = response.headers.get('location'); await response.body?.cancel();
     if (!location || hop === 5) throw Error('Asset redirect missing or exceeds five hops; existing tasks are kept');
     let next; try { next = new URL(location, current).href; } catch { throw Error('Invalid asset redirect'); }
     current = https(next);
   }
-  if (!response.ok) { await response.body?.cancel(); throw Error(`HTTP ${response.status}; check the existing task in the Aholo console. No generation retry.`); }
+  if (!response.ok) { await response.body?.cancel(); throw Object.assign(Error(`HTTP ${response.status}; check the existing task in the Aholo console. No generation retry.`), {reason: 'http', status: response.status}); }
   if (!response.body) throw Error('Asset response has no body; existing tasks are kept');
   const partial = `${file}.part`, handle = await fs.open(partial, 'w'), hash = crypto.createHash('sha256');
   try {
     for await (const chunk of response.body) { await handle.writeFile(chunk); hash.update(chunk); }
-  } catch { throw Error('Asset download interrupted. Received .part bytes and existing tasks are kept; rerun only downloads again.'); }
+  } catch (error) {
+    if (error.code && error.code !== 'UND_ERR_SOCKET') throw error;
+    throw Object.assign(Error('Asset download interrupted. Received .part bytes and existing tasks are kept; rerun only downloads again.'), {reason: 'response-read'});
+  }
   finally { await handle.close(); }
   // Save the complete paid result before format/size validation, including files
   // that our importer rejects. Streaming avoids loading oversized results in RAM.
