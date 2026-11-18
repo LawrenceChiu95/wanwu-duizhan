@@ -15,10 +15,11 @@ import potUrl from '../../data/showcase/pot/model.glb?url';
 import hull from '../../data/showcase/pot/hull.json';
 
 /** Shows the pot in `box` (its <img> is the stand-in) and says so in `hint`, with `toggle` (if there is one) showing and
- *  hiding its collision shell; returns a function that takes it down. */
-export async function showPot(box, hint, toggle) {
+ *  hiding its collision shell; returns a function that takes it down. A load that `current()` says a later showing of the
+ *  page has replaced touches nothing (Sol 4be2198c: else its close took the new viewer's 收起 away with the shell up). */
+export async function showPot(box, hint, toggle, current = () => true) {
   const {scene: pot} = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(potUrl);
-  if (!box.isConnected || box.closest('[hidden]')) return () => {};
+  if (!current() || !box.isConnected || box.closest('[hidden]')) return () => {};
   const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   const scene = new THREE.Scene(), environment = new RoomEnvironment(), generator = new THREE.PMREMGenerator(renderer);
@@ -56,9 +57,10 @@ export async function showPot(box, hint, toggle) {
     shell.visible = on; toggle.textContent = on ? '收起' : '看碰撞体'; toggle.setAttribute('aria-pressed', String(on));
     label.textContent = on ? '对战里碰的就是这层外壳' : named; draw();
   };
-  if (toggle) { toggle.onclick = () => show(!shell.visible); show(false); toggle.hidden = false; }
+  const flip = () => show(!shell.visible);
+  if (toggle) { toggle.onclick = flip; show(false); toggle.hidden = false; }
   return () => {
-    if (toggle) { toggle.hidden = true; toggle.onclick = null; label.textContent = named; }
+    if (toggle?.onclick === flip) { toggle.hidden = true; toggle.onclick = null; label.textContent = named; }
     edges.dispose(); edgeLook.dispose();
     sized.disconnect(); controls.dispose();
     scene.traverse(o => { if (o.isMesh) { o.geometry.dispose(); for (const m of [o.material].flat()) { for (const v of Object.values(m)) if (v?.isTexture) v.dispose(); m.dispose(); } } });
