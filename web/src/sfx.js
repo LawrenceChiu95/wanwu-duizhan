@@ -92,15 +92,20 @@ const SOUNDS = {
     if (core) { v.tone(t, 0.12, 0.3, 'sine', 210, 90); v.noise(t, 0.05, 0.18, 'lowpass', 600); }
     if (crit) { v.tone(t + 0.005, 0.28, 0.08, 'sine', 3150); v.tone(t + 0.005, 0.2, 0.05, 'sine', 4870); }
   },
-  // The big one: a pitch drop with a sub under it, mid body that small phone speakers can still play, and a crack.
+  // The big one: a bright crack, then a pitch drop with a sub under it and mid body that small phone speakers can still
+  // play. The crack leads the thump by 12 ms so a landed 冲 reads sharp, not only heavy (a friend's 「不够爽」, via Elara);
+  // no louder than the clang + 完美 of a lunge caught.
   dashHit(v) {
-    const t = v.t;
-    v.tone(t, 0.42, 0.5, 'sine', 140, 45, 0.25);
-    v.tone(t, 0.45, 0.3, 'sine', 58, 40, 0.3, 0.008);
-    v.tone(t, 0.3, 0.22, 'sine', 280, 90, 0.25); // the drop an octave up: heard as the same pitch where the sub is lost
-    v.tone(t, 0.22, 0.3, 'triangle', 360, 150, 0.2);
-    v.noise(t, 0.16, 0.5, 'bandpass', 300, 170, 0.9);
-    v.noise(t, 0.045, 0.35, 'highpass', 1800);
+    const t = v.t, low = t + 0.012;
+    v.noise(t, 0.022, 0.5, 'highpass', 3600, 3600, 0.7, 0.001); // the crack: a snap of high noise, a little ring, a falling tick
+    v.noise(t, 0.03, 0.2, 'bandpass', 2600, 1700, 2, 0.001);
+    v.tone(t, 0.03, 0.12, 'triangle', 2900, 1500, 0.025, 0.001);
+    v.noise(t, 0.045, 0.25, 'highpass', 1800);
+    v.tone(low, 0.42, 0.42, 'sine', 140, 45, 0.25);
+    v.tone(low, 0.45, 0.3, 'sine', 58, 40, 0.3, 0.008);
+    v.tone(low, 0.3, 0.22, 'sine', 280, 90, 0.25); // the drop an octave up: heard as the same pitch where the sub is lost
+    v.tone(low, 0.22, 0.3, 'triangle', 360, 150, 0.2);
+    v.noise(low, 0.16, 0.5, 'bandpass', 300, 170, 0.9);
   },
   // Wind-up: a rising tone and a noise swell that peak at the launch, then let go quickly.
   charge(v, secs = 0.3) {
@@ -218,12 +223,12 @@ const SOUNDS = {
     v.tone(v.t, 0.03, 0.1, 'triangle', 2200, 1500, 0.02, 0.001);
     v.noise(v.t, 0.012, 0.07, 'highpass', 5000);
   },
-  // A 角色库 card turning over: a short papery swish and the soft tap of it landing.
-  flip(v) {
-    const t = v.t, f = v.noise(t, 0.16, 0.12, 'bandpass', 1200, 1200, 1.1, 0.03);
+  // A card turning over: a short papery swish and the soft tap of it landing; quieter (k) when a screenful turns together.
+  flip(v, k = 1) {
+    const t = v.t, f = v.noise(t, 0.16, 0.12 * k, 'bandpass', 1200, 1200, 1.1, 0.03);
     f.frequency.exponentialRampToValueAtTime(3800, t + 0.12);
-    v.noise(t + 0.17, 0.03, 0.12, 'lowpass', 1800);
-    v.tone(t + 0.17, 0.06, 0.08, 'triangle', 300, 180, 0.05);
+    v.noise(t + 0.17, 0.03, 0.12 * k, 'lowpass', 1800);
+    v.tone(t + 0.17, 0.06, 0.08 * k, 'triangle', 300, 180, 0.05);
   },
   // Its grade showing (Elara 11-02: the draw has to feel like something). A rising run of bell notes, more of them and
   // brighter the better the grade; an S adds a low bloom and a sparkle that rings on.

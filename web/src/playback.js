@@ -59,6 +59,7 @@ export class Playback {
     this.t = 0;
     this.cursor = 0;
     this.hold = 0;
+    this.held = 0;
     this.owed = 0;
     this.dilate = 0;
     this.dilateLen = DILATE_TIME;
@@ -100,7 +101,7 @@ export class Playback {
     this.t = Math.max(0, Math.min(t, this.end));
     this.cursor = this.events.findIndex(e => e.t > this.t);
     if (this.cursor < 0) this.cursor = this.events.length;
-    this.hold = this.owed = this.dilate = 0;
+    this.hold = this.held = this.owed = this.dilate = 0;
     this.sample(this.t);
   }
 
@@ -114,13 +115,14 @@ export class Playback {
   advance(realDt, speed, onEvent) {
     const start = this.t;
     const events = this.events;
-    let remaining = realDt;
+    let remaining = realDt, still = 0;
     if (this.owed) { this.hold = Math.max(this.hold, this.owed); this.owed = 0; }
     while (remaining > 0) {
       // A freeze may end halfway through this frame; keep the rest for motion.
       const held = Math.min(this.hold, remaining);
       this.hold -= held;
       remaining -= held;
+      still += held;
       if (remaining <= 0) break;
       const rate = speed * this.slowFactor(this.t) * this.dilateFactor();
       let next = Math.min(this.end, this.t + remaining * rate), stop = 0, base = 0, parried = false, deflect = null;
@@ -157,6 +159,9 @@ export class Playback {
       remaining = stop > 0 ? Math.max(0, remaining - moved) : 0;
       this.hold = stop;
     }
+    // Real seconds the picture stood still; all of them when it ends on a freeze, so what an impact starts (the camera's
+    // jolts, photo-kitchen.js) waits for the freeze to end.
+    this.held = this.hold > 0 ? realDt : still;
     this.sample(this.t);
     return this.t - start;
   }

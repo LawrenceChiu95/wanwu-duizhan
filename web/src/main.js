@@ -647,6 +647,8 @@ async function main() {
     const a = strikerChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
     if (a) setFlash(a, `strike${e.attacker}`);
     if (b && b !== a) setFlash(b, 'hurt');
+    // A landed 冲 on a core also jolts that core bar (terminal.css .jolt); the next one restarts it.
+    if (b && e.dash && !e.parry && e.targetPart === 'core') replay_(b, 'jolt');
   }
   // The few big moments of a match say who did what to whom, once, where the eye can find it: one line 「拖鞋 撞碎了
   // 马克杯！」 at a fixed spot under the HUD for about 1.4 s, or with ?call=slot the striking piece's HUD slot grows and
@@ -687,9 +689,10 @@ async function main() {
     const whom = targetPart ? partName(targetPart, targetItem) : '';
     const spot = at ?? stage.fighters[target]?.center;
     if (tiered && spot) {
-      // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」.
+      // No room for the whole line at 390 wide: 「锅 冲中！」, 「马克杯 碎了！」. 冲中 rides over the struck top's head, not the
+      // contact point between the two (Elara 5b03a33d), so it never lands on 「你」.
       const short = broke ? whom && {who: whom, verb: '碎了', whom: '', side: target, whomSide: target} : {who, verb, whom: '', side, whomSide: target};
-      overlay.stampLine(spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME, faces2P(side));
+      overlay.stampLine(verb === '冲中' && stage.fighters[target] || spot, {who, verb, whom, side, whomSide: target}, short, HILITE_TIME, faces2P(side));
       return true;
     }
     const top = el.hud.getBoundingClientRect().bottom - el.app.getBoundingClientRect().top + 12;
@@ -833,7 +836,8 @@ async function main() {
     // hint, never a white-out (Elara 2065efad).
     stage.deflect(e.side, at, e.attacker);
     overlay.screenFlash(0.1);
-    stage.shake(perfect ? 9 : 6, perfect ? 0.26 : 0.2);
+    // It starts as the deflect's freeze ends (the camera holds through it) and reads about 0.12 s above half its peak, either kind.
+    stage.shake(perfect ? 9 : 6, 0.26);
     stage.shakeV4(perfect ? 1 : 0.7);
     sfx.clang();
     if (perfect || tiered) { sfx.perfect(); dip(0.5); }
@@ -904,6 +908,8 @@ async function main() {
       // piece hit now that no word plate does (凡朔 11-11, Elara 207a725b b2bd14f1); position combat edges every touch.
       if (!caught && !plain && (positionCombat(e) || e.damage > 0)) stage.strike(e.attacker, e.part, point);
       if (!plain) stage.flashPart(e.target, e.targetPart, caught ? 0.3 : (core ? 1 : 0.75) * (dash && !oldFx ? 0.6 : 1));
+      // A landed 冲: the struck top lights up whole, clearly, in the same warm light (Elara 5b03a33d).
+      if (dash && !oldFx && e.damage > 0) stage.flashTop(e.target, 1);
       if (e.damage > 0) {
         if (e.dash && !e.parry) stage.ring(point, TEAM[e.attacker], 0.1, 1.3, 0.4);
         flashHud(e);
@@ -1645,9 +1651,9 @@ async function main() {
     el.libGrades.innerHTML = `收集${GRADES.map(g => `<span><i class="g${g}">${g}</i>${count(g)}</span>`).join('')}`;
     const first = unplaced(), shown = [...first, ...byGrade(OFFER.filter(id => !first.includes(id)), rate)];
     el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
-    revealUnseen();
     el.libGrid.scrollTop = again ? top : 0;
     el.library.hidden = false;
+    revealUnseen();
     for (const card of el.libGrid.querySelectorAll('.card')) {
       const id = card.dataset.item;
       card.querySelector('.pick').onclick = async () => {
@@ -1687,21 +1693,41 @@ async function main() {
   }
   function closeLibrary() { libReq++; el.library.hidden = true; }
 
-  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over when 拍一件's 好了 shows it, with a sound
-  // by grade and gold for an S. Remembered per item and rating version, so a re-rated item turns over again there.
-  // ?reveal=again resets it.
+  // 翻牌 (Elara 11-02 79a528bb): a grade this phone has not seen yet turns over, with a sound by grade and gold for an S:
+  // in the 角色库 and when 拍一件's 好了 shows it. Remembered per item and rating version, so a re-rated item turns over
+  // again. ?reveal=again resets it.
   const SEEN_KEY = 'wanwu-grades-seen';
   const gradesSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]')); } catch { return new Set(); } })();
   if (q.get('reveal') === 'again') gradesSeen.clear();
   const seenKey = id => `${id}:${rate(id)?.version}`;
   const REVEAL_FACE = 330; // ms into the turn when the face shows
-  // In the 角色库 every card is face up from the start (Pollux acbd091c, Elara 0f310068): dealt face down, the ones
-  // scrolled past too fast stayed a row of 「？」. What it shows now counts as seen, so 拍一件's 好了 doesn't turn it again.
+  // In the 角色库 (远夏 a63667e4 「翻」, Elara ee078f5c) only the cards on screen as it opens turn over, all within about a
+  // second (style.css .quick), each with a light flip sound and no buzz: dealt face down as they were scrolled to, the
+  // ones gone past too fast stayed a row of 「？」 (Pollux acbd091c). The rest are face up at once and count as seen.
+  // Only the twelve: a shot item is face up here and left unseen, so its first 做好了 still turns it.
+  // Left before its turn, a card is still face down next time.
+  // Its own record under a new key (Elara 344e50b5): a phone that opened the 角色库 before still sees it once. 做好了's
+  // record (SEEN_KEY) is left as it was.
+  const QUICK_START = 250, QUICK_GAP = 80, QUICK_FACE = 150; // ms: after the 角色库 has faded in; between cards; into a turn
+  const DEALT_KEY = 'wanwu-library-dealt-v2';
+  const dealt = (() => { try { return new Set(JSON.parse(localStorage.getItem(DEALT_KEY) ?? '[]')); } catch { return new Set(); } })();
+  if (q.get('reveal') === 'again') dealt.clear();
   function revealUnseen() {
-    const ids = [...el.libGrid.querySelectorAll('.card')].map(c => c.dataset.item).filter(id => rate(id) && !gradesSeen.has(seenKey(id)));
-    if (!ids.length) return;
-    for (const id of ids) gradesSeen.add(seenKey(id));
-    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...gradesSeen])); } catch { /* no storage here */ }
+    const cards = [...el.libGrid.querySelectorAll('.card')].filter(c => ROSTER.includes(c.dataset.item) && rate(c.dataset.item) && !dealt.has(seenKey(c.dataset.item)));
+    if (!cards.length) return;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const turn = cards.filter(c => { const r = c.getBoundingClientRect(); return !still && r.top < innerHeight && r.bottom > 0; });
+    const seen = id => { dealt.add(seenKey(id)); try { localStorage.setItem(DEALT_KEY, JSON.stringify([...dealt])); } catch { /* no storage here */ } };
+    for (const c of cards) if (!turn.includes(c)) seen(c.dataset.item);
+    const go = (card, ms, step) => setTimeout(() => { if (card.isConnected && !el.library.hidden) step(); }, ms);
+    turn.forEach((card, n) => {
+      card.classList.add('down', 'quick');
+      go(card, QUICK_START + n * QUICK_GAP, () => {
+        card.classList.replace('down', 'turning');
+        sfx.flip(0.55);
+        go(card, QUICK_FACE, () => seen(card.dataset.item));
+      });
+    });
   }
   $('libBack').onclick = closeLibrary;
   // The face showing: its sound by grade, a short buzz for an S (task #55), and remembered.
@@ -2413,7 +2439,8 @@ async function main() {
     }
     const slowNow = pb && (phase === 'play' || phase === 'replay' ? pb.slowFactor(pb.t) < 0.99 : phase === 'finale' && pb.slowFactor(pb.end + finaleSim) < 0.99);
     sfx.duck(Boolean(slowNow) || performance.now() < dipUntil);
-    stage.updateCamera(dt, false);
+    // Hit-stop holds the camera too: a 冲中's push and any shake wait for the freeze to end (Elara).
+    stage.updateCamera(dt, false, (phase === 'play' || phase === 'replay') && pb ? pb.held : 0);
     if (test.safe && dt > 0 && phase !== 'build' && phase !== 'computing') {
       const o = stage.safeOverflow(), cur = test.safe[phase];
       if (!cur || o.px > cur.px) test.safe[phase] = {...o, t: +(pb?.t ?? 0).toFixed(2), w: el.app.clientWidth};
