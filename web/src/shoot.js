@@ -339,7 +339,7 @@ export function mountShoot(ctx) {
   const go = (act, label, sub = '') => `<button type="button" class="go" data-act="${act}"><span>${label}</span>${sub ? `<small>${sub}</small>` : ICON.arrow}</button>`;
   const PLAY_LINK = '<button type="button" class="slink" data-act="play">先用现成的角色打一局</button>';
   // 评委版: two real generations, there to look at (and play) whether or not 拍照 is on now (Elara 9e17f724).
-  const SAMPLE = ctx.sample && ctx.samples?.length ? `<div class="ssamples"><span>${ICON.play}看真实生成的过程</span><div>${ctx.samples.map(x =>
+  const SAMPLE = ctx.sample && ctx.samples?.length ? `<div class="ssamples"><span>${ICON.play}看它怎么来的</span><div>${ctx.samples.map(x =>
     `<button type="button" data-act="sample" data-id="${esc(x.id)}"${x.own ? ' class="own"' : ''}><img src="${esc(x.photo ?? '')}" alt=""><b>${esc(x.name)}</b><small>${esc(x.own ? x.tag : '网上公开图片')}</small><small>用时 ${esc(x.time)}</small></button>`).join('')}</div></div>` : '';
 
   // 鉴定卡 (Elara 207a725b): what 认物 made of the photo, its name, material and one line (recognition.verdict, Sol
@@ -442,7 +442,7 @@ export function mountShoot(ctx) {
         : code === 'photo-failed' ? [go('fresh', '再拍一次')]
         // Again after 认物 broke is a new go: it takes one of today's photos once made (Elara 704b790a). After a paid stage
         // broke, today's photo is taken already.
-        : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', code.startsWith('recognition-') ? '做成才算' : '不算次数')]
+        : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', code.startsWith('recognition-') ? '做成才算' : '')]
         : retry === 'resubmit' ? [ghost('lib', '回角色库'), go('resubmit', '再提交', '这次没算')]
         : retry === 'regenerate' ? [ghost('lib', '回角色库'), go('regen', '重新生成', '会多算一次')]
         : ['photo-invalid', 'photo-unclear', 'key-conflict', 'refused', 'process-corrupt', 'process-too-large'].includes(code) ? [ghost('lib', '回角色库'), go('fresh', '换一张拍')]
