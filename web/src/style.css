@@ -649,6 +649,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
     repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 18px), radial-gradient(120% 90% at 50% 40%, #141b30, #0a0e1a);
   background-repeat: no-repeat; aspect-ratio: 1 / 1.05; max-height: 54vh; }
 :where(.seen) .sframe.pick { max-height: calc(var(--seen) * 0.54); }
+/* The frame takes a tap like 拍照 under it: it gives a little under the finger. */
+.sframe[data-act] { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
+.sframe[data-act]:active { transform: scale(0.985); filter: brightness(1.15); }
 .sview { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
 .sview svg { width: 54px; height: 54px; stroke-width: 1.5; color: var(--c0l); margin-bottom: 6px; filter: drop-shadow(0 0 16px rgba(255, 138, 61, 0.5)); }
 .sview b { font-family: var(--display); font-weight: 400; font-size: 26px; letter-spacing: 0.04em; }
