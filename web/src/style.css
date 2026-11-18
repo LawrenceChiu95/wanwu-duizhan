@@ -700,6 +700,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .sframe.got::after { opacity: 0; }
 @keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(240%); } }
 .stag { position: absolute; left: 10px; top: 10px; z-index: 2; font-size: 12px; font-weight: 700; line-height: 22px; padding: 0 10px; color: #1a0900; background: var(--c0); clip-path: var(--slant); }
+/* 认物 made nothing of it (Elara 9699c50e): not a failure, so no red; the photo stays as it is and the six are big
+   enough to hit with a thumb, the one tapped lit while the backend takes it. */
+.stag.ask { color: #241700; background: #ffc94d; }
+.schoose { flex: none; margin: 16px 16px 0; }
+.schoose > b { display: block; font-size: 19px; font-weight: 700; line-height: 1.4; }
+.schoose > small { display: block; margin-top: 4px; font-size: 13px; color: var(--mute); }
+.schoose > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.schoose button { height: 50px; font-family: var(--display); font-size: 21px; letter-spacing: 0.06em; color: var(--ink); background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1.5px var(--line); clip-path: var(--slant); transition: transform 0.1s, background 0.15s, color 0.15s; -webkit-tap-highlight-color: transparent; }
+.schoose button:active { transform: translateY(1px); background: rgba(255, 138, 61, 0.2); }
+.schoose button.on { color: #1a0900; background: linear-gradient(100deg, var(--c0l), var(--c0)); box-shadow: none; }
+.schoose button:disabled:not(.on) { opacity: 0.35; }
 /* 鉴定卡 (Elara 207a725b): a slip pushed out over the bottom of the photo, name and material, its one line, 已鉴定. */
 .sid { position: relative; z-index: 2; flex: none; margin: -22px 20px 0; padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 2px;
   background: var(--plate); box-shadow: inset 0 0 0 1px var(--line), 0 10px 24px rgba(0, 0, 0, 0.55); transform: rotate(-1.2deg); }

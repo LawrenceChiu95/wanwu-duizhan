@@ -29,6 +29,8 @@ const SAY = {
   pass: '口令不对',
   quota: '今天的生成名额用完了，明天再来',
   busy: '生成的人太多，稍等再提交',
+  // Every retry spent, today's photo given back (Elara d597a68a: say it straight, nothing about counting).
+  'photo-failed': '这次没成功，再拍一次',
   'step-failed': '这次没生成出来，可以重新生成（会多算一次）',
   expired: '结果过期了，可以重新生成（会多算一次）',
   download: '模型没取回来，再试一次',
@@ -115,7 +117,7 @@ const catOf = r => r?.name ?? CAT[r?.category] ?? '东西';
 const countAs = r => !('inSix' in (r ?? {})) ? catOf(r) : r.inSix ? `按${catOf(r)}算` : `不在六类里，按最像的${catOf(r)}算`;
 const matOf = r => r?.materialName ?? MATERIAL[r?.material] ?? '';
 /** The tag beside an item's name: one of the six, or nothing when the category is just the name again (task #84). */
-export const catLabel = (it, name) => CAT[it?.category] ?? (it?.category && it.category !== name ? it.category : '');
+export const catLabel = (it, name) => (c => c !== name ? c : '')(CAT[it?.category] ?? it?.category ?? '');
 
 /** A small JPEG data URL of the photo for this page's own screens (the backend keeps the original). */
 async function thumbOf(blob, side = 480) {
@@ -183,6 +185,10 @@ export function mountShoot(ctx) {
   // anything is paid for; null when there is no such moment (a job made from an earlier one's 认物).
   const retakeLeft = () => job?.status === 'generating' && job.retakeUntil && !job.steps.some(s => s.startedAt)
     ? Math.max(0, (ms(job.retakeUntil) - api.now()) / 1000) : 0;
+  // Seconds left to pick one of the six before the backend takes the pillow (Elara 9699c50e).
+  const chooseLeft = () => job?.status === 'choosing-category' && job.categoryUntil ? Math.max(0, (ms(job.categoryUntil) - api.now()) / 1000) : 0;
+  // The pick sent and not yet answered, or what went wrong with it.
+  let picking = null, pickSay = '';
   // After 不是它 was tapped: what 认物 says, whether the call is still out, and when the backend said too late. 认物 stays
   // up until the answer is in and a moment after a 「已经开始生成了」, so the tap is never just swallowed.
   let retakeSay = '', retaking = false, lateAt = -Infinity;
@@ -292,13 +298,15 @@ export function mountShoot(ctx) {
     if (!stored) return pending ? 'confirm' : quotaOut() ? 'out:' + quotaOut() : 'pick';
     if (!job) return 'wait';
     if (ahead() && job.status === 'recognizing') return 'qrecog';
+    if (job.status === 'choosing-category') return 'choose';
     if (job.status === 'recognizing' || (job.status === 'generating' && (retakeLeft() > 0 || retaking || performance.now() - lateAt < LATE_HOLD || performance.now() - recogAt < RECOG_HOLD))) return 'recog';
     if (ahead()) return 'qgen';
     if (job.status === 'generating') return 'gen';
-    if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + job.error.code;
+    // A failure whose photo was given back reads as the last word, whatever its code (Sol c6bbf915).
+    if (job.status === 'failed') return job.error.code === 'unknown-submit' ? 'held' : 'fail:' + (job.error.refunded ? 'photo-failed' : job.error.code);
     return fetching() ? 'fetch' : refused() ? 'lost:refused' : 'done:' + job.itemId;
   }
-  const STEP_OF = {pick: 0, out: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
+  const STEP_OF = {pick: 0, out: 0, confirm: 0, wait: 2, qrecog: 1, recog: 1, choose: 1, qgen: 2, gen: 2, fetch: 2, fail: 2, held: 2, lost: 3, done: 3, err: 0};
   function paintSteps(key) {
     // An error lights the step the job stopped at (task #70), the first one if there is no job; a job that failed before
     // anything was recognised, or a request turned down by 认物, stopped at 认物 (Elara fa35bf76).
@@ -331,7 +339,8 @@ export function mountShoot(ctx) {
   // A long name (up to 12 characters) gets smaller rather than cut; a long material goes under it.
   const idFace = r => `<span class="sid-head"><i></i>鉴定单</span><span class="sid-row"><b class="sid-name" style="--n:${Array.from(catOf(r)).length}">${esc(catOf(r))}</b>
     ${matOf(r) ? `<span class="sid-mat"><small>材质</small>${esc(matOf(r))}</span>` : ''}</span>${r.verdict ? `<p class="sid-say">${esc(r.verdict)}</p>` : ''}
-    ${'inSix' in r && !r.inSix ? `<small class="sid-as">${esc(countAs(r))}</small>` : ''}<i class="sid-seal" aria-hidden="true">已鉴定</i>`;
+    ${'inSix' in r && !r.inSix ? `<small class="sid-as">${esc(countAs(r))}</small>` : ''}${r.chosen ? `<small class="sid-as">${r.chosen === 'timeout' ? '没选，就按枕头来做' : '你选的，就按它来做'}</small>` : ''}
+    <i class="sid-seal" aria-hidden="true">${r.chosen ? (r.chosen === 'timeout' ? '默认' : '你选的') : '已鉴定'}</i>`;
   function idCard() {
     const r = job?.recognition;
     if (!r) return '<div class="sid wait" data-live="id"><span class="sid-head"><i></i>鉴定单</span><span class="sid-row"><b class="sid-name"></b><span class="sid-scan">正在认是什么</span></span></div>';
@@ -391,6 +400,13 @@ export function mountShoot(ctx) {
         ${idCard()}${api.kind === 'fake' ? `<div class="sfines"><p class="sfine fake">${api.named ? '现在是假生成：认出来的名字是地址里写的' : '现在是假生成：前两张固定是扫把、刀剪，之后从六类里随机'}</p></div>` : ''}
         <div class="sfoot"><button type="button" class="sghost sretake" data-act="nothis" hidden>${ICON.retry}<span>不是它，重拍</span></button>
           <p class="snext"><i class="spin"></i><span data-live="next">正在认是什么</span></p></div>`;
+    } else if (kind === 'choose') {
+      // 认物 made nothing of it (Elara 9699c50e): no failure, the six to pick from, the pillow if nobody does.
+      html = `${frame('scan got', '<span class="stag ask">没认出来</span>')}
+        <div class="schoose"><b>没认出来，挑一个最像的吧</b><small>按你挑的那类来做，大小、轻重照这类算</small>
+          <div>${Object.entries(CAT).map(([k, c]) => `<button type="button" data-act="pick" data-cat="${k}">${c}</button>`).join('')}</div></div>
+        <p class="serr" data-live="send"></p>
+        <div class="sfoot"><p class="snext"><span data-live="next"></span></p></div>`;
     } else if (kind === 'gen') {
       // The photo, then the styled picture over it as soon as there is one (Elara 207a725b); the 鉴定卡 under it.
       html = `${frame('gen', `<img class="sstyled" data-live="styled" alt="改成游戏画风的图" hidden><i class="sedge"></i><i class="ssweep"></i>
@@ -405,10 +421,12 @@ export function mountShoot(ctx) {
       // Whether this one took one of today's photos (Elara 5027aa74: every failure screen says so). A job's own word
       // (charged: paid generation began), or a photo 认物 could not make out: only the photo's own fault is the player's
       // (Elara 7235d89f); a request turned down made no job.
-      const count = kind === 'lost' || (kind === 'fail' && (job.error.charged === true || code === 'photo-unclear')) ? (retry === 'same' ? '这次算了一次，再试不另算' : '这次算了一次')
+      const count = kind === 'fail' && code === 'photo-failed' ? '这次没算次数' : kind === 'lost' || (kind === 'fail' && (job.error.charged === true || code === 'photo-unclear')) ? (retry === 'same' ? '这次算了一次，再试不另算' : '这次算了一次')
         // 认物 breaking is always our fault, whatever the job says about retrying (Elara 139c00fb).
         : (kind === 'fail' && (job.error.charged === false || code.startsWith('recognition-'))) || (kind === 'err' && lastSend && code !== 'pass') ? '这次没算次数' : '';
       const btns = code === 'pass' ? [go('pass', '确定')]
+        // The last word: one way on, a new photo (Elara d597a68a).
+        : code === 'photo-failed' ? [go('fresh', '再拍一次')]
         // Again after 认物 broke is a new go: it takes one of today's photos once made (Elara 704b790a). After a paid stage
         // broke, today's photo is taken already.
         : retry === 'same' ? [ghost('lib', '回角色库'), go('retry', '再试', code.startsWith('recognition-') ? '做成才算' : '不算次数')]
@@ -471,6 +489,12 @@ export function mountShoot(ctx) {
       const left = Math.ceil(retakeLeft()), btn = el.body.querySelector('[data-act="nothis"]');
       btn.hidden = (!left && !retaking) || retakeLate();
       live('next').textContent = retakeLate() ? retakeSay : !left ? '认好了，马上开始生成' : retakeSay ? `${retakeSay}（还剩 ${left} 秒）` : `${left} 秒后开始生成`;
+    }
+    if (shown === 'choose') {
+      const left = Math.ceil(chooseLeft());
+      live('next').textContent = picking ? `好，按${CAT[picking]}来做…` : left ? `不选的话，${left} 秒后按枕头来做` : '按枕头来做';
+      live('send').textContent = pickSay;
+      for (const b of el.body.querySelectorAll('[data-act="pick"]')) { b.disabled = !!picking; b.classList.toggle('on', b.dataset.cat === picking); }
     }
     const queued = shown === 'qrecog' || shown === 'qgen';
     // Waiting for generation: when theirs is done, about 3 minutes for each one ahead (the one being made counts) and 3
@@ -540,6 +564,7 @@ export function mountShoot(ctx) {
       : state === 'done' ? `<b>${what}做好了</b><span class="sgo">装上去打</span>${ICON.arrow}`
       : state === 'bad' ? `<b>${stopped() ? (startError === 'session' ? '拍照记录找不到了，去看看' : '拍一件连错了后台，去看看') : refused() ? '这件装不进游戏，去看看' : job.error.code === 'unknown-submit' ? '这件还在核实' : '这件没生成出来，去看看'}</b>${ICON.arrow}`
       : fetching() ? `<i class="ring" style="--fill:1"></i><b>${what}生成好了</b><small>正在取回</small>`
+      : job.status === 'choosing-category' ? `<b>没认出来，去挑一个</b><small>${Math.ceil(chooseLeft())} 秒后按枕头</small>${ICON.arrow}`
       : ahead() ? `<i class="ring" style="--fill:0.02"></i><b>${job.recognition ? what : '新的一件'}排队中</b><small>${job.status === 'recognizing' ? `前面还有 ${ahead()} 人` : `前面 ${ahead()} 件，做好约 ${(ahead() + 1) * 3} 分钟`}</small>`
       : `<i class="ring" style="--fill:${fraction().toFixed(2)}"></i><b>${job.recognition ? what : '新的一件'}生成中</b><small>${remaining() > 0 && elapsed() < SLOW ? '还要 ' + about(remaining()) : '快好了'}</small>`;
     if (el.tag.innerHTML !== html) el.tag.innerHTML = html;
@@ -654,6 +679,21 @@ export function mountShoot(ctx) {
         else { btn.disabled = false; retakeSay = e.code === 'offline' ? '没连上，再点一次' : '没成功，再点一次'; }
         sync();
       }
+    },
+    // One of the six while choosing-category: the job goes on to 生成中 once the backend has it. Too late (the pillow was
+    // taken), the next poll shows it going on anyway.
+    pick: async b => {
+      const id = job.id;
+      picking = b.dataset.cat; pickSay = '';
+      sync();
+      try {
+        job = await api.category(id, picking);
+        if (stored?.id === id) poll();
+      } catch (e) {
+        if (stored?.id !== id) return;
+        if (e.code === 'not-allowed') poll();
+        else pickSay = e.code === 'offline' ? '没连上，再点一次' : '没成功，再点一次';
+      } finally { picking = null; sync(); }
     },
     again: () => lastSend && send(lastSend),
     refresh: () => { startError = null; poll(); },

@@ -121,6 +121,8 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     retry: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retry`)).job,
     // 不是它，重拍 between 认物 and generation (task #85; the route is Sol's to settle).
     retake: async id => (await call('POST', `/jobs/${encodeURIComponent(id)}/retake`)).job,
+    // 认物 didn't make it out (choosing-category, Elara 9699c50e): the player's pick of the six; Sol c6bbf915.
+    category: async (id, category) => (await call('POST', `/jobs/${encodeURIComponent(id)}/category`, {category})).job,
     regenerate: async (id, clientKey) => (await call('POST', `/jobs/${encodeURIComponent(id)}/regenerate`, {confirm: true, clientKey})).job,
     quota: () => call('GET', '/quota'),
     // The player chose to start again after 401 session: forget the old token; the next call asks for a new one.
