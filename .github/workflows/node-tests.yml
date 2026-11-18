@@ -1,12 +1,16 @@
 name: Node tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   contents: read
 
 jobs:
   test:
+    if: github.event.action != 'edited'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,6 +26,7 @@ jobs:
       - run: npm test --prefix web
       - run: npm run build --prefix web
   import-tool:
+    if: github.event.action != 'edited'
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -36,3 +41,41 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix tools/import-item
       - run: npm test --prefix tools/import-item
+
+  pr-description:
+    if: github.event_name == 'pull_request'
+    permissions: {}
+    name: PR 正文说明可见变化
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # Read only the event payload. Do not check out or execute the pull request's code.
+      - name: Check the PR description
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
+          body = event["pull_request"]["body"] or ""
+          ignored = re.compile(
+              r"<!--.*?(?:-->|\Z)|^ {0,3}(`{3,}|~{3,})[^\n]*\n.*?(?:^ {0,3}\1[ 	]*(?=\n|\Z)|\Z)",
+              re.MULTILINE | re.DOTALL,
+          )
+          body = ignored.sub("\n", body.replace("\r\n", "\n"))
+          headings = list(re.finditer(r"^ {0,3}(#{1,2})[ 	]+([^\n]*)", body, re.MULTILINE))
+          section_name = "他看得见的变化"
+          for index, heading in enumerate(headings):
+              title = re.sub(r"[ 	]+#+[ 	]*$", "", heading[2]).strip()
+              if heading[1] != "##" or title != section_name:
+                  continue
+              end = headings[index + 1].start() if index + 1 < len(headings) else len(body)
+              contents = body[heading.end():end]
+              if re.search(r"\w", contents):
+                  break
+              raise SystemExit(f"请在「{section_name}」下写清变化和原因。没有可见变化就写「无」。")
+          else:
+              raise SystemExit(f"PR 正文缺少「## {section_name}」一节。")
+          PY
