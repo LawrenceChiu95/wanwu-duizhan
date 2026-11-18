@@ -266,13 +266,13 @@ export class Overlay {
       if (t >= 1 || !stage.project(s.follow?.center ?? s.at, p)) { s.el.remove(); this.stamps.splice(k, 1); continue; }
       const rise = ease(Math.min(1, t * 1.5)) * 8, punch = t < 0.12 ? 1.35 - 0.35 * ease(t / 0.12) : 1;
       s.y = s.flip ? Math.min(stage.view.h - stage.safeBottom() - s.h - 6, p.y + s.lift) + rise : Math.max(stage.view.top + s.h + 6, p.y - s.lift) - rise;
+      // Clear of 「你」 (last frame's box), with room to spare: the word goes up over it, so the two never read as a pair of tags.
+      const m = this.meBox, sTop = s.flip ? s.y : s.y - s.h, x0 = Math.min(W - 6 - s.w / 2, Math.max(6 + s.w / 2, p.x));
+      if (m && Math.abs(x0 - m.x) < (s.w + m.w) / 2 + 8 && sTop < m.y + 6 && sTop + s.h > m.y - m.h - 6) s.y = s.flip ? m.y - m.h - 6 - s.h : m.y - m.h - 6;
       // On a short phone ModelScope's round button sits on the right edge 40% down: a line level with it keeps 56 px off
-      // that edge (走查 1118 第 13 条).
+      // that edge (走查 1118 第 13 条), where it ends up after the step round 「你」.
       const H = this.layer.clientHeight, top = s.flip ? s.y : s.y - s.h, ball = H <= 700 && top < H * 0.4 + 30 && top + s.h > H * 0.4 - 30;
       s.x = Math.min(W - (ball ? 56 : 6) - s.w / 2, Math.max(6 + s.w / 2, p.x));
-      // Clear of 「你」 (last frame's box), with room to spare: the word goes up over it, so the two never read as a pair of tags.
-      const m = this.meBox, sTop = s.flip ? s.y : s.y - s.h;
-      if (m && Math.abs(s.x - m.x) < (s.w + m.w) / 2 + 8 && sTop < m.y + 6 && sTop + s.h > m.y - m.h - 6) s.y = s.flip ? m.y - m.h - 6 - s.h : m.y - m.h - 6;
       s.el.style.opacity = t > 0.6 ? (1 - t) / 0.4 : 1;
       s.el.style.transform = s.flip ? `translate(${s.x}px, ${s.y}px) translate(-50%, 0) scale(${punch}) rotate(180deg)`
         : `translate(${s.x}px, ${s.y}px) translate(-50%, -100%) scale(${punch})`;
