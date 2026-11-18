@@ -105,26 +105,37 @@ try {
     // 390 it is gone through with the button each card is about pressed once just before it (Elara 8b471471, d2999ce8):
     // 冲 at the start and after 知道了, 挡 after stop 2, 反打 as soon as it lights; all four cards must still come.
     if(!pvp&&width===390) {
+     // Every press is a real one at the key's middle on screen, held 60 ms, after checking that the middle lands on the key:
+     // a layer over a lit key (the veil over 冲, Sol aa052007) fails here instead of being stepped around.
+     if(!page.__realPress) {page.__realPress=true;await page.exposeFunction('__realPress',async (x,y) => {await page.mouse.move(x,y);await page.mouse.down();await new Promise(r => setTimeout(r,60));await page.mouse.up();});}
      const cards=await page.evaluate(() => new Promise(resolve => {
-      const $=id => document.getElementById(id),teach=$('teach'),order=['intro','dash','block','counter'],early=[],seen=[];
-      const tap=el => {el.dispatchEvent(new PointerEvent('pointerdown',{pointerId:9,bubbles:true}));setTimeout(() => el.dispatchEvent(new PointerEvent('pointerup',{pointerId:9,bubbles:true})),60);};
+      const $=id => document.getElementById(id),teach=$('teach'),order=['intro','dash','block','counter'],early=[],seen=[],covered=[];
+      const press=el => {
+       const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,hit=document.elementFromPoint(x,y);
+       if(!hit||!(hit===el||el.contains(hit))) {covered.push(`${el.id} under ${hit?.id||hit?.getAttribute('class')||hit?.tagName||'nothing'}`);return false;}
+       window.__realPress(x,y);return true;
+      };
       const key=kind => kind==='intro'?$('teachOk'):kind==='block'?$('blockBtn'):$('dashBtn');
-      let next=0,busy=false;
+      let next=0,busy=false,pressed=null,pressedAt=0;
       const tick=() => {
-       const kind=teach.hidden?null:teach.dataset.kind,s=window.__top.status();
-       if(!s.teach||s.phase!=='play'||next===order.length) {resolve({seen,early});return;}
+       let kind=teach.hidden?null:teach.dataset.kind;const s=window.__top.status();
+       // A real press lands a few ms later: the card it answered is still up until then.
+       if(kind&&kind===pressed) {kind=null;busy=true;if(performance.now()-pressedAt>3000) covered.push(`${pressed}: the press did not close the card`);}
+       else if(pressed&&kind!==pressed) pressed=null,busy=false;
+       if(covered.length||!s.teach||s.phase!=='play'||next===order.length) {resolve({seen,early,covered});return;}
        if(kind&&!busy) {
-        if(kind!==order[next]) {seen.push(kind);resolve({seen,early});return;}
+        if(kind!==order[next]) {seen.push(kind);resolve({seen,early,covered});return;}
         seen.push(kind);busy=true;
-        setTimeout(() => {const k=key(kind);if(kind==='intro') k.click();else tap(k);next++;busy=false;},250);
+        setTimeout(() => {if(press(key(kind))) {next++;pressed=kind;pressedAt=performance.now();} else busy=false;},250);
        } else if(!kind&&!busy&&!early[next]) {
         const want=order[next];
-        if(want!=='counter'||$('dashBtn').classList.contains('counter')) {tap(want==='block'?$('blockBtn'):$('dashBtn'));early[next]=true;}
+        if(want!=='counter'||$('dashBtn').classList.contains('counter')) early[next]=press(want==='block'?$('blockBtn'):$('dashBtn'));
        }
        requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
      }));
+     assert.deepEqual(cards.covered,[],`${width}px: each lit key of the lesson takes a real press at its middle`);
      assert.deepEqual(cards.seen,['intro','dash','block','counter'],`${width}px: every stop of the lesson after an early press`);
      assert.equal(cards.early.filter(Boolean).length,4,`${width}px: an early press before each card`);
      report.push({width,screen:'solo-teach-early',cards:cards.seen});

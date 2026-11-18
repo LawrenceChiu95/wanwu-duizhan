@@ -568,7 +568,9 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* 第一关教学 (Elara 534cbd22): the fight stopped, the screen dark (about 70%) but for holes over what the stop is about,
    rimmed in light; a card on the 准备 plate beside them. The shade takes every tap (a tap there makes the lit button
    hop). The buttons stand over it anyway (#pad's z-index): the one to press as it is, the other as dark and out of reach. */
-#teach { position:absolute; inset:0; z-index:5; touch-action:none; }
+#teach { position:absolute; inset:0; z-index:3; touch-action:none; }
+/* The pads (4) stay over the veil to be pressed; a word stamped while a card is up goes under it, off the card's lines (走查 1118 第 1 条). */
+#app:has(#teach:not([hidden])) #fx .stamp { z-index:2; }
 #teach .veil { position:absolute; inset:0; width:100%; height:100%; animation:teachIn .2s ease-out both; }
 #teach .shade { fill:rgba(3,7,6,.72); stroke:none; }
 #teachRims { fill:none; stroke:#fff1c2; stroke-width:2.5; filter:drop-shadow(0 0 6px #ffe39acc) drop-shadow(0 0 14px #ffd76688); animation:teachRim 1s ease-in-out infinite; }
