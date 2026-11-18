@@ -885,14 +885,15 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .khead small, .kcap span:last-child { margin-left: auto; color: var(--teal); }
 .khead .kmute { flex: none; width: 32px; height: 28px; margin: -4px -8px -4px 2px; clip-path: none; color: #c9d6c2; background: #0d2119; box-shadow: inset 0 0 0 1px #4c5c46; }
 .khead .kmute svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-.khead small, .kloc, .kcap { font: 700 12px/1.5 var(--kmono); letter-spacing: 0.08em; }
+.khead small, .kcap { font: 700 12px/1.5 var(--kmono); letter-spacing: 0.08em; }
 .kbench { flex: 1; min-height: 0; isolation: isolate; position: relative; display: flex; flex-direction: column; overflow: hidden; background: #172520; }
 .kbench::before { content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg, #08160eb8, transparent 35%, #07150fc9), linear-gradient(90deg, #0c1e18aa, #26392f22 66%, #0b1a1555), url("./assets/kitchen-bench.webp") center 54% / cover; }
 .ktitle { position: relative; z-index: 1; padding: 22px 22px 0; pointer-events: none; }
-.kloc { color: #a8e9cb; }
 #intro h1 { margin-top: 4px; font-size: clamp(40px, 12vw, 66px); font-weight: 900; line-height: 1.1; letter-spacing: -0.055em; text-shadow: 0 3px #101612; }
 #intro h1 span { color: var(--amber); }
+/* What it is, under the name: the pot below is only the example (Elara 0e4694bd). */
+.ksub { margin-top: 2px; font-size: 16px; font-weight: 700; line-height: 1.45; letter-spacing: 0.04em; color: #e3e5d2; text-shadow: 0 2px #101612; }
 .kmodel { position: relative; flex: 1; min-height: 170px; cursor: grab; touch-action: none; background: radial-gradient(ellipse at center, #68797070, transparent 66%); }
 .kmodel img, .kmodel canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .kcap { padding: 6px 10px; margin: 0 20px 12px; border-left: 2px solid var(--teal); background: #0d201bea; }
@@ -923,6 +924,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 @media (max-height: 740px) {
   .ktitle { padding-top: 14px; }
   #intro h1 { font-size: 40px; }
+  .ksub { font-size: 14px; }
   .kmodel { min-height: 130px; }
   .kcap { margin-bottom: 8px; }
   #intro figure img { height: 64px; }
@@ -931,6 +933,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 }
 :where(.seen-740) .ktitle { padding-top: 14px; }
 :where(.seen-740) #intro h1 { font-size: 40px; }
+:where(.seen-740) .ksub { font-size: 14px; }
 :where(.seen-740) .kmodel { min-height: 130px; }
 :where(.seen-740) .kcap { margin-bottom: 8px; }
 :where(.seen-740) #intro figure img { height: 64px; }

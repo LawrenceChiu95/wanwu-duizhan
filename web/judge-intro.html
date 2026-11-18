@@ -1,12 +1,12 @@
   <!-- 评委版 opening page (vite.config.js puts it in for --mode judge): 凡朔's 奶锅 page from his UI preview (11-07,
-       Elara ce042e3d). Plain HTML so it shows while the game loads behind it; judge.js turns 和电脑打 / 和人打 on once the page is
+       Elara ce042e3d), titled with the game's name and the 奶锅 as its example (Elara 0e4694bd). Plain HTML so it shows while the game loads behind it; judge.js turns 和电脑打 / 和人打 on once the page is
        ready, and only then loads the pot's 3D into the box (the picture stands in until it comes). -->
   <section id="intro" aria-label="万物对战 · 评委试玩">
-    <header class="khead"><i></i> 万物对战 <small>评委试玩</small><button type="button" class="kmute mute" id="introMute" aria-label="关掉声音"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path class="w1" d="M15.5 9a4 4 0 0 1 0 6" /><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11" /><path class="x" d="M16 9.5l5 5M21 9.5l-5 5" /></svg></button></header>
+    <header class="khead"><i></i> 评委试玩 <small>Aholo 3D AI 黑客松</small><button type="button" class="kmute mute" id="introMute" aria-label="关掉声音"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path class="w1" d="M15.5 9a4 4 0 0 1 0 6" /><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11" /><path class="x" d="M16 9.5l5 5M21 9.5l-5 5" /></svg></button></header>
     <div class="kbench">
-      <div class="ktitle"><span class="kloc">厨房改装台</span><h1>改装<span>奶锅</span></h1></div>
-      <div class="kmodel" id="introModel"><img src="../data/showcase/pot/styled.webp" alt="改装奶锅参考图"></div>
-      <div class="kcap"><span>Aholo 生成模型</span><span id="introHint">3D 稍后载入</span></div>
+      <div class="ktitle"><h1>万物<span>对战</span></h1><p class="ksub">拍一件身边的东西，它替你上场对撞</p></div>
+      <div class="kmodel" id="introModel"><img src="../data/showcase/pot/styled.webp" alt="示范：一口奶锅的改装图"></div>
+      <div class="kcap"><span>示范：一口奶锅</span><span id="introHint">3D 稍后载入</span></div>
     </div>
     <div class="kfoot">
       <h2>从厨房到赛场</h2>
