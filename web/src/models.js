@@ -180,7 +180,7 @@ const RIM_BODY = `#include <emissivemap_fragment>
 {
   float facing = clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0);
   float rim = pow(1.0 - facing, 3.0);
-  // No steady team-colour rim (凡朔 via 远夏, Elara 9c98f16a): the pieces keep their own colours; the side shows as an outline.
+  // No steady team-colour rim (凡朔 via 远夏, Elara 9c98f16a): the pieces keep their own colours; 「你」 and the floor ring mark the side.
   // uWarm (the new feel's short hit light, stage.js): the flash goes warm and dimmer instead of white, and the striker's
   // gold edge is fainter (that feel builds no outline shell); unset it reads 0.
   totalEmissiveRadiance += mix(vec3(1.6), vec3(1.0, 0.55, 0.24), uWarm) * uFlash;
