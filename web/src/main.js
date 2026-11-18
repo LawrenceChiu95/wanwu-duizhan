@@ -647,6 +647,8 @@ async function main() {
     const a = strikerChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
     if (a) setFlash(a, `strike${e.attacker}`);
     if (b && b !== a) setFlash(b, 'hurt');
+    // A landed 冲 on a core also jolts that core bar (terminal.css .jolt); the next one restarts it.
+    if (b && e.dash && !e.parry && e.targetPart === 'core') replay_(b, 'jolt');
   }
   // The few big moments of a match say who did what to whom, once, where the eye can find it: one line 「拖鞋 撞碎了
   // 马克杯！」 at a fixed spot under the HUD for about 1.4 s, or with ?call=slot the striking piece's HUD slot grows and

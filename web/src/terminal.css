@@ -466,6 +466,9 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
   100% { transform:none;filter:none; }
 }
 @keyframes pcCrackLine { 0% { opacity:1;clip-path:inset(0 100% 0 0); } 18% { opacity:1;clip-path:inset(0 0 0 0); } 60% { opacity:.9; } 100% { opacity:.5; } }
+/* A landed 冲 on a core: that side's core bar jolts sideways and settles (main.js onEvent); ordinary knocks only flash it. */
+#hud.newfeel .core .bar.jolt { animation:coreJolt .28s ease-out; }
+@keyframes coreJolt { 0% { translate:5px 0; } 16% { translate:-4px 0; } 34% { translate:3px 0; } 54% { translate:-2px 0; } 76% { translate:1px 0; } 100% { translate:0 0; } }
 
 /* 三个都赢了: 拍一件 inside the tip, a word you can tap (Elara 2621157e). */
 /* 拍一件 after the first 莽牛 win: a cream plate of its own over the result's buttons, the 组装台's 拍一件 made wide. */
