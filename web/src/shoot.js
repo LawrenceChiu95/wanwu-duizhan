@@ -192,7 +192,8 @@ export function mountShoot(ctx) {
   // Seconds left to pick one of the six before the backend takes the pillow (Elara 9699c50e).
   const chooseLeft = () => job?.status === 'choosing-category' && job.categoryUntil ? Math.max(0, (ms(job.categoryUntil) - api.now()) / 1000) : 0;
   // The pick sent and not yet answered, or what went wrong with it.
-  let picking = null, pickSay = '';
+  // picking: the category on its way to the backend; taken: the one it took for that job, shown till a poll moves on.
+  let picking = null, taken = null, pickSay = '';
   // After 不是它 was tapped: what 认物 says, whether the call is still out, and when the backend said too late. 认物 stays
   // up until the answer is in and a moment after a 「已经开始生成了」, so the tap is never just swallowed.
   let retakeSay = '', retaking = false, lateAt = -Infinity;
@@ -496,10 +497,10 @@ export function mountShoot(ctx) {
       live('next').textContent = retakeLate() ? retakeSay : !left ? '认好了，马上开始生成' : retakeSay ? `${retakeSay}（还剩 ${left} 秒）` : `${left} 秒后开始生成`;
     }
     if (shown === 'choose') {
-      const left = Math.ceil(chooseLeft());
-      live('next').textContent = picking ? `好，按${CAT[picking]}来做…` : left ? `不选的话，${left} 秒后按枕头来做` : '按枕头来做';
+      const left = Math.ceil(chooseLeft()), cat = picking ?? (taken?.id === job.id ? taken.cat : null);
+      live('next').textContent = cat ? `好，按${CAT[cat]}来做…` : left ? `不选的话，${left} 秒后按枕头来做` : '按枕头来做';
       live('send').textContent = pickSay;
-      for (const b of el.body.querySelectorAll('[data-act="pick"]')) { b.disabled = !!picking; b.classList.toggle('on', b.dataset.cat === picking); }
+      for (const b of el.body.querySelectorAll('[data-act="pick"]')) { b.disabled = !!cat; b.classList.toggle('on', b.dataset.cat === cat); }
     }
     const queued = shown === 'qrecog' || shown === 'qgen';
     // Waiting for generation: when theirs is done, about 3 minutes for each one ahead (the one being made counts) and 3
@@ -686,14 +687,15 @@ export function mountShoot(ctx) {
       }
     },
     // One of the six while choosing-category: the job goes on to 生成中 once the backend has it. Too late (the pillow was
-    // taken), the next poll shows it going on anyway.
+    // taken), the next poll shows it going on anyway. The reply can come late, after a poll has moved on or another photo
+    // was taken (Sol 886c3a95): it never replaces the job, the poll for the job still shown does.
     pick: async b => {
-      const id = job.id;
-      picking = b.dataset.cat; pickSay = '';
+      const id = job.id, cat = b.dataset.cat;
+      picking = cat; pickSay = '';
       sync();
       try {
-        job = await api.category(id, picking);
-        if (stored?.id === id) poll();
+        await api.category(id, cat);
+        if (stored?.id === id) { taken = {id, cat}; poll(); }
       } catch (e) {
         if (stored?.id !== id) return;
         if (e.code === 'not-allowed') poll();
