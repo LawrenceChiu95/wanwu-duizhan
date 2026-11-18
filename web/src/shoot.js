@@ -464,7 +464,7 @@ export function mountShoot(ctx) {
       // A page reopened in another browser has no photo of its own; the item carries the one the backend kept (Elara cf1366e6).
       const shot = photo() || it.origin?.photo || '';
       html = `<h2 class="shead">做好了</h2><div class="spair"><figure><span class="pane">${shot ? `<img src="${esc(shot)}" alt="">` : ''}</span><figcaption>你拍的</figcaption></figure>
-          <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D</figcaption></figure></div>
+          <figure><span class="pane"><canvas class="turn" data-live="turn"></canvas></span><figcaption>生成的 3D · 拖着转</figcaption></figure></div>
         <div class="sstage"><div class="card sreveal${r ? ' grade' + r.grade : ''}" data-item="${esc(id)}">
           ${r ? `<i class="big g${r.grade}">${r.grade}</i>` : ''}
           <div class="sname"><span class="nm"><b>${esc(ctx.name(id))}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, ctx.name(id)))}</span><small>${line}</small></div>
@@ -483,7 +483,7 @@ export function mountShoot(ctx) {
     if (ctx.grade(id) && !ctx.seen(id)) ctx.flip(card, id, 500, card.parentElement);
     if (!stored.seen) { stored.seen = true; keep(); paintTag(); }
     await ctx.loadModels([ctx.item(id)]);
-    if (canvas.isConnected) ctx.turns.show(canvas, id, {zoom: 1.3});
+    if (canvas.isConnected) ctx.turns.show(canvas, id, {zoom: 1.3, drag: true});
   }
   // The parts of a screen that move: 认物's result, 生成中's steps, times and bar, the connection and slow notices.
   function update() {

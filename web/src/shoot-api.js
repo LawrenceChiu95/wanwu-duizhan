@@ -76,7 +76,8 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     let res;
     try {
       res = await fetch(base + path, {method, body: body instanceof FormData ? body : body && JSON.stringify(body),
-        headers: {'X-Shoot-Pass': getPass(), ...who, ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
+        // X-Shoot-Category: this page knows choosing-category; a page from before it is never sent one (Sol ff68c10b).
+        headers: {'X-Shoot-Pass': getPass(), 'X-Shoot-Category': '1', ...who, ...(body && !(body instanceof FormData) ? {'Content-Type': 'application/json'} : {})}});
     } catch { throw new ShootError('offline'); }
     const data = await res.json().catch(() => null);
     // No such path or method, and not in the backend's own JSON: this address has no 拍一件 backend behind it (task #62).

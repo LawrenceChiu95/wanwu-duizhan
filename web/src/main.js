@@ -2018,7 +2018,10 @@ async function main() {
     // lunge ends, a lunge charging as the shield runs out empty): that keeps going, but the button no longer lights as if
     // a tap would count (Sol e0535c0d). A tap shakes it as in cooling.
     const stun = c.stunIn ?? 0, dashLock = Math.max(stun, c.dashLockIn ?? 0);
-    for (const [btn, cool, total, on, lock] of [[pad.dash, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [pad.block, c.blockIn, M.blockCooldown, c.shield, stun]]) {
+    for (const [btn, due, total, on, lock] of [[pad.dash, c.dashIn, M.dashCooldown, c.charging || c.dashing, dashLock], [pad.block, c.blockIn, M.blockCooldown, c.shield, stun]]) {
+      // Ready as press() counts it: a tap now is taken at the next step, so its last step of cooling shows no 「1」 (Wren
+      // 3b937043: 「1反打」, the digit under a lit 反打, which a tap at that moment does land).
+      const cool = due > rules.dt + 1e-9 ? due : 0;
       const state = lock > 0 ? (lock >= cool - rules.dt ? 'locked' : 'cooling') : on ? 'on' : cool > 0 ? 'cooling' : live.done ? 'idle' : 'ready';
       const left = state === 'locked' ? lock : cool;
       if (state === 'locked' && btn.dataset.state !== 'locked') btn.lockTotal = lock;
