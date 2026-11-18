@@ -593,6 +593,7 @@ async function main() {
     layout_();
     stage.updateCamera(0, true);
     takeLate(); // the address's build, if its photo item came in during a match (task #70)
+    swapTipNow();
   }
 
   // ---------- HUD ----------
@@ -1301,9 +1302,38 @@ async function main() {
   const SCREENS = ['intro', 'build', 'result', 'library', 'shootView', 'howView', 'pvpReady', 'pvpWin', 'hud'];
   const flipped = r => r.attributeName === 'hidden' ? (r.oldValue !== null) !== r.target.hidden
     : (r.oldValue ?? '').split(' ').includes('turned') !== r.target.classList.contains('turned');
-  const screens = new MutationObserver(rs => { if (rs.some(flipped)) choiceReq++; });
+  const screens = new MutationObserver(rs => { if (rs.some(flipped)) { choiceReq++; swapTipNow(); } });
   for (const n of SCREENS.map(k => document.getElementById(k)).filter(Boolean)) screens.observe(n, {attributeFilter: ['hidden'], attributeOldValue: true});
   screens.observe(el.app, {attributeFilter: ['class'], attributeOldValue: true});
+  // The first time on the bench (Elara 1370fb7f): a small bubble over the left 换件 saying the 角色库 has more. It covers
+  // nothing that can be pressed; any tap puts it away for good, and 拍一件 holds its breath while it is up (terminal.css).
+  const TIP_KEY = 'wanwu-swap-tip', swapTip = $('swapTip');
+  let tipDone = q.get('swaptip') !== 'again' && (() => { try { return localStorage.getItem(TIP_KEY) === '1'; } catch { return false; } })();
+  function swapTipNow() {
+    const off = id => document.getElementById(id)?.hidden ?? true;
+    const room = phase === 'build' && !pvp && !el.build.hidden && ['library', 'howView', 'shootView', 'foeSheet', 'intro'].every(off);
+    if (tipDone || !room || !swapTip.hidden) return;
+    swapTip.textContent = `库里还有 ${OFFER.filter(id => shipped.has(id)).length} 件现成的，\n点这儿换一件`;
+    swapTip.hidden = false;
+    el.build.classList.add('tipping');
+    placeSwapTip();
+    addEventListener('pointerdown', dropSwapTip, {capture: true, once: true});
+  }
+  function placeSwapTip() {
+    if (swapTip.hidden) return;
+    const chip = el.build.querySelector('[data-swap="0"]').getBoundingClientRect(), box = el.build.getBoundingClientRect();
+    const w = swapTip.offsetWidth, mid = chip.left + chip.width / 2 - box.left, left = Math.max(8, Math.min(box.width - 8 - w, chip.right - box.left - w + 6));
+    swapTip.style.left = `${left.toFixed(1)}px`;
+    swapTip.style.top = `${(chip.top - box.top - swapTip.offsetHeight - 9).toFixed(1)}px`;
+    swapTip.style.setProperty('--tail', `${(mid - left).toFixed(1)}px`);
+  }
+  function dropSwapTip() {
+    tipDone = true;
+    try { localStorage.setItem(TIP_KEY, '1'); } catch { /* no storage here: it shows once per page load */ }
+    swapTip.hidden = true;
+    el.build.classList.remove('tipping');
+  }
+  addEventListener('resize', placeSwapTip);
   const choosing = () => {
     screens.takeRecords(); // the screens this choice closed on its way (装上它 leaves 拍一件) are before it
     const ask = ++choiceReq, side = pick, slot = libSlot, was = phase;
@@ -1476,8 +1506,8 @@ async function main() {
     el.statsList.innerHTML = pvp ? '' : pickStats(stats, m.winner).map(x => `<li><b>${esc(x.value)}</b><span>${esc(x.label)}</span></li>`).join('');
     el.tipLine.textContent = pvp ? '' : tipLine(stats, m.winner, fought === null ? null : LADDER[fought].id);
     outcome ??= ladderOutcome(m.winner);
-    showOutcome(outcome);
     $('replayBtn').hidden = pb.slowAt === null;
+    showOutcome(outcome);
     setCaption(false, undefined, true);
     // The highlight under the HUD goes with it, or it sits on the result's own lines (Elara 5fd78c17).
     overlay.dropHighlight();
@@ -1497,7 +1527,7 @@ async function main() {
   // A win over a ladder opponent: kept at once. The first win over one unlocks the next (打下一个), the first over the last
   // one is the 三个都赢了 ending (随便挑 opens the ladder). Losing, a draw, or ?foe= leave the result as it was.
   function ladderOutcome(winner) {
-    if (pvp || !ladderOn || winner !== 0) return {act: 'again'};
+    if (pvp || !ladderOn || winner !== 0) return {act: 'again', lost: !pvp && winner !== 0};
     const id = LADDER[fought].id, first = !ladder.won.has(id);
     ladder.won.add(id);
     keepLadder();
@@ -1533,6 +1563,11 @@ async function main() {
     // 结算's way back, beside its main button: the 首页 in both modes when there is one (Pollux, Elara 56506aa2).
     $('soloBtn').hidden = !pvp && !homeOn;
     $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
+    // Lost alone: 换件再打 straight into the 角色库, beside 原样再来 (Elara 1370fb7f). An odd number of keys gives the main
+    // one the whole last row (style.css).
+    $('swapBtn').hidden = !o.lost;
+    const keys = [...el.result.querySelectorAll('.actions button')].filter(b => !b.hidden);
+    el.result.querySelector('.actions').classList.toggle('odd', keys.length % 2 === 1);
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -1849,6 +1884,7 @@ async function main() {
     for (const it of fresh) { byId.set(it.id, it); items.push(it); stage.items.set(it.id, it); }
     setNames(items);
     OFFER.splice(0, OFFER.length, ...offerNow());
+    paintBenchLib();
     // Open already: the 角色库 is drawn again with them, where it was scrolled to (Elara c611b379: 「以为没存上」).
     if (!el.library.hidden) openLibrary(libSlot, true);
     takeLate();
@@ -1860,6 +1896,10 @@ async function main() {
   // the catalog and no job kept on this phone.
   const benchShoot = $('benchShoot');
   const paintBenchShoot = () => benchShoot.classList.toggle('first', !shoot?.state.stored && items.every(it => shipped.has(it.id) || sampleIds.has(it.id)));
+  // …and the 角色库 beside it, saying how many it holds (Elara 1370fb7f).
+  const paintBenchLib = () => { $('benchLibN').textContent = OFFER.length; };
+  paintBenchLib();
+  $('benchLib').onclick = () => { if (phase === 'build') openLibrary(libSlot); };
   shoot0.then(async s => {
     // 评委版 with ?shoot=off: no backend; the 角色库's 拍一件 shows how the two real items were made.
     if (!s && judge) {
@@ -1920,6 +1960,11 @@ async function main() {
     }
   }).catch(showError);
   document.querySelectorAll('[data-pick]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.pick)); }; });
+  document.querySelectorAll('[data-swap]').forEach(b => { b.onclick = () => { if (phase === 'build') openLibrary(Number(b.dataset.swap)); }; });
+  // The whole slot opens its 角色库, not only its name plate (Elara 1370fb7f); 伸出 and 贴着 keep their own taps.
+  document.querySelectorAll('.slot').forEach(slot => slot.addEventListener('click', e => {
+    if (phase === 'build' && !e.target.closest('button')) openLibrary(Number(slot.dataset.slot));
+  }));
   document.querySelectorAll('.slot').forEach(slot => slot.querySelectorAll('[data-orient]').forEach(b => {
     b.onclick = () => { if (phase !== 'build') return; const part = cur().parts[Number(slot.dataset.slot)]; changed(part.orient, b.dataset.orient); part.orient = b.dataset.orient; rebuild(); };
   }));
@@ -2126,6 +2171,7 @@ async function main() {
   };
   // 原样再来: the same two builds again at once (a new seed unless ?seed= fixed it).
   $('sameBtn').onclick = () => { showBuild(); start(); };
+  $('swapBtn').onclick = () => { showBuild(); openLibrary(libSlot); };
   // 一机双人's way back to the three opponents; with an opening page, back to it.
   $('soloBtn').onclick = () => { if (homeOn) goHome(); else setPvp(false); };
 

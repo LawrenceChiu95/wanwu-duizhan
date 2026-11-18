@@ -28,7 +28,6 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #foe { top:8px;left:10px;right:10px;min-height:68px;padding:9px 12px;display:flex;justify-content:space-between;gap:10px;
   background:var(--case);box-shadow:var(--case-shadow);border-radius:5px;align-items:center; }
 .terminal-brand { min-width:110px;display:flex;flex-direction:column;gap:3px; }
-.terminal-brand small { font-size:8px;letter-spacing:2px;color:#a8b7a6;display:flex;gap:6px;align-items:center; }
 .terminal-brand small i,.terminal-led { width:5px;height:5px;display:block;background:var(--c1);box-shadow:0 0 5px #4fc8bd66;border-radius:1px; }
 .terminal-brand b { font-size:23px;font-weight:900;letter-spacing:3px;color:var(--ink);line-height:1.25; }
 .foe-readout { display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;max-width:57%;padding:7px 6px;border:1px solid #485542;background:#0a1b16;
@@ -48,22 +47,35 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .bhead .terminal-led { margin-left:auto;flex:none; }
 .slots { gap:9px; }
 .slot { clip-path:none;border-radius:4px;gap:7px;padding:12px 10px 10px;background:var(--case);box-shadow:var(--case-shadow); }
-.slot-rail { display:flex;align-items:center;gap:3px;border-bottom:1px solid #48583d;padding-bottom:6px; }
-.slot-rail span { margin-right:auto;font:9px/1.2 Consolas,"Microsoft YaHei",sans-serif;letter-spacing:1px;color:#a3af98; }
+.slot-rail { display:flex;align-items:center;justify-content:flex-end;gap:3px;border-bottom:1px solid #48583d;padding-bottom:6px; }
 .slot-rail i { width:4px;height:4px;background:#4dc4b3;box-shadow:0 0 4px #4fc8bd33; }
-.slot-rail i:last-child { background:#415b4c;box-shadow:none; }
+.slot-rail i:last-of-type { background:#415b4c;box-shadow:none; }
 .item { border:1px solid #3b5343;border-radius:2px;background:repeating-linear-gradient(0deg,transparent 0 3px,#81c4a204 3px 4px),#0c2019;box-shadow:inset 0 2px 6px #0008;min-height:56px;padding:7px 8px; }
 .item b { font-size:18px;font-weight:800;color:#e1ddc6;letter-spacing:0; }
 .item .nm { gap:5px; }
-.item .spec { color:#92b4a1;font:10px/1.4 Consolas,"Microsoft YaHei",sans-serif;margin-top:3px; }
-.item .swapchip { height:20px;padding:0 5px;border-radius:2px;background:#0a1b16;color:var(--c1l);box-shadow:inset 0 0 0 1px #485542;font-size:12px;font-weight:700;line-height:20px;letter-spacing:1px; }
-.lux { font:8px/1.3 Consolas,monospace;clip-path:none;color:#a9c7ae;background:#203e2e;border:1px solid #476649;padding:1px 3px; }
+.item .spec { color:#92b4a1;font:11px/1.4 var(--body);font-variant-numeric:tabular-nums;margin-top:3px; }
+/* 换件 reads as a key (Elara 1370fb7f): on the slot's top strip, so the name keeps the plate's whole width; the ⇄ of
+   换个对手 and a bright teal rim like the plate's lights. The whole slot opens the 角色库 as well. */
+.slot-rail { justify-content:flex-start; }
+.swapkey { z-index:1;margin-left:auto;display:flex;align-items:center;gap:3px;height:26px;padding:0 8px 0 6px;border-radius:2px;background:#0b2620;color:#e9f3e4;
+  box-shadow:inset 0 0 0 1.5px #6fdcc6,0 0 8px #4fc8bd55;font:700 13px/1 var(--body);letter-spacing:1px;white-space:nowrap; }
+.swapkey svg { width:14px;height:14px;stroke:#8ff0dc;stroke-width:2.4; }
+@media(max-height:740px) { .swapkey { height:22px;font-size:12px; } }
+:where(.seen-740) .swapkey { height:22px;font-size:12px; }
+/* The first visit's bubble over the left 换件: cream like 拍一件, its tail on the key; taps go through it. */
+.swaptip { position:absolute;z-index:4;margin:0;padding:6px 10px 7px;white-space:pre-line;pointer-events:none;
+  font:700 13px/1.4 var(--body);color:#20291f;background:#f0e4c0;border-radius:3px;box-shadow:0 0 0 1px #8b7a4c,0 4px 10px #000a;
+  animation:tipIn .25s ease-out both; }
+.swaptip::after { content:"";position:absolute;top:100%;left:calc(var(--tail, 50%) - 6px);border:6px solid transparent;border-top-color:#f0e4c0;border-bottom:0; }
+.swaptip[hidden] { display:none; }
+@keyframes tipIn { from { opacity:0;transform:translateY(4px); } }
+.lux { font:700 11px/1.3 var(--body);clip-path:none;color:#a9c7ae;background:#203e2e;border:1px solid #476649;padding:1px 3px; }
 .seg { border-radius:3px;padding:3px;background:#0d1712;box-shadow:inset 0 0 0 1px #5c6049;gap:4px; }
 .seg button { font-size:14px;font-weight:700;color:#b4b6a1;border-radius:2px;transition:background .12s,color .12s; }
 .seg button[aria-checked="true"] { background:linear-gradient(#d8d0b6,#b6ad91);color:#20291f;clip-path:none;
   box-shadow:inset 0 1px #f1e7ca,inset 0 -3px #8d876d; }
 .seg button[aria-checked="true"] svg { color:#1c493f; }
-.hint { color:#b5a87f;font-size:10px;opacity:1; }
+.hint { color:#b5a87f;font-size:11px;opacity:1; }
 .spread { height:53px;background:var(--case); }
 .spread button { font-size:13px; }
 .spread button[aria-checked="true"] { color:#ded7b8;background:#243a2b;box-shadow:inset 0 0 0 1px #c6aa58,inset 3px 0 #45b7a6; }
@@ -131,7 +143,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .kitchen-panel:not([open]) { opacity:.65; }
 .kitchen-panel:not([open]):hover { opacity:1; }
 .kitchen-panel select { max-width:135px;background:#10251a;color:var(--ink);border:1px solid #627254;font:11px var(--body);padding:4px; }
-@media(max-width:380px) { .terminal-brand b {font-size:20px;} .item b {font-size:16px;} .hint {font-size:9px;} .bhead span {font-size:11px;} }
+@media(max-width:380px) { .terminal-brand b {font-size:20px;} .item b {font-size:16px;} .hint {font-size:11px;} .bhead span {font-size:11px;} }
 @media(max-height:720px) { .slot {gap:5px;padding:10px 8px 8px;} .slot-rail {padding-bottom:4px;} .item {min-height:46px;} #build {gap:7px;} .bhead {padding:6px 9px;} }
 :where(.seen-720) .slot {gap:5px;padding:10px 8px 8px;} :where(.seen-720) .slot-rail {padding-bottom:4px;} :where(.seen-720) .item {min-height:46px;} :where(.seen-720) #build {gap:7px;} :where(.seen-720) .bhead {padding:6px 9px;}
 @media(prefers-reduced-motion:reduce) { .pad.on {animation:none;} }
@@ -151,24 +163,22 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .terminal-brand { align-items:center;min-width:0;gap:6px;text-align:center; }
 .terminal-brand b { font-size:clamp(22px,6vw,36px);font-weight:950;letter-spacing:2px;color:#e5dfc4;text-shadow:1px 2px #000;
   background:repeating-linear-gradient(175deg,#e5dfc4 0 4px,#bdbb9f 4px 5px,#e5dfc4 6px 12px);background-clip:text;color:transparent; }
-.terminal-brand small { font-size:7px;letter-spacing:1.5px; }
 .foe-readout { grid-column:1/-1;justify-content:center;max-width:none;padding:4px 4px 1px;gap:7px;border:0;background:none;box-shadow:none; }
-#foeParts span { font-size:9px; }
+#foeParts span { font-size:11px; }
 #foeParts .grade { font-size:max(11px,1.15em); }
-#foe .label { font-size:9px; }
+#foe .label { font-size:11px; }
 #foe .vs { font-size:11px; }
 #build { gap:6px;padding-top:10px;background:linear-gradient(transparent,#111b14ea 5%,#101a13f2 80%); }
-.bhead { border-width:10px;padding:1px 4px;min-height:35px; }
+.bhead { border-width:10px;padding:5px 4px;min-height:60px;align-items:center; }
 .bhead b { font-size:18px; }
 .bhead span { font-size:12px;color:#c3cdbd; }
-.bhead .shoot { border-radius:0;border:6px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;box-shadow:none;background:none;color:#242c20;font-weight:800;height:30px;padding:0 4px;margin:-3px 0; }
+.bhead .shoot { border-radius:0;border:6px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;box-shadow:none;background:none;color:#242c20;font-weight:800;height:30px;padding:0 4px; }
 .bhead .shoot svg { width:14px;height:14px; }
 .slot { border-width:13px;padding:2px 3px 3px;gap:5px;min-width:0; }
-.slot-rail { font-size:8px;padding-bottom:3px; }
-.slot-rail span { font-size:8px; }
+.slot-rail { padding-bottom:3px; }
 .item { min-height:44px;padding:4px 44px 4px 5px;border:0;box-shadow:none;background:transparent; }
 .item b { font-size:17px; }
-.item .spec { font-size:9px;margin-top:2px; }
+.item .spec { font-size:11px;margin-top:2px; }
 .module-display { height:63px;position:relative;border:1px solid #405843;overflow:hidden;
   background:repeating-linear-gradient(0deg,transparent 0 11px,#74997a12 11px 12px),repeating-linear-gradient(90deg,transparent 0 11px,#74997a12 11px 12px),#0b2118;
   box-shadow:inset 0 2px 8px #000b; }
@@ -177,7 +187,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .orient { height:35px;padding:2px;background:#17241b;box-shadow:none; }
 .orient button { font-size:12px;position:relative; }
 .orient button svg { width:12px;height:12px; }
-.hint { font-size:9px;line-height:12px;min-height:12px; }
+.hint { font-size:11px;line-height:14px;min-height:14px; }
 .spread { border-width:10px;height:56px;padding:0; }
 .spread button { font-size:12px; }
 .go { height:56px;font-size:24px; }
@@ -492,18 +502,22 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #app.pvp #hud .mid .clock { display:none; }
 #app.pvp #hud .mid .slowtag { writing-mode:vertical-rl; }
 /* 回首页 and the sound off the fight: a pair of the plate's own chips either side of 万物对战 (Pollux, Elara 56506aa2). */
-#foe .terminal-brand { position:relative; }
-#foe .hkey { position:absolute; top:calc(50% + 7px); transform:translateY(-50%); z-index:1; height:28px; display:flex; align-items:center; justify-content:center; gap:2px; clip-path:none; border:0; }
-#foe #homeBtn { left:-5px; padding:0 4px 0 2px; }
+/* Two equal side columns, so the name sits in the middle whichever chips are up, at least 8 px from either (Pollux). */
+#foe .terminal-brand { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; column-gap:8px; }
+#foe .terminal-brand b { grid-area:1/2; }
+#foe .hkey { position:relative; z-index:1; height:28px; display:flex; align-items:center; justify-content:center; gap:2px; clip-path:none; border:0; margin:0; }
+#foe #homeBtn { grid-area:1/1; justify-self:start; padding:0 4px 0 2px; }
 #foe #homeBtn[hidden] { display:none; }
 #foe #homeBtn svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
-#foe #muteTop { right:-5px; width:30px; padding:0; }
+#foe #muteTop { grid-area:1/3; justify-self:end; width:30px; padding:0; }
 #foe #muteTop svg { width:17px; height:17px; }
 #app.infight #foe .hkey { visibility:hidden; }
 /* Narrow phones: the chips keep saying where they go back to (the 换个对手 one alone goes down to its icon); 回首页 drops
    its arrow to fit beside the name. */
 @media (max-width:380px) { #foe :is(#homeBtn,#pvpBack) span { display:inline; } #foe #homeBtn { padding:0 3px; font-size:11px; } #foe #homeBtn svg { display:none; } }
-#foe .terminal-brand b { font-size:clamp(22px,6.6vw,27px); }
+#foe .terminal-brand b { font-size:clamp(21px,6.2vw,27px); }
+/* Up to 410 wide 回首页 goes without its arrow, so the name keeps 8 px from it at its size. */
+@media (max-width:410px) { #foe #homeBtn svg { display:none; } #foe #homeBtn { padding:0 4px; } }
 #app.pvp #camSeg, #app.pvp #caption, #app.pvp #fx .me, #app.pvp #coach { display:none; }
 #pvpTip { position:absolute; inset:0; z-index:5; pointer-events:none; }
 #pvpTip b { position:absolute; left:50%; padding:7px 14px 8px 16px; white-space:nowrap; font-size:16px; font-weight:800; color:#ece9d7;
@@ -532,10 +546,6 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
    and hid 接口 01's name and grade (Pollux acbd091c). There the whole column keeps clear of that strip, so the slots, the
    bench bar and 开打 still line up (走查 1118, 拿不准 2). */
 @media(max-height:700px) { #app.pvp.turned #build { padding-left:54px; } }
-#app.pvp.turned .item { padding-right:36px; }
-/* 360 wide: a four-character name (按摩滚筒) still whole beside 换件 (走查 1118 第 14 条). */
-@media(max-width:380px) { #app.pvp.turned .item { padding-right:28px; } }
-#app.pvp.turned .item .swapchip { right:3px; padding:0 4px; letter-spacing:0; }
 /* 接口 01's grade is the letter nearest that button: a little further in. */
 #app.pvp.turned .slot[data-slot="0"] .item { padding-left:12px; }
 /* …and a point smaller, so a four-character name (按摩滚筒) still fits the narrower slot whole. */
@@ -597,7 +607,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 /* The lesson's 挡 taken while the fight stands still: held in with a gold edge till the shield is up. */
 #pad .pad.block.armed { z-index:1; transform:translateY(4px) scale(.965); outline:3px solid var(--c0l); outline-offset:1px; filter:brightness(1.15) drop-shadow(0 0 14px #ecce85cc); }
 /* Small keys keep their look but take a finger (走查 1118 第 12 条): a clear square of at least 44 px around each that still counts as it. */
-:where(.mute,#foe .swap,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot) { position:relative; }
-:is(.mute,#foe .swap,#foe .hkey,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot,#teachSkip,.hreplay,#shootTag)::before { content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%); }
+:where(.mute,#foe .swap,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot,.swapkey) { position:relative; }
+:is(.mute,#foe .swap,#foe .hkey,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot,.swapkey,#teachSkip,.hreplay,#shootTag)::before { content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%); }
 /* The slanted tag's cut runs on 4 px past its top and bottom, the same slope, so that margin isn't cut off. */
 #shootTag { clip-path:polygon(11.1px -4px,calc(100% + 1.1px) -4px,calc(100% - 11.1px) calc(100% + 4px),-1.1px calc(100% + 4px)); }
