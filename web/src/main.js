@@ -1977,9 +1977,14 @@ async function main() {
       if (state === 'ready' && (btn.dataset.state === 'cooling' || btn.dataset.state === 'locked')) replay_(btn, 'pop');
       btn.dataset.state = state;
     }
-    // 反打 (Elara b32bfd9a ①): 冲 lights up and says so while a 冲 pressed now lands as the counter. The eyes are on the
+    // 反打 (Elara b32bfd9a ①): 冲 lights up and says so while a 冲 pressed now lands as the counter (counterLands: it gets
+    // there in time, Sol 0fe8da0c). The eyes are on the
     // 完美 in the arena then (Elara fa80d1bb), so it comes on with a sound of its own as well as a pop and a ring.
-    const counter = !live.done && (c.counterIn ?? 0) + 1e-9 >= COUNTER_CUE_LIT && c.dashIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0);
+    // Once off it stays off till the next 完美 (counterLands can come back for a step or two: one light, one sound).
+    let counter = !live.done && (c.counterIn ?? 0) + 1e-9 >= COUNTER_CUE_LIT && c.counterLands && c.dashIn <= rules.dt + 1e-9 && !c.charging && !c.dashing && !(c.stunIn > 0);
+    if (!(c.counterIn > 0)) pad.counterOver = false;
+    else if (!counter && pad.dash.classList.contains('counter')) pad.counterOver = true;
+    counter &&= !pad.counterOver;
     if (pad.dash.classList.contains('counter') !== counter) {
       pad.dash.classList.toggle('counter', counter);
       pad.dash.word.textContent = counter ? '反打' : '冲';
