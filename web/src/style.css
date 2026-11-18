@@ -247,7 +247,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .item { position: relative; height: 50px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 26px 0 9px; background: rgba(255, 255, 255, 0.06); min-width: 0; text-align: left; clip-path: polygon(0 0, 100% 0, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
 .item .nm { display: flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; }
 .item b { font-family: var(--display); font-weight: 400; font-size: 23px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-bottom: 2px; }
-.item .facts { display: flex; align-items: center; gap: 6px; }
+.item .facts { display: flex; align-items: center; gap: 6px; width: 100%; overflow: hidden; }
 .item .spec { font-size: 11px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .lux { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; color: #0a0f1c; background: #b8f06a; padding: 1px 3px; white-space: nowrap; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); padding: 1px 5px; }
 .seg { display: flex; height: 40px; background: rgba(0, 0, 0, 0.35); box-shadow: inset 0 0 0 1px var(--line); padding: 3px; gap: 3px; }
@@ -528,6 +528,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* Name and tag: the tag goes under the name when both don't fit (「无名之物」「按枕头算」 at 360), the grade stays beside. */
 .card .nmt { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .card .cat { flex: none; font-size: 11px; line-height: 17px; padding: 0 5px; border-radius: 4px; color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
+/* A piece's strong point (能打 / 够得远 / 耐撞, 碎了崩人): after the name on the card, on the size line on the bench's slot. */
+.trait { flex: none; font-size: 11px; font-weight: 700; line-height: 17px; padding: 0 5px; border-radius: 4px; white-space: nowrap; color: var(--c0l); background: rgba(255, 138, 61, 0.12); }
 .card .spec { font-size: 12px; color: var(--mute); }
 .card .how, .card .src { margin: 2px 10px 0; padding: 7px 0 9px; border-top: 1px solid var(--line); font-size: 12.5px; }
 /* 等级 (Elara 11-02 79a528bb): S gold, A purple, B blue, C green, D grey; the letter in the display face, slanted. */

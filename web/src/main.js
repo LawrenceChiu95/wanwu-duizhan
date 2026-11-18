@@ -215,6 +215,24 @@ async function main() {
   const rate = id => ratingOf(byId.get(id));
   // A grade letter, coloured by grade (empty for an item without one).
   const gradeTag = (grade, cls = 'grade') => grade ? `<i class="${cls} g${grade}">${grade}</i>` : '';
+  // A piece's strong point beside its grade (Elara b8d58d49): the highest of its own attack / range / durability scores,
+  // and 碎了崩人 for a ceramic one (sim/v3.js's own test of the material: glass does not shatter into shards). Nothing
+  // for a piece without scores; a photographed one by its scores too.
+  const TRAIT = {attack: '能打', range: '够得远', durability: '耐撞'};
+  const traitsOf = id => {
+    const s = rate(id)?.scores;
+    if (!s) return [];
+    const best = Object.keys(TRAIT).reduce((a, k) => s[k] > s[a] ? k : a);
+    return [TRAIT[best], ...(/陶瓷|瓷器|瓷质|^瓷$/.test(byId.get(id)?.materialName?.trim() ?? '') ? ['碎了崩人'] : [])];
+  };
+  const traitTags = id => traitsOf(id).map(t => `<span class="trait">${t}</span>`).join('');
+  // A slot's spec line is one line: when the specialties and the size don't all fit, the size goes first, then the
+  // specialties from the end; nothing is cut short.
+  const fitFacts = f => {
+    const parts = [f.querySelector('.spec'), ...[...f.querySelectorAll('.trait')].reverse()];
+    parts.forEach(x => { x.hidden = false; });
+    for (const x of parts) { if (!f.clientWidth || f.scrollWidth <= f.clientWidth + 0.5) break; x.hidden = true; }
+  };
   const spec = id => { const it = byId.get(id); return `${Math.round(Math.max(...it.bounds.max.map((v, i) => v - it.bounds.min[i])) * 100)} cm · ${it.mass} kg`; };
   const layout = def => def.parts.map(p => ({item: p.item, orient: p.orient, ...mountExtents(byId.get(p.item), p.mount, p.orient, rules)}));
   const sweepOf = def => Math.max(rules.core.radius, ...layout(def).map(p => p.r1));
@@ -450,10 +468,13 @@ async function main() {
     document.querySelectorAll('.slot').forEach(slot => {
       const k = Number(slot.dataset.slot), part = cur().parts[k];
       slot.querySelector('.item b').textContent = NAMES[part.item];
-      slot.querySelector('.item .nm').querySelector('.grade')?.remove();
+      slot.querySelectorAll('.item .grade, .item .trait').forEach(x => x.remove());
       slot.querySelector('.item .nm').insertAdjacentHTML('afterbegin', gradeTag(rate(part.item)?.grade));
+      // On the spec line, so the name keeps its whole width.
+      slot.querySelector('.item .facts').insertAdjacentHTML('afterbegin', traitTags(part.item));
       slot.querySelector('.lux').hidden = !isLux(part.item);
       slot.querySelector('.spec').textContent = spec(part.item);
+      fitFacts(slot.querySelector('.item .facts'));
       slot.querySelector('.hint').textContent = HINT[part.orient];
       const thumb = slot.querySelector('.module-thumb');
       thumb.dataset.modelId = part.item;
@@ -1637,7 +1658,7 @@ async function main() {
     return `<article class="card${own ? ' own' : ''}${other ? ' used' : ''}${grade ? ' grade' + grade : ''}" data-item="${esc(id)}">
       <button type="button" class="pick"${other ? ' disabled' : ''} aria-label="装上${esc(NAMES[id])}${grade ? `，${grade} 级` : ''}">
         <span class="media">${ghost}<canvas class="turn"></canvas>${corner}${isLux(id) ? '<i class="lux">Lux3D</i>' : ''}${badge}</span>
-        <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<span class="nmt"><b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}</span></span>
+        <span class="nm">${gradeTag(rate(id)?.grade, 'big')}<span class="nmt"><b>${esc(NAMES[id])}</b>${(c => c ? `<span class="cat">${esc(c)}</span>` : '')(catLabel(it, NAMES[id]))}${traitTags(id)}</span></span>
         ${rows}<small class="spec">${spec(id)}</small>
       </button>${foot}<span class="cover" aria-hidden="true"><i>?</i></span></article>`;
   }
@@ -2245,6 +2266,9 @@ async function main() {
     stage.resize(w, h, top, bottom);
   }
   new ResizeObserver(layout_).observe(el.app);
+  // Next frame, so hiding a part doesn't feed back into this observer's own round.
+  const factsFit = new ResizeObserver(es => requestAnimationFrame(() => es.forEach(e => fitFacts(e.target))));
+  document.querySelectorAll('.slot .item .facts').forEach(f => factsFit.observe(f));
 
   // ---------- diagnostics ----------
   // For a phone we cannot hold: frames per second, how fast game time runs against the wall clock (cooldowns count in game

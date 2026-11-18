@@ -381,7 +381,7 @@ export function mountShoot(ctx) {
     if (kind === 'pick') {
       html = `<div class="sframe pick" data-act="camera" role="button" tabindex="0" aria-label="拍照"><span class="sview">${ICON.camera}<b>拍一件身边的东西</b><small>一次拍一样，让它占满画面</small></span></div>
         ${api.kind === 'fake' && !api.named ? `<div class="ssix"><span>拍什么都行，会按最像的一类算攻守</span><div>${Object.values(CAT).map(c => `<i>${c}</i>`).join('')}</div></div>`
-          : '<div class="ssix"><span>拍的是什么就认成什么，大小、轻重、软硬看照片估</span></div>'}${SAMPLE}
+          : '<div class="ssix"><span>挑件狠的：铁的、实木的耐撞，长的够得远，瓷的会碎</span></div>'}${SAMPLE}
         ${foot(ghost('album', '从相册选', ICON.album), go('camera', '拍照'))}`;
     } else if (kind === 'out') {
       // Used up for today: 拍照 greyed, and the way on is a game with the characters already there (Elara 6dee70f7).
