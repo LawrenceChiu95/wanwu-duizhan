@@ -393,10 +393,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .unlock b small { font-family: var(--body); font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; color: var(--c1l); }
 .unlock .play { font-size: 12.5px; line-height: 1.35; color: #b6c2da; }
 .rlinks { display: flex; justify-content: center; flex-wrap: wrap; margin-top: -2px; }
-.rlinks button { min-height: 44px; padding: 0 2px; font-family: var(--body); font-size: 14px; font-weight: 600; color: var(--mute); background: none; }
+.rlinks button { min-height: 44px; min-width: 44px; padding: 0 6px; font-family: var(--body); font-size: 14px; font-weight: 600; color: var(--mute); background: none; }
 .rlinks button[hidden] { display: none; }
 /* The dot is not read out: a key's name stays 「回首页」 (alt text after the slash). */
-.rlinks button:not([hidden]) ~ button:not([hidden])::before { content: "·" / ""; display: inline-block; margin: 0 10px; color: var(--mute); }
+.rlinks button:not([hidden]) ~ button:not([hidden])::before { content: "·" / ""; display: inline-block; margin: 0 12px 0 0; color: var(--mute); }
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Sheets ---------- */
