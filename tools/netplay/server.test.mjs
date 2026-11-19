@@ -141,6 +141,7 @@ test('two seats negotiate versions, handshakes, countdown, relay, result and rem
   a.send('rematch', {matchId});
   const oneVote = await a.next('state', frame => frame.phase === 'finished' && frame.seats[0].rematchReady);
   assert.equal(oneVote.round, 1);
+  assert.deepEqual(oneVote, await b.next('state', frame => frame.phase === 'finished' && frame.seats[0].rematchReady));
   b.send('rematch', {matchId});
   const next = await a.next('state', frame => frame.phase === 'loadout' && frame.matchId !== matchId);
   assert.equal(next.prepare, null);
@@ -320,9 +321,35 @@ test('leaving revokes the seat while a survivor keeps the same result', async t 
   const result = await a.state('finished');
   assert.equal(result.reason, 'disconnect');
   assert.equal(result.winner, 0);
+  assert.equal(result.seats[1].left, true);
   const fresh = await client(f.url);
   fresh.send('resume', {code: bSession.code, token: bSession.token});
   assert.equal((await fresh.next('error')).code, 'session');
+});
+
+test('a result survives an opponent leaving while the other seat is temporarily offline', async t => {
+  const f = await fixture(t), {a, b, aSession, matchId} = await pair(f.url);
+  await getPlaying(f, {a, b, matchId});
+  const outcome = {matchId, winner: 0, hash: checkHash};
+  a.send('result', outcome);
+  b.send('result', outcome);
+  await a.state('finished');
+  await b.state('finished');
+
+  a.ws.terminate();
+  const offline = await b.next('state', state => state.phase === 'finished' && !state.seats[0].connected);
+  assert.equal(offline.seats[0].left, false);
+  const closed = once(b.ws, 'close');
+  b.send('leave');
+  await closed;
+
+  const resumed = await client(f.url);
+  resumed.send('resume', {code: aSession.code, token: aSession.token});
+  await resumed.next('session');
+  const finished = await resumed.state('finished');
+  assert.equal(finished.winner, outcome.winner);
+  assert.equal(finished.reason, 'complete');
+  assert.equal(finished.seats[1].left, true);
 });
 
 test('the bundled font, scene, music and license are served with their MIME types', async t => {

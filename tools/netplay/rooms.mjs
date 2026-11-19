@@ -32,7 +32,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
     t: 'state', code: room.code, phase: room.phase, matchId: room.matchId, round: room.round,
     version: room.version, seed: room.seed,
     seats: room.seats.map(seat => seat ? {
-      connected: active(seat), ready: Boolean(seat.selection), assetsReady: seat.assets,
+      connected: active(seat), left: seat.token === null, ready: Boolean(seat.selection), assetsReady: seat.assets,
       resultReady: Boolean(seat.result), rematchReady: seat.rematch
     } : null),
     prepare: room.prepare, startAt: room.startAt, resumeAt: room.resumeAt,
@@ -221,8 +221,8 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       seat.visible = false;
       seat.token = null;
       ws.close(1000, 'left');
-      if (room.phase === 'waiting' || !room.seats.some(active)) return remove(room);
-      if (room.phase !== 'finished') finish(room, 1 - seat.index, 'disconnect');
+      if (room.phase === 'waiting' || !room.seats.some(member => member?.token)) return remove(room);
+      if (room.phase !== 'finished') return finish(room, 1 - seat.index, 'disconnect');
       return publish(room);
     }
     if (msg.t === 'presence') {
@@ -274,7 +274,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       case 'rematch':
         if (room.phase !== 'finished' || msg.matchId !== room.matchId) throw new RoomError('phase');
         seat.rematch = true;
-        if (!maybeRematch(room)) send(ws, states(room));
+        if (!maybeRematch(room)) publish(room);
         return;
       default:
         throw new RoomError('message');
