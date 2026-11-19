@@ -679,3 +679,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #fx .me.under i { clip-path:polygon(50% 0,100% 100%,0 100%);margin:0 0 -1px; }
 #app.mine1 .s0 .ball { background:radial-gradient(circle at 35% 35%,#fff 0,var(--c0) 45%,#0f4a7a 100%);box-shadow:0 0 8px var(--c0); }
 #app.mine1 .s1 .ball { background:radial-gradient(circle at 35% 35%,#fff 0,var(--c1) 45%,#7a3510 100%);box-shadow:0 0 8px var(--c1); }
+/* 好友对撞's address: once, under the grades, the 评委链接's photo items are not here (Elara 497bde95). */
+.lnote { flex:none;margin:0 14px 10px;padding:9px 10px 9px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:3px 10px;font-size:13px;line-height:1.45;color:#e1ddc6;background:#1b2a22;box-shadow:inset 3px 0 #edbb59,inset 0 0 0 1px #405843; }
+.lnote b { flex-basis:100%;font-weight:800;color:#edbb59;letter-spacing:1px; }
+.lnote button { margin-left:auto;flex:none;padding:4px 10px;font:inherit;font-weight:800;color:#a8e9cb;background:none;border:1px solid #4f7a66; }
+.lnote[hidden] { display:none; }

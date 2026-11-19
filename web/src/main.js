@@ -2103,6 +2103,9 @@ async function main() {
     const first = unplaced(), shown = [...first, ...byGrade(OFFER.filter(id => !first.includes(id)), rate)];
     el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
     el.libGrid.scrollTop = again ? top : 0;
+    // 好友对撞's address keeps its own photo items, not the 评委链接's: said the first time the 角色库 opens here, until 知道了
+    // or the 角色库 is shut (Elara 497bde95; docs/netplay-spec.md: the first version brings none over).
+    if (__NETPLAY__ && !again && !libNoteSeen()) $('libNote').hidden = false;
     el.library.hidden = false;
     revealUnseen();
     for (const card of el.libGrid.querySelectorAll('.card')) {
@@ -2143,7 +2146,11 @@ async function main() {
       if (req !== libReq || el.library.hidden) return;
     }
   }
-  function closeLibrary() { libReq++; el.library.hidden = true; }
+  function closeLibrary() { libReq++; el.library.hidden = true; if (!$('libNote').hidden) libNoteDone(); }
+  const LIB_NOTE = 'wanwu-netplay-lib-note';
+  const libNoteSeen = () => { try { return localStorage.getItem(LIB_NOTE) === '1'; } catch { return false; } };
+  function libNoteDone() { $('libNote').hidden = true; try { localStorage.setItem(LIB_NOTE, '1'); } catch { /* shown again next time */ } }
+  $('libNoteOk').onclick = libNoteDone;
   // The two sides at the top, each named by what it has on; a tap fills the other side instead.
   const libSides = [...$('libSides').querySelectorAll('[data-side]')];
   function paintSides(k) {
