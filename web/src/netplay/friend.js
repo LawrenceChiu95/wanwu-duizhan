@@ -61,9 +61,9 @@ const ROOM_HTML = `
  * onGame(d, via), onLink(kind), onHome(), onReload(state) → a Promise while it puts a match back after a reload, else
  * null}. Returns the room's controls.
  *
- * What this phone tells the room (准备, 模型到了, the result, 再来一局) is told again until the room's state says it has
- * it (seats[].ready, assetsReady, resultReady, rematchReady, Sol 1701f8e0): a message lost with the connection is made
- * up on the state the room sends when it is back.
+ * What this phone tells the room (准备, 模型到了, the result, 再来一局, a desync's record) is told again until the room's
+ * state says it has it (seats[].ready, assetsReady, resultReady, rematchReady, traceReady, Sol 1701f8e0 dd49be57): a
+ * message lost with the connection is made up on the state the room sends when it is back.
  */
 export function createFriend(app, hooks) {
   const box = document.createElement('section');
@@ -113,6 +113,8 @@ export function createFriend(app, hooks) {
       game: (d, via) => hooks.onGame(d, via),
       link: kind => hooks.onLink?.(kind),
       error: code => {
+        // The room could not write this phone's desync record down: sent again a little later, a few times at most.
+        if (code === 'trace-store') { const m = told.desync; if (m && (told.traceTries = (told.traceTries ?? 0) + 1) <= 3) setTimeout(() => { if (told.desync === m) client?.send(m); }, 2000); return; }
         say(ERRORS[code] ?? `出错了（${code}）`);
         if (['room', 'full', 'session', 'version'].includes(code) && phase !== 'playing') { $('netStart').hidden = false; $('netHost').hidden = true; }
         if (['item', 'shoot-offline', 'parts'].includes(code)) { readySent = null; told.ready = null; hooks.onReadyRefused?.(ERRORS[code]); }
@@ -147,6 +149,7 @@ export function createFriend(app, hooks) {
       if (told.assets && state.phase === 'preparing' && !me.assetsReady) client.send(told.assets);
       if (told.result && ['playing', 'paused'].includes(state.phase) && !me.resultReady) client.send(told.result);
       if (told.rematch && state.phase === 'finished' && !me.rematchReady) client.send(told.rematch);
+      if (told.desync && ['playing', 'paused', 'finished'].includes(state.phase) && !me.traceReady) client.send(told.desync);
     }
     if (state.phase === 'waiting') {
       box.hidden = false;
@@ -207,8 +210,15 @@ export function createFriend(app, hooks) {
     },
     get readySent() { return readySent === client?.state?.matchId; },
     result(winner, hash) { const s = client?.state; if (s) tell('result', {t: 'result', matchId: s.matchId, winner, hash}); },
-    desync(step, log) { const s = client?.state; if (s) client.send({t: 'desync', matchId: s.matchId, step, log}); },
-    rematch() { const s = client?.state; if (s?.phase === 'finished') tell('rematch', {t: 'rematch', matchId: s.matchId}); },
+    desync(step, log) { const s = client?.state; if (s) tell('desync', {t: 'desync', matchId: s.matchId, step, log}); },
+    /** 再来一局: told now if the room has the match finished, else once it has (a phone that saw the desync first). */
+    rematch() {
+      const s = client?.state;
+      if (!s) return;
+      const msg = {t: 'rematch', matchId: s.matchId};
+      if (s.phase === 'finished') tell('rematch', msg);
+      else told = {...told.matchId === s.matchId ? told : {matchId: s.matchId}, rematch: msg};
+    },
     /** The room this tab was in when its page was last loaded (a reload goes back into it). */
     kept: () => NetClient.kept(),
     game(d) { return client?.game(d); },

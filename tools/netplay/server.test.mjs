@@ -29,7 +29,7 @@ async function listen(server) {
   return 'http://127.0.0.1:' + server.address().port;
 }
 
-async function fixture(t, {shoot = false, webRoot} = {}) {
+async function fixture(t, {shoot = false, webRoot, beforeTrace} = {}) {
   const requests = [], traces = [];
   let time = 1000;
   let upstream;
@@ -56,7 +56,10 @@ async function fixture(t, {shoot = false, webRoot} = {}) {
     upstream = await listen(mock);
     t.after(() => new Promise(resolve => mock.close(resolve)));
   }
-  const app = createNetplayServer({origin, upstream, webRoot, tickMs: 5, now: () => time, storeTrace: async trace => { traces.push(trace); }});
+  const app = createNetplayServer({origin, upstream, webRoot, tickMs: 5, now: () => time, storeTrace: async trace => {
+    if (beforeTrace) await beforeTrace(trace);
+    traces.push(trace);
+  }});
   const url = await listen(app.server);
   t.after(() => app.close());
   return {url, requests, traces, ahead: ms => { time += ms; }};
@@ -141,6 +144,7 @@ test('two seats negotiate versions, handshakes, countdown, relay, result and rem
   a.send('rematch', {matchId});
   const oneVote = await a.next('state', frame => frame.phase === 'finished' && frame.seats[0].rematchReady);
   assert.equal(oneVote.round, 1);
+  assert.deepEqual(oneVote, await b.next('state', frame => frame.phase === 'finished' && frame.seats[0].rematchReady));
   b.send('rematch', {matchId});
   const next = await a.next('state', frame => frame.phase === 'loadout' && frame.matchId !== matchId);
   assert.equal(next.prepare, null);
@@ -307,10 +311,41 @@ test('desync preserves one trace per seat and unrelated origins cannot connect',
   a.send('desync', {matchId, step: 25, log: {input: [3], checks: {25: checkHash}}});
   b.send('desync', {matchId, step: 25, log: {input: [4], checks: {25: '3'.repeat(64)}}});
   a.send('desync', {matchId, step: 26, log: {input: [5]}});
-  a.send('ping', {n: 1});
-  await a.next('pong');
+  await a.next('state', state => state.seats[0].traceReady);
+  await b.next('state', state => state.seats[1].traceReady);
   assert.deepEqual(f.traces.map(trace => trace.seat).sort(), [0, 1]);
   assert.equal(f.traces.every(trace => trace.matchId === matchId && trace.step === 25), true);
+});
+
+test('trace acknowledgement survives resume and only follows a successful write', async t => {
+  const write = Promise.withResolvers();
+  let attempts = 0;
+  const f = await fixture(t, {beforeTrace: () => ++attempts === 1 ? write.promise : undefined});
+  const {a, b, aSession, matchId} = await pair(f.url);
+  await getPlaying(f, {a, b, matchId});
+  const report = {matchId, step: 25, log: {input: [3]}};
+  a.send('desync', report);
+  const finished = await a.state('finished');
+  assert.equal(finished.reason, 'desync');
+  assert.equal(finished.seats[0].traceReady, false);
+  a.ws.terminate();
+  const resumed = await client(f.url);
+  resumed.send('resume', {code: aSession.code, token: aSession.token, version});
+  await resumed.next('session');
+  assert.equal((await resumed.state('finished')).seats[0].traceReady, false);
+
+  resumed.send('desync', report);
+  resumed.send('ping', {n: 1});
+  await resumed.next('pong');
+  assert.equal(attempts, 1);
+  write.reject(new Error('simulated disk failure'));
+  assert.equal((await resumed.next('error')).code, 'trace-store');
+  resumed.send('desync', report);
+  await resumed.next('state', state => state.seats[0].traceReady);
+  resumed.send('desync', report);
+  await resumed.next('state', state => state.seats[0].traceReady);
+  assert.equal(attempts, 2);
+  assert.equal(f.traces.length, 1);
 });
 
 test('leaving revokes the seat while a survivor keeps the same result', async t => {
@@ -320,9 +355,35 @@ test('leaving revokes the seat while a survivor keeps the same result', async t 
   const result = await a.state('finished');
   assert.equal(result.reason, 'disconnect');
   assert.equal(result.winner, 0);
+  assert.equal(result.seats[1].left, true);
   const fresh = await client(f.url);
   fresh.send('resume', {code: bSession.code, token: bSession.token});
   assert.equal((await fresh.next('error')).code, 'session');
+});
+
+test('a result survives an opponent leaving while the other seat is temporarily offline', async t => {
+  const f = await fixture(t), {a, b, aSession, matchId} = await pair(f.url);
+  await getPlaying(f, {a, b, matchId});
+  const outcome = {matchId, winner: 0, hash: checkHash};
+  a.send('result', outcome);
+  b.send('result', outcome);
+  await a.state('finished');
+  await b.state('finished');
+
+  a.ws.terminate();
+  const offline = await b.next('state', state => state.phase === 'finished' && !state.seats[0].connected);
+  assert.equal(offline.seats[0].left, false);
+  const closed = once(b.ws, 'close');
+  b.send('leave');
+  await closed;
+
+  const resumed = await client(f.url);
+  resumed.send('resume', {code: aSession.code, token: aSession.token});
+  await resumed.next('session');
+  const finished = await resumed.state('finished');
+  assert.equal(finished.winner, outcome.winner);
+  assert.equal(finished.reason, 'complete');
+  assert.equal(finished.seats[1].left, true);
 });
 
 test('the bundled font, scene, music and license are served with their MIME types', async t => {

@@ -193,7 +193,8 @@ export class Session {
     for (const a of theirs ?? []) m.press(1 - this.seat, a);
     this.used.set(s, key(theirs));
     m.advance();
-    if (s % this.hashEvery === 0 || m.done) this.hashes.set(s, m.hash());
+    // skew: a test's made-up difference from this step on (window.__top.netSkew), so a desync can be had on purpose.
+    if (s % this.hashEvery === 0 || m.done) this.hashes.set(s, this.skew && s >= this.skew ? m.hash() ^ 1 : m.hash());
     if (!m.done && s % this.snapEvery === 0) this.snaps.set(s, m.snapshot());
   }
 
@@ -237,8 +238,23 @@ export class Session {
     return out;
   }
 
-  /** What a desync report needs (sent to the room service, which keeps it). */
+  /** What a desync report needs (sent to the room service, which keeps it): an object, see fitReport for its size. */
   report() { return {seat: this.seat, present: this.present, remoteUpto: this.remoteUpto, desync: this.desync, presses: this.log, hashes: [...this.hashes]}; }
 }
 
 const key = actions => actions?.length ? actions.join() : '';
+
+/**
+ * A desync report cut to `max` bytes of JSON (the room service takes an object of up to 48 KB, tools/netplay/rooms.mjs):
+ * the oldest presses and hashes go first, the steps near the desync stay; dropped says how many went.
+ */
+export function fitReport(report, max = 46000) {
+  const size = x => new TextEncoder().encode(JSON.stringify(x)).length;
+  const out = {...report, presses: [...report.presses], hashes: [...report.hashes], dropped: {presses: 0, hashes: 0}};
+  while (size(out) > max && (out.presses.length || out.hashes.length)) {
+    const k = out.presses.length >= out.hashes.length ? 'presses' : 'hashes', n = Math.ceil(out[k].length / 4);
+    out[k].splice(0, n);
+    out.dropped[k] += n;
+  }
+  return out;
+}

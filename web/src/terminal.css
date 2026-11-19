@@ -662,7 +662,7 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #netRoom .nlink { margin:0;display:flex;flex-direction:column;align-items:center;gap:6px; }
 #netRoom .nlink small { font-size:13px;color:var(--mute); }
 #netRoom .nlink a { max-width:100%;padding:10px 8px;border:1px dashed #627254;border-radius:3px;background:#0c1612;color:var(--c0l);
-  font:700 13px/1.35 Consolas,Menlo,monospace;letter-spacing:-.2px;text-align:center;text-decoration:none;word-break:break-all;-webkit-user-select:all;user-select:all;-webkit-touch-callout:default; }
+  font:700 clamp(11px,3.3vw,13px)/1.35 Consolas,Menlo,monospace;letter-spacing:-.2px;text-align:center;text-decoration:none;word-break:break-all;-webkit-user-select:all;user-select:all;-webkit-touch-callout:default; }
 #netRoom .nsay { min-height:22px;margin:0;text-align:center;font-size:15px;color:var(--c1l); }
 #netRoom .nsay:not(:empty)::before { content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--c1);vertical-align:1px;animation:netPulse 1.2s ease-in-out infinite; }
 @keyframes netPulse { 50% { opacity:.25; } }

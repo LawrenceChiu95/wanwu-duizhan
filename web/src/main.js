@@ -14,7 +14,7 @@ import {sfx} from './sfx.js';
 import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
 import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
-import {Session} from './netplay/session.js';
+import {Session, fitReport} from './netplay/session.js';
 import {createFriend, available as friendOn, buildVersion, digest, keptRoom, shareable} from './netplay/friend.js';
 
 const $ = id => document.getElementById(id);
@@ -776,8 +776,15 @@ async function main() {
     if (!net) return;
     net.state = st;
     if (phase === 'build') renderPick();
+    if (phase === 'result') netResult();
     // Ended by the room, not by the fight: the other phone gone too long, or the two phones worked out different matches.
-    if (st.phase === 'finished' && st.reason !== 'complete' && live?.matchId === st.matchId && phase !== 'result') netEnd(st);
+    // 这局不算 goes over a 结算 already up too, or the two phones would each keep their own 输赢 (Elara e01e6e64).
+    if (st.phase === 'finished' && st.reason !== 'complete' && live?.matchId === st.matchId && (phase !== 'result' || st.reason === 'desync' && net.voided !== st.matchId)) netEnd(st);
+  }
+  // 这局不算's line: 记录已经交上去查 only once the room says it has this phone's record (seats[].traceReady, Sol dd49be57).
+  function voidWhy() {
+    const me = net.state?.matchId === net.voided ? net.state.seats?.[ME] : null;
+    return `两台手机算出来的不一样，这局作废了${me?.traceReady ? '。记录已经交上去查' : ''}`;
   }
   // The other phone's messages: presses (a broken one is dropped by the session and noted here), and a reloaded one asking
   // for all of mine again.
@@ -824,17 +831,18 @@ async function main() {
     lateCharge(pb.r.events, want);
     net.stall = out.stalled ? net.stall + dt : 0;
     netLine(net.stall > 0.4 ? '网络卡了一下…' : null);
-    if (s.desync && !net.desyncSent) {
-      net.desyncSent = true;
-      const log = JSON.stringify(s.report());
-      friend.desync(s.desync.step, log.length > 46000 ? log.slice(0, 46000) : log);
+    if (s.desync) {
+      // 这局不算 on this phone at once (Elara 64235b6a): the room's word, to both, comes after and changes nothing here.
+      netEnd({reason: 'desync', winner: null, matchId: live.matchId});
+      return 0;
     }
     if (s.finished && !s.desync) {
       live.done = true;
       replay = m.result();
       pb.r = replay;
       setCaption(false, reasonLine(replay, netWho()));
-      friend.result(replay.meta.winner, m.hash());
+      if (s.skewEnd) { const w = replay.meta.winner, h = (m.hash() ^ 1) >>> 0; setTimeout(() => friend.result(w, h), s.skewEnd); }
+      else friend.result(replay.meta.winner, m.hash());
     }
     netSend();
     return Math.max(0, Math.min(dt * k, m.t - pb.t));
@@ -857,8 +865,42 @@ async function main() {
     el.busyText.textContent = text ?? '';
     el.busy.hidden = !text;
   }
+  // A desync: this phone's record of the match to the room, which keeps it to look into (once a match, an object cut to
+  // the room's size, Castor e34c1871). Sent by both phones, the one that saw it and the one the room told.
+  function netReport(matchId) {
+    const s = live?.session;
+    if (!s || live.matchId !== matchId || net.reported === matchId) return;
+    net.reported = matchId;
+    friend.desync(s.desync?.step ?? s.confirmed, fitReport(s.report()));
+  }
+  // 好友对撞's 结算 as the room changes under it (Castor e34c1871, Elara 64235b6a): the other phone gone for good (its
+  // 回首页, seats[].left) turns the key into the way home; its 再来一局 first says so here.
+  function netResult() {
+    const st = net?.state, other = st?.seats?.[1 - ME], me = st?.seats?.[ME];
+    if (!st || phase !== 'result') return;
+    const btn = $('againBtn');
+    if (other?.left) {
+      btn.dataset.act = 'home';
+      btn.disabled = false;
+      btn.querySelector('span').textContent = '对面已离开 · 回首页';
+      $('soloBtn').hidden = true;
+    }
+    if (net.voided === st.matchId) el.whyLine.textContent = voidWhy();
+    el.tipLine.textContent = !other?.left && other?.rematchReady && !me?.rematchReady ? '对面想再来一局' : '';
+    el.tipLine.hidden = !el.tipLine.textContent;
+  }
   // The room ended the match: a short card saying why, the way home or into the next.
   function netEnd(st) {
+    const desync = st.reason === 'desync', w = st.winner;
+    if (desync) {
+      netReport(st.matchId);
+      net.voided = st.matchId;
+      // A 输赢 already counted in the run comes off it again.
+      if (net.scored === st.matchId && net.counted != null) net.score[net.counted]--;
+      net.scored = st.matchId; net.counted = null;
+      el.pvpScore.textContent = `你 ${net.score[ME]} : ${net.score[1 - ME]} 对面`;
+      setCaption(false);
+    }
     if (live) live.done = true;
     net.restored?.(); net.restored = null;
     showPads(false);
@@ -866,16 +908,16 @@ async function main() {
     netLine(null);
     el.pvpReady.hidden = true;
     phase = 'result';
-    const desync = st.reason === 'desync', w = st.winner;
     el.winnerLine.textContent = desync ? '这局不算' : w === ME ? '你赢了' : w === null ? '平局' : '你输了';
     el.result.className = desync || w === null ? 'draw' : w === ME ? 'win' : 'lose';
-    el.whyLine.textContent = desync ? '两台手机算出来的不一样，这局作废了。记录已经交上去查' : st.reason === 'complete' ? '这局在你刷新时打完了' : w === ME ? '对面掉线太久，算你赢' : w === null ? '两边都掉线太久' : '你离开太久，算对面赢';
+    el.whyLine.textContent = desync ? voidWhy() : st.reason === 'complete' ? '这局在你刷新时打完了' : w === ME ? '对面掉线太久，算你赢' : w === null ? '两边都掉线太久' : '你离开太久，算对面赢';
     el.tipLine.hidden = true;
     $('replayBtn').hidden = true;
     showOutcome({act: 'again'});
     el.hud.classList.add('dim');
     el.result.hidden = false;
     layout_();
+    stage.setFocusOn(null, el.result.offsetTop);
   }
   // 回首页: the opening page's two choices again; a page without one (not the 评委版) goes straight back to single-player.
   // Off the fight only (选装备 either side's turn, 结算): two hands on the phone mid-fight don't tap it by mistake (Elara
@@ -1913,7 +1955,7 @@ async function main() {
     // 第二轮 ⑤: the run so far, each end from its own side.
     if (pvp && scored !== runId) { scored = runId; if (m.winner !== null) score[m.winner]++; }
     // 好友对撞: the room's run, counted once a match (重看 shows the card again).
-    if (net && net.scored !== live?.matchId) { net.scored = live?.matchId; if (m.winner !== null) net.score[m.winner]++; }
+    if (net && net.scored !== live?.matchId) { net.scored = live?.matchId; net.counted = m.winner; if (m.winner !== null) net.score[m.winner]++; }
     el.pvpScore.hidden = !pvp && !net;
     el.pvpScore.textContent = net ? `你 ${net.score[ME]} : ${net.score[1 - ME]} 对面` : `你 ${score[0]} : ${score[1]} 对面`;
     // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows. Alone, two numbers at
@@ -1979,6 +2021,8 @@ async function main() {
   // One yellow key for what to do next, at most one outlined key under it, the rest a line of small links (远夏 a63667e4
   // 「我根本就不知道要点哪个」, Elara ee078f5c). Each key's `act` is one of RESULT_ACTS.
   function showOutcome(o, advice = null) {
+    // 「你」 goes the moment any card comes up, not fading over it (one the room ended never turned it off: Elara 8f0804a2).
+    stage.showMe = false; overlay.meShown = 0;
     el.result.classList.toggle('clear', Boolean(o.clear));
     el.result.classList.toggle('lost', Boolean(o.lost));
     $('clearTrio').hidden = !o.clear;
@@ -2029,6 +2073,7 @@ async function main() {
     $('againBtn').disabled = false;
     $('soloBtn').hidden = !pvp && !homeOn || main.act === 'home';
     $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
+    if (net) netResult();
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -2820,6 +2865,18 @@ async function main() {
   };
   window.__top = {
     press,
+    // 好友对撞's desync on purpose (scripts/netplay-desync.mjs): this phone's checks are off from the next step on; pad
+    // makes its report that many presses longer, so the cut to the room's size limit is tried too.
+    // end (ms): only the result this phone gives the room is made wrong, and given that late, so both phones have their
+    // 结算 up before the room voids the match.
+    netSkew(pad = 0, {end = 0} = {}) {
+      const s = live?.session;
+      if (!s) return false;
+      if (end) return Boolean(s.skewEnd = end);
+      for (let i = 0; i < pad; i++) s.log.push([i, s.seat, 'dash']);
+      s.skew = s.present + 1;
+      return true;
+    },
     taps: diag.count,
     turns,
     setControl(c) { control = c; },
@@ -2836,7 +2893,7 @@ async function main() {
     status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1 - ME) : null, me: live && !live.done ? live.match.control(ME) : null,
       feel: {reactions: test.feel.reactions, windups: test.feel.windups},
       net: net && {seat: ME, room: friend?.state?.phase ?? null, matchId: live?.matchId ?? null, rtt: friend?.rtt ?? null, direct: Boolean(friend?.direct), stats: live?.session ? {...live.session.stats, badLine: friend?.client?.bad ?? 0} : null,
-        desync: live?.session?.desync ?? null, seenRollbacks: test.net.seen, seenMaxSteps: test.net.seenMax, advantage: live?.session?.advantage ?? null, oneWayMs: live?.session ? +(live.session.oneWay * rules.dt * 1000).toFixed(1) : null, confirmed: live?.session?.confirmed ?? null}, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),
+        desync: live?.session?.desync ?? null, seenRollbacks: test.net.seen, seenMaxSteps: test.net.seenMax, advantage: live?.session?.advantage ?? null, oneWayMs: live?.session ? +(live.session.oneWay * rules.dt * 1000).toFixed(1) : null, confirmed: live?.session?.confirmed ?? null}, inputs: live?.done ? replay?.meta.manual?.inputs ?? null : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
