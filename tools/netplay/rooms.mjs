@@ -29,7 +29,8 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   };
   const error = (ws, code) => send(ws, {t: 'error', code});
   const states = room => ({
-    t: 'state', code: room.code, phase: room.phase, matchId: room.matchId, version: room.version, seed: room.seed,
+    t: 'state', code: room.code, phase: room.phase, matchId: room.matchId, round: room.round,
+    version: room.version, seed: room.seed,
     seats: room.seats.map(seat => seat ? {
       connected: active(seat), ready: Boolean(seat.selection), assetsReady: seat.assets,
       resultReady: Boolean(seat.result), rematchReady: seat.rematch
@@ -117,7 +118,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       do {
         code = Array.from({length: 6}, () => alphabet[randomInt(alphabet.length)]).join('');
       } while (rooms.has(code));
-      const room = {code, version: msg.version, seats: [newSeat(0), null]};
+      const room = {code, version: msg.version, round: 1, seats: [newSeat(0), null]};
       reset(room, 'waiting');
       rooms.set(code, room);
       attach(ws, room, room.seats[0]);
@@ -188,6 +189,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
 
   function maybeRematch(room) {
     if (room.phase !== 'finished' || !room.seats.every(seat => active(seat) && seat.rematch)) return false;
+    room.round++;
     reset(room, 'loadout');
     publish(room);
     return true;

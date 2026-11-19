@@ -119,6 +119,7 @@ test('two seats negotiate versions, handshakes, countdown, relay, result and rem
   assert.equal(aSession.seat, 0);
   assert.equal(bSession.seat, 1);
   assert.notEqual(aSession.token, bSession.token);
+  assert.equal(state.round, 1);
   assert.equal(JSON.stringify(state).includes(aSession.token), false);
   c.send('join', {code: aSession.code, version: 'old'});
   assert.equal((await c.next('error')).code, 'version');
@@ -138,9 +139,13 @@ test('two seats negotiate versions, handshakes, countdown, relay, result and rem
   assert.equal(result.reason, 'complete');
   assert.deepEqual(result, await b.state('finished'));
   a.send('rematch', {matchId});
+  const oneVote = await a.next('state', frame => frame.phase === 'finished' && frame.seats[0].rematchReady);
+  assert.equal(oneVote.round, 1);
   b.send('rematch', {matchId});
   const next = await a.next('state', frame => frame.phase === 'loadout' && frame.matchId !== matchId);
   assert.equal(next.prepare, null);
+  assert.equal(next.round, 2);
+  assert.deepEqual(next, await b.next('state', frame => frame.matchId === next.matchId));
   b.send('relay', {matchId, d: {step: 124}});
   assert.equal((await b.next('error')).code, 'match');
 });
@@ -172,6 +177,17 @@ test('background and reconnect pause both seats; expired reconnect sees the same
   const seen = await late.state('finished');
   assert.equal(seen.reason, result.reason);
   assert.equal(seen.winner, result.winner);
+  assert.equal(seen.round, 1);
+
+  a.send('rematch', {matchId});
+  late.send('rematch', {matchId});
+  const rematch = await late.state('loadout');
+  assert.equal(rematch.round, 2);
+  assert.equal((await a.next('state', frame => frame.matchId === rematch.matchId)).round, 2);
+  const reloaded = await client(f.url);
+  reloaded.send('resume', {code: bSession.code, token: bSession.token});
+  await reloaded.next('session');
+  assert.equal((await reloaded.state('loadout')).round, 2);
 });
 
 test('readiness, loaded assets and final results can be retried through reconnect', async t => {
