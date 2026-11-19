@@ -2004,6 +2004,8 @@ async function main() {
   // One yellow key for what to do next, at most one outlined key under it, the rest a line of small links (远夏 a63667e4
   // 「我根本就不知道要点哪个」, Elara ee078f5c). Each key's `act` is one of RESULT_ACTS.
   function showOutcome(o, advice = null) {
+    // 「你」 goes the moment any card comes up, not fading over it (one the room ended never turned it off: Elara 8f0804a2).
+    stage.showMe = false; overlay.meShown = 0;
     el.result.classList.toggle('clear', Boolean(o.clear));
     el.result.classList.toggle('lost', Boolean(o.lost));
     $('clearTrio').hidden = !o.clear;

@@ -30,7 +30,8 @@ const until = (p, fn, arg, timeout = 60000) => p.page.waitForFunction(fn, arg, {
 const shot = (p, name) => shots && p.page.screenshot({path: join(shots, `${name}.png`)});
 const card = p => p.page.evaluate(() => ({winner: document.querySelector('#winnerLine').textContent, why: document.querySelector('#whyLine').textContent,
   key: document.querySelector('#againBtn').textContent, disabled: document.querySelector('#againBtn').disabled,
-  tip: document.querySelector('#tipLine').hidden ? null : document.querySelector('#tipLine').textContent, room: window.__top.status().net?.room}));
+  tip: document.querySelector('#tipLine').hidden ? null : document.querySelector('#tipLine').textContent, room: window.__top.status().net?.room,
+  me: +getComputedStyle(document.querySelector('#fx .me')).opacity}));
 
 await a.page.goto(origin + '/?shoot=off');
 await a.page.locator('#introFriend').tap();
@@ -57,7 +58,7 @@ await Promise.all([a, b].map(p => until(p, () => window.__top.status().net?.room
 await a.page.waitForTimeout(1200);
 const [ca, cb] = await Promise.all([a, b].map(card));
 await shot(a, 'desync-host'); await shot(b, 'desync-guest');
-for (const c of [ca, cb]) { assert.equal(c.winner, '这局不算'); assert.match(c.why, /作废/); assert.equal(c.key, '再来一局'); }
+for (const c of [ca, cb]) { assert.equal(c.winner, '这局不算'); assert.match(c.why, /作废/); assert.equal(c.key, '再来一局'); assert.ok(c.me < 0.02, '「你」 is off the card'); }
 const room = await a.page.evaluate(() => window.__top.status().net);
 
 // The room's record of it: one file a phone (the one that saw it, and the one the room told), each an object.
@@ -75,10 +76,12 @@ assert.ok(Buffer.byteLength(JSON.stringify(host.log)) <= 46000);
 await b.page.locator('#againBtn').tap();
 await until(a, () => !document.querySelector('#tipLine').hidden && document.querySelector('#tipLine').textContent === '对面想再来一局', null, 10000);
 const voted = await card(a);
+assert.ok(voted.me < 0.02);
 await shot(a, 'rematch-asked-host');
 await a.page.locator('#soloBtn').tap();
 await until(b, () => document.querySelector('#againBtn').textContent === '对面已离开 · 回首页' && !document.querySelector('#againBtn').disabled, null, 10000);
 const left = await card(b);
+assert.ok(left.me < 0.02);
 await shot(b, 'left-guest');
 await b.page.locator('#againBtn').tap();
 await until(b, () => !document.getElementById('intro')?.hidden, null, 10000);
