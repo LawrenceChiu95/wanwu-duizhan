@@ -174,6 +174,83 @@ test('background and reconnect pause both seats; expired reconnect sees the same
   assert.equal(seen.winner, result.winner);
 });
 
+test('readiness, loaded assets and final results can be retried through reconnect', async t => {
+  const f = await fixture(t), {a, b, bSession, matchId} = await pair(f.url);
+  a.send('ready', {matchId, parts: [pot]});
+  await a.next('state', state => state.seats[0].ready);
+  b.ws.terminate();
+  await a.next('state', state => !state.seats[1].connected);
+
+  const fresh = await client(f.url);
+  fresh.send('resume', {code: bSession.code, token: bSession.token, version});
+  await fresh.next('session');
+  const restored = await fresh.state('loadout');
+  assert.deepEqual(restored.seats.map(seat => seat.ready), [true, false]);
+  await a.next('state', state => state.seats[1].connected);
+  a.send('ready', {matchId, parts: [plate]});
+  await a.next('state', state => state.seats[0].ready);
+  fresh.send('ready', {matchId, parts: [plate]});
+  const prep = await fresh.state('preparing');
+  assert.deepEqual(prep.prepare.loadouts.map(x => x.parts), [[pot], [plate]]);
+  const hash = prep.prepare.hash;
+  a.send('assetsReady', {matchId, hash});
+  await a.next('state', state => state.seats[0].assetsReady);
+  fresh.send('assetsReady', {matchId, hash});
+  await fresh.state('countdown');
+  await a.state('countdown');
+  a.send('assetsReady', {matchId, hash});
+  await a.next('state', state => state.phase === 'countdown' && state.seats.every(x => x.assetsReady));
+  f.ahead(2500);
+  await fresh.state('playing');
+
+  fresh.ws.terminate();
+  await a.state('paused');
+  const finalReport = {matchId, winner: 0, hash: 9271};
+  a.send('result', finalReport);
+  await a.next('state', state => state.seats[0].resultReady);
+  a.send('result', finalReport);
+  await a.next('state', state => state.seats[0].resultReady);
+  const returned = await client(f.url);
+  returned.send('resume', {code: bSession.code, token: bSession.token, version});
+  await returned.next('session');
+  assert.deepEqual((await returned.state('playing')).seats.map(seat => seat.resultReady), [true, false]);
+  returned.send('result', finalReport);
+  assert.equal((await returned.state('finished')).reason, 'complete');
+
+  returned.ws.terminate();
+  await a.next('state', state => state.phase === 'finished' && !state.seats[1].connected);
+  a.send('rematch', {matchId});
+  await a.next('state', state => state.seats[0].rematchReady);
+  const next = await client(f.url);
+  next.send('resume', {code: bSession.code, token: bSession.token, version});
+  await next.next('session');
+  await next.state('finished');
+  next.send('rematch', {matchId});
+  const rematch = await next.state('loadout');
+  assert.notEqual(rematch.matchId, matchId);
+  assert.ok(rematch.seats.every(seat => !seat.ready && !seat.assetsReady && !seat.resultReady && !seat.rematchReady));
+});
+
+test('a reloaded seat keeps the match paused until it restores its state', async t => {
+  const f = await fixture(t), {a, b, aSession, bSession, matchId} = await pair(f.url);
+  await getPlaying(f, {a, b, matchId});
+  for (const [seat, session] of [[0, aSession], [1, bSession]]) {
+    const replacement = await client(f.url);
+    replacement.send('resume', {code: session.code, token: session.token, version: 'old', active: false});
+    assert.equal((await replacement.next('error')).code, 'version');
+    replacement.send('resume', {code: session.code, token: session.token, version, active: false});
+    assert.deepEqual(await replacement.next('session'), session);
+    const paused = await replacement.state('paused');
+    assert.equal(paused.matchId, matchId);
+    assert.equal(paused.pausedSeat, seat);
+    assert.equal(paused.seats[seat].connected, false);
+    replacement.send('presence', {active: true});
+    const resumed = await replacement.state('playing');
+    assert.equal(resumed.matchId, matchId);
+    assert.ok(resumed.seats.every(x => x.connected));
+  }
+});
+
 test('source photograph is kept private and only the two seats can read the selected model', async t => {
   const f = await fixture(t, {shoot: true}), {a, b, aSession, bSession, matchId} = await pair(f.url);
   b.send('ready', {matchId, parts: [part(photoId)], shootSession: otherToken});

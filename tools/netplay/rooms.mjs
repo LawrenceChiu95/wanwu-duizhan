@@ -30,7 +30,10 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   const error = (ws, code) => send(ws, {t: 'error', code});
   const states = room => ({
     t: 'state', code: room.code, phase: room.phase, matchId: room.matchId, version: room.version, seed: room.seed,
-    seats: room.seats.map(seat => seat ? {connected: active(seat), ready: Boolean(seat.selection)} : null),
+    seats: room.seats.map(seat => seat ? {
+      connected: active(seat), ready: Boolean(seat.selection), assetsReady: seat.assets,
+      resultReady: Boolean(seat.result), rematchReady: seat.rematch
+    } : null),
     prepare: room.prepare, startAt: room.startAt, resumeAt: room.resumeAt,
     pausedSeat: room.pausedSeat, deadline: room.deadline, winner: room.winner, reason: room.reason
   });
@@ -90,12 +93,13 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
     if (absent === -1) {
       maybePrepare(room);
       maybeStart(room);
+      maybeRematch(room);
     }
   }
 
-  function attach(ws, room, seat) {
+  function attach(ws, room, seat, visible = true) {
     const old = seat.ws;
-    Object.assign(seat, {ws, visible: true, checking: null});
+    Object.assign(seat, {ws, visible, checking: null});
     Object.assign(ws, {room, seat});
     if (old && old !== ws) {
       old.room = null;
@@ -126,9 +130,11 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
     if (msg.t === 'resume') {
       if (typeof msg.token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(msg.token)) throw new RoomError('session');
       const seat = room.seats.find(seat => seat?.token === msg.token);
-      if (!seat || (msg.version !== undefined && msg.version !== room.version)) throw new RoomError('session');
+      if (!seat) throw new RoomError('session');
+      if (msg.version !== undefined && msg.version !== room.version) throw new RoomError('version');
+      if (msg.active !== undefined && typeof msg.active !== 'boolean') throw new RoomError('message');
       if (room.phase === 'paused' && now() >= room.deadline) checkPresence(room);
-      attach(ws, room, seat);
+      attach(ws, room, seat, msg.active ?? true);
       return;
     }
     if (msg.version !== room.version) throw new RoomError('version');
@@ -156,8 +162,10 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   }
 
   async function ready(ws, room, seat, msg) {
-    if (seat.selection || seat.checking) throw new RoomError('ready');
-    if (room.phase !== 'loadout' || msg.matchId !== room.matchId) throw new RoomError('phase');
+    if (msg.matchId !== room.matchId) throw new RoomError('phase');
+    if (seat.selection) return send(ws, states(room));
+    if (room.phase !== 'loadout') throw new RoomError('phase');
+    if (seat.checking) return;
     const pending = {};
     seat.checking = pending;
     try {
@@ -176,6 +184,13 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
     } finally {
       if (seat.checking === pending) seat.checking = null;
     }
+  }
+
+  function maybeRematch(room) {
+    if (room.phase !== 'finished' || !room.seats.every(seat => active(seat) && seat.rematch)) return false;
+    reset(room, 'loadout');
+    publish(room);
+    return true;
   }
 
   function store(room, seat, step, log) {
@@ -231,17 +246,20 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       case 'ready':
         return ready(ws, room, seat, msg);
       case 'assetsReady':
+        if (!room.prepare || msg.matchId !== room.matchId || msg.hash !== room.prepare.hash) throw new RoomError('assets');
+        if (seat.assets) return send(ws, states(room));
         if (room.phase !== 'preparing') throw new RoomError('phase');
-        if (msg.matchId !== room.matchId || msg.hash !== room.prepare.hash) throw new RoomError('assets');
         seat.assets = true;
-        return maybeStart(room);
+        maybeStart(room);
+        if (room.phase === 'preparing') send(ws, states(room));
+        return;
       case 'result': {
-        if (room.phase === 'finished') return;
         if (msg.matchId !== room.matchId || !winner(msg.winner) || !resultHash(msg.hash)) throw new RoomError('result');
+        if (room.phase === 'finished') return send(ws, states(room));
         if (room.phase !== 'playing' && !(room.phase === 'paused' && room.priorPhase === 'playing')) throw new RoomError('phase');
         seat.result ??= {winner: msg.winner, hash: msg.hash};
         const other = room.seats[1 - seat.index].result;
-        if (!other) return;
+        if (!other) return send(ws, states(room));
         if (other.winner !== seat.result.winner || other.hash !== seat.result.hash) return finish(room, null, 'desync');
         return finish(room, other.winner, 'complete');
       }
@@ -252,12 +270,9 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
         if (room.phase !== 'finished') return finish(room, null, 'desync');
         return;
       case 'rematch':
-        if (room.phase !== 'finished' || msg.matchId !== room.matchId || !room.seats.every(active)) throw new RoomError('phase');
+        if (room.phase !== 'finished' || msg.matchId !== room.matchId) throw new RoomError('phase');
         seat.rematch = true;
-        if (room.seats.every(s => s.rematch)) {
-          reset(room, 'loadout');
-          publish(room);
-        }
+        if (!maybeRematch(room)) send(ws, states(room));
         return;
       default:
         throw new RoomError('message');
