@@ -871,6 +871,7 @@ export class Stage {
     this.foeRing.visible = false;
     this.scene.add(this.foeRing);
     this.showMe = false;
+    this.meSide = 0;  // the player's top (好友对撞's second phone plays side 1)
     this.showBoth = false;
     // 一机双人's camera (photo-kitchen.js): straight down, this world direction up the screen; null for the usual one.
     this.topDown = null;
@@ -1807,7 +1808,7 @@ export class Stage {
       // Motion trail: always on for the player's top (orange), only while lunging or flung for the opponent.
       // A top knocked off an exchange trails it as hot, fading out over the last of RECOIL_TIME.
       if (a.recoil > 0) a.recoil = Math.max(0, a.recoil - simDt);
-      const hot = a.dash > 0 || a.fling > 0, mine = i === 0 && this.showMe && this.trailAlways, recoil = Math.min(1, (a.recoil ?? 0) / 0.15);
+      const hot = a.dash > 0 || a.fling > 0, mine = i === this.meSide && this.showMe && this.trailAlways, recoil = Math.min(1, (a.recoil ?? 0) / 0.15);
       const op = f.dim > 0.5 ? 0 : hot ? 1 : Math.max(recoil * 0.85, mine ? 0.6 : 0);
       this.trails[i].update(f.center, this.simClock, hot ? 0.42 : recoil > 0 ? 0.32 : 0.28, hot ? 0.3 : 0.14 + 0.1 * recoil, op);
       // The wall lights up in a top's colour where that top is close to it.
@@ -1818,7 +1819,7 @@ export class Stage {
     // The player's ring on the floor under its top (it follows the core, stays on the floor when the core rises).
     [this.meRing, this.foeRing].forEach((ring, i) => {
       const me = this.fighters[i];
-      ring.visible = Boolean(this.showMe && (i === 0 || this.showBoth) && me && me.dim < 0.6);
+      ring.visible = Boolean(this.showMe && (i === this.meSide || this.showBoth) && me && me.dim < 0.6);
       if (!ring.visible) { ring.userData.r = 0; return; }
       const want = this.reachOf(me) * ME_RING_OUT, r = ring.userData.r = ring.userData.r ? ring.userData.r + (want - ring.userData.r) * (1 - Math.exp(-realDt * 6)) : want, s = r / ME_RING_AT;
       ring.position.set(me.center.x, ME_RING_Y, me.center.z);

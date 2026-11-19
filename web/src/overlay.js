@@ -309,7 +309,7 @@ export class Overlay {
       if (t >= 1) this.banner.dur = 0;
     }
     // 「你」: rides just above the player's top (above its pieces' reach), always on top of everything.
-    const me = stage.fighters[0];
+    const me = stage.fighters[stage.meSide];
     const meOn = showRings && stage.showMe && me && me.dim < 0.6 && stage.project(me.center, p);
     this.meShown += ((meOn ? 1 : 0) - this.meShown) * (1 - Math.exp(-dt * 12));
     if (this.meShown > 0.02 && me && stage.project(me.center, p)) {

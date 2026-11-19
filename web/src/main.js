@@ -869,7 +869,7 @@ async function main() {
 
   // ---------- HUD ----------
   function buildHud(defs) {
-    $('foeWho').textContent = pvp ? sideName(1) : fought === null ? '对手' : LADDER[fought].name;
+    $('foeWho').textContent = pvp || net ? sideName(1) : fought === null ? '对手' : LADDER[fought].name;
     el.hud.querySelector('.s0 .who b').textContent = sideName(0);
     defs.forEach((def, i) => {
       const box = el.hud.querySelector(`.s${i} .parts`);
@@ -1754,6 +1754,7 @@ async function main() {
     stage.setCameraMode('fight');
     stage.setFocusOn(null);
     stage.showMe = true;
+    stage.meSide = net ? ME : 0;
     // 一机双人: straight down on the table, 2P's start up the screen and 1P's down it, so the two ends of the phone each
     // have their own half; both tops ringed and trailed alike.
     const [p0, p1] = r.meta.initial.map(f => new THREE.Vector3().fromArray(f.pos));
