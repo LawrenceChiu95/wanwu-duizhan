@@ -32,11 +32,15 @@ const rapierWasm = {
 const combatBuild = process.env.WANWU_COMBAT ?? '';
 if (!['', 'current', 'position'].includes(combatBuild)) throw Error(`WANWU_COMBAT must be current or position, not ${combatBuild}`);
 
+// 好友对撞 (tools/netplay): WANWU_NETPLAY=1 gives the page that the room service serves, with the 好友对撞 key. Without it
+// the page never asks for the room service (the 评委版 link makes no backend request, scripts/check-judge-navigation.mjs).
+const netplayBuild = process.env.WANWU_NETPLAY === '1';
+
 export default defineConfig(({mode}) => {
   const judge = mode === 'judge';
   return {
     base: './',
-    define: {__JUDGE__: JSON.stringify(judge), __COMBAT__: JSON.stringify(combatBuild)},
+    define: {__JUDGE__: JSON.stringify(judge), __COMBAT__: JSON.stringify(combatBuild), __NETPLAY__: JSON.stringify(netplayBuild)},
     plugins: judge ? [judgeIntro, rapierWasm] : [],
     // 评委版 bundles the twelve's models only (src/model-files.judge.js).
     resolve: {alias: [{find: '@dimforge/rapier3d-compat', replacement: rapier}, ...judge ? [{find: /^\.\/model-files\.js$/, replacement: './model-files.judge.js'}] : []]},

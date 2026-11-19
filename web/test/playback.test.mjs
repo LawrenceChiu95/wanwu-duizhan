@@ -192,3 +192,26 @@ test('planar charges follow until the last ten steps and preserve the block wind
   close(block.until - block.t, r.meta.rules.manual.blockTime);
   assert.equal(r.meta.combatRules.lockCorePlane, true);
 });
+
+test('好友对撞 rollback: an event shown before the match went back and played again the same is not shown twice', () => {
+  const live = fixture([]), fired = [];
+  const p = new Playback(live);
+  p.slowEnabled = false;
+  const a = {t: .1, type: 'dash', phase: 'charge', side: 1}, b = {t: .3, type: 'dash', phase: 'charge', side: 0};
+  live.events.push(a, b);
+  p.sync(false);
+  p.advance(.35, 1, e => fired.push(e));
+  // Back to .2: b is gone from the sim's events and comes again as a new object, with a late press's 冲 (c) before it.
+  live.events.length = 1;
+  p.rewind(.2);
+  const again = {...b}, c = {t: .25, type: 'dash', phase: 'charge', side: 1};
+  live.events.push(c, again);
+  p.sync(false);
+  p.advance(.05, 1, e => fired.push(e));
+  assert.deepEqual(fired.map(e => e.t), [.1, .3, .25], 'b once; the late c as soon as it is known');
+  // And a later one still fires in its time.
+  live.events.push({t: .5, type: 'dash', phase: 'charge', side: 0});
+  p.sync(false);
+  p.advance(.2, 1, e => fired.push(e));
+  assert.deepEqual(fired.map(e => e.t), [.1, .3, .25, .5]);
+});

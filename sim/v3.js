@@ -6,6 +6,8 @@ import {add,sub,scale,vec,arr,quat,qarr,rotate,inverseRotate,random} from './mat
 // and no exp/log/pow/sin/cos/hypot.
 const hyp=(...a)=>{let s=0;for(const x of a)s+=x*x;return Math.sqrt(s);};
 const length=a=>hyp(...a);
+/** random() from math.js, the same numbers, with its state readable so a rollback (snapshot/restore) can wind it back. */
+function seeded(seed){let x=seed>>>0;const f=()=>{x=(x+0x6d2b79f5)>>>0;let t=Math.imul(x^(x>>>15),1|x);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296;};f.get=()=>x;f.set=v=>{x=v;};return f;}
 const S2=Math.SQRT1_2;
 /** Unit direction in the equator plane for a slot angle in degrees; multiples of 45° only (exact constants). */
 function slotDirection(deg){const k=((deg%360)+360)%360,table={0:[0,1],45:[S2,S2],90:[1,0],135:[S2,-S2],180:[0,-1],225:[-S2,-S2],270:[-1,0],315:[-S2,S2]}[k];if(!table)throw Error(`Slot angle ${deg} must be a multiple of 45 degrees`);return [table[0],0,table[1]];}
@@ -522,10 +524,11 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  if(bounce&&[bounce.attraction,bounce.thrust,bounce.recoilSpeed].some(v=>!Number.isFinite(v)||v<0))throw Error('feelRules must have non-negative finite attraction, thrust and recoilSpeed');
  // A separate seeded global half turn shares the engine's Float32 axis bias without changing player identities.
  const openingHalfTurn=random(seed^0xd1b54a35)()>=.5;
- const aiSeeds=manual?.aiSeeds??[(seed^0x243f6a88)>>>0,(seed^0xb7e15162)>>>0],aiRoll=aiSeeds.map(random);
- const dashCooldownRoll=guardTiming&&aiSeeds.map(s=>random(s^0x85ebca6b));
+ const aiSeeds=manual?.aiSeeds??[(seed^0x243f6a88)>>>0,(seed^0xb7e15162)>>>0],aiRoll=aiSeeds.map(seeded);
+ const dashCooldownRoll=guardTiming&&aiSeeds.map(s=>seeded(s^0x85ebca6b));
  const perfectGuardSteps=guardTiming&&Math.floor(guardTiming.perfectTime/r.dt+1e-8);
- const world=new RAPIER.World({x:0,y:0,z:0});world.timestep=r.dt;
+ let world=new RAPIER.World({x:0,y:0,z:0}),freed=false;world.timestep=r.dt;
+ const freeWorld=()=>{if(!freed){freed=true;world.free();}};
  let fs,extents,initial,events,frames,diagnostics,scrapeEpisodes,record,closeContactRun,critRoll;
  let contactSteps=0,maxContactSteps=0;
  let t=0,step=0,done=false,result=null,winner=null,reason='timeout',lastSeen=-Infinity,lastDamage=-Infinity,lastRecoil=-Infinity,contactRunSteps=0,contactRunStart=0;
@@ -547,7 +550,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   }
  }
  try{
- buildArena(world,r);critRoll=random(seed^0x9e3779b9);
+ buildArena(world,r);critRoll=seeded(seed^0x9e3779b9);
  fs=definitions.map((d,i)=>{
   const id=aiProfiles[i]?.id;
   const previousScale=id==='mang'?mangHpScale:1;
@@ -559,7 +562,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  scrapeEpisodes=[];
  closeContactRun=()=>{const duration=contactRunSteps*r.dt;if(duration>=.1-1e-8)scrapeEpisodes.push({start:contactRunStart,end:contactRunStart+duration,duration});contactRunSteps=0;};
  record=()=>frames.push({t,fighters:fs.map(fighterFrame)});record();
- }catch(e){world.free();throw e;}
+ }catch(e){freeWorld();throw e;}
  // ---- manual play state (steps, not seconds) ----
  const queued=[[],[]],inputs=[],scripted=new Map();
  if(M){for(const f of fs)f.ctl={dashReady:0,blockReady:0,chargeUntil:-1,dashUntil:-1,shieldUntil:-1,blockPressStep:null,blockResolved:true,dashPressStep:null,lockedDir:null,pendingAi:null,stunUntil:-1,dashLockedUntil:0};for(const x of manual.inputs??[]){const k=`${x.step}|${x.side}`;scripted.set(k,[...(scripted.get(k)??[]),x.action]);}}
@@ -1080,7 +1083,7 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  const why=timeout?.why??(cause&&loser!==null?{attacker:cause.attacker,attackerPart:cause.part,attackerItem:cause.item==='__core'?null:cause.item,attackerOrient:cause.orient,target:cause.target,targetPart:cause.targetPart,targetItem:cause.targetItem==='__core'?null:cause.targetItem,targetOrient:cause.targetOrient,weak:cause.weak,role:cause.role,coreRatios:fs.map(f=>Math.max(0,f.core.hp)/f.core.maxHp),partsLeft:fs.map(f=>f.parts.filter(p=>p.alive).length),loserBroken:brokenBefore,loserPartsLeft:definitions[loser].parts.length-brokenBefore.length,...(M&&{dash:Boolean(cause.dash)})}:null);
  events.push({t,type:'result',winner,reason,why});
  result={meta:{schemaVersion:3,variant:'top',engine:'rapier3d-compat@0.21.0',seed,openingHalfTurn,mode,...(bounce&&{feel:position?'bounce':feel,feelRules:structuredClone(bounce)}),...(position&&{combat,combatRules:structuredClone(position)}),duration:t,winner,reason,initial,arenaRadius:r.arenaRadius,slots:structuredClone(r.top.slots),rules:M?r:autoRules,diagnostics,...(M&&{manual:{sides:[...manual.sides],blockTime:M.blockTime,aiSeeds:[...aiSeeds],inputs,...(aiProfiles.some(Boolean)&&{aiProfiles:structuredClone(aiProfiles)})}})},frames,events,decisive:{t0,t1:Math.min(t,t0+2.5),eventIndex:cause?events.indexOf(cause):null,finishType:reason==='timeout'?'timeout':'contact',why,caption:timeout?(winner===null?'时间到，双方剩血相同':`时间到，${winner===0?'左':'右'}方${why.criterion==='core-hp-ratio'?'核心剩血比例':'挂件剩血'}更多`):events.findLast(e=>e.type==='ko').caption}};
-  }finally{world.free();}
+  }finally{freeWorld();}
  }
  return {
   rules:r,initial,frames,events,
@@ -1095,7 +1098,45 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
   advance,
   result(){if(!done)throw Error('match not finished');return result;},
   /** Abandon a match before its end (frees the physics world). */
-  free(){if(!done){done=true;world.free();}}
+  free(){if(!done){done=true;freeWorld();}},
+  /**
+   * 好友对撞's rollback: everything the next steps depend on, taken between steps. restore() puts the match back exactly
+   * there (the physics world rebuilt from Rapier's snapshot, the event and frame lists cut back to their length then),
+   * so stepping on with the same presses gives the same bytes as never having left (test/netplay/rollback.test.mjs).
+   */
+  snapshot(){
+   if(freed)throw Error('snapshot of a finished match');
+   return {world:world.takeSnapshot(),t,step,done,winner,reason,lastSeen,lastDamage,lastRecoil,contactRunSteps,contactRunStart,contactSteps,maxContactSteps,
+    events:events.length,frames:frames.length,scrape:scrapeEpisodes.length,inputs:inputs.length,diagnostics:{...diagnostics},queued:queued.map(q=>[...q]),
+    rolls:[critRoll.get(),...aiRoll.map(f=>f.get()),...(dashCooldownRoll||[]).map(f=>f.get())],
+    fighters:fs.map(f=>({mass:f.mass,inertia:f.inertia,before:structuredClone(f.before),ctl:structuredClone(f.ctl),core:{hp:f.core.hp,alive:f.core.alive},
+     parts:f.parts.map(p=>({hp:p.hp,alive:p.alive,brokenPose:p.brokenPose,shardsReleased:p.shardsReleased}))}))};
+  },
+  restore(s){
+   freeWorld();world=RAPIER.World.restoreSnapshot(s.world);freed=false;world.timestep=r.dt;
+   ({t,step,done,winner,reason,lastSeen,lastDamage,lastRecoil,contactRunSteps,contactRunStart,contactSteps,maxContactSteps}=s);result=null;
+   events.length=s.events;frames.length=s.frames;scrapeEpisodes.length=s.scrape;inputs.length=s.inputs;
+   for(const k of Object.keys(diagnostics))if(!(k in s.diagnostics))delete diagnostics[k];Object.assign(diagnostics,s.diagnostics);
+   s.queued.forEach((q,i)=>{queued[i].length=0;queued[i].push(...q);});
+   [critRoll,...aiRoll,...(dashCooldownRoll||[])].forEach((f,i)=>f.set(s.rolls[i]));
+   fs.forEach((f,i)=>{
+    const x=s.fighters[i];
+    f.body=world.getRigidBody(f.body.handle);f.core.collider=world.getCollider(f.core.collider.handle);
+    Object.assign(f,{mass:x.mass,inertia:x.inertia,before:structuredClone(x.before),ctl:structuredClone(x.ctl)});Object.assign(f.core,x.core);
+    f.parts.forEach((p,j)=>{Object.assign(p,x.parts[j]);if(p.alive)p.collider=world.getCollider(p.collider.handle);});
+   });
+  },
+  /** 好友对撞's check that both phones computed the same: FNV-1a over every body's pose and speed and every HP, at this step. */
+  hash(){
+   const v=new DataView(new ArrayBuffer(8));let h=0x811c9dc5;
+   const put=x=>{v.setFloat64(0,x);for(let i=0;i<8;i++)h=Math.imul(h^v.getUint8(i),0x01000193);};
+   put(step);
+   for(const f of fs){
+    if(!freed)for(const q of [f.body.translation(),f.body.rotation(),f.body.linvel(),f.body.angvel()])for(const x of Object.values(q))put(x);
+    put(f.core.hp);for(const p of f.parts){put(p.hp);put(p.alive?1:0);}
+   }
+   return h>>>0;
+  }
  };
 }
 export async function simulateV3({fighters,mode='A',seed,onProgress,manual=null,feel,feelRules,combat,combatRules}){

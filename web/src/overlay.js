@@ -309,7 +309,7 @@ export class Overlay {
       if (t >= 1) this.banner.dur = 0;
     }
     // 「你」: rides just above the player's top (above its pieces' reach), always on top of everything.
-    const me = stage.fighters[0];
+    const me = stage.fighters[stage.meSide];
     const meOn = showRings && stage.showMe && me && me.dim < 0.6 && stage.project(me.center, p);
     this.meShown += ((meOn ? 1 : 0) - this.meShown) * (1 - Math.exp(-dt * 12));
     if (this.meShown > 0.02 && me && stage.project(me.center, p)) {
@@ -317,8 +317,14 @@ export class Overlay {
       // and slid sideways when the other core sits right where it would go.
       const r = Math.min(64, stage.screenRadius(me.center, stage.reachOf(me) + 0.1) * 0.95);
       let x = p.x;
-      const y = Math.max(stage.view.top + 34, p.y - r - 4), foe = stage.fighters[1], q = {x: 0, y: 0};
-      if (foe?.core.visible && stage.project(foe.center, q)) {
+      const foe = stage.fighters[1 - stage.meSide], q = {x: 0, y: 0}, seen = foe?.core.visible && stage.project(foe.center, q);
+      // 好友对撞, both phones: under its own top, so it never sits between the two (Elara faf1e410, 445ffe3a); over it only
+      // when the top is too near the foot of the screen for it (10 px either way before it changes, so it never flickers).
+      const low = stage.view.h - stage.safeBottom() - 30;
+      const under = stage.meBelow && p.y + r + 4 <= low + (this.me.classList.contains('under') ? 10 : -10);
+      const y = under ? p.y + r + 4 : Math.max(stage.view.top + 34, p.y - r - 4);
+      this.me.classList.toggle('under', under);
+      if (seen && !under) {
         const fr = stage.screenRadius(foe.center, stage.coreRadius) + 4;
         if (Math.abs(q.x - x) < 20 + fr && q.y > y - 44 - fr && q.y < y + fr) x = q.x + Math.sign(x - q.x || 1) * (20 + fr);
       }
@@ -327,7 +333,7 @@ export class Overlay {
       // Always shown now (Elara 5b03a33d): the words step round it instead (the stamps above, from this box).
       this.meBox = {x, y, w: (this.meW ??= this.me.offsetWidth || 40), h: (this.meH ??= this.me.offsetHeight || 32)};
       this.me.style.opacity = this.meShown.toFixed(3);
-      this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, ${under ? 0 : -100}%)`;
     } else { this.me.style.opacity = 0; this.meBox = null; }
     // Life ring around each core: the core is the thing that must not break.
     this.rings.forEach((r, i) => {

@@ -7,6 +7,8 @@
 ```sh
 npm --prefix tools/netplay ci
 npm --prefix tools/netplay test
+# 网页要带好友对撞入口（WANWU_NETPLAY=1；不带就是评委版，不会去问房间服务）
+(cd web && WANWU_NETPLAY=1 WANWU_COMBAT=position npx vite build --mode judge --outDir dist-judge-position && node ../tools/import-item/pack-web-models.mjs dist-judge-position)
 PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/netplay start
 ```
 
@@ -22,7 +24,7 @@ PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/net
 |---|---|---|
 | create | version | 开房，座位 0 |
 | join | code, version | 加入等待中的房间，座位 1 |
-| resume | code, token, version（可省） | 重新接回原座位 |
+| resume | code, token, version（可省）, active（可省） | 重新接回原座位。重载后还原本局时带 false，完成后发 presence true |
 | ping | n（整数） | 立即回 `{t:'pong',n,s}`，s 为服务端 Unix 毫秒 |
 | signal / relay | d, matchId（可省） | 转给对方 `{t,from,d,matchId?}`，按键只在倒计时、对局和暂停中转发 |
 | ready | matchId, parts, shootSession（选拍照件时） | parts 为至多两条 `{item,mount,orient}`，校验所选拍照件归属 |
@@ -33,11 +35,11 @@ PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/net
 | rematch | matchId | 两边都确认后进下一局配装 |
 | leave | | 主动退房并作废座位 token |
 
-开房、加入和接回会先单独回 `{t:'session',code,seat,token}`，座位凭证只在这条消息中出现。其后的房间快照两边相同。
+开房、加入和接回会先单独回 `{t:'session',code,seat,token}`，座位凭证只在这条消息中出现。房间快照里每个座位的布尔值表示服务器已收到该动作。按同一局号补发准备、资源就绪、结果或再赛时，服务器保留已经接受的状态。连接恢复时会重发房间快照。
 
 ```js
 {
-  t: 'state', code, phase, matchId, version, seed, seats: [{connected, ready}, /* … */],
+  t: 'state', code, phase, matchId, version, seed, seats: [{connected, ready, assetsReady, resultReady, rematchReady}, /* … */],
   prepare, startAt, resumeAt, pausedSeat, deadline, winner, reason
 }
 ```
