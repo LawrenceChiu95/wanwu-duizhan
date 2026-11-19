@@ -9,7 +9,8 @@ import {mountRooms} from './rooms.mjs';
 const types = {
   html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
   json: 'application/json', glb: 'model/gltf-binary', wasm: 'application/wasm', woff: 'font/woff', woff2: 'font/woff2',
-  webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', mp4: 'video/mp4'
+  webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', mp4: 'video/mp4',
+  mp3: 'audio/mpeg', spz: 'application/octet-stream', txt: 'text/plain; charset=utf-8'
 };
 const modelPath = /^\/api\/netplay\/models\/([23456789A-HJ-NP-Z]{6})\/([a-f0-9-]{36})\/(shoot_[a-f0-9-]{36})$/;
 const shootGet = /^\/api\/shoot\/(?:health|quota|items|jobs\/j_[a-f0-9-]{36}|files\/shoot_[a-f0-9-]{36}\/(?:model\.glb|photo\.jpg|styled\.jpg))$/;

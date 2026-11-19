@@ -1,4 +1,4 @@
-import {access, copyFile, cp, mkdir, readFile, writeFile} from 'node:fs/promises';
+import {access, copyFile, cp, mkdir, writeFile} from 'node:fs/promises';
 import {isAbsolute, relative, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -17,5 +17,4 @@ await Promise.all(['data', 'sim', 'tools/netplay'].map(dir => mkdir(resolve(dest
 await Promise.all([...items, ...service, 'data/catalog.json'].map(path => copyFile(resolve(repo, path), resolve(destination, path))));
 await copyFile(resolve(repo, 'tools/netplay/Dockerfile'), resolve(destination, 'Dockerfile'));
 await cp(web, resolve(destination, 'web'), {recursive: true});
-const note = (await readFile(resolve(repo, 'tools/netplay/README.md'), 'utf8')).split('## 本机开发')[0].trimEnd();
-await writeFile(resolve(destination, 'README.md'), '---\ntitle: 万物对战·好友对撞\nsdk: docker\napp_port: 7860\n---\n\n' + note + '\n');
+await writeFile(resolve(destination, 'README.md'), '---\ntitle: 万物对战·好友对撞\nsdk: docker\napp_port: 7860\n---\n\n万物对战的好友对撞试玩空间。\n');

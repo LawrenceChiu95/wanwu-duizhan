@@ -232,15 +232,22 @@ test('leaving revokes the seat while a survivor keeps the same result', async t 
   assert.equal((await fresh.next('error')).code, 'session');
 });
 
-test('the built font is served with its original MIME type', async t => {
+test('the bundled font, scene, music and license are served with their MIME types', async t => {
   const webRoot = await mkdtemp(join(tmpdir(), 'netplay-web-'));
-  const file = join(webRoot, 'smiley-sans.woff');
-  await writeFile(file, 'wOFF fixture');
   const f = await fixture(t, {webRoot});
-  const font = await fetch(f.url + '/smiley-sans.woff');
-  assert.equal(font.status, 200);
-  assert.equal(font.headers.get('content-type'), 'font/woff');
-  assert.equal(await font.text(), 'wOFF fixture');
+  const types = {
+    'smiley-sans.woff': 'font/woff',
+    'bgm.mp3': 'audio/mpeg',
+    'scene.spz': 'application/octet-stream',
+    'LICENSES.txt': 'text/plain; charset=utf-8'
+  };
+  for (const [name, type] of Object.entries(types)) {
+    await writeFile(join(webRoot, name), name);
+    const response = await fetch(f.url + '/' + name);
+    assert.equal(response.status, 200, name);
+    assert.equal(response.headers.get('content-type'), type);
+    assert.equal(await response.text(), name);
+  }
 });
 
 test('a friend can use the invitation while the host shares it outside the browser', async t => {
