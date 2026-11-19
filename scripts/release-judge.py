@@ -2,10 +2,12 @@
 
 Release commands require --state-dir so a new release cannot overwrite old evidence.
 `checks BUILD` runs only the local gates, without contacting the release service.
+`publish` waits for the new public build and verifies photo health and quota.
 This script does not grant permission to deploy a new candidate.
 """
 
 import json
+import os
 from pathlib import Path
 import re
 import runpy
@@ -13,6 +15,8 @@ import sys
 import subprocess
 import shlex
 import time
+from urllib.error import HTTPError
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
 QA = None
@@ -69,6 +73,110 @@ def observe():
 
 def assert_live(entry):
     assert observe() == {'platform': {'status': 'Running', 'sdk': 'docker'}, 'http': 200, 'entry': entry}
+
+
+def wait_for_live(entry):
+    deadline = time.monotonic() + 360
+    while time.monotonic() < deadline:
+        try:
+            status = observe()
+        except (OSError, AssertionError, ValueError):
+            time.sleep(6)
+            continue
+        if status == {'platform': {'status': 'Running', 'sdk': 'docker'}, 'http': 200, 'entry': entry}:
+            return
+        time.sleep(6)
+    raise RuntimeError(f'Judge rollout did not serve {entry} within six minutes')
+
+
+class NoPhotoRedirects(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+class PhotoCheckError(RuntimeError):
+    def __init__(self, message, gateway_unreachable=False):
+        super().__init__(message)
+        self.gateway_unreachable = gateway_unreachable
+
+
+def photo_json(origin, path, method='GET', token=None):
+    headers = previous['HEADERS'].copy()
+    if token is not None:
+        headers['X-Shoot-Session'] = token
+    request = Request(origin + path, method=method, data=b'' if method == 'POST' else None, headers=headers)
+    try:
+        with build_opener(NoPhotoRedirects()).open(request, timeout=8) as response:
+            payload = json.load(response)
+    except HTTPError as error:
+        unreachable = False
+        with error:
+            if error.code == 503:
+                try:
+                    result = json.load(error)['error']
+                    unreachable = result.get('code') == 'server' and result.get('charged') is False
+                except (ValueError, TypeError, KeyError, AttributeError, OSError):
+                    pass
+        raise PhotoCheckError(f'{origin}{path} returned HTTP {error.code}', unreachable) from None
+    except OSError:
+        raise PhotoCheckError(f'{origin}{path} is unreachable', gateway_unreachable=True) from None
+    except ValueError:
+        raise PhotoCheckError(f'{origin}{path} did not return JSON') from None
+    if not isinstance(payload, dict):
+        raise PhotoCheckError(f'{origin}{path} returned an unexpected JSON value')
+    return payload
+
+
+def photo_health(origin):
+    health = photo_json(origin, '/api/shoot/health')
+    proxy = health.get('recognitionProxy')
+    if (health.get('status') != 'ok' or health.get('provider') != 'real'
+            or not isinstance(proxy, dict) or proxy.get('reachable') is not True):
+        raise PhotoCheckError(f'{origin}/api/shoot/health did not report a healthy real photo backend')
+
+
+def public_photo_quota():
+    photo_health(judge_url)
+    session = photo_json(judge_url, '/api/shoot/session', method='POST')
+    token = session.get('token')
+    if not isinstance(token, str) or re.fullmatch(r'[a-f0-9-]{36}\.[a-f0-9]{64}', token) is None:
+        raise PhotoCheckError('Public photo session did not return a valid session token')
+    quota = photo_json(judge_url, '/api/shoot/quota', token=token)
+    recognition = quota.get('recognition')
+    if quota.get('provider') != 'real' or not isinstance(recognition, dict):
+        raise PhotoCheckError('Public photo quota did not describe the real generation and recognition allowances')
+    for allowance in (quota, recognition):
+        remaining, limit = allowance.get('remaining'), allowance.get('limit')
+        if type(remaining) is not int or type(limit) is not int or not 0 <= remaining <= limit:
+            raise PhotoCheckError('Public photo quota returned an invalid allowance')
+    return {'generationRemaining': quota['remaining'], 'recognitionRemaining': recognition['remaining']}
+
+
+def verify_public_photo(recover):
+    # Raft #万物对战:b88b2fec msg=75fc9f4c. The deployed gateway can lose frpc
+    # during a frontend swap. Confirm the local backend is alive before signalling frpc.
+    try:
+        return {'reconnected': False, **public_photo_quota()}
+    except PhotoCheckError as error:
+        if not recover or not error.gateway_unreachable:
+            raise
+        gateway = photo_json(judge_url, '/_health')
+        if gateway != {'service': 'wanwu-studio', 'role': 'transport-only'}:
+            raise
+        photo_health('http://127.0.0.1:4331')
+
+    service = f'gui/{os.getuid()}/com.lawrence.wanwu-frpc'
+    print('Public photo gateway lost its tunnel. Reconnecting the existing frpc service once.', flush=True)
+    subprocess.run(['launchctl', 'kill', 'SIGTERM', service], check=True, timeout=10)
+    # Give KeepAlive and the proxy registration time to complete.
+    deadline = time.monotonic() + 30
+    while True:
+        try:
+            return {'reconnected': True, **public_photo_quota()}
+        except PhotoCheckError as error:
+            if not error.gateway_unreachable or time.monotonic() >= deadline:
+                raise PhotoCheckError(f'Public photo check still failed after reconnecting frpc: {error}') from None
+            time.sleep(2)
 
 
 def deploy(commit, entry):
@@ -151,10 +259,12 @@ def publish():
     git(judge, 'push', 'origin', release + ':refs/heads/master')
     assert remote_head(judge) == release
     save('judge-candidate-deploy.json', deploy(release, candidate['entry']))
-    print(f"Judge release pushed: {release[:7]} / {candidate['entry']}")
+    print(f"Judge release pushed: {release[:7]} / {candidate['entry']}", flush=True)
+    wait_for_live(candidate['entry'])
+    verify(recover_photo=True)
 
 
-def verify(restore=False):
+def verify(restore=False, recover_photo=False):
     if restore:
         commit = read('judge-restored.json')['commit']
         entry = old_entry
@@ -167,13 +277,15 @@ def verify(restore=False):
     assert remote_head(judge) == commit
     assert_live(entry)
     public = previous['public_files'](judge_url, files)
+    mismatches = [row['path'] for row in public if not row['match']]
+    assert not mismatches, mismatches
+    photo = verify_public_photo(recover_photo)
     services = previous['services']()
     same_processes = services['processes'] == read('judge-baseline-preflight.json')['processes']
     save('judge-restored-public.json' if restore else 'judge-public.json',
-         {'commit': commit, 'entry': entry, 'processesUnchanged': same_processes, 'files': public})
-    mismatches = [row['path'] for row in public if not row['match']]
-    assert not mismatches, mismatches
-    print(f'Judge {commit[:7]} running, {len(public)} public files match, photo backend healthy.')
+         {'commit': commit, 'entry': entry, 'processesUnchanged': same_processes, 'files': public, 'photo': photo})
+    print(f"Judge {commit[:7]} running, {len(public)} public files match, photo backend healthy. "
+          f"New session quota: {photo['generationRemaining']} generation, {photo['recognitionRemaining']} recognition.")
 
 
 def rollback():
