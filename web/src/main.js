@@ -868,11 +868,15 @@ async function main() {
   }
 
   // ---------- HUD ----------
+  // The bar a side's numbers go in: on 好友对撞's second phone the two swap, so 你 is on the left on every phone and every
+  // screen, as in single-player (Elara faf1e410); each keeps its side's colour (#app.mine1 swaps the bars' colours too).
+  const hudSlot = i => net && ME === 1 ? 1 - i : i;
   function buildHud(defs) {
-    $('foeWho').textContent = pvp || net ? sideName(1) : fought === null ? '对手' : LADDER[fought].name;
-    el.hud.querySelector('.s0 .who b').textContent = sideName(0);
+    el.app.classList.toggle('mine1', Boolean(net) && ME === 1);
+    $('foeWho').textContent = pvp || net ? sideName(hudSlot(1)) : fought === null ? '对手' : LADDER[fought].name;
+    el.hud.querySelector('.s0 .who b').textContent = sideName(hudSlot(0));
     defs.forEach((def, i) => {
-      const box = el.hud.querySelector(`.s${i} .parts`);
+      const box = el.hud.querySelector(`.s${hudSlot(i)} .parts`);
       // Imported items often have three- or four-character names: those tags get the compact style (style.css .pc.long).
       const fit = name => [...name].length > 3 ? ' long long4' : [...name].length > 2 ? ' long' : '';
       box.innerHTML = def.parts.map(p => `<span class="pc${fit(NAMES[p.item])}" data-item="${esc(p.item)}">${ICON[p.orient]}<b>${esc(NAMES[p.item])}</b><span class="mini"><i></i></span></span>`).join('');
@@ -898,7 +902,7 @@ async function main() {
       v.since += dt;
       if (v.since > 0.45) v.chip = Math.max(v.core, v.chip - dt * 0.6);
       if (v.chip < v.core) v.chip = v.core;
-      const side = el.hud.querySelector(`.s${i}`);
+      const side = el.hud.querySelector(`.s${hudSlot(i)}`);
       side.querySelector('.core .fill').style.transform = `scaleX(${v.core})`;
       side.querySelector('.core .chip').style.transform = `scaleX(${v.chip})`;
       side.querySelectorAll('.pc').forEach((pc, k) => {
@@ -914,7 +918,7 @@ async function main() {
     });
   }
   // The same blow on the HUD: the striking piece lights in its side's colour, the piece (or core bar) hit flashes white.
-  const hudChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .core .bar`) : el.hud.querySelectorAll(`.s${side} .pc`)[Number(part.split('-')[1])];
+  const hudChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${hudSlot(side)} .core .bar`) : el.hud.querySelectorAll(`.s${hudSlot(side)} .pc`)[Number(part.split('-')[1])];
   // Runs on the game clock (holds through hit-stop and a frozen frame), like the callouts.
   const hudFlash = new Map();
   const setFlash = (node, cls, dur = 0.55) => {
@@ -925,7 +929,7 @@ async function main() {
     hudFlash.set(node, {age: 0, cls, dur});
   };
   const dropFlash = node => { const f = hudFlash.get(node); if (f) { node.classList.remove(f.cls); hudFlash.delete(node); } };
-  const strikerChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${side} .ball`) : hudChip(side, part);
+  const strikerChip = (side, part) => part === 'core' ? el.hud.querySelector(`.s${hudSlot(side)} .ball`) : hudChip(side, part);
   function flashHud(e) {
     const a = strikerChip(e.attacker, e.part), b = hudChip(e.target, e.targetPart);
     if (a) setFlash(a, `strike${e.attacker}`);

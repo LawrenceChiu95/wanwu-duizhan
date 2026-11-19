@@ -317,8 +317,12 @@ export class Overlay {
       // and slid sideways when the other core sits right where it would go.
       const r = Math.min(64, stage.screenRadius(me.center, stage.reachOf(me) + 0.1) * 0.95);
       let x = p.x;
-      const y = Math.max(stage.view.top + 34, p.y - r - 4), foe = stage.fighters[1], q = {x: 0, y: 0};
-      if (foe?.core.visible && stage.project(foe.center, q)) {
+      const foe = stage.fighters[1 - stage.meSide], q = {x: 0, y: 0}, seen = foe?.core.visible && stage.project(foe.center, q);
+      // 好友对撞's second phone: under its own top when the other is above it, so it never sits between the two (Elara faf1e410).
+      const under = Boolean(stage.meSide === 1 && seen && q.y < p.y);
+      const y = under ? Math.min(stage.view.h - stage.safeBottom() - 30, p.y + r + 4) : Math.max(stage.view.top + 34, p.y - r - 4);
+      this.me.classList.toggle('under', under);
+      if (seen && !under) {
         const fr = stage.screenRadius(foe.center, stage.coreRadius) + 4;
         if (Math.abs(q.x - x) < 20 + fr && q.y > y - 44 - fr && q.y < y + fr) x = q.x + Math.sign(x - q.x || 1) * (20 + fr);
       }
@@ -327,7 +331,7 @@ export class Overlay {
       // Always shown now (Elara 5b03a33d): the words step round it instead (the stamps above, from this box).
       this.meBox = {x, y, w: (this.meW ??= this.me.offsetWidth || 40), h: (this.meH ??= this.me.offsetHeight || 32)};
       this.me.style.opacity = this.meShown.toFixed(3);
-      this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      this.me.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, ${under ? 0 : -100}%)`;
     } else { this.me.style.opacity = 0; this.meBox = null; }
     // Life ring around each core: the core is the thing that must not break.
     this.rings.forEach((r, i) => {

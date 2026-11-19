@@ -668,3 +668,14 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 .kfriend span { font-size:18px;font-weight:900; }
 .kfriend small { font-size:12px;font-weight:700;color:#4b4a36; }
 .kfriend b { font-size:18px; }
+
+/* 好友对撞's second phone (side 1, main.js hudSlot): its own bar is on the left, as 你 is on every phone, in its own teal;
+   the 你 tag is teal too, and sits under its top when the other is above (Elara faf1e410). */
+#app.mine1 #hud { --c0:#4fc8bd; --c0d:#24736b; --c0l:#b2e0d4; --c1:#d0a34a; --c1d:#866422; --c1l:#ecce85; }
+#app.mine1 .s0 .who b { background:#254a42; }
+#app.mine1 .s1 .who b { background:#514128; }
+#app.mine1 #fx .me { --signal:#83e1d7; }
+#fx .me.under { flex-direction:column-reverse; }
+#fx .me.under i { clip-path:polygon(50% 0,100% 100%,0 100%);margin:0 0 -1px; }
+#app.mine1 .s0 .ball { background:radial-gradient(circle at 35% 35%,#fff 0,var(--c0) 45%,#0f4a7a 100%);box-shadow:0 0 8px var(--c0); }
+#app.mine1 .s1 .ball { background:radial-gradient(circle at 35% 35%,#fff 0,var(--c1) 45%,#7a3510 100%);box-shadow:0 0 8px var(--c1); }
