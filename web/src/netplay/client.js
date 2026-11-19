@@ -139,6 +139,8 @@ export class NetClient {
       let msg;
       try { msg = JSON.parse(ev.data); } catch { this.dropped('not JSON'); return; }
       if (msg === null || typeof msg !== 'object' || Array.isArray(msg) || !('d' in msg)) { this.dropped('no message in it'); return; }
+      if (typeof msg.m !== 'string') { this.dropped('no match id'); return; }
+      // Another match's (one before a 再来一局, still on its way): nothing wrong with it, just late.
       if (msg.m === this.state?.matchId) this.on.game?.(msg.d, 'direct');
     };
   }
