@@ -51,6 +51,7 @@ const ROOM_HTML = `
       <div class="nqr" id="netQr"></div>
       <p class="ncode"><small>房间号</small><b id="netRoomCode"></b></p>
       <button type="button" class="nkey" id="netCopy"><span>复制链接发给朋友</span></button>
+      <p class="nlink" id="netLink" hidden><small>长按复制，发给朋友</small><a id="netLinkUrl"></a></p>
     </div>
     <p class="nsay" id="netSay" aria-live="polite"></p>
   </div>`;
@@ -85,11 +86,18 @@ export function createFriend(app, hooks) {
     qr.addData(link(code));
     qr.make();
     $('netQr').innerHTML = qr.createSvgTag({cellSize: 6, margin: 2, scalable: true});
+    $('netLinkUrl').textContent = $('netLinkUrl').href = link(code);
+    showLink(!canCopy());
   }
+  // Only https (or this Mac itself) lets a page copy (Wren e1bda3fc: the LAN address is http): there the link is shown,
+  // to long-press, instead of a 复制 key that can't (Elara 4a54464d).
+  const canCopy = () => Boolean(globalThis.isSecureContext && navigator.clipboard?.writeText);
+  function showLink(on) { $('netCopy').hidden = on; $('netLink').hidden = !on; }
   $('netCopy').onclick = async () => {
-    const url = link(client?.code ?? '');
-    try { await navigator.clipboard.writeText(url); say('链接已复制，发给朋友'); } catch { say(url); }
+    try { await navigator.clipboard.writeText(link(client?.code ?? '')); say('链接已复制，发给朋友'); } catch { showLink(true); }
   };
+  // A tap picks the whole link (for the phone's own 拷贝), and never goes to it: this phone is in the room already.
+  $('netLinkUrl').onclick = ev => { ev.preventDefault(); getSelection()?.selectAllChildren(ev.currentTarget); };
   $('netBack').onclick = () => { leave(); hooks.onHome(); };
 
   const ERRORS = {

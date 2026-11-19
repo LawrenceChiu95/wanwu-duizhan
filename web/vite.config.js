@@ -8,9 +8,18 @@ const rapier = fileURLToPath(new URL('../sim/node_modules/@dimforge/rapier3d-com
 const allowedHosts = ['lawrence-mac', 'lawrence-mac.tail1c8f33.ts.net'];
 
 // 评委版 (--mode judge, task #4): the opening card goes into the page itself, so it shows before the scripts arrive.
+// 好友对撞's page (WANWU_NETPLAY=1) has it without 评委试玩: a friend sent its code is no judge (Elara 4a54464d).
+const BADGE = ['<header class="khead"><i></i> 评委试玩 ', '<header class="khead plain">'];
 const judgeIntro = {
   name: 'judge-intro',
-  transformIndexHtml: {order: 'pre', handler: html => html.replace('<!-- judge-intro -->', readFileSync(new URL('./judge-intro.html', import.meta.url), 'utf8'))}
+  transformIndexHtml: {order: 'pre', handler: html => {
+    let intro = readFileSync(new URL('./judge-intro.html', import.meta.url), 'utf8');
+    if (netplayBuild) {
+      if (!intro.includes(BADGE[0])) throw Error('judge-intro.html: 评委试玩 badge not found (changed?)');
+      intro = intro.replace(BADGE[0], BADGE[1]).replace('aria-label="万物对战 · 评委试玩"', 'aria-label="万物对战"');
+    }
+    return html.replace('<!-- judge-intro -->', intro);
+  }}
 };
 // 评委版 build only: rapier3d-compat carries its engine as base64 inside the script (1.65 MB gzipped). The same bytes as a
 // .wasm file next to it are 1.17 MB gzipped and start compiling while they download; the engine is unchanged.
