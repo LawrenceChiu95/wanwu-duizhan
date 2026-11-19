@@ -182,7 +182,8 @@ async function main() {
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
   // 冲加快试玩 (远夏 4872800a, Elara 5c5bbeba): ?lunge=0|1|2 shows a switch on the bench for 现在 / 明显快 / 很快, both
   // sides alike, from the next match. Without it the page plays as before and shows nothing.
-  const LUNGE_TIERS = [['现在', 1], ['明显快', 1.3], ['很快', 1.6]];
+  // 远夏 ea0cc4c7「马上上」(Elara e96340b5): the judge build plays 很快 without ?lunge, and shows no switch.
+  const LUNGE_TIERS = [['现在', 1], ['明显快', 1.3], ['很快', 1.6]], LUNGE_DEFAULT = combat ? 1.6 : 1;
   let lungeTier = q.has('lunge') && combat ? Math.max(0, Math.min(2, Math.floor(Number(q.get('lunge'))) || 0)) : null, lungePill = null;
   const showLungePill = on => {
     if (lungeTier === null) return;
@@ -1507,7 +1508,7 @@ async function main() {
         ? {...opponent.ai, ...opponent.impactAi}
         : opponent.ai);
       const manual = pvp ? {sides: ['input', 'input']} : {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})};
-      const tempo = lungeTier === null ? 1 : LUNGE_TIERS[lungeTier][1];
+      const tempo = lungeTier === null ? LUNGE_DEFAULT : LUNGE_TIERS[lungeTier][1];
       const extra = {...(ceramic && {ceramicShards: true}), ...(tempo !== 1 && {lungeTempo: tempo})};
       const args = {fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(Object.keys(extra).length && {combatRules: {...combatOptions.combatRules, ...extra}}), manual};
       // The page's own copy of the lunge (its streak, the reach arrow) plays at the same tempo.
