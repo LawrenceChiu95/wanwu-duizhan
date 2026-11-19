@@ -117,7 +117,10 @@ function coreTextures(color) {
 
 // The shell behind the fight, muted so the fighters stand out (Elara, 凡朔): its colour keeps this much of its
 // saturation, then this much of its brightness. The 冲中 wave and the amber closing band stay at full strength.
-const SHELL_SAT = 0.7, SHELL_BRIGHT = 0.75;
+// Its lines are drawn out of focus too (凡朔 11-19, Elara a64e77fa): each edge spread over SHELL_SOFT times its sharp
+// width with the light it carries kept the same (so a line goes wide and faint, not fat), then dimmed to SHELL_LINES.
+// The floor under the tops stays sharp.
+const SHELL_SAT = 0.7, SHELL_BRIGHT = 0.75, SHELL_SOFT = 4.0, SHELL_LINES = 0.85;
 const backdropShader = {
   vertexShader: `varying vec3 vP, worldPos, clipXYW; varying vec3 screenXYW;
     void main(){
@@ -132,6 +135,11 @@ const backdropShader = {
       clipXYW = vec3(tilted.x/aspect,tilted.y,1.0)*gl_Position.w;
     }`,
   fragmentShader: `varying vec3 vP, worldPos, clipXYW, screenXYW; uniform vec3 hitPoint; uniform float hitAge, hitPower, fieldTime, fieldZoom, fieldFade, fieldHeat, fieldThrob, uSat, uBright;
+    // A line of half-width core at distance d, its edge (w wide when sharp) blurred: same light, spread wider.
+    float soft(float d, float core, float w){
+      float b = w * ${SHELL_SOFT.toFixed(2)};
+      return (1.0 - smoothstep(max(0.0, core - 0.5 * b), core + b, d)) * (core + 0.5 * w) / (core + 0.25 * b + 0.25 * max(b - 2.0 * core, 0.0));
+    }
     void main(){
       // Stereographic projection curves the peripheral grid without distorting the fighters.
       vec2 lens = clipXYW.xy / clipXYW.z * vec2(0.60,0.78) * fieldZoom;
@@ -146,8 +154,8 @@ const backdropShader = {
       float lon2 = fract(lon / 24.0 + 0.5) * 24.0;
       vec2 g = abs(fract(vec2(lat, lon)) - 0.5);
       vec2 w = vec2(fwidth(lat), min(fwidth(lon), fwidth(lon2))) * 1.2;
-      float meridian = (1.0 - smoothstep(0.0, w.y, 0.5 - g.y)) * smoothstep(0.12, 0.45, sqrt(max(0.0,1.0 - latitude * latitude)));
-      float line = max(1.0 - smoothstep(0.0, w.x, 0.5 - g.x), meridian);
+      float meridian = soft(0.5 - g.y, 0.0, w.y) * smoothstep(0.12, 0.45, sqrt(max(0.0,1.0 - latitude * latitude)));
+      float line = max(soft(0.5 - g.x, 0.0, w.x), meridian);
       float shade = 0.75 + 0.25 * vP.y;
       vec3 base = vec3(0.0035,0.005,0.011) * shade;
       float sweep = pow(max(0.,cos(lat * 0.7 + lon * 0.5 - fieldTime * 0.75)), 8.);
@@ -158,15 +166,15 @@ const backdropShader = {
       // reveals the finer radial traces between those permanent conductors.
       float poleFade = smoothstep(0.07, 0.32, sqrt(max(0.0,1.0-latitude*latitude)));
       float trunkDist = abs(fract(lon/4.0 + 0.5)-0.5)*4.0;
-      float trunk = (1.0-smoothstep(0.035,0.035+w.y,trunkDist))*poleFade;
+      float trunk = soft(trunkDist, 0.035, w.y)*poleFade;
       float fringe = exp(-14.0*trunkDist)*poleFade;
       float sectorAngle = 6.2831853 * lon/24.0 - fieldTime*0.34;
       float fan = smoothstep(0.72,0.98,cos(sectorAngle*2.0));
       float band = smoothstep(0.15,0.8,abs(lat))*(1.0-smoothstep(4.8,5.8,abs(lat)));
       float spokes = abs(fract(lon*3.0+0.5)-0.5);
-      float fine = (1.0-smoothstep(0.01,0.01+min(0.48,w.y*3.0),spokes))*poleFade;
+      float fine = soft(spokes, 0.01, min(0.12, w.y*3.0))*poleFade;
       float arcDist = abs(fract((lat+0.18)/3.0+0.5)-0.5)*3.0;
-      float arc = 1.0-smoothstep(0.038,0.038+w.x,arcDist);
+      float arc = soft(arcDist, 0.038, w.x);
       float trail = fract(-sectorAngle/3.14159265 + floor((lat+0.18)/3.0+0.5)*0.27);
       float head = smoothstep(0.0,0.012,trail)*exp(-trail*15.0);
       float tail = smoothstep(0.0,0.012,trail)*exp(-trail*6.5);
@@ -176,6 +184,7 @@ const backdropShader = {
       light += band*fan*(cyan*(0.022+0.35*fine+0.36*line));
       light += arc*(vec3(1.2,0.015,0.42)*tail + vec3(1.1,0.33,0.76)*head);
       light += vec3(0.46,0.008,0.16)*exp(-arcDist*10.0)*tail;
+      light *= ${SHELL_LINES.toFixed(2)};
       vec3 cue = vec3(0.95,0.07,0.48)*wave*max(line,trunk);
       // Distance from the arena centre to the view ray, in world units.
       vec3 viewRay = normalize(worldPos - cameraPosition);
