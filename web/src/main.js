@@ -778,7 +778,13 @@ async function main() {
     if (phase === 'build') renderPick();
     if (phase === 'result') netResult();
     // Ended by the room, not by the fight: the other phone gone too long, or the two phones worked out different matches.
-    if (st.phase === 'finished' && st.reason !== 'complete' && live?.matchId === st.matchId && phase !== 'result') netEnd(st);
+    // 这局不算 goes over a 结算 already up too, or the two phones would each keep their own 输赢 (Elara e01e6e64).
+    if (st.phase === 'finished' && st.reason !== 'complete' && live?.matchId === st.matchId && (phase !== 'result' || st.reason === 'desync' && net.voided !== st.matchId)) netEnd(st);
+  }
+  // 这局不算's line: 记录已经交上去查 only once the room says it has this phone's record (seats[].traceReady, Sol dd49be57).
+  function voidWhy() {
+    const me = net.state?.matchId === net.voided ? net.state.seats?.[ME] : null;
+    return `两台手机算出来的不一样，这局作废了${me?.traceReady ? '。记录已经交上去查' : ''}`;
   }
   // The other phone's messages: presses (a broken one is dropped by the session and noted here), and a reloaded one asking
   // for all of mine again.
@@ -835,7 +841,8 @@ async function main() {
       replay = m.result();
       pb.r = replay;
       setCaption(false, reasonLine(replay, netWho()));
-      friend.result(replay.meta.winner, m.hash());
+      if (s.skewEnd) { const w = replay.meta.winner, h = (m.hash() ^ 1) >>> 0; setTimeout(() => friend.result(w, h), s.skewEnd); }
+      else friend.result(replay.meta.winner, m.hash());
     }
     netSend();
     return Math.max(0, Math.min(dt * k, m.t - pb.t));
@@ -878,12 +885,22 @@ async function main() {
       btn.querySelector('span').textContent = '对面已离开 · 回首页';
       $('soloBtn').hidden = true;
     }
+    if (net.voided === st.matchId) el.whyLine.textContent = voidWhy();
     el.tipLine.textContent = !other?.left && other?.rematchReady && !me?.rematchReady ? '对面想再来一局' : '';
     el.tipLine.hidden = !el.tipLine.textContent;
   }
   // The room ended the match: a short card saying why, the way home or into the next.
   function netEnd(st) {
-    if (st.reason === 'desync') netReport(st.matchId);
+    const desync = st.reason === 'desync', w = st.winner;
+    if (desync) {
+      netReport(st.matchId);
+      net.voided = st.matchId;
+      // A 输赢 already counted in the run comes off it again.
+      if (net.scored === st.matchId && net.counted != null) net.score[net.counted]--;
+      net.scored = st.matchId; net.counted = null;
+      el.pvpScore.textContent = `你 ${net.score[ME]} : ${net.score[1 - ME]} 对面`;
+      setCaption(false);
+    }
     if (live) live.done = true;
     net.restored?.(); net.restored = null;
     showPads(false);
@@ -891,16 +908,16 @@ async function main() {
     netLine(null);
     el.pvpReady.hidden = true;
     phase = 'result';
-    const desync = st.reason === 'desync', w = st.winner;
     el.winnerLine.textContent = desync ? '这局不算' : w === ME ? '你赢了' : w === null ? '平局' : '你输了';
     el.result.className = desync || w === null ? 'draw' : w === ME ? 'win' : 'lose';
-    el.whyLine.textContent = desync ? '两台手机算出来的不一样，这局作废了。记录已经交上去查' : st.reason === 'complete' ? '这局在你刷新时打完了' : w === ME ? '对面掉线太久，算你赢' : w === null ? '两边都掉线太久' : '你离开太久，算对面赢';
+    el.whyLine.textContent = desync ? voidWhy() : st.reason === 'complete' ? '这局在你刷新时打完了' : w === ME ? '对面掉线太久，算你赢' : w === null ? '两边都掉线太久' : '你离开太久，算对面赢';
     el.tipLine.hidden = true;
     $('replayBtn').hidden = true;
     showOutcome({act: 'again'});
     el.hud.classList.add('dim');
     el.result.hidden = false;
     layout_();
+    stage.setFocusOn(null, el.result.offsetTop);
   }
   // 回首页: the opening page's two choices again; a page without one (not the 评委版) goes straight back to single-player.
   // Off the fight only (选装备 either side's turn, 结算): two hands on the phone mid-fight don't tap it by mistake (Elara
@@ -1938,7 +1955,7 @@ async function main() {
     // 第二轮 ⑤: the run so far, each end from its own side.
     if (pvp && scored !== runId) { scored = runId; if (m.winner !== null) score[m.winner]++; }
     // 好友对撞: the room's run, counted once a match (重看 shows the card again).
-    if (net && net.scored !== live?.matchId) { net.scored = live?.matchId; if (m.winner !== null) net.score[m.winner]++; }
+    if (net && net.scored !== live?.matchId) { net.scored = live?.matchId; net.counted = m.winner; if (m.winner !== null) net.score[m.winner]++; }
     el.pvpScore.hidden = !pvp && !net;
     el.pvpScore.textContent = net ? `你 ${net.score[ME]} : ${net.score[1 - ME]} 对面` : `你 ${score[0]} : ${score[1]} 对面`;
     // 一机双人: the numbers and the tip are about 1P's play against the computer, so neither shows. Alone, two numbers at
@@ -2850,9 +2867,12 @@ async function main() {
     press,
     // 好友对撞's desync on purpose (scripts/netplay-desync.mjs): this phone's checks are off from the next step on; pad
     // makes its report that many presses longer, so the cut to the room's size limit is tried too.
-    netSkew(pad = 0) {
+    // end (ms): only the result this phone gives the room is made wrong, and given that late, so both phones have their
+    // 结算 up before the room voids the match.
+    netSkew(pad = 0, {end = 0} = {}) {
       const s = live?.session;
       if (!s) return false;
+      if (end) return Boolean(s.skewEnd = end);
       for (let i = 0; i < pad; i++) s.log.push([i, s.seat, 'dash']);
       s.skew = s.present + 1;
       return true;

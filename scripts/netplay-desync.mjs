@@ -2,7 +2,9 @@
 // phone's checks made wrong mid-fight (window.__top.netSkew, its report padded past the room's size limit). Both phones
 // must say 这局不算 (one that sees it at once, not waiting for the room), the room must end the match as a desync and
 // keep both phones' reports as objects in its trace directory. Then, on the 结算: the guest's 再来一局 shows on the
-// host's as 对面想再来一局, and the host's 回首页 turns the guest's key into 对面已离开 · 回首页.
+// host's as 对面想再来一局. A second match both phones finish, but whose results the room finds differ (the host's made
+// wrong and late): 这局不算 goes over the 结算 already up on both, the run's score back as it was. Then the host's 回首页
+// turns the guest's key into 对面已离开 · 回首页.
 //
 //   NETPLAY_TRACE_DIR=<empty dir> PORT=7873 NETPLAY_WEB_ROOT=$PWD/web/dist-netplay-<sha> node tools/netplay/main.mjs &
 //   node scripts/netplay-desync.mjs http://127.0.0.1:7873 <that dir> [screenshot dir]
@@ -78,6 +80,28 @@ await until(a, () => !document.querySelector('#tipLine').hidden && document.quer
 const voted = await card(a);
 assert.ok(voted.me < 0.02);
 await shot(a, 'rematch-asked-host');
+// 记录已经交上去查 once the room has written each phone's record down (seats[].traceReady).
+await Promise.all([a, b].map(p => until(p, () => document.querySelector('#whyLine').textContent.endsWith('记录已经交上去查'), null, 10000)));
+
+// ---- a second match: both phones finish it and show their 结算, then the room voids it (the host's result was wrong and late) ----
+await a.page.locator('#againBtn').tap();
+for (const p of [a, b]) {
+  await until(p, () => { const s = window.__top.status(); return s.phase === 'build' && s.net?.room === 'loadout' && !document.querySelector('#goBtn').disabled; });
+  await p.page.locator('#goBtn').tap();
+}
+await Promise.all([a, b].map(p => until(p, () => window.__top.status().phase === 'play')));
+for (const p of [a, b]) await p.page.evaluate(() => { window.__said = []; new MutationObserver(() => window.__said.push(document.querySelector('#winnerLine').textContent)).observe(document.querySelector('#winnerLine'), {childList: true, characterData: true, subtree: true}); });
+assert.ok(await a.page.evaluate(() => window.__top.netSkew(0, {end: 6000})));
+await Promise.all([a, b].map(p => until(p, () => window.__top.status().net?.room === 'finished' && document.querySelector('#winnerLine').textContent === '这局不算' && !document.querySelector('#result').hidden, null, 240000)))
+  .catch(async e => { for (const p of [a, b]) console.error(p.name, JSON.stringify(await p.page.evaluate(() => ({status: window.__top.status(), said: window.__said, why: document.querySelector('#whyLine').textContent}))), p.errors); throw e; });
+await a.page.waitForTimeout(1500);
+const said = await Promise.all([a, b].map(p => p.page.evaluate(() => window.__said)));
+for (const w of said) assert.ok(w.some(t => ['你赢了', '你输了', '平局'].includes(t)), `a 结算 was up first: ${w}`);
+const voided = await Promise.all([a, b].map(p => p.page.evaluate(() => ({score: document.querySelector('#pvpScore').textContent, replay: document.querySelector('#replayBtn').hidden, me: +getComputedStyle(document.querySelector('#fx .me')).opacity}))));
+for (const v of voided) { assert.equal(v.score, '你 0 : 0 对面', 'the voided match is off the run'); assert.ok(v.replay && v.me < 0.02); }
+await shot(a, 'void-over-result-host'); await shot(b, 'void-over-result-guest');
+await new Promise(ok => setTimeout(ok, 800));
+assert.equal(readdirSync(traceDir).filter(f => f.endsWith('.json')).length, 4, 'both phones\' records of the second match too');
 await a.page.locator('#soloBtn').tap();
 await until(b, () => document.querySelector('#againBtn').textContent === '对面已离开 · 回首页' && !document.querySelector('#againBtn').disabled, null, 10000);
 const left = await card(b);
@@ -89,5 +113,5 @@ const errors = [...a.errors, ...b.errors];
 assert.deepEqual(errors, []);
 console.log(JSON.stringify({shownMs: shown, room: {reason: room.reason ?? null, room: room.room}, card: {host: ca, guest: cb},
   traces: traces.map(t => ({file: files[traces.indexOf(t)], seat: t.seat, step: t.step, bytes: Buffer.byteLength(JSON.stringify(t.log)), presses: t.log.presses.length, dropped: t.log.dropped})),
-  rematchAsked: voted.tip, afterLeave: {key: left.key, disabled: left.disabled}, guestHome: true}, null, 1));
+  rematchAsked: voted.tip, voided: {said, voided}, afterLeave: {key: left.key, disabled: left.disabled}, guestHome: true}, null, 1));
 await browser.close();
