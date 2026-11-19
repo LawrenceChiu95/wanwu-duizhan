@@ -33,7 +33,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
     version: room.version, seed: room.seed,
     seats: room.seats.map(seat => seat ? {
       connected: active(seat), left: seat.token === null, ready: Boolean(seat.selection), assetsReady: seat.assets,
-      resultReady: Boolean(seat.result), rematchReady: seat.rematch
+      resultReady: Boolean(seat.result), rematchReady: seat.rematch, traceReady: seat.traceStatus === 'stored'
     } : null),
     prepare: room.prepare, startAt: room.startAt, resumeAt: room.resumeAt,
     pausedSeat: room.pausedSeat, deadline: room.deadline, winner: room.winner, reason: room.reason
@@ -49,7 +49,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       deadline: null, winner: null, reason: null, priorPhase: null, expires: now() + idleTimeout
     });
     for (const seat of room.seats.filter(Boolean)) {
-      Object.assign(seat, {selection: null, assets: false, rematch: false, result: null, traced: false, checking: null});
+      Object.assign(seat, {selection: null, assets: false, rematch: false, result: null, traceStatus: null, checking: null});
     }
   };
 
@@ -196,13 +196,20 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   }
 
   function store(room, seat, step, log) {
-    if (!storeTrace || seat.traced || !Number.isSafeInteger(step) || step < 0 || !record(log)) return;
+    if (!storeTrace) return;
+    if (seat.traceStatus === 'stored') return send(seat.ws, states(room));
+    if (seat.traceStatus === 'pending') return;
     if (Buffer.byteLength(JSON.stringify(log)) > 48 * 1024) throw new RoomError('trace');
-    seat.traced = true;
+    seat.traceStatus = 'pending';
     const matchId = room.matchId;
-    Promise.resolve(storeTrace({matchId, seat: seat.index, at: now(), step, log})).catch(() => {
+    const trace = {matchId, seat: seat.index, at: now(), step, log};
+    Promise.resolve().then(() => storeTrace(trace)).then(() => {
       if (room.matchId !== matchId) return;
-      seat.traced = false;
+      seat.traceStatus = 'stored';
+      send(seat.ws, states(room));
+    }, () => {
+      if (room.matchId !== matchId) return;
+      seat.traceStatus = null;
       error(seat.ws, 'trace-store');
     });
   }
