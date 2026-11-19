@@ -120,6 +120,9 @@ const IMPACT={playerCharge:.075,playerAimLockSteps:2,blockTime:.375,emptyGuardDa
  passiveSpeedLimit:1,launchSpeed:2.25,launchGain:.18,launchLimit:3.5,dashDamage:2.2,heavyTurnLoss:.55,
  contactMinSpeed:.75,contactMinAlignment:.45};
 
+// The lunge k times faster: launch speed and cap times k, push times k² and time over k, so a free lunge keeps
+// about the same reach (damping, per second, bites a little less). Mutates and returns the manual rules.
+export function applyLungeTempo(m,k){m.dashSpeed*=k;m.dashSpeedLimit*=k;m.dashThrust*=k*k;m.dashTime/=k;return m;}
 export async function loadV3Rules(){
  rulesPromise??=(async()=>{const url=new URL('./v3-rules.json',import.meta.url);if(url.protocol==='file:'){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(url,'utf8'));}const r=await fetch(url);if(!r.ok)throw Error(`v3 rules HTTP ${r.status}`);return r.json();})();
  return structuredClone(await rulesPromise);
@@ -443,6 +446,10 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
  }
  if(impact)r.manual.blockTime=guardTiming?.blockTime??IMPACT.blockTime;
  if(guardTiming)r.manual.blockCooldown=guardTiming.blockCooldown;
+ // 冲加快试玩 (远夏 4872800a, 凡朔「冲的好慢」): lungeTempo plays the same lunge that many times faster for both sides.
+ // Wind-ups, block windows, cue lead and cooldowns stay; see applyLungeTempo.
+ const lungeTempo=position?.lungeTempo;
+ if(lungeTempo!==undefined){if(!Number.isFinite(lungeTempo)||lungeTempo<1||lungeTempo>2)throw Error('lungeTempo must be within 1..2');applyLungeTempo(r.manual,lungeTempo);}
  // Automatic play uses the same symmetric spawn, but carries no manual rules or actions.
  const {manual:manualRules,...autoRules}=r,M=manual?manualRules:null,steps=x=>Math.round(x/r.dt);
  const opening=refinedImpact?position.opening:undefined;
@@ -881,7 +888,8 @@ export async function createV3Match({fighters:definitions,mode='A',seed,manual=n
       (position.bareCoreByPartsOnly===true||opponent.core.hp>=opponent.core.maxHp*.75);
      // Higher durability changes time to break, leaving per-hit limits and triggers on the original scale.
      const damageReferenceHp=tp.baseHp;
-     const d=tierDamage({mode,impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:damageReferenceHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
+     // A faster lunge (lungeTempo) lands as hard as the plain one did: only its speed changes, not what it deals.
+     const d=tierDamage({mode,impulse:dashContact&&lungeTempo>1?impulse/lungeTempo:impulse,attacker:ap.item,target:tp.item,materials:c.materials,matchups:c.matchups,weak,tipMultiplier:role==='attack'?(roles.clash?1+r.tipBonus*roles.tipRatios[attacker]:roles.tipMultiplier):1,maxHp:damageReferenceHp,roleMultiplier,ramp:damageRamp(t,r.top.damageRamp),attackerOrient:ap.orient,targetOrient:tp.orient,rules:r,positionRules:position,coreMasses:coreMassImpact>0&&ap.mount==='core'&&tp.mount==='core'?[fs[attacker].mass,fs[target].mass]:undefined,
       coreLoadout:coreLoadout&&ap.mount==='core'&&tp.mount==='core'?{attack:fs[attacker].coreStats.attack,defense:exposedCore?Math.min(1,fs[target].coreStats.defense):fs[target].coreStats.defense}:undefined});
      // Broad heavy attachments resist weaker hits without gaining starting HP.
      if(tp.resistWeakHits){

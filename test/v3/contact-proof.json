@@ -50,21 +50,24 @@
       "planeDamping": 1.5,
       "tangentialDamping": 2.5,
       "maxCorrectionPerStep": 0.02,
-      "itemPower": {
-        "scissors": 1.6,
-        "slipper": 1.35,
-        "broom": 0.48,
-        "pillow": 0.8
+      "itemStats": {
+        "hpBase": 0.4,
+        "hpScale": 0.01,
+        "powerBase": 0.6,
+        "powerScale": 0.01,
+        "attackBase": 6,
+        "attackScale": 0.15,
+        "defenseBase": 2,
+        "defenseScale": 0.06
       },
-      "itemHp": {
-        "scissors": 1.4,
-        "slipper": 1.3,
-        "broom": 1.1,
-        "pillow": 0.75
+      "referenceHardness": 1.2,
+      "softHugReceive": {
+        "cloth": 0.7,
+        "rubber": 0.8
       },
       "orientPower": {
-        "out": 1.2,
-        "hug": 0.85
+        "out": 1.05,
+        "hug": 0.95
       },
       "orientReceive": {
         "out": 1.15,
@@ -85,7 +88,7 @@
         ],
         [
           40,
-          1.8
+          4.5
         ]
       ]
     },
@@ -133,7 +136,7 @@
     "arenaRadius": 2.2,
     "damageScale": {
       "A": 0.8,
-      "B": 1
+      "B": 1.5
     }
   },
   "diagnostics": {
