@@ -183,7 +183,7 @@ async function main() {
   // 冲加快试玩 (远夏 4872800a, Elara 5c5bbeba): ?lunge=0|1|2 shows a switch on the bench for 现在 / 明显快 / 很快, both
   // sides alike, from the next match. Without it the page plays as before and shows nothing.
   const LUNGE_TIERS = [['现在', 1], ['明显快', 1.3], ['很快', 1.6]];
-  let lungeTier = q.has('lunge') && combat ? Math.max(0, Math.min(2, Number(q.get('lunge')) || 0)) : null, lungePill = null;
+  let lungeTier = q.has('lunge') && combat ? Math.max(0, Math.min(2, Math.floor(Number(q.get('lunge'))) || 0)) : null, lungePill = null;
   const showLungePill = on => {
     if (lungeTier === null) return;
     if (!lungePill) {
