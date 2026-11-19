@@ -37,6 +37,9 @@ export function decisiveAnchor(replay) {
   return replay.events.filter(e => e.t <= stop && CONTACT.has(e.type) && e.role === 'attack').sort((x, y) => y.damage - x.damage)[0] ?? null;
 }
 
+// The same event of the same step, as a rollback plays it again.
+const eventKey = e => [e.type, Math.round(e.t * 1e4), e.side, e.attacker, e.target, e.part, e.targetPart, e.phase, e.outcome].join('|');
+
 const v3 = () => new THREE.Vector3();
 const q4 = () => new THREE.Quaternion();
 const tmpV = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
@@ -76,8 +79,35 @@ export class Playback {
    */
   sync(done) {
     const all = this.r.events;
-    for (; this.seen < all.length; this.seen++) { const e = all[this.seen]; if (e.type !== 'contact' && e.type !== 'recoil') this.events.push(e); }
+    for (; this.seen < all.length; this.seen++) {
+      const e = all[this.seen];
+      if (e.type === 'contact' || e.type === 'recoil') continue;
+      // Played again after a rollback and come out the same: it was shown already.
+      const k = this.shown?.size ? eventKey(e) : null;
+      if (k !== null && this.shown.delete(k)) { this.events.splice(this.cursor++, 0, e); continue; }
+      this.events.push(e);
+    }
     if (done) { this.end = this.r.meta.duration; this.stopT = stopTime(this.r); }
+  }
+
+  /**
+   * 好友对撞's rollback (netplay/session.js): the match went back to match time t and was played forward again. Its events
+   * after t are gone from the replay; those not shown yet go from here too, and those already shown are remembered, so
+   * the same one played again is not shown twice. (One that does not come again stays shown: it was on screen.)
+   */
+  rewind(t) {
+    const all = this.r.events;
+    let seen = all.length;
+    while (seen > 0 && all[seen - 1].t > t + 1e-9) seen--;
+    this.seen = seen;
+    let cut = this.events.length;
+    while (cut > 0 && this.events[cut - 1].t > t + 1e-9) cut--;
+    this.shown ??= new Set();
+    for (let i = cut; i < this.cursor; i++) this.shown.add(eventKey(this.events[i]));
+    this.events.length = cut;
+    this.cursor = Math.min(this.cursor, cut);
+    // Kept only as long as a rollback could still bring one back.
+    if (this.shown.size > 64) this.shown = new Set([...this.shown].slice(-32));
   }
 
   /** 1 outside the decisive window, easing down to 0.25 inside it. */

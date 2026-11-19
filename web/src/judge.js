@@ -50,6 +50,22 @@ export function readyIntro(onPick, onShoot) {
   loadPot();
 }
 
+/**
+ * 好友对撞 (docs/netplay-spec.md): a third, quieter key under the two, only on an address with the room service (main.js
+ * asks it first), so the 评委版 link looks as it did. It leaves the opening page as the two do.
+ */
+export function friendKey(onPick) {
+  const intro = document.getElementById('intro'), modes = intro?.querySelector('.kmodes');
+  if (!modes || document.getElementById('introFriend')) return;
+  const key = document.createElement('button');
+  key.type = 'button';
+  key.className = 'kfriend';
+  key.id = 'introFriend';
+  key.innerHTML = '<span>好友对撞</span><small>两台手机，扫码连上</small><b aria-hidden="true">→</b>';
+  key.onclick = () => { onPick?.(); intro.classList.add('out'); setTimeout(() => { intro.hidden = true; closePot(); closePot = () => {}; }, 220); };
+  modes.after(key);
+}
+
 /** ?pvp=1 goes straight into 一机双人: the opening page is not shown (its pot's 3D is let go as it arrives). */
 export function skipIntro() {
   const intro = document.getElementById('intro');

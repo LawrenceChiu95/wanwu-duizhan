@@ -631,3 +631,40 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 :is(.mute,#foe .swap,#foe .hkey,.lhead .back,.lhead .shoot,.seg button,.close,.slink,.bhead .shoot,.swapkey,#teachSkip,.hreplay,#shootTag)::before { content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%); }
 /* The slanted tag's cut runs on 4 px past its top and bottom, the same slope, so that margin isn't cut off. */
 #shootTag { clip-path:polygon(11.1px -4px,calc(100% + 1.1px) -4px,calc(100% - 11.1px) calc(100% + 4px),-1.1px calc(100% + 4px)); }
+
+/* 好友对撞's room (netplay/friend.js): full screen like the 角色库; one yellow key (开个房间), the rest cream. The QR sits on
+   white for the camera that reads it; the room code big enough to read out across a table. */
+#netRoom { --kfont:"PingFang SC","Microsoft YaHei",sans-serif; position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
+  background:repeating-linear-gradient(0deg,#92c7ac05 0 1px,transparent 1px 4px),#101915;color:var(--ink);animation:fade .18s ease-out both; }
+#netRoom .lhead i { justify-self:end; }
+#netRoom .nbody { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px 24px calc(env(safe-area-inset-bottom) + 28px);overflow-y:auto; }
+#netRoom .nstart, #netRoom .nhost { width:min(100%,340px);display:flex;flex-direction:column;align-items:stretch;gap:14px; }
+#netRoom .nlead { margin:0;text-align:center;font:800 19px/1.4 var(--kfont);letter-spacing:1px;color:var(--ink); }
+#netRoom .kgo { min-height:72px;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px; }
+#netRoom .kgo small { grid-row:2;justify-self:start;padding:0 5px;border-radius:2px;font-size:12px;font-weight:700;line-height:17px;color:#2a2616;background:rgba(255,238,190,.5); }
+#netRoom .kgo b { grid-row:1/3;grid-column:2; }
+#netRoom .nor { display:flex;align-items:center;gap:10px;margin:4px 0 0;color:var(--mute);font-size:13px; }
+#netRoom .nor::before, #netRoom .nor::after { content:"";flex:1;height:1px;background:var(--line); }
+#netRoom .njoin { display:flex;flex-direction:column;gap:8px; }
+#netRoom .njoin label { font-size:14px;color:var(--mute); }
+#netRoom .nrow { display:flex;gap:8px; }
+#netRoom .nrow input { flex:1;min-width:0;height:48px;padding:0 12px;border:1px solid #627254;border-radius:3px;background:#0c1612;color:var(--ink);
+  font:700 24px/1 Consolas,Menlo,monospace;letter-spacing:6px;text-transform:uppercase; }
+#netRoom .nrow input::placeholder { font:400 16px/1 var(--kfont);letter-spacing:1px;color:#5f6d63; }
+#netRoom .nrow input:focus { outline:2px solid var(--c1);outline-offset:1px; }
+#netRoom .nkey { min-height:48px;padding:0 16px;border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:#e7dcb9 padding-box;
+  color:#242c20;font:800 16px/1 var(--kfont);white-space:nowrap; }
+#netRoom .nqr { align-self:center;width:min(64vw,240px);aspect-ratio:1;padding:10px;background:#fff;border-radius:6px;box-shadow:0 0 0 1px #948b64,0 10px 30px #0008; }
+#netRoom .nqr svg { display:block;width:100%;height:100%; }
+#netRoom .ncode { margin:0;display:flex;flex-direction:column;align-items:center;gap:2px; }
+#netRoom .ncode small { font-size:13px;color:var(--mute); }
+#netRoom .ncode b { font:700 34px/1.1 Consolas,Menlo,monospace;letter-spacing:8px;color:var(--c0l);padding-left:8px; }
+#netRoom .nsay { min-height:22px;margin:0;text-align:center;font-size:15px;color:var(--c1l); }
+#netRoom .nsay:not(:empty)::before { content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--c1);vertical-align:1px;animation:netPulse 1.2s ease-in-out infinite; }
+@keyframes netPulse { 50% { opacity:.25; } }
+/* The opening page's third key: quieter than the two yellow ones (one main key a screen). */
+.kfriend { width:100%;margin-top:8px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:10px;min-height:52px;padding:0 10px;
+  border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:#e7dcb9 padding-box;color:#242c20;font-family:var(--kfont);text-align:left; }
+.kfriend span { font-size:18px;font-weight:900; }
+.kfriend small { font-size:12px;font-weight:700;color:#4b4a36; }
+.kfriend b { font-size:18px; }

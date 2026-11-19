@@ -7,6 +7,8 @@
 ```sh
 npm --prefix tools/netplay ci
 npm --prefix tools/netplay test
+# 网页要带好友对撞入口（WANWU_NETPLAY=1；不带就是评委版，不会去问房间服务）
+(cd web && WANWU_NETPLAY=1 WANWU_COMBAT=position npx vite build --mode judge --outDir dist-judge-position && node ../tools/import-item/pack-web-models.mjs dist-judge-position)
 PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/netplay start
 ```
 

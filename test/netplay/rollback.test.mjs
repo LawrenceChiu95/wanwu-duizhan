@@ -6,7 +6,10 @@ import {random} from '../../sim/math.js';
 const build = (parts, spread = 'e180') => ({parts: parts.map((p, i) => ({...p, mount: i ? spread : 'e0'}))});
 const pot = build([{item: 'fanshuo-pot', orient: 'out'}, {item: 'fanshuo-cushion', orient: 'hug'}]);
 const knife = build([{item: 'fanshuo-knife', orient: 'out'}, {item: 'fanshuo-plate', orient: 'hug'}]);
-const pvp = (seed, fighters) => createV3Match({...rules, seed, fighters, manual: {sides: ['input', 'input']}});
+// 好友对撞 plays the 评委版's 一机双人 rules: ceramic shards on, the faster lunge (web/src/main.js NET_OPTIONS).
+const net = {...rules, combatRules: {...rules.combatRules, ceramicShards: true, lungeTempo: 1.6}};
+let options = rules;
+const pvp = (seed, fighters) => createV3Match({...options, seed, fighters, manual: {sides: ['input', 'input']}});
 
 // Two people pressing at random: a 冲 or 挡 every 0.2–1.2 s each, the whole match.
 function script(seed) {
@@ -49,6 +52,19 @@ test('a match wound back and played again comes out byte for byte the same', asy
     assert.equal(first, -1, `seed ${seed}: hashes part at step ${first + 1}`);
     assert.equal(b.result, a.result, `seed ${seed} result`);
   }
+});
+
+test('…and so does one under the rules 好友对撞 plays, ceramic pieces and a seed the room hands out', async () => {
+  options = net;
+  try {
+    const cup = build([{item: 'fanshuo-cup', orient: 'out'}, {item: 'fanshuo-plate', orient: 'out'}]);
+    for (const [seed, fighters] of [[4271333276, [pot, cup]], [2654435769, [cup, knife]], [99, [cup, cup]]]) {
+      const presses = script(seed), a = await straight(seed, fighters, presses), b = await rolled(seed, fighters, presses);
+      const first = a.hashes.findIndex((h, i) => h !== b.hashes[i]);
+      assert.equal(first, -1, `seed ${seed}: hashes part at step ${first + 1}`);
+      assert.equal(b.result, a.result, `seed ${seed} result`);
+    }
+  } finally { options = rules; }
 });
 
 test('restoring rewinds a press that came after the snapshot', async () => {

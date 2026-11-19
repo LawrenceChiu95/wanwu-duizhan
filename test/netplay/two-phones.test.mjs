@@ -20,7 +20,7 @@ export async function duel({seed, fighters, rtt, jitter = 0, loss = 0, delay = 2
   let ms = 0, frame = 0;
   while (!phones.every(p => p.finished) && frame < 60 * 200) {
     frame++; ms = frame * 1000 / 60;
-    for (const n of net.filter(n => n.at <= ms)) phones[n.to].receive(n.msg, Math.round(rtt / 2 / (1000 / 120)));
+    for (const n of net.filter(n => n.at <= ms)) phones[n.to].receive(n.msg);
     net.splice(0, net.length, ...net.filter(n => n.at > ms));
     for (const [seat, p] of phones.entries()) {
       if (!p.m.done && p.present >= nextPress[seat]) { p.press(roll() < .6 ? 'dash' : 'block'); nextPress[seat] = p.present + 24 + Math.floor(roll() * 120); }
@@ -62,4 +62,23 @@ test('a late press is played again from its step, and a lie about the state is c
   s.tick(120);
   assert.equal(s.desync?.step, 60);
   m.free();
+});
+
+test('a state check that comes with the late press it hangs on waits for the replay, not a false 两边算岔了', async () => {
+  const [a, b] = await Promise.all([0, 1].map(async seat => new Session(await pvp(5, [pot, knife]), {seat})));
+  b.receive({k: 'in', u: 200, p: [], n: 0, a: 0, h: []});
+  b.tick(48);
+  a.receive(b.outgoing());
+  b.press('dash'); b.tick(130);
+  a.tick(90);
+  const stale = a.hashes.get(60);
+  b.receive(a.outgoing());
+  const told = b.outgoing();
+  assert.ok(told.h.some(([s, h]) => s === 60 && h !== stale), 'the press changed step 60');
+  a.receive(told);
+  assert.equal(a.desync, null, 'not before the replay');
+  a.tick(130);
+  assert.equal(a.desync, null);
+  assert.equal(a.hashes.get(120), b.hashes.get(120));
+  a.m.free(); b.m.free();
 });
