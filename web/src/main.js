@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {loadCatalog, registerItems} from '../../sim/index.js';
-import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS, COUNTER_CUE_LIT} from '../../sim/v3.js';
+import {simulateV3, createV3Match, loadV3Rules, mountExtents, openingDistance, warmEngine, POSITION_COMBAT_RULES, PLANAR_JUDGE_COMBAT_OPTIONS, MATERIAL_JUDGE_COMBAT_OPTIONS, PVP_COMBAT_OPTIONS, COUNTER_CUE_LIT, applyLungeTempo} from '../../sim/v3.js';
 import ladderJson from '../../data/foes.json';
 import {loadModels, prefetchModels, pictureUrl, stillUrl, outlinePath, itemThumbnail, setFileSource, lookEnvironment} from './models.js';
 import {LiveTurns} from './livecards.js';
@@ -180,6 +180,26 @@ async function main() {
   // 一机双人 plays its own rules (sim/v3.js PVP_COMBAT_OPTIONS), whatever the page's single-player ones are.
   let combatOptions = soloOptions;
   const ladderKey = combat ? `${LADDER_KEY}-position` : LADDER_KEY;
+  // 冲加快试玩 (远夏 4872800a, Elara 5c5bbeba): ?lunge=0|1|2 shows a switch on the bench for 现在 / 明显快 / 很快, both
+  // sides alike, from the next match. Without it the page plays as before and shows nothing.
+  const LUNGE_TIERS = [['现在', 1], ['明显快', 1.3], ['很快', 1.6]];
+  let lungeTier = q.has('lunge') && combat ? Math.max(0, Math.min(2, Number(q.get('lunge')) || 0)) : null, lungePill = null;
+  const showLungePill = on => {
+    if (lungeTier === null) return;
+    if (!lungePill) {
+      lungePill = document.createElement('button');
+      lungePill.id = 'lungeTier';
+      lungePill.style.cssText = 'position:fixed;z-index:60;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 134px);padding:6px 14px;border-radius:999px;border:1px solid #ff8a3d;background:rgba(10,14,22,.85);color:#fff;font:600 14px/1.2 system-ui,sans-serif;letter-spacing:1px';
+      lungePill.onclick = () => {
+        lungeTier = (lungeTier + 1) % LUNGE_TIERS.length;
+        lungePill.textContent = `冲速：${LUNGE_TIERS[lungeTier][0]} ▸`;
+        try { history.replaceState(null, '', `?${[...location.search.slice(1).split('&').filter(x => x && !x.startsWith('lunge=')), `lunge=${lungeTier}`].join('&')}`); } catch { /* sandboxed viewer */ }
+      };
+      document.body.append(lungePill);
+    }
+    lungePill.textContent = `冲速：${LUNGE_TIERS[lungeTier][0]} ▸`;
+    lungePill.hidden = !on;
+  };
   // shootReset is a one-off: dropped from the address at once so a reload keeps the fake's state.
   if (q.has('shootReset')) try { history.replaceState(null, '', `?${location.search.slice(1).split('&').filter(p => p && !p.startsWith('shootReset=')).join('&')}`); } catch { /* sandboxed viewer */ }
   // 评委版 (judge.js, task #4): 拍一件 talks to this origin's backend (Elara edd90212), with one real generation beside it.
@@ -201,6 +221,7 @@ async function main() {
     return {api, quota, items: sent ?? [], again: sent === null || Boolean(quota.late)};
   });
   const [items, rules, shot] = await Promise.all([loadCatalog(), loadV3Rules(), __JUDGE__ ? null : shoot0]);
+  const baseManual = {...rules.manual};
   const photoLater = __JUDGE__ && q.get('shoot') !== 'off'; // shootApi: the 评委版's photo items may still come in
   // Anything not shipped in the catalog came from 拍一件: the result tip compares it with the opponent (Elara 365a2667).
   // 评委版's replayed items (below) aren't the player's photos, so they don't count.
@@ -609,6 +630,7 @@ async function main() {
   $('pvpBack').onclick = () => { if (pick) setPick(0); else goHome(); };
   function showBuild() {
     phase = 'build';
+    showLungePill(true);
     stage.setHeat(0);
     pb = replay = null;
     live?.match.free();
@@ -1455,6 +1477,7 @@ async function main() {
     fought = pvp ? null : ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
     outcome = null;
     phase = 'computing';
+    showLungePill(false);
     el.go.disabled = true;
     el.foeSheet.hidden = true;
     $('foeBtn').disabled = true;
@@ -1484,7 +1507,11 @@ async function main() {
         ? {...opponent.ai, ...opponent.impactAi}
         : opponent.ai);
       const manual = pvp ? {sides: ['input', 'input']} : {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})};
-      const args = {fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(ceramic && {combatRules: {...combatOptions.combatRules, ceramicShards: true}}), manual};
+      const tempo = lungeTier === null ? 1 : LUNGE_TIERS[lungeTier][1];
+      const extra = {...(ceramic && {ceramicShards: true}), ...(tempo !== 1 && {lungeTempo: tempo})};
+      const args = {fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, ...(Object.keys(extra).length && {combatRules: {...combatOptions.combatRules, ...extra}}), manual};
+      // The page's own copy of the lunge (its streak, the reach arrow) plays at the same tempo.
+      Object.assign(rules.manual, applyLungeTempo({...baseManual}, tempo));
       const match = await createV3Match(args);
       if (id !== runId) { match.free(); return; }
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules, ...(combat && {combat})}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
