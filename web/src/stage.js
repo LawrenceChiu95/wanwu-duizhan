@@ -872,6 +872,7 @@ export class Stage {
     this.scene.add(this.foeRing);
     this.showMe = false;
     this.meSide = 0;  // the player's top (好友对撞's second phone plays side 1)
+    this.meBelow = false;  // the 「你」 tag under the player's top (好友对撞), not over it
     this.showBoth = false;
     // 一机双人's camera (photo-kitchen.js): straight down, this world direction up the screen; null for the usual one.
     this.topDown = null;

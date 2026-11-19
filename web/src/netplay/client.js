@@ -28,7 +28,11 @@ export class NetClient {
     this.pc = null;
     this.direct = false;
     this.retry = 0;
+    this.bad = 0;          // messages from the other phone dropped before they got to the game (not JSON, not an object)
   }
+
+  /** A message from the other phone that is not even the shape of one: dropped, counted, noted the first few times. */
+  dropped(why) { if (++this.bad <= 5 || this.bad % 100 === 0) console.warn(`好友对撞：丢掉对面一条消息（第 ${this.bad} 条，${why}）`); }
 
   /** The room this tab was last in (a reload or a lost connection picks it up again). */
   static kept() { try { return JSON.parse(sessionStorage.getItem(KEPT)); } catch { return null; } }
@@ -42,7 +46,7 @@ export class NetClient {
     this.closeSocket();
     const ws = this.ws = new WebSocket(this.url);
     ws.onopen = () => { this.send(first); this.ping(); };
-    ws.onmessage = ev => { let msg; try { msg = JSON.parse(ev.data); } catch { return; } this.receive(msg); };
+    ws.onmessage = ev => { let msg; try { msg = JSON.parse(ev.data); } catch { return; } if (msg !== null && typeof msg === 'object') this.receive(msg); };
     ws.onclose = () => {
       if (ws !== this.ws) return;
       this.ws = null;
@@ -131,7 +135,12 @@ export class NetClient {
     this.dc = dc;
     dc.onopen = () => { this.direct = true; this.on.link?.('direct'); };
     dc.onclose = () => { if (dc === this.dc) { this.direct = false; this.on.link?.('relay'); } };
-    dc.onmessage = ev => { let msg; try { msg = JSON.parse(ev.data); } catch { return; } if (msg.m === this.state?.matchId) this.on.game?.(msg.d, 'direct'); };
+    dc.onmessage = ev => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { this.dropped('not JSON'); return; }
+      if (msg === null || typeof msg !== 'object' || Array.isArray(msg) || !('d' in msg)) { this.dropped('no message in it'); return; }
+      if (msg.m === this.state?.matchId) this.on.game?.(msg.d, 'direct');
+    };
   }
   async offer() {
     const pc = this.peer();

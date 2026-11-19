@@ -318,9 +318,11 @@ export class Overlay {
       const r = Math.min(64, stage.screenRadius(me.center, stage.reachOf(me) + 0.1) * 0.95);
       let x = p.x;
       const foe = stage.fighters[1 - stage.meSide], q = {x: 0, y: 0}, seen = foe?.core.visible && stage.project(foe.center, q);
-      // 好友对撞's second phone: under its own top when the other is above it, so it never sits between the two (Elara faf1e410).
-      const under = Boolean(stage.meSide === 1 && seen && q.y < p.y);
-      const y = under ? Math.min(stage.view.h - stage.safeBottom() - 30, p.y + r + 4) : Math.max(stage.view.top + 34, p.y - r - 4);
+      // 好友对撞, both phones: under its own top, so it never sits between the two (Elara faf1e410, 445ffe3a); over it only
+      // when the top is too near the foot of the screen for it (10 px either way before it changes, so it never flickers).
+      const low = stage.view.h - stage.safeBottom() - 30;
+      const under = stage.meBelow && p.y + r + 4 <= low + (this.me.classList.contains('under') ? 10 : -10);
+      const y = under ? p.y + r + 4 : Math.max(stage.view.top + 34, p.y - r - 4);
       this.me.classList.toggle('under', under);
       if (seen && !under) {
         const fr = stage.screenRadius(foe.center, stage.coreRadius) + 4;

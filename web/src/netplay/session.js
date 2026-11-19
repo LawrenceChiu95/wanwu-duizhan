@@ -95,8 +95,11 @@ export class Session {
 
   outgoing() {
     const p = [];
-    for (let i = this.own.length - 1; i >= 0 && this.own[i][0] > this.peerAck; i--) p.push(this.own[i]);
-    p.sort((x, y) => x[0] - y[0]);
+    // own is in the order pressed (steps never go down): from the first one they lack, as it is, so two presses on one
+    // step reach them in the order they were made (Sol 0fb59413).
+    let i = this.own.length;
+    while (i > 0 && this.own[i - 1][0] > this.peerAck) i--;
+    for (; i < this.own.length; i++) p.push(this.own[i]);
     const h = [...this.hashes].filter(([s]) => s <= this.confirmed && s < this.rollbackFrom).slice(-4);
     this.stats.sent++;
     this.claimed = Math.max(this.claimed, this.present + this.delay - 1);

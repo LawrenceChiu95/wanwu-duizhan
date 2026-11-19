@@ -1816,6 +1816,7 @@ async function main() {
     stage.setFocusOn(null);
     stage.showMe = true;
     stage.meSide = net ? ME : 0;
+    stage.meBelow = Boolean(net);
     // 一机双人: straight down on the table, 2P's start up the screen and 1P's down it, so the two ends of the phone each
     // have their own half; both tops ringed and trailed alike.
     const [p0, p1] = r.meta.initial.map(f => new THREE.Vector3().fromArray(f.pos));
@@ -2819,7 +2820,7 @@ async function main() {
     replayJson: () => replay && JSON.stringify(replay),
     status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1 - ME) : null, me: live && !live.done ? live.match.control(ME) : null,
       feel: {reactions: test.feel.reactions, windups: test.feel.windups},
-      net: net && {seat: ME, room: friend?.state?.phase ?? null, matchId: live?.matchId ?? null, rtt: friend?.rtt ?? null, direct: Boolean(friend?.direct), stats: live?.session ? {...live.session.stats} : null,
+      net: net && {seat: ME, room: friend?.state?.phase ?? null, matchId: live?.matchId ?? null, rtt: friend?.rtt ?? null, direct: Boolean(friend?.direct), stats: live?.session ? {...live.session.stats, badLine: friend?.client?.bad ?? 0} : null,
         desync: live?.session?.desync ?? null, seenRollbacks: test.net.seen, seenMaxSteps: test.net.seenMax, advantage: live?.session?.advantage ?? null, oneWayMs: live?.session ? +(live.session.oneWay * rules.dt * 1000).toFixed(1) : null, confirmed: live?.session?.confirmed ?? null}, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },

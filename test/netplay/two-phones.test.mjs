@@ -162,3 +162,19 @@ test('a broken or made-up message from the other phone is dropped and counted, a
   assert.equal(s.present, 20);
   s.m.free();
 });
+
+test('two presses on one step reach the other phone in the order they were made', async () => {
+  const [a, b] = await Promise.all([0, 1].map(async seat => new Session(await pvp(11, [pot, knife]), {seat})));
+  a.tick(40); b.tick(40);
+  a.press('dash'); a.press('block');
+  assert.deepEqual(a.outgoing().p.map(x => x[1]), ['dash', 'block']);
+  b.receive(a.outgoing());
+  assert.deepEqual(b.theirs.get(42), ['dash', 'block']);
+  for (const s of [a, b]) { s.receive((s === a ? b : a).outgoing()); s.tick(120); }
+  a.receive(b.outgoing()); b.receive(a.outgoing()); a.tick(120); b.tick(120);
+  assert.equal(a.m.hash(), b.m.hash());
+  // Every event of the match so far, one by one, the same on both.
+  assert.equal(JSON.stringify(b.m.events), JSON.stringify(a.m.events));
+  assert.ok(a.m.events.some(e => e.side === 0 && e.type === 'dash'), 'the 冲 was played');
+  a.m.free(); b.m.free();
+});
