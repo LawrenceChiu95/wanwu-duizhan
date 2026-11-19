@@ -12,9 +12,16 @@
  *   u: every press of mine up to this step is in p (or there was none); p: my presses after a (the steps the other phone
  *   already has), each step's full list; n: the step I am on; a: up to which step I have all of theirs; v: how far
  *   ahead of their last n I was when it came (both phones' v together say who is ahead, whatever the delay); h: state hashes
- *   of steps whose presses both phones have (sim/v3.js hash()).
+ *   of steps whose presses both phones have (sim/v3.js hash()); f: p is every press of mine since the start (asked for
+ *   with {k:'again'} by a phone that reloaded its page, which takes nothing else until it has it).
+ *
+ * Whatever the other phone sends is checked before it is taken: a message that is not of this shape, or tells of steps
+ * no phone could be on yet, is dropped and counted (stats.bad), and the next one carries the same again.
  */
 export const ACTIONS = ['dash', 'block'];
+// How far past the last step I have told of the other phone can be: it waits at maxRollback (≤ 48) past mine, plus its
+// delay; this is 2 s of steps, well clear of that and far short of anything that could hurt.
+const AHEAD = 240;
 
 export class Session {
   constructor(match, {seat, delay = 2, maxRollback = 48, hashEvery = 60, snapEvery = 4} = {}) {
@@ -44,7 +51,32 @@ export class Session {
     // Once before the fight, so the first real rollback is not also the first time the page ever goes back (slow).
     match.restore(this.snaps.get(match.step));
     this.log = [];              // every press both ways, for a desync report
+    this.own = [];              // [step, action] of every press of mine, in order (for a reloaded other phone)
+    this.first = match.step;
+    this.claimed = match.step;  // the furthest u I have sent: no press of mine may land at or before it any more
+    this.awaitFull = false;     // reloaded: take only a message with every press of theirs (f)
+    this.peerFull = null;       // that message's u and a, once it came
+    this.stats.bad = 0;
+    this.lastBad = null;
   }
+
+  /**
+   * This page was reloaded mid-match: my presses as kept on the phone ([step, action] in order) and the u I had told of
+   * (kept.n + delay - 1). From here only a message with every press of theirs is taken (ask with {k:'again'}).
+   */
+  resume(presses, present) {
+    for (const [step, action] of presses) {
+      if (!Number.isInteger(step) || !ACTIONS.includes(action)) continue;
+      this.mine.set(step, [...this.mine.get(step) ?? [], action]);
+      this.own.push([step, action]);
+      this.log.push([step, this.seat, action]);
+    }
+    this.claimed = Math.max(this.claimed, present + this.delay - 1);
+    this.awaitFull = true;
+  }
+
+  /** The other phone reloaded: every press of mine goes again, in each message until it says it has them. */
+  again() { this.peerAck = this.first - 1; }
 
   /** Up to which step both phones' presses are known: no rollback can reach it any more. */
   get confirmed() { return Math.min(this.present, this.remoteUpto); }
@@ -54,30 +86,43 @@ export class Session {
   /** My press now: it lands `delay` steps on. Returns that step. */
   press(action) {
     if (!ACTIONS.includes(action)) throw Error(`bad action ${action}`);
-    const step = this.present + this.delay;
+    const step = Math.max(this.present + this.delay, this.claimed + 1);
     this.mine.set(step, [...this.mine.get(step) ?? [], action]);
+    this.own.push([step, action]);
     this.log.push([step, this.seat, action]);
     return step;
   }
 
   outgoing() {
     const p = [];
-    for (const [step, actions] of [...this.mine].sort((x, y) => x[0] - y[0])) if (step > this.peerAck) for (const a of actions) p.push([step, a]);
+    for (let i = this.own.length - 1; i >= 0 && this.own[i][0] > this.peerAck; i--) p.push(this.own[i]);
+    p.sort((x, y) => x[0] - y[0]);
     const h = [...this.hashes].filter(([s]) => s <= this.confirmed && s < this.rollbackFrom).slice(-4);
     this.stats.sent++;
-    return {k: 'in', u: this.present + this.delay - 1, p, n: this.present, a: this.remoteUpto, v: this.lead ?? 0, h};
+    this.claimed = Math.max(this.claimed, this.present + this.delay - 1);
+    return {k: 'in', u: this.claimed, p, n: this.present, a: this.awaitFull ? this.first - 1 : this.remoteUpto, v: this.lead ?? 0, h, ...(this.peerAck < this.first && {f: 1})};
   }
 
+  /** A message from the other phone. Returns false (and counts it) when it was dropped. */
   receive(msg) {
-    if (msg?.k !== 'in' || !Number.isInteger(msg.u) || !Array.isArray(msg.p)) return;
+    const bad = this.wrong(msg);
+    if (bad) { this.stats.bad++; this.lastBad = bad; return false; }
+    if (this.awaitFull) {
+      if (!msg.f) return false;
+      this.awaitFull = false;
+      this.peerFull = {u: msg.u, a: msg.a ?? this.first};
+      // They had mine up to a: none of mine may land there any more, though this page has not got that far yet.
+      this.claimed = Math.max(this.claimed, Math.min(msg.a ?? this.first, this.claimed + AHEAD));
+    }
     this.stats.received++;
-    if (Number.isInteger(msg.a) && msg.a > this.peerAck) {
-      this.peerAck = msg.a;
+    // How far they have mine: never taken past what I told of.
+    if (msg.a !== undefined && Math.min(msg.a, this.claimed) > this.peerAck) {
+      this.peerAck = Math.min(msg.a, this.claimed);
       for (const s of this.mine.keys()) if (s <= this.peerAck && s < this.present - this.maxRollback) this.mine.delete(s);
     }
     const told = new Map();
     for (const [step, action] of msg.p) {
-      if (!Number.isInteger(step) || !ACTIONS.includes(action) || step <= this.remoteUpto) continue;
+      if (step <= this.remoteUpto) continue;
       told.set(step, [...told.get(step) ?? [], action]);
     }
     for (const [step, actions] of told) {
@@ -94,10 +139,29 @@ export class Session {
         if (!told.has(s) && this.used.has(s) && this.used.get(s) !== key(this.theirs.get(s))) this.rollbackFrom = Math.min(this.rollbackFrom, s);
       this.remoteUpto = msg.u;
     }
-    if (Number.isInteger(msg.n)) this.lead = this.present - msg.n;
-    if (Number.isFinite(msg.v)) this.remoteLead = msg.v;
+    if (msg.n !== undefined) this.lead = this.present - msg.n;
+    if (msg.v !== undefined) this.remoteLead = msg.v;
     for (const [s, h] of msg.h ?? []) this.theirHashes.set(s, h);
     this.check();
+    return true;
+  }
+
+  /** Why a message from the other phone cannot be taken, or null. */
+  wrong(msg) {
+    if (msg === null || typeof msg !== 'object' || msg.k !== 'in') return 'not a press message';
+    const top = this.claimed + AHEAD;
+    const step = x => Number.isSafeInteger(x) && x >= this.first - 1 && x <= top;
+    if (!step(msg.u)) return `u ${msg.u}`;
+    if (!Array.isArray(msg.p) || msg.p.length > 2048) return 'p';
+    for (const x of msg.p) if (!Array.isArray(x) || x.length !== 2 || !step(x[0]) || x[0] > msg.u + this.delay + 8 || !ACTIONS.includes(x[1])) return `press ${JSON.stringify(x)?.slice(0, 40)}`;
+    if (msg.n !== undefined && !step(msg.n)) return `n ${msg.n}`;
+    if (msg.a !== undefined && !step(msg.a)) return `a ${msg.a}`;
+    if (msg.v !== undefined && !(Number.isFinite(msg.v) && Math.abs(msg.v) <= 100000)) return `v ${msg.v}`;
+    if (msg.h !== undefined) {
+      if (!Array.isArray(msg.h) || msg.h.length > 16) return 'h';
+      for (const x of msg.h) if (!Array.isArray(x) || x.length !== 2 || !step(x[0]) || !Number.isFinite(x[1])) return `hash ${JSON.stringify(x)?.slice(0, 40)}`;
+    }
+    return null;
   }
 
   /**

@@ -15,7 +15,7 @@ import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
 import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
 import {Session} from './netplay/session.js';
-import {createFriend, available as friendOn, buildVersion, digest, shareable} from './netplay/friend.js';
+import {createFriend, available as friendOn, buildVersion, digest, keptRoom, shareable} from './netplay/friend.js';
 
 const $ = id => document.getElementById(id);
 // Inside another page (ModelScope's studio frame), whose floating ball sits over our right edge: the sheets keep below it (style.css).
@@ -653,7 +653,7 @@ async function main() {
   })();
   async function openFriend(code = null) {
     friend ??= createFriend(el.app, {version: buildVersion(), onBench: netBench, onPrepare: netPrepare, onCountdown: netCountdown,
-      onState: netState, onGame: netGame, onHome: netHome, onReadyRefused: netRefused});
+      onState: netState, onGame: netGame, onHome: netHome, onReadyRefused: netRefused, onReload: netReload});
     if (pvp) await setPvp(false);
     // Until the other phone's build comes, its place on the bench is 一机双人's 2P default (the plate says 对面在选装).
     if (!net) { soloFoe = FOE; FOE = structuredClone(DEFAULT_P2); }
@@ -723,6 +723,49 @@ async function main() {
     }
   }
   function netCountdown(st) { if (live?.matchId !== st.matchId) start(st); }
+  // A reload mid-match (Elara db4ed438 ①): this phone's presses and step are kept on it (netKeep); the match is made again
+  // from the room's builds and seed, the other phone's presses asked for, and played up to where it was (phase 'restore').
+  // The room holds the match paused until then (Sol 1701f8e0). A match already over shows how it ended.
+  const NET_KEPT = 'wanwu-netplay-match';
+  function netKept(st) { try { const k = JSON.parse(sessionStorage.getItem(NET_KEPT)); return k?.code === st.code && k.matchId === st.matchId && k.seat === friend.seat ? k : null; } catch { return null; } }
+  function netKeep(force = false) {
+    const s = live?.session;
+    if (!s || !net) return;
+    if (!force && s.own.length === net.keptPresses && s.present - (net.keptAt ?? -Infinity) < 15) return;
+    net.keptPresses = s.own.length; net.keptAt = s.present;
+    try { sessionStorage.setItem(NET_KEPT, JSON.stringify({code: friend.state?.code, matchId: live.matchId, seat: ME, n: s.present, p: s.own})); } catch { /* private browsing: no pick-up on reload */ }
+  }
+  addEventListener('pagehide', () => { if (phase === 'play') netKeep(true); });
+  function netReload(st) {
+    ME = friend.seat;
+    el.app.classList.toggle('seat1', ME === 1);
+    const kept = netKept(st);
+    if (st.phase === 'finished' && kept) { netEnd(st); return null; }
+    if (!kept || !['playing', 'paused'].includes(st.phase) || !st.prepare) return null;
+    return (async () => {
+      if (!await netPrepare(st)) return;
+      await new Promise(done => { net.restored = done; start(st, kept); });
+    })();
+  }
+  // Each frame of phase 'restore': ask for the other phone's presses until they come, then play up to the step this page
+  // was on (and the other phone's), a stretch a frame, and go on with the fight from there, nothing shown in between.
+  function netRestore(dt) {
+    const s = live.session, m = live.match;
+    if (s.peerFull === null) {
+      if ((net.asked = (net.asked ?? 0.3) + dt) >= 0.3) { net.asked = 0; friend.game({k: 'again'}); }
+      return;
+    }
+    const target = Math.max(live.restore, s.peerFull.u - s.delay + 1, s.peerFull.a - s.delay + 1);
+    s.maxRollback = 48;
+    s.tick(Math.min(target, s.present + 480));
+    if (s.present < target && !m.done) return;
+    pb.sync(false);
+    pb.seek(Math.max(0, m.t - LIVE_LEAD));
+    el.busy.hidden = true;
+    phase = 'play';
+    netKeep(true);
+    net.restored?.(); net.restored = null;
+  }
   function netState(st) {
     if (!net) return;
     net.state = st;
@@ -730,7 +773,18 @@ async function main() {
     // Ended by the room, not by the fight: the other phone gone too long, or the two phones worked out different matches.
     if (st.phase === 'finished' && st.reason !== 'complete' && live?.matchId === st.matchId && phase !== 'result') netEnd(st);
   }
-  function netGame(d) { if (live?.session && d?.k === 'in') live.session.receive(d); }
+  // The other phone's messages: presses (a broken one is dropped by the session and noted here), and a reloaded one asking
+  // for all of mine again.
+  function netGame(d) {
+    const s = live?.session;
+    if (!s) return;
+    try {
+      if (d?.k === 'again') { s.again(); netSend(); return; }
+      const bad = s.stats.bad;
+      s.receive(d);
+      if (s.stats.bad > bad && (s.stats.bad <= 5 || s.stats.bad % 100 === 0)) console.warn(`好友对撞：丢掉对面一条消息（第 ${s.stats.bad} 条，${s.lastBad}）`);
+    } catch (e) { s.stats.bad++; console.warn('好友对撞：对面一条消息没处理好', e); }
+  }
   // Every frame of a match, and at once on a press: each message holds everything the other phone may still lack.
   function netSend() { if (live?.session && net?.state?.matchId === live.matchId && net.state.phase !== 'finished') friend.game(live.session.outgoing()); }
   const netWho = () => [0, 1].map(sideName);
@@ -755,6 +809,7 @@ async function main() {
     s.maxRollback = Math.min(48, 14 + Math.ceil(s.oneWay));
     const want = pb.t + dt * k;
     const out = s.tick(Math.ceil((want + LIVE_LEAD) / rules.dt - 1e-9));
+    netKeep();
     if (out.rolledTo !== undefined) {
       // A rollback reaching back past what is on screen: what was shown since may change under the player's eyes.
       if (out.t < pb.t - 1e-9) { test.net.seen++; test.net.seenMax = Math.max(test.net.seenMax, Math.round((pb.t - out.t) / rules.dt)); }
@@ -798,7 +853,8 @@ async function main() {
   }
   // The room ended the match: a short card saying why, the way home or into the next.
   function netEnd(st) {
-    live.done = true;
+    if (live) live.done = true;
+    net.restored?.(); net.restored = null;
     showPads(false);
     endNudge();
     netLine(null);
@@ -807,7 +863,7 @@ async function main() {
     const desync = st.reason === 'desync', w = st.winner;
     el.winnerLine.textContent = desync ? '这局不算' : w === ME ? '你赢了' : w === null ? '平局' : '你输了';
     el.result.className = desync || w === null ? 'draw' : w === ME ? 'win' : 'lose';
-    el.whyLine.textContent = desync ? '两台手机算出来的不一样，这局作废了。记录已经交上去查' : w === ME ? '对面掉线太久，算你赢' : '你离开太久，算对面赢';
+    el.whyLine.textContent = desync ? '两台手机算出来的不一样，这局作废了。记录已经交上去查' : st.reason === 'complete' ? '这局在你刷新时打完了' : w === ME ? '对面掉线太久，算你赢' : w === null ? '两边都掉线太久' : '你离开太久，算对面赢';
     el.tipLine.hidden = true;
     $('replayBtn').hidden = true;
     showOutcome({act: 'again'});
@@ -1680,7 +1736,7 @@ async function main() {
   // ---------- match ----------
   let runId = 0;
   // ns: 好友对撞's room state at its countdown; the match is the room's (its seed, both builds as the room checked them).
-  async function start(ns = null) {
+  async function start(ns = null, restore = null) {
     if (!ns && (phase !== 'build' || !el.error.hidden)) return;
     const id = ++runId;
     if (ns) seed = ns.seed; else if (!fixedSeed) seed = randomSeed();
@@ -1730,7 +1786,8 @@ async function main() {
       r = {meta: {initial: match.initial, duration: Infinity, rules: match.rules, ...(combat && {combat})}, frames: match.frames, events: match.events, decisive: {eventIndex: null, why: null}};
       live = {match, done: false, args};
       // 好友对撞: this phone's presses and the other's go through the session (rollback, netplay/session.js).
-      if (ns) { Object.assign(live, {matchId: ns.matchId, startAt: ns.startAt, session: new Session(match, {seat: ME})}); net.charges = new Set(); net.hold = null; }
+      if (ns) { Object.assign(live, {matchId: ns.matchId, startAt: ns.startAt, session: new Session(match, {seat: ME})}); net.charges = new Set(); net.hold = null; net.keptPresses = net.keptAt = null; }
+      if (restore) { live.session.resume(restore.p, restore.n); live.restore = restore.n; }
     } else {
       // Yield to the page every few hundred physics steps so the preview keeps spinning.
       r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, onProgress: () => new Promise(res => setTimeout(res, 0))});
@@ -1788,6 +1845,13 @@ async function main() {
     stage.updateCamera(0, true);
     stage.setHeat(0);
     phase = 'ready';
+    if (restore) {
+      phase = 'restore';
+      el.busyText.textContent = '回到对局…';
+      el.busy.classList.remove('say');
+      el.busy.hidden = false;
+      return;
+    }
     // Back the right way for the fight; 换个装法再打 afterwards starts again from 1P.
     if (pvp) { pick = 0; el.app.style.transition = 'none'; el.app.classList.remove('turned'); void el.app.offsetWidth; el.app.style.transition = ''; }
     // 准备 then 开打！ before anything counts, so a hand still on its way is not behind: both ends in 一机双人 (第二轮 ①), the
@@ -2806,7 +2870,7 @@ async function main() {
     if (phase === 'loading') return;
     // 好友对撞: the other phone keeps hearing from this one until the room has the match settled (its last presses and
     // checks may still be on their way); in play netStep sends.
-    if (live?.session && phase !== 'play' && phase !== 'ready') netSend();
+    if (live?.session && phase !== 'play' && phase !== 'ready' && phase !== 'restore') netSend();
     if (phase === 'play' && teach) dt *= teachScale();
     for (const n of lateNums) if ((n.wait -= dt) <= 0) overlay.number(...n.broke);
     lateNums = lateNums.filter(n => n.wait > 0);
@@ -2814,6 +2878,9 @@ async function main() {
     if (phase === 'build' || phase === 'computing') {
       spinAngle += dt * PREVIEW_SPIN;
       stage.pose(previewState());
+    } else if (phase === 'restore') {
+      netRestore(dt);
+      stage.pose(pb.state);
     } else if (phase === 'ready') {
       // 好友对撞: 准备 → 开打！ on the room's clock, so both phones let the fight go at the same moment.
       if (live?.session) { const age = (friend.serverNow() - live.startAt) / 1000; if (age > readyAge) readyStep(age - readyAge); netSend(); }
@@ -2938,7 +3005,9 @@ async function main() {
   if (__NETPLAY__) friendOn().then(on => {
     if (!on) return;
     judge?.friendKey?.(() => whenSetUp.then(() => openFriend()));
-    if (roomArg || q.get('net') === '1') { judge?.skipIntro(); openFriend(roomArg); }
+    // A reload in a room (the tab keeps its seat): back into it, and into the match if one is on.
+    const kept = roomArg ? null : keptRoom();
+    if (roomArg || kept || q.get('net') === '1') { judge?.skipIntro(); openFriend(roomArg ?? kept?.code ?? null); }
   });
   requestAnimationFrame(frame);
   if (q.get('autoplay') === '1') start();

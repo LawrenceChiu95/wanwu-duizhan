@@ -35,7 +35,8 @@ export class NetClient {
 
   create() { this.left = false; return this.connect({t: 'create', version: this.version}); }
   join(code) { this.left = false; return this.connect({t: 'join', code: String(code).trim().toUpperCase(), version: this.version}); }
-  resume(code, token) { this.left = false; this.code = code; this.token = token; return this.connect({t: 'resume', code, token, version: this.version}); }
+  /** active false: a reloaded page, which says when it is back in the match (presence) once it has put it back. */
+  resume(code, token, active) { this.left = false; this.code = code; this.token = token; return this.connect({t: 'resume', code, token, version: this.version, ...(active !== undefined && {active})}); }
 
   connect(first) {
     this.closeSocket();

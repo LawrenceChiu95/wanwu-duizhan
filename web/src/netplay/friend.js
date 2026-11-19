@@ -24,6 +24,9 @@ export async function digest(value) {
   return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** The room this tab was in (sessionStorage): a reloaded page goes back into it. */
+export const keptRoom = () => NetClient.kept();
+
 export async function available() {
   try { const r = await fetch('/api/netplay/health', {cache: 'no-store'}); return r.ok && (await r.json())?.status === 'ok'; } catch { return false; }
 }
@@ -54,7 +57,12 @@ const ROOM_HTML = `
 
 /**
  * hooks: {version, onBench(state), onPrepare(state) → Promise (models in), onCountdown(state), onState(state, was),
- * onGame(d, via), onLink(kind), onHome()}. Returns the room's controls.
+ * onGame(d, via), onLink(kind), onHome(), onReload(state) → a Promise while it puts a match back after a reload, else
+ * null}. Returns the room's controls.
+ *
+ * What this phone tells the room (准备, 模型到了, the result, 再来一局) is told again until the room's state says it has
+ * it (seats[].ready, assetsReady, resultReady, rematchReady, Sol 1701f8e0): a message lost with the connection is made
+ * up on the state the room sends when it is back.
  */
 export function createFriend(app, hooks) {
   const box = document.createElement('section');
@@ -64,7 +72,9 @@ export function createFriend(app, hooks) {
   app.append(box);
   const $ = id => box.querySelector(`#${id}`);
   const say = text => { $('netSay').textContent = text; };
-  let client = null, phase = null, prepared = null, readySent = null;
+  let client = null, phase = null, prepared = null, readySent = null, reloaded = false, restoring = false;
+  // What this phone has told the room for the match it is on, to tell again if the room's state does not have it.
+  let told = {};
 
   const link = code => `${location.origin}${location.pathname}?room=${code}`;
   function showHost(code) {
@@ -83,7 +93,7 @@ export function createFriend(app, hooks) {
   $('netBack').onclick = () => { leave(); hooks.onHome(); };
 
   const ERRORS = {
-    version: '两台手机的版本不一样：两边都刷新一下再进', room: '没有这个房间，或者已经关了', full: '这个房间已经有两个人了',
+    version: '两边版本不同，请都刷新一下', room: '没有这个房间，或者已经关了', full: '这个房间已经有两个人了',
     session: '房间连不上了，重新开一个吧', busy: '房间太多了，稍后再开', item: '有件东西对面拿不到，换一件再准备',
     'shoot-offline': '拍照服务暂时连不上，先用内置的件', parts: '这套装法不行，换一下再准备'
   };
@@ -97,7 +107,7 @@ export function createFriend(app, hooks) {
       error: code => {
         say(ERRORS[code] ?? `出错了（${code}）`);
         if (['room', 'full', 'session', 'version'].includes(code) && phase !== 'playing') { $('netStart').hidden = false; $('netHost').hidden = true; }
-        if (['item', 'shoot-offline', 'parts'].includes(code)) { readySent = null; hooks.onReadyRefused?.(ERRORS[code]); }
+        if (['item', 'shoot-offline', 'parts'].includes(code)) { readySent = null; told.ready = null; hooks.onReadyRefused?.(ERRORS[code]); }
       }
     }});
     how(client);
@@ -107,9 +117,29 @@ export function createFriend(app, hooks) {
   async function onState(state, was) {
     const fresh = was?.matchId !== state.matchId;
     phase = state.phase;
-    if (fresh) { prepared = null; readySent = null; }
+    if (fresh) { prepared = null; readySent = null; told = {}; }
+    const mine = client.seat, other = state.seats[1 - mine], me = state.seats[mine];
+    // A reloaded page came back in with the room holding its seat away (resume active:false): a match it was in is put
+    // back first (main.js), then it is here (presence), and the room plays on.
+    if (reloaded) {
+      reloaded = false;
+      const back = hooks.onReload?.(state);
+      if (back) {
+        hooks.onState?.(state, was);
+        restoring = true;
+        try { await back; } finally { restoring = false; }
+        if (client?.state) client.send({t: 'presence', active: document.visibilityState === 'visible'});
+        return;
+      }
+      client.send({t: 'presence', active: document.visibilityState === 'visible'});
+    }
     hooks.onState?.(state, was);
-    const mine = client.seat, other = state.seats[1 - mine];
+    if (me && state.matchId === told.matchId) {
+      if (told.ready && state.phase === 'loadout' && !me.ready) client.send(told.ready);
+      if (told.assets && state.phase === 'preparing' && !me.assetsReady) client.send(told.assets);
+      if (told.result && ['playing', 'paused'].includes(state.phase) && !me.resultReady) client.send(told.result);
+      if (told.rematch && state.phase === 'finished' && !me.rematchReady) client.send(told.rematch);
+    }
     if (state.phase === 'waiting') {
       box.hidden = false;
       // The friend who came in by the link waits here for the room's maker (Sol #156: they can come in while it is away).
@@ -117,11 +147,13 @@ export function createFriend(app, hooks) {
       say(mine === 1 && !state.seats[0]?.connected ? '等房主回来…' : other?.connected ? '' : '等朋友进来…');
       return;
     }
-    if (state.phase === 'loadout') { box.hidden = true; hooks.onBench(state); return; }
+    // Past the waiting the room's page is gone (a reloaded page comes back in on it, whatever the room is at).
+    box.hidden = true;
+    if (state.phase === 'loadout') { hooks.onBench(state); return; }
     if (state.phase === 'preparing' && state.prepare && prepared !== state.matchId) {
       prepared = state.matchId;
       const ok = await hooks.onPrepare(state);
-      if (ok && client.state?.matchId === state.matchId) client.send({t: 'assetsReady', matchId: state.matchId, hash: state.prepare.hash});
+      if (ok && client.state?.matchId === state.matchId) tell('assets', {t: 'assetsReady', matchId: state.matchId, hash: state.prepare.hash});
       return;
     }
     if (state.phase === 'countdown' && (fresh || was?.phase !== 'countdown' || was.startAt !== state.startAt)) hooks.onCountdown(state);
@@ -133,7 +165,7 @@ export function createFriend(app, hooks) {
     $('netHost').hidden = true;
     say('');
     const kept = NetClient.kept();
-    if (code && kept?.code === code) connect(c => c.resume(kept.code, kept.token));
+    if (code && kept?.code === code) { reloaded = true; connect(c => c.resume(kept.code, kept.token, false)); }
     else if (code) { say('进房中…'); connect(c => c.join(code)); }
   }
   $('netCreate').onclick = () => { say('开房中…'); connect(c => c.create()); };
@@ -144,10 +176,11 @@ export function createFriend(app, hooks) {
     say('进房中…');
     connect(c => c.join(code));
   };
-  function leave() { client?.leave(); client = null; phase = null; box.hidden = true; }
+  function leave() { client?.leave(); client = null; phase = null; told = {}; box.hidden = true; }
+  function tell(what, msg) { told = {...told.matchId === msg.matchId ? told : {matchId: msg.matchId}, [what]: msg}; client.send(msg); }
   // Off the page (锁屏, 切走): the room pauses the fight for both; back, it carries on (工作包 5).
   document.addEventListener('visibilitychange', () => {
-    if (!client?.state || !['countdown', 'playing', 'paused'].includes(client.state.phase)) return;
+    if (!client?.state || reloaded || restoring || !['countdown', 'playing', 'paused'].includes(client.state.phase)) return;
     client.send({t: 'presence', active: document.visibilityState === 'visible'});
   });
 
@@ -161,13 +194,15 @@ export function createFriend(app, hooks) {
       const s = client?.state;
       if (!s || s.phase !== 'loadout' || readySent === s.matchId) return false;
       readySent = s.matchId;
-      client.send({t: 'ready', matchId: s.matchId, parts, ...(shootSession && {shootSession})});
+      tell('ready', {t: 'ready', matchId: s.matchId, parts, ...(shootSession && {shootSession})});
       return true;
     },
     get readySent() { return readySent === client?.state?.matchId; },
-    result(winner, hash) { const s = client?.state; if (s) client.send({t: 'result', matchId: s.matchId, winner, hash}); },
+    result(winner, hash) { const s = client?.state; if (s) tell('result', {t: 'result', matchId: s.matchId, winner, hash}); },
     desync(step, log) { const s = client?.state; if (s) client.send({t: 'desync', matchId: s.matchId, step, log}); },
-    rematch() { const s = client?.state; if (s?.phase === 'finished') client.send({t: 'rematch', matchId: s.matchId}); },
+    rematch() { const s = client?.state; if (s?.phase === 'finished') tell('rematch', {t: 'rematch', matchId: s.matchId}); },
+    /** The room this tab was in when its page was last loaded (a reload goes back into it). */
+    kept: () => NetClient.kept(),
     game(d) { return client?.game(d); },
     serverNow() { return client?.serverNow() ?? Date.now(); },
     get rtt() { return client?.rtt ?? null; },

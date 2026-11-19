@@ -82,3 +82,83 @@ test('a state check that comes with the late press it hangs on waits for the rep
   assert.equal(a.hashes.get(120), b.hashes.get(120));
   a.m.free(); b.m.free();
 });
+
+/**
+ * A page reloaded mid-match (Elara db4ed438 ①): its presses and step kept on the phone, a new match from the start; it
+ * asks the other phone for all of its presses ({k:'again'}), plays up to where it was, and the match goes on. The room
+ * has the match paused meanwhile, so neither phone plays on until the reloaded one is back.
+ */
+async function reloadDuel({seed, fighters, rtt, loss = 0, at = 600, who = [1]}) {
+  const roll = random(seed ^ 0x51ed27), net = [];
+  const phones = await Promise.all([0, 1].map(async seat => new Session(await pvp(seed, fighters), {seat})));
+  const nextPress = [0, 1].map(() => 40 + Math.floor(roll() * 60));
+  const back = [null, null];
+  let ms = 0, frame = 0, reloaded = false;
+  while (!phones.every(p => p.finished) && frame < 60 * 200) {
+    frame++; ms = frame * 1000 / 60;
+    if (!reloaded && phones[0].present >= at) {
+      reloaded = true;
+      for (const seat of who) {
+        const old = phones[seat], kept = {p: structuredClone(old.own), n: old.present};
+        old.m.free();
+        const s = phones[seat] = new Session(await pvp(seed, fighters), {seat});
+        s.resume(kept.p, kept.n);
+        back[seat] = kept.n;
+      }
+      net.length = 0;  // what was on its way to the old page is gone with it
+    }
+    for (const n of net.filter(n => n.at <= ms)) {
+      const p = phones[n.to];
+      if (n.msg.k === 'again') { p.again(); net.push({to: 1 - n.to, at: ms + rtt / 2, msg: structuredClone(p.outgoing())}); }
+      else p.receive(n.msg);
+    }
+    net.splice(0, net.length, ...net.filter(n => n.at > ms));
+    const restoring = back.some(x => x !== null);
+    for (const [seat, p] of phones.entries()) {
+      if (back[seat] !== null) {
+        if (p.peerFull === null) { if (frame % 10 === 0) net.push({to: 1 - seat, at: ms + rtt / 2, msg: {k: 'again'}}); continue; }
+        p.tick(Math.max(back[seat], p.peerFull.u - p.delay + 1, p.peerFull.a - p.delay + 1));
+        back[seat] = null;
+        continue;
+      }
+      if (restoring) continue;  // paused by the room
+      if (!p.m.done && p.present >= nextPress[seat]) { p.press(roll() < .6 ? 'dash' : 'block'); nextPress[seat] = p.present + 24 + Math.floor(roll() * 120); }
+      p.tick(p.present + 2);
+      if (roll() >= loss) net.push({to: 1 - seat, at: ms + rtt / 2, msg: structuredClone(p.outgoing())});
+    }
+  }
+  return phones;
+}
+
+for (const [name, who] of [['the guest', [1]], ['the host', [0]], ['both', [0, 1]]]) {
+  test(`${name} reloading mid-match plays on into the same match`, async () => {
+    for (const [seed, fighters] of [[7, [pot, knife]], [42, [knife, pot]]]) {
+      const [a, b] = await reloadDuel({seed, fighters, rtt: 80, loss: .03, who});
+      assert.ok(a.finished && b.finished, 'both finished');
+      assert.equal(a.desync, null); assert.equal(b.desync, null);
+      const ra = JSON.stringify(a.m.result());
+      assert.equal(ra, JSON.stringify(b.m.result()), `seed ${seed}: the phones differ`);
+      const log = [...a.own.map(([s, x]) => [s, 0, x]), ...b.own.map(([s, x]) => [s, 1, x])];
+      assert.equal(JSON.stringify((await straight(seed, fighters, log)).result()), ra, `seed ${seed}: not the straight match`);
+      assert.ok(a.own.some(([s]) => s > 620) && b.own.some(([s]) => s > 620), 'both pressed after the reload');
+      a.m.free(); b.m.free();
+    }
+  });
+}
+
+test('a broken or made-up message from the other phone is dropped and counted, and the next good one is taken', async () => {
+  const s = new Session(await pvp(9, [pot, knife]), {seat: 0});
+  const junk = [null, 7, 'in', {}, {k: 'in'}, {k: 'in', u: 1.5, p: []}, {k: 'in', u: 1e12, p: []}, {k: 'in', u: -9, p: []},
+    {k: 'in', u: 10, p: 'dash'}, {k: 'in', u: 10, p: [[5]]}, {k: 'in', u: 10, p: [[5, 'kick']]}, {k: 'in', u: 10, p: [[5000, 'dash']]},
+    {k: 'in', u: 10, p: [], n: 'x'}, {k: 'in', u: 10, p: [], v: Infinity}, {k: 'in', u: 10, p: [], h: [[60]]},
+    {k: 'in', u: 10, p: [], h: [[60, 'abc']]}, {k: 'in', u: 10, p: [], h: Array(40).fill([60, 1])}, {k: 'in', u: 10, p: [], a: NaN}];
+  for (const msg of junk) assert.equal(s.receive(msg), false, JSON.stringify(msg));
+  assert.equal(s.stats.bad, junk.length);
+  assert.equal(s.remoteUpto, 0, 'nothing taken');
+  assert.equal(s.receive({k: 'in', u: 10, p: [[8, 'dash']], n: 8, a: 0, v: 0, h: []}), true);
+  assert.equal(s.remoteUpto, 10);
+  assert.deepEqual(s.theirs.get(8), ['dash']);
+  s.tick(20);
+  assert.equal(s.present, 20);
+  s.m.free();
+});
