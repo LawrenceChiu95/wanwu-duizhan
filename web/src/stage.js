@@ -284,9 +284,12 @@ const meRingShader = {
   fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity;
     void main(){
       float r = length(vP);
-      float a = (1.0 - smoothstep(0.6, 1.4, abs(r - ${ME_RING_AT}) / max(fwidth(r), 1e-5))) * uOpacity;
-      if (a <= 0.0) discard;
-      gl_FragColor = vec4(uColor, a);
+      float d = abs(r - ${ME_RING_AT}) / max(fwidth(r), 1e-5);
+      // Trial (凡朔 11-19, not shipped): the same 2 px line, a faint narrow glow of its own colour round it.
+      float line = 1.0 - smoothstep(0.6, 1.4, d), glow = exp(-d * d / 30.0) * 0.45;
+      float a = max(line, glow) * uOpacity;
+      if (a <= 0.003) discard;
+      gl_FragColor = vec4(mix(uColor, vec3(1.0), 0.12 * line), a);
       #include <colorspace_fragment>
     }`
 };
