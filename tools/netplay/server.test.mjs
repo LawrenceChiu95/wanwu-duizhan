@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import {EventEmitter, once} from 'node:events';
 import {readFileSync} from 'node:fs';
+import {mkdtemp, writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import http from 'node:http';
 import test from 'node:test';
 import {WebSocket} from 'ws';
@@ -26,7 +29,7 @@ async function listen(server) {
   return 'http://127.0.0.1:' + server.address().port;
 }
 
-async function fixture(t, {shoot = false} = {}) {
+async function fixture(t, {shoot = false, webRoot} = {}) {
   const requests = [], traces = [];
   let time = 1000;
   let upstream;
@@ -53,7 +56,7 @@ async function fixture(t, {shoot = false} = {}) {
     upstream = await listen(mock);
     t.after(() => new Promise(resolve => mock.close(resolve)));
   }
-  const app = createNetplayServer({origin, upstream, tickMs: 5, now: () => time, storeTrace: async trace => { traces.push(trace); }});
+  const app = createNetplayServer({origin, upstream, webRoot, tickMs: 5, now: () => time, storeTrace: async trace => { traces.push(trace); }});
   const url = await listen(app.server);
   t.after(() => app.close());
   return {url, requests, traces, ahead: ms => { time += ms; }};
@@ -128,8 +131,8 @@ test('two seats negotiate versions, handshakes, countdown, relay, result and rem
   await getPlaying(f, {a, b, matchId});
   b.send('relay', {matchId, d: {step: 123, action: 'block'}});
   assert.deepEqual(await a.next('relay'), {t: 'relay', from: 1, matchId, d: {step: 123, action: 'block'}});
-  a.send('result', {matchId, winner: 0, hash: checkHash});
-  b.send('result', {matchId, winner: 0, hash: checkHash});
+  a.send('result', {matchId, winner: 0, hash: 2931433});
+  b.send('result', {matchId, winner: 0, hash: 2931433});
   const result = await a.state('finished');
   assert.equal(result.winner, 0);
   assert.equal(result.reason, 'complete');
@@ -185,11 +188,11 @@ test('source photograph is kept private and only the two seats can read the sele
   assert.equal(shared.item.id, photoId);
   for (const key of ['origin', 'glb', 'source', 'normalization', 'currentRating']) assert.equal(Object.hasOwn(shared.item, key), false);
   assert.equal(JSON.stringify(prepare).includes(ownerToken), false);
-  assert.equal(await (await fetch(f.url + shared.model, {headers: {Authorization: 'Bearer ' + bSession.token}})).text(), 'glTFfixture');
+  assert.equal(await (await fetch(f.url + shared.model, {headers: {'X-Netplay-Seat': bSession.token}})).text(), 'glTFfixture');
   assert.equal((await fetch(f.url + shared.model)).status, 404);
-  assert.equal((await fetch(f.url + shared.model, {headers: {Authorization: 'Bearer ' + otherToken}})).status, 404);
-  assert.equal((await fetch(f.url + shared.model.replace(photoId, otherId), {headers: {Authorization: 'Bearer ' + aSession.token}})).status, 404);
-  assert.equal((await fetch(f.url + shared.model.replace(photoId, photoId + '/photo.jpg'), {headers: {Authorization: 'Bearer ' + aSession.token}})).status, 404);
+  assert.equal((await fetch(f.url + shared.model, {headers: {'X-Netplay-Seat': otherToken}})).status, 404);
+  assert.equal((await fetch(f.url + shared.model.replace(photoId, otherId), {headers: {'X-Netplay-Seat': aSession.token}})).status, 404);
+  assert.equal((await fetch(f.url + shared.model.replace(photoId, photoId + '/photo.jpg'), {headers: {'X-Netplay-Seat': aSession.token}})).status, 404);
   assert.equal((await fetch(f.url + modelPath, {headers: {'x-shoot-session': otherToken}})).status, 404);
   assert.equal((await fetch(f.url + '/api/shoot/jobs', {method: 'POST', headers: {origin: 'https://unrelated.example'}})).status, 403);
   const reply = await fetch(f.url + '/api/shoot/session', {method: 'POST', headers: {origin}});
@@ -227,4 +230,50 @@ test('leaving revokes the seat while a survivor keeps the same result', async t 
   const fresh = await client(f.url);
   fresh.send('resume', {code: bSession.code, token: bSession.token});
   assert.equal((await fresh.next('error')).code, 'session');
+});
+
+test('the built font is served with its original MIME type', async t => {
+  const webRoot = await mkdtemp(join(tmpdir(), 'netplay-web-'));
+  const file = join(webRoot, 'smiley-sans.woff');
+  await writeFile(file, 'wOFF fixture');
+  const f = await fixture(t, {webRoot});
+  const font = await fetch(f.url + '/smiley-sans.woff');
+  assert.equal(font.status, 200);
+  assert.equal(font.headers.get('content-type'), 'font/woff');
+  assert.equal(await font.text(), 'wOFF fixture');
+});
+
+test('a friend can use the invitation while the host shares it outside the browser', async t => {
+  const f = await fixture(t), host = await client(f.url);
+  host.send('create', {version});
+  const session = await host.next('session');
+  await host.state('waiting');
+  const closed = once(host.ws, 'close');
+  host.ws.terminate();
+  await closed;
+  f.ahead(60_000);
+  const guest = await client(f.url);
+  guest.send('join', {code: session.code, version});
+  await guest.next('session');
+  const joined = await guest.state('loadout');
+  assert.equal(joined.seats[0].connected, false);
+  assert.equal(joined.seats[1].connected, true);
+  f.ahead(60_000);
+  const resumed = await client(f.url);
+  resumed.send('resume', {code: session.code, token: session.token});
+  assert.deepEqual(await resumed.next('session'), session);
+  const room = await resumed.state('loadout');
+  assert.equal(room.matchId, joined.matchId);
+  assert.equal(room.seats[0].connected, true);
+});
+
+test('an abandoned invitation expires after ten minutes', async t => {
+  const f = await fixture(t), host = await client(f.url);
+  host.send('create', {version});
+  const session = await host.next('session');
+  await host.state('waiting');
+  f.ahead(600_001);
+  const guest = await client(f.url);
+  guest.send('join', {code: session.code, version});
+  assert.equal((await guest.next('error')).code, 'room');
 });

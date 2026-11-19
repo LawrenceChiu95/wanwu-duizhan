@@ -8,7 +8,7 @@ import {mountRooms} from './rooms.mjs';
 
 const types = {
   html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
-  json: 'application/json', glb: 'model/gltf-binary', wasm: 'application/wasm', woff2: 'font/woff2',
+  json: 'application/json', glb: 'model/gltf-binary', wasm: 'application/wasm', woff: 'font/woff', woff2: 'font/woff2',
   webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', mp4: 'video/mp4'
 };
 const modelPath = /^\/api\/netplay\/models\/([23456789A-HJ-NP-Z]{6})\/([a-f0-9-]{36})\/(shoot_[a-f0-9-]{36})$/;
@@ -120,7 +120,7 @@ export function createNetplayServer({origin, webRoot, upstream, storeTrace, ...r
 
     const lookup = pathname.match(modelPath);
     if (lookup && req.method === 'GET') {
-      const selected = rooms.model(...lookup.slice(1), req.headers.authorization);
+      const selected = rooms.model(...lookup.slice(1), req.headers['x-netplay-seat']);
       if (!selected || !shoot) return publicError(res, 404, 'not-found');
       const cancel = new AbortController();
       res.on('close', () => { if (!res.writableFinished) cancel.abort(); });

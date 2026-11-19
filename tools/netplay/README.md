@@ -28,7 +28,7 @@ PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/net
 | ready | matchId, parts, shootSession（选拍照件时） | parts 为至多两条 `{item,mount,orient}`，校验所选拍照件归属 |
 | assetsReady | matchId, hash | 确认收到并验证两边完整配装且模型就绪 |
 | presence | active | 切到后台时发 false，回来发 true |
-| result | matchId, winner, hash | 两边赢家与散列相同后结束，赢家按座位 0/1 或 null |
+| result | matchId, winner, hash | 两边赢家与散列相同后结束，赢家按座位 0/1 或 null。hash 可为模拟的 uint32 |
 | desync | matchId, step, log | 停局，每座位写一份最多 48 KiB 的对账记录 |
 | rematch | matchId | 两边都确认后进下一局配装 |
 | leave | | 主动退房并作废座位 token |
@@ -42,9 +42,9 @@ PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/net
 }
 ```
 
-空座和暂未进入的字段是 null。服务端下发的所有时刻都为 Unix 毫秒。phase 为 `waiting → loadout → preparing → countdown → playing → finished`。第二个座位入房后首个可配装的 matchId 生效，之后每次重开都发新的局号和 uint32 seed。两边对齐后 `startAt` 为现有 1.5 秒准备动画的起始时间。隐藏页面或连接消失会进入 `paused`，保留 15 秒。回来后回到暂停前状态，继续已开打的局时下发新的 `resumeAt`。超过时间以在线的一方胜，两边都不在线时赢家为 null。结束原因 `complete`、`disconnect`、`desync`。
+空座和暂未进入的字段是 null。服务端下发的所有时刻都为 Unix 毫秒。phase 为 `waiting → loadout → preparing → countdown → playing → finished`。第二个座位入房后首个可配装的 matchId 生效，之后每次重开都发新的局号和 uint32 seed。两边对齐后 `startAt` 为现有 1.5 秒准备动画的起始时间。倒计时或开打后，隐藏页面或连接消失会进入 `paused`，保留 15 秒。回来后回到暂停前状态，继续已开打的局时下发新的 `resumeAt`。超过时间以在线的一方胜，两边都不在线时赢家为 null。结束原因 `complete`、`disconnect`、`desync`。开打前允许双方离开再接回，直到 10 分钟没有房间活动。对方可以在房主不在线时加入，收到 `seats[0].connected: false` 时显示「等房主回来」。
 
-两边都准备后，`prepare` 为 `{loadouts:[{parts,items:[{item,hash,model}]}],hash}`。loadouts 按座位排列，items 按 parts 顺序排列。每件对 `item` 算 SHA-256 小写十六进制，输入是 `sim/runtime-items.js` 的 `itemSignature(item)`。整局 hash 的输入为 `itemSignature({version,matchId,seed,loadouts:[{parts,itemHashes}]})`。内置件用本地模型，回包中 model 是 null。拍照件的 model 是同域路径，请加 `Authorization: Bearer <房间 token>` 取 GLB。路径与这场对局绑定。选中的件仅分享战斗数据与模型。原图、改图、整个角色库和拍照身份凭证不会随房间状态发出。
+两边都准备后，`prepare` 为 `{loadouts:[{parts,items:[{item,hash,model}]}],hash}`。loadouts 按座位排列，items 按 parts 顺序排列。每件对 `item` 算 SHA-256 小写十六进制，输入是 `sim/runtime-items.js` 的 `itemSignature(item)`。整局 hash 的输入为 `itemSignature({version,matchId,seed,loadouts:[{parts,itemHashes}]})`。内置件用本地模型，回包中 model 是 null。拍照件的 model 是同域路径，请加 `X-Netplay-Seat: <房间 token>` 取 GLB。路径与这场对局绑定。选中的件仅分享战斗数据与模型。原图、改图、整个角色库和拍照身份凭证不会随房间状态发出。
 
 ## 独立地址
 

@@ -5,7 +5,8 @@ import {prepareMatch, RoomError, selectItems} from './items.mjs';
 const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const roomCode = /^[23456789A-HJ-NP-Z]{6}$/;
 const version = /^[A-Za-z0-9_.-]{1,80}$/;
-const hash = /^[a-f0-9]{64}$/;
+const resultHash = value => Number.isInteger(value) && value >= 0 && value <= 0xffff_ffff ||
+  typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
 const winner = value => value === 0 || value === 1 || value === null;
 const active = seat => Boolean(seat?.ws) && seat.visible;
@@ -79,13 +80,17 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       Object.assign(room, {phase, pausedSeat: null, deadline: null, priorPhase: null, resumeAt});
       if (phase === 'countdown') room.startAt = time + waitBeforeReady;
       if (phase === 'playing') room.expires = time + playingTimeout;
-      if (phase === 'loadout') maybePrepare(room);
-      if (phase === 'preparing') maybeStart(room);
-    } else if (absent !== -1 && ['loadout', 'preparing', 'countdown', 'playing'].includes(room.phase)) {
+    } else if (absent !== -1 && ['countdown', 'playing'].includes(room.phase)) {
       Object.assign(room, {priorPhase: room.phase, phase: 'paused', pausedSeat: absent, deadline: time + graceMs, resumeAt: null});
     }
-    if (room.phase === 'waiting') room.expires = time + (active(room.seats[0]) ? idleTimeout : graceMs);
+    if (room.phase === 'waiting' || room.phase === 'loadout' || room.phase === 'preparing') {
+      room.expires = time + idleTimeout;
+    }
     publish(room);
+    if (absent === -1) {
+      maybePrepare(room);
+      maybeStart(room);
+    }
   }
 
   function attach(ws, room, seat) {
@@ -128,7 +133,6 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
     }
     if (msg.version !== room.version) throw new RoomError('version');
     if (room.phase !== 'waiting' || room.seats[1]) throw new RoomError('full');
-    if (!active(room.seats[0])) throw new RoomError('waiting');
     room.seats[1] = newSeat(1);
     reset(room, 'loadout');
     attach(ws, room, room.seats[1]);
@@ -164,8 +168,8 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
         if (cause instanceof RoomError) throw cause;
         throw new RoomError('shoot-offline');
       }
-      if (seat.checking !== pending || seat.ws !== ws || ws.room !== room || msg.matchId !== room.matchId ||
-          (room.phase !== 'loadout' && !(room.phase === 'paused' && room.priorPhase === 'loadout'))) return;
+      if (seat.checking !== pending || seat.ws !== ws || ws.room !== room ||
+          msg.matchId !== room.matchId || room.phase !== 'loadout') return;
       seat.selection = selection;
       publish(room);
       maybePrepare(room);
@@ -227,13 +231,13 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
       case 'ready':
         return ready(ws, room, seat, msg);
       case 'assetsReady':
-        if (room.phase !== 'preparing' && !(room.phase === 'paused' && room.priorPhase === 'preparing')) throw new RoomError('phase');
+        if (room.phase !== 'preparing') throw new RoomError('phase');
         if (msg.matchId !== room.matchId || msg.hash !== room.prepare.hash) throw new RoomError('assets');
         seat.assets = true;
         return maybeStart(room);
       case 'result': {
         if (room.phase === 'finished') return;
-        if (msg.matchId !== room.matchId || !winner(msg.winner) || typeof msg.hash !== 'string' || !hash.test(msg.hash)) throw new RoomError('result');
+        if (msg.matchId !== room.matchId || !winner(msg.winner) || !resultHash(msg.hash)) throw new RoomError('result');
         if (room.phase !== 'playing' && !(room.phase === 'paused' && room.priorPhase === 'playing')) throw new RoomError('phase');
         seat.result ??= {winner: msg.winner, hash: msg.hash};
         const other = room.seats[1 - seat.index].result;
@@ -313,10 +317,10 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   }, heartbeatEvery).unref();
 
   return {
-    model(code, id, itemId, bearer) {
+    model(code, id, itemId, seatToken) {
       const room = rooms.get(code);
-      if (!room || id !== room.matchId || !bearer?.startsWith('Bearer ') ||
-          !room.seats.some(seat => seat?.token === bearer.slice(7))) return null;
+      if (!room || id !== room.matchId || typeof seatToken !== 'string' ||
+          !room.seats.some(seat => seat?.token === seatToken)) return null;
       if (!room.prepare) return null;
       return room.seats.map(seat => seat?.selection?.privateModels.get(itemId)).find(Boolean) ?? null;
     },
