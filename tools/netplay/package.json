@@ -1,0 +1,8 @@
+{
+  "name": "wanwu-netplay",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node --test", "start": "node main.mjs" },
+  "dependencies": { "ws": "8.23.0" }
+}
