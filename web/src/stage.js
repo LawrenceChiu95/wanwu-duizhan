@@ -270,13 +270,13 @@ const wallShader = {
     }`
 };
 // The player's own top: a thin, half-transparent line hugging the outside of its core (远夏 10-28 89169677: the big
-// bright ring read as a skill or weapon range). No glow, no pulse, no ticks; 「你」 and the orange trail do the work.
+// bright ring read as a skill or weapon range). No pulse, no ticks; 「你」 and the orange trail do the work.
 // The line sits at r = 0.9 of the quad and stays about 2 px wide whatever the zoom.
 // The player's floor ring (Elara 5b03a33d): a line round the top on the floor, drawn under the models (depth-tested, the
-// tops hide it), never on them; about 2 px wide whatever the zoom, no glow under it (远夏 via Elara 6310be92: the thick
-// ring and the outline read as too loud). ME_RING_AT: the line's radius in the quad (-1..1). Radius: just outside the pieces
-// as drawn (reachOf: models reach past their hulls, a 贴着 pillow most of all), so the line shows round the top; eased when
-// a piece breaks.
+// tops hide it), never on them; about 2 px wide whatever the zoom (远夏 via Elara 6310be92: the thick ring and the
+// outline read as too loud), with only a faint, narrow glow of its own colour round the line (凡朔 11-19, 远夏 6365d6ae).
+// ME_RING_AT: the line's radius in the quad (-1..1). Radius: just outside the pieces as drawn (reachOf: models reach past
+// their hulls, a 贴着 pillow most of all), so the line shows round the top; eased when a piece breaks.
 const ME_RING_AT = 0.9, ME_RING_OUT = 1.08, ME_RING_OPACITY = 0.9, ME_RING_Y = -0.012;
 const meRingShader = {
   uniforms: {uColor: {value: new THREE.Color('#ff8a3d')}, uOpacity: {value: ME_RING_OPACITY}},
@@ -284,9 +284,12 @@ const meRingShader = {
   fragmentShader: `varying vec2 vP; uniform vec3 uColor; uniform float uOpacity;
     void main(){
       float r = length(vP);
-      float a = (1.0 - smoothstep(0.6, 1.4, abs(r - ${ME_RING_AT}) / max(fwidth(r), 1e-5))) * uOpacity;
-      if (a <= 0.0) discard;
-      gl_FragColor = vec4(uColor, a);
+      float d = abs(r - ${ME_RING_AT}) / max(fwidth(r), 1e-5);
+      // The 2 px line, its core lifted a little toward white, and a faint glow about 2-3 px either side of it.
+      float line = 1.0 - smoothstep(0.6, 1.4, d), glow = exp(-d * d / 30.0) * 0.45;
+      float a = max(line, glow) * uOpacity;
+      if (a <= 0.003) discard;
+      gl_FragColor = vec4(mix(uColor, vec3(1.0), 0.12 * line), a);
       #include <colorspace_fragment>
     }`
 };
