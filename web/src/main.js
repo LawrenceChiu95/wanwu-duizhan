@@ -612,11 +612,17 @@ async function main() {
       $('foeLabel').textContent = !other?.connected ? '对面暂时不在' : other.ready ? '对面准备好了' : '对面在选装';
       $('foeBtn').hidden = $('foeMark').hidden = true;
       el.foeParts.innerHTML = '';
-      el.go.querySelector('span').textContent = sent ? '等对面准备' : '准备';
+      // The key is this phone's 准备, which match it is; under it, where the other phone is (Elara 4a54464d: after 再来一局
+      // both are back here, and it has to say that 准备 is wanted again). The room counts the matches (state.round, Sol
+      // ceb73008), so both phones say the same number, whatever ended the last one and after a reload (Elara dd0a5a95).
+      const round = net.state?.round;
+      el.go.querySelector('span').textContent = sent ? '已准备' : round > 1 ? `准备第 ${round} 局` : '准备';
+      el.go.querySelector('small').textContent = !other?.connected ? '对面暂时不在' : other.ready ? '对面已准备' : sent ? '等对面准备…' : '对面在选装';
       el.go.disabled = sent || !el.error.hidden;
       return;
     }
     el.go.querySelector('span').textContent = pvp && pick === 0 ? '下一步' : '开打';
+    el.go.querySelector('small').textContent = '';
     if (!pvp) { $('foeLabel').textContent = '对手'; $('foeBtn').hidden = false; renderFoe(); return; }
     $('foeLabel').textContent = pick ? '轮到 2P 选装' : '轮到 1P 选装';
     $('foeBtn').hidden = $('foeMark').hidden = true;
@@ -1681,7 +1687,7 @@ async function main() {
   let soloDone = false, tipUp = null; // soloDone: a match against the computer came to its result on this page
   function swapTipNow() {
     const off = id => document.getElementById(id)?.hidden ?? true;
-    const room = phase === 'build' && !pvp && !el.build.hidden && ['library', 'howView', 'shootView', 'foeSheet', 'intro'].every(off);
+    const room = phase === 'build' && !pvp && !net && !el.build.hidden && ['library', 'howView', 'shootView', 'foeSheet', 'intro'].every(off);
     const t = TIPS.find(t => !t.done && t.ready() && !t.chip()?.hidden);
     if (!room || !t || tipUp) return;
     tipUp = t;
@@ -1887,7 +1893,7 @@ async function main() {
       stage.pose(pb.state);
     }
     phase = 'result';
-    if (!pvp) soloDone = true;
+    if (!pvp && !net) soloDone = true;
     const m = replay.meta;
     stage.setCameraMode('result');
     stage.showMe = false;
@@ -2129,6 +2135,8 @@ async function main() {
       };
       const how = card.querySelector('[data-how]');
       if (how) how.onclick = () => openHow(id);
+      // The card's foot (where it came from) picks it too: a tap anywhere on a card but 看它怎么来的 puts it on.
+      card.onclick = ev => { if (!ev.target.closest('.pick, [data-how]')) card.querySelector('.pick').click(); };
     }
     // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it): the cards on
     // screen together first, so a small model is not stuck behind a big one (task #37), then the rest.

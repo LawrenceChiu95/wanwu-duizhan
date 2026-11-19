@@ -659,9 +659,20 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #netRoom .ncode { margin:0;display:flex;flex-direction:column;align-items:center;gap:2px; }
 #netRoom .ncode small { font-size:13px;color:var(--mute); }
 #netRoom .ncode b { font:700 34px/1.1 Consolas,Menlo,monospace;letter-spacing:8px;color:var(--c0l);padding-left:8px; }
+#netRoom .nlink { margin:0;display:flex;flex-direction:column;align-items:center;gap:6px; }
+#netRoom .nlink small { font-size:13px;color:var(--mute); }
+#netRoom .nlink a { max-width:100%;padding:10px 8px;border:1px dashed #627254;border-radius:3px;background:#0c1612;color:var(--c0l);
+  font:700 13px/1.35 Consolas,Menlo,monospace;letter-spacing:-.2px;text-align:center;text-decoration:none;word-break:break-all;-webkit-user-select:all;user-select:all;-webkit-touch-callout:default; }
 #netRoom .nsay { min-height:22px;margin:0;text-align:center;font-size:15px;color:var(--c1l); }
 #netRoom .nsay:not(:empty)::before { content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--c1);vertical-align:1px;animation:netPulse 1.2s ease-in-out infinite; }
 @keyframes netPulse { 50% { opacity:.25; } }
+/* 好友对撞's bench key: 准备 (第 N 局 from the second) over where the other phone is, the arrow beside both. */
+.go small:empty { display:none; }
+#app.net .go { display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-content:center;justify-content:center;column-gap:8px;row-gap:3px; }
+#app.net .go span { grid-area:1/1;font-size:20px;line-height:1;letter-spacing:1px;white-space:nowrap; }
+#app.net .go small { grid-area:2/1;justify-self:center;font:700 12px/1 var(--kfont,"PingFang SC",sans-serif);letter-spacing:0;color:#4a3d17;text-shadow:none;white-space:nowrap; }
+#app.net .go svg { grid-area:1/2/3/3;align-self:center; }
+#app.net .go:disabled { opacity:.72; }
 /* The opening page's third key: quieter than the two yellow ones (one main key a screen). */
 .kfriend { width:100%;margin-top:8px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:10px;min-height:52px;padding:0 10px;
   border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:#e7dcb9 padding-box;color:#242c20;font-family:var(--kfont);text-align:left; }
