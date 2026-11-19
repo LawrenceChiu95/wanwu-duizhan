@@ -208,7 +208,14 @@ export function createFriend(app, hooks) {
     get readySent() { return readySent === client?.state?.matchId; },
     result(winner, hash) { const s = client?.state; if (s) tell('result', {t: 'result', matchId: s.matchId, winner, hash}); },
     desync(step, log) { const s = client?.state; if (s) client.send({t: 'desync', matchId: s.matchId, step, log}); },
-    rematch() { const s = client?.state; if (s?.phase === 'finished') tell('rematch', {t: 'rematch', matchId: s.matchId}); },
+    /** 再来一局: told now if the room has the match finished, else once it has (a phone that saw the desync first). */
+    rematch() {
+      const s = client?.state;
+      if (!s) return;
+      const msg = {t: 'rematch', matchId: s.matchId};
+      if (s.phase === 'finished') tell('rematch', msg);
+      else told = {...told.matchId === s.matchId ? told : {matchId: s.matchId}, rematch: msg};
+    },
     /** The room this tab was in when its page was last loaded (a reload goes back into it). */
     kept: () => NetClient.kept(),
     game(d) { return client?.game(d); },

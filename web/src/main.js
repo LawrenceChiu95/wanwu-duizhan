@@ -14,7 +14,7 @@ import {sfx} from './sfx.js';
 import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
 import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
-import {Session} from './netplay/session.js';
+import {Session, fitReport} from './netplay/session.js';
 import {createFriend, available as friendOn, buildVersion, digest, keptRoom, shareable} from './netplay/friend.js';
 
 const $ = id => document.getElementById(id);
@@ -776,6 +776,7 @@ async function main() {
     if (!net) return;
     net.state = st;
     if (phase === 'build') renderPick();
+    if (phase === 'result') netResult();
     // Ended by the room, not by the fight: the other phone gone too long, or the two phones worked out different matches.
     if (st.phase === 'finished' && st.reason !== 'complete' && live?.matchId === st.matchId && phase !== 'result') netEnd(st);
   }
@@ -824,10 +825,10 @@ async function main() {
     lateCharge(pb.r.events, want);
     net.stall = out.stalled ? net.stall + dt : 0;
     netLine(net.stall > 0.4 ? '网络卡了一下…' : null);
-    if (s.desync && !net.desyncSent) {
-      net.desyncSent = true;
-      const log = JSON.stringify(s.report());
-      friend.desync(s.desync.step, log.length > 46000 ? log.slice(0, 46000) : log);
+    if (s.desync) {
+      // 这局不算 on this phone at once (Elara 64235b6a): the room's word, to both, comes after and changes nothing here.
+      netEnd({reason: 'desync', winner: null, matchId: live.matchId});
+      return 0;
     }
     if (s.finished && !s.desync) {
       live.done = true;
@@ -857,8 +858,32 @@ async function main() {
     el.busyText.textContent = text ?? '';
     el.busy.hidden = !text;
   }
+  // A desync: this phone's record of the match to the room, which keeps it to look into (once a match, an object cut to
+  // the room's size, Castor e34c1871). Sent by both phones, the one that saw it and the one the room told.
+  function netReport(matchId) {
+    const s = live?.session;
+    if (!s || live.matchId !== matchId || net.reported === matchId) return;
+    net.reported = matchId;
+    friend.desync(s.desync?.step ?? s.confirmed, fitReport(s.report()));
+  }
+  // 好友对撞's 结算 as the room changes under it (Castor e34c1871, Elara 64235b6a): the other phone gone for good (its
+  // 回首页, seats[].left) turns the key into the way home; its 再来一局 first says so here.
+  function netResult() {
+    const st = net?.state, other = st?.seats?.[1 - ME], me = st?.seats?.[ME];
+    if (!st || phase !== 'result') return;
+    const btn = $('againBtn');
+    if (other?.left) {
+      btn.dataset.act = 'home';
+      btn.disabled = false;
+      btn.querySelector('span').textContent = '对面已离开 · 回首页';
+      $('soloBtn').hidden = true;
+    }
+    el.tipLine.textContent = !other?.left && other?.rematchReady && !me?.rematchReady ? '对面想再来一局' : '';
+    el.tipLine.hidden = !el.tipLine.textContent;
+  }
   // The room ended the match: a short card saying why, the way home or into the next.
   function netEnd(st) {
+    if (st.reason === 'desync') netReport(st.matchId);
     if (live) live.done = true;
     net.restored?.(); net.restored = null;
     showPads(false);
@@ -2029,6 +2054,7 @@ async function main() {
     $('againBtn').disabled = false;
     $('soloBtn').hidden = !pvp && !homeOn || main.act === 'home';
     $('soloBtn').textContent = homeOn ? '回首页' : '回单人';
+    if (net) netResult();
   }
   function replaySlow() {
     // A live match had no decisive slow motion; its finished replay has.
@@ -2820,6 +2846,15 @@ async function main() {
   };
   window.__top = {
     press,
+    // 好友对撞's desync on purpose (scripts/netplay-desync.mjs): this phone's checks are off from the next step on; pad
+    // makes its report that many presses longer, so the cut to the room's size limit is tried too.
+    netSkew(pad = 0) {
+      const s = live?.session;
+      if (!s) return false;
+      for (let i = 0; i < pad; i++) s.log.push([i, s.seat, 'dash']);
+      s.skew = s.present + 1;
+      return true;
+    },
     taps: diag.count,
     turns,
     setControl(c) { control = c; },
@@ -2836,7 +2871,7 @@ async function main() {
     status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1 - ME) : null, me: live && !live.done ? live.match.control(ME) : null,
       feel: {reactions: test.feel.reactions, windups: test.feel.windups},
       net: net && {seat: ME, room: friend?.state?.phase ?? null, matchId: live?.matchId ?? null, rtt: friend?.rtt ?? null, direct: Boolean(friend?.direct), stats: live?.session ? {...live.session.stats, badLine: friend?.client?.bad ?? 0} : null,
-        desync: live?.session?.desync ?? null, seenRollbacks: test.net.seen, seenMaxSteps: test.net.seenMax, advantage: live?.session?.advantage ?? null, oneWayMs: live?.session ? +(live.session.oneWay * rules.dt * 1000).toFixed(1) : null, confirmed: live?.session?.confirmed ?? null}, inputs: live?.done ? replay.meta.manual.inputs : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),
+        desync: live?.session?.desync ?? null, seenRollbacks: test.net.seen, seenMaxSteps: test.net.seenMax, advantage: live?.session?.advantage ?? null, oneWayMs: live?.session ? +(live.session.oneWay * rules.dt * 1000).toFixed(1) : null, confirmed: live?.session?.confirmed ?? null}, inputs: live?.done ? replay?.meta.manual?.inputs ?? null : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
     release() { Object.assign(test, {frozen: false, freezeOn: null, pending: -1}); },
