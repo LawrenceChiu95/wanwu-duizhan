@@ -71,6 +71,8 @@ async function phone(cut = []) {
   const context = await browser.newContext({viewport: {width: 390, height: 844}, deviceScaleFactor: shots ? 2 : 1, hasTouch: true, isMobile: true});
   const page = await context.newPage();
   page.setDefaultTimeout(60000);
+  // Phones that have had their 木桩 (好友初见): 准备 goes straight to the room.
+  await page.addInitScript(() => localStorage.setItem('wanwu-netplay-warm-seen', '1'));
   const asked = {};
   // Counted per address: each file matching is cut its first `cuts` times, the connection reset or (short) its bytes
   // ending early with a 200, as a phone network can leave them (Sol c263fd78).

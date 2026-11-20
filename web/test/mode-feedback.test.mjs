@@ -58,7 +58,7 @@ function rig(pvp, seat = null) {
     lungeDir:[[1,0,0],[-1,0,0]], towardPoint:() => [1,0,0],
     faces2P:side => pvp && side===1, partName:(part,item) => part==='core'?'核心':item,
     HILITE:'line',HILITE_TIME:1.8,HILITE_HOLD:1.2,hilite:null,
-    buzz:() => {}, dip:() => {},flashHud:() => {},test:{highlights:0,onEvent:() => {},feelEvent:() => {}}, teachBlocked:() => {},wenHint:null,nudge:null,
+    buzz:() => {}, dip:() => {},flashHud:() => {},test:{highlights:0,onEvent:() => {},feelEvent:() => {}}, teachBlocked:() => {},wenHint:null,nudge:null,teach:null,live:null,
     deflectLine:() => {throw Error('Tiered feedback must use the contact-point word');},
     lastDeflectT:-Infinity,lastKnockT:-Infinity,
   };

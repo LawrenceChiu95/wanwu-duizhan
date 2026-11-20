@@ -8,13 +8,14 @@ const rapier = fileURLToPath(new URL('../sim/node_modules/@dimforge/rapier3d-com
 const allowedHosts = ['lawrence-mac', 'lawrence-mac.tail1c8f33.ts.net'];
 
 // 评委版 (--mode judge, task #4): the opening card goes into the page itself, so it shows before the scripts arrive.
-// 好友对撞's page (WANWU_NETPLAY=1) has it without 评委试玩: a friend sent its code is no judge (Elara 4a54464d).
+// 好友对撞's own address (WANWU_NETPLAY=1) has it without 评委试玩: a friend sent its code is no judge (Elara 4a54464d). The
+// 评委链接 with 好友对撞 on it (WANWU_NETPLAY=judge) keeps the badge.
 const BADGE = ['<header class="khead"><i></i> 评委试玩 ', '<header class="khead plain">'];
 const judgeIntro = {
   name: 'judge-intro',
   transformIndexHtml: {order: 'pre', handler: html => {
     let intro = readFileSync(new URL('./judge-intro.html', import.meta.url), 'utf8');
-    if (netplayBuild) {
+    if (friendSite) {
       if (!intro.includes(BADGE[0])) throw Error('judge-intro.html: 评委试玩 badge not found (changed?)');
       intro = intro.replace(BADGE[0], BADGE[1]).replace('aria-label="万物对战 · 评委试玩"', 'aria-label="万物对战"');
     }
@@ -41,15 +42,19 @@ const rapierWasm = {
 const combatBuild = process.env.WANWU_COMBAT ?? '';
 if (!['', 'current', 'position'].includes(combatBuild)) throw Error(`WANWU_COMBAT must be current or position, not ${combatBuild}`);
 
-// 好友对撞 (tools/netplay): WANWU_NETPLAY=1 gives the page that the room service serves, with the 好友对撞 key. Without it
-// the page never asks for the room service (the 评委版 link makes no backend request, scripts/check-judge-navigation.mjs).
-const netplayBuild = process.env.WANWU_NETPLAY === '1';
+// 好友对撞 (tools/netplay): WANWU_NETPLAY=1 gives the page of its own address, with the 好友对撞 key. WANWU_NETPLAY=judge
+// gives the 评委链接's page with the key added and its single-player as it was (远夏 17:28, Elara ef0fb69e, 3f8972db):
+// __FRIEND_SITE__ is what only the own address has. Without either the page never asks for the room service (the
+// 评委版 link makes no backend request, scripts/check-judge-navigation.mjs).
+const netplayArg = process.env.WANWU_NETPLAY ?? '';
+if (!['', '1', 'judge'].includes(netplayArg)) throw Error(`WANWU_NETPLAY must be 1 or judge, not ${netplayArg}`);
+const netplayBuild = netplayArg !== '', friendSite = netplayArg === '1';
 
 export default defineConfig(({mode}) => {
   const judge = mode === 'judge';
   return {
     base: './',
-    define: {__JUDGE__: JSON.stringify(judge), __COMBAT__: JSON.stringify(combatBuild), __NETPLAY__: JSON.stringify(netplayBuild)},
+    define: {__JUDGE__: JSON.stringify(judge), __COMBAT__: JSON.stringify(combatBuild), __NETPLAY__: JSON.stringify(netplayBuild), __FRIEND_SITE__: JSON.stringify(friendSite)},
     plugins: judge ? [judgeIntro, rapierWasm] : [],
     // 评委版 bundles the twelve's models only (src/model-files.judge.js).
     resolve: {alias: [{find: '@dimforge/rapier3d-compat', replacement: rapier}, ...judge ? [{find: /^\.\/model-files\.js$/, replacement: './model-files.judge.js'}] : []]},

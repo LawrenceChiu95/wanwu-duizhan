@@ -10,7 +10,7 @@ import {createHash} from 'node:crypto';
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.glb': 'model/gltf-binary', '.spz': 'application/octet-stream', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.txt': 'text/plain; charset=utf-8', '.woff': 'font/woff', '.woff2': 'font/woff2'};
 const compress = promisify(gzip);
 const tag = bytes => '"' + createHash('sha256').update(bytes).digest('hex') + '"';
-async function loadStatic(root) {
+async function loadStatic(root, compressModels) {
   root = await fs.realpath(root);
   const files = new Map();
   async function walk(folder) {
@@ -20,10 +20,11 @@ async function loadStatic(root) {
       // Only regular files from the immutable build; never follow a symlink.
       else if (entry.isFile() && TYPES[path.extname(file)]) {
         const ext = path.extname(file), bytes = await fs.readFile(file);
-        const compressed = ['.html', '.js', '.css', '.json', '.wasm', '.svg'].includes(ext) ? await compress(bytes) : null;
+        const compressible = ['.html', '.js', '.css', '.json', '.wasm', '.svg'].includes(ext) || (compressModels && ext === '.glb');
+        const compressed = compressible ? await compress(bytes) : null;
         files.set('/' + path.relative(root, file).split(path.sep).join('/'), {
           type: TYPES[ext], cache: ext === '.html' ? 'no-store' : /-[A-Za-z0-9_-]{8,}\.(js|css|wasm)$/.test(entry.name) ? 'public, max-age=31536000, immutable' : 'no-cache',
-          plain: {bytes, etag: tag(bytes)}, gzip: compressed && {bytes: compressed, etag: tag(compressed)}
+          plain: {bytes, etag: tag(bytes)}, gzip: compressed && (ext !== '.glb' || compressed.length < bytes.length) ? {bytes: compressed, etag: tag(compressed)} : null
         });
       }
     }
@@ -41,12 +42,12 @@ function headers(input) {
   return Object.fromEntries(Object.entries(input).filter(([name]) => !skip.has(name)));
 }
 
-// The external platform terminates TLS. Both internal listeners are loopback;
-// only /~!frp may upgrade, and all API requests have one fixed destination.
-export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frpPort = 7000, tls = null}) {
+// The platform terminates TLS. Photo requests and FRP upgrades have fixed
+// loopback destinations. The judge build can also dispatch room requests.
+export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frpPort = 7000, tls = null, rooms = null}) {
   const origin = new URL(publicOrigin);
   if (origin.protocol !== 'https:' || origin.origin !== publicOrigin) throw Error('Exact HTTPS public origin required');
-  const sockets = new Set(), ready = webRoot ? loadStatic(webRoot) : Promise.resolve(null);
+  const sockets = new Set(), ready = webRoot ? loadStatic(webRoot, Boolean(rooms)) : Promise.resolve(null);
   const handler = async (req, res) => {
     try {
       if (!req.url.startsWith('/') || req.url.startsWith('//')) return end(res, 400, {error: 'bad-request'});
@@ -54,6 +55,10 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
       res.setHeader('referrer-policy', 'no-referrer');
       res.setHeader('x-content-type-options', 'nosniff');
       if (route === '/_health' && req.method === 'GET') return end(res, 200, {service: 'wanwu-studio', role: 'transport-only'});
+      if (rooms && (route === '/api/netplay/health' || route.startsWith('/api/netplay/models/'))) {
+        rooms.emit('request', req, res);
+        return;
+      }
       if (route.startsWith('/api/shoot/')) {
         const upstream = http.request({host: '127.0.0.1', port: apiPort, method: req.method, path: url.pathname + url.search, headers: {...headers(req.headers), host: origin.host}, agent: false}, response => {
           res.writeHead(response.statusCode, {...headers(response.headers), 'cache-control': 'no-store'});
@@ -110,6 +115,10 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
     return true;
   }
   server.on('upgrade', (req, socket, head) => {
+    if (rooms && req.url === '/api/netplay/ws' && req.method === 'GET') {
+      rooms.emit('upgrade', req, socket, head);
+      return;
+    }
     if (upgradeTunnel(req, socket, head)) return;
     socket.on('error', () => socket.destroy());
     socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');

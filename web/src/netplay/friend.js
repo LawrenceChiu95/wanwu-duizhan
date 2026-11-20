@@ -58,7 +58,7 @@ const ROOM_HTML = `
 
 /**
  * hooks: {version, onBench(state), onPrepare(state) → Promise (models in), onCountdown(state), onState(state, was),
- * onGame(d, via), onLink(kind), onHome(), onReload(state) → a Promise while it puts a match back after a reload, else
+ * onGame(d, via), onWarm(on), onLink(kind), onHome(), onReload(state) → a Promise while it puts a match back after a reload, else
  * null}. Returns the room's controls.
  *
  * What this phone tells the room (准备, 模型到了, the result, 再来一局, a desync's record) is told again until the room's
@@ -111,6 +111,7 @@ export function createFriend(app, hooks) {
       session: msg => { if (msg.seat === 0) showHost(msg.code); },
       state: (state, was) => onState(state, was),
       game: (d, via) => hooks.onGame(d, via),
+      warm: on => hooks.onWarm?.(on),
       link: kind => hooks.onLink?.(kind),
       error: code => {
         // The room could not write this phone's desync record down: sent again a little later, a few times at most.
@@ -222,6 +223,8 @@ export function createFriend(app, hooks) {
     /** The room this tab was in when its page was last loaded (a reload goes back into it). */
     kept: () => NetClient.kept(),
     game(d) { return client?.game(d); },
+    /** 对面在热身: this phone on its 木桩 (true) or done (false), for the other phone's bench. */
+    warm(on) { const s = client?.state; if (s?.seats?.[1 - client.seat]?.connected) client.send({t: 'signal', d: {warm: on}}); },
     serverNow() { return client?.serverNow() ?? Date.now(); },
     get rtt() { return client?.rtt ?? null; },
     get direct() { return Boolean(client?.direct); },
