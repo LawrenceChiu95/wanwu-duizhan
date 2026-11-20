@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const rapier = fileURLToPath(new URL('../sim/node_modules/@dimforge/rapier3d-compat/dist/rapier.mjs', import.meta.url));
+const steady = fileURLToPath(new URL('./src/fetch-steady.js', import.meta.url));
 // Phone entry goes through the tailnet proxy, which keeps its own Host header.
 const allowedHosts = ['lawrence-mac', 'lawrence-mac.tail1c8f33.ts.net'];
 
@@ -33,7 +34,11 @@ const rapierWasm = {
     const m = code.match(/module_or_path:([\w$]+)\.toByteArray\("([A-Za-z0-9+/=]+)"\)(\.buffer)?/);
     if (!m) throw Error('rapier3d-compat: inlined wasm not found (package changed?)');
     const ref = this.emitFile({type: 'asset', name: 'rapier.wasm', source: Buffer.from(m[2], 'base64')});
-    return {code: code.replace(m[0], `module_or_path:new URL(import.meta.ROLLUP_FILE_URL_${ref})`), map: null};
+    if (!netplayBuild) return {code: code.replace(m[0], `module_or_path:new URL(import.meta.ROLLUP_FILE_URL_${ref})`), map: null};
+    // 好友对撞's builds fetch it by src/fetch-steady.js, not by rapier: one that stalls is cut off and asked for anew
+    // (19:04's stuck start).
+    return {code: `import {engineFile as __engineFile} from ${JSON.stringify(steady)};\n` +
+      code.replace(m[0], `module_or_path:__engineFile(new URL(import.meta.ROLLUP_FILE_URL_${ref}))`), map: null};
   }
 };
 

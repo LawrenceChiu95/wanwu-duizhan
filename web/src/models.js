@@ -5,6 +5,7 @@ import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 // The phone-sized GLBs in data/models (catalog `glb` paths are relative to the repo root); which ones, model-files.js.
 // data/lux3d holds the 17–20 MB originals and is deliberately not bundled.
 import {urls, stillUrls} from './model-files.js';
+import {fetchSteady} from './fetch-steady.js';
 // Generation records (item.origin, 看它怎么来的): the original photo and the styled image, kept under data/origins/<id>/.
 const originUrls = import.meta.glob('../../data/origins/**/*.{jpg,jpeg,png,webp}', {query: '?url', import: 'default', eager: true});
 /** A record's picture: a repo-relative path from the catalog (bundled above), or a URL as it is. */
@@ -137,10 +138,11 @@ export function itemThumbnail(itemId, renderer, environment) {
 }
 
 /** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
-export function loadModels(items) {
+export function loadModels(items, again = 0) {
   return Promise.all(items.map(item => {
-    // One that didn't come (a backend file on a bad connection) is asked for again the next time it is needed.
-    if (!loading.has(item.id)) loading.set(item.id, loadOne(item).catch(e => { loading.delete(item.id); forgetFile(item.glb); throw e; }));
+    // One that didn't come (a backend file on a bad connection) is asked for again the next time it is needed; `again`
+    // is the try (loadAgain's), a new request past the browser's cache (fetch-steady.js).
+    if (!loading.has(item.id)) loading.set(item.id, loadOne(item, again).catch(e => { loading.delete(item.id); forgetFile(item.glb); throw e; }));
     return loading.get(item.id);
   }));
 }
@@ -150,17 +152,19 @@ export function loadModels(items) {
 export async function prefetchModels(items) {
   for (const item of items) {
     const url = item && !loading.has(item.id) && urlFor(await Promise.resolve(fileSource(item.glb)).catch(() => null));
-    if (url) await fetch(url, {priority: 'low'}).then(r => r.arrayBuffer()).catch(() => {});
+    // 好友对撞's builds watch it too: one stuck for ever would hold up what waits for these (main.js: the bench's 3D).
+    if (url) await (__NETPLAY__ ? fetchSteady(url, 0, {priority: 'low'}) : fetch(url, {priority: 'low'}).then(r => r.arrayBuffer())).catch(() => {});
   }
 }
 
 /** An item whose GLB is not bundled is an error (no stand-in box: it would look like the import worked). */
-async function loadOne(item) {
+async function loadOne(item, again) {
   {
     const url = urlFor(await fileSource(item.glb));
     if (!url) throw Error(`缺模型文件：${item.name ?? item.id}（${item.glb}）`);
     await decoder;
-    const gltf = await loader.loadAsync(url);
+    // 好友对撞's builds take its bytes by fetchSteady, so one that stalls is cut off and tried again, not waited on for ever.
+    const gltf = __NETPLAY__ ? await loader.parseAsync(await fetchSteady(url, again), THREE.LoaderUtils.extractUrlBase(url)) : await loader.loadAsync(url);
     gltf.scene.traverse(o => {
       if (!o.isMesh) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];

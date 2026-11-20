@@ -15,6 +15,7 @@ import bgmUrl from './assets/bgm.mp3?url';
 import {shootApi} from './shoot-api.js';
 import {catLabel, mountShoot, readQuota, shootOpen} from './shoot.js';
 import {Session, fitReport} from './netplay/session.js';
+import {fetchSteady} from './fetch-steady.js';
 import {createFriend, available as friendOn, buildVersion, digest, keptRoom, shareable} from './netplay/friend.js';
 
 const $ = id => document.getElementById(id);
@@ -116,7 +117,8 @@ const ICON = {
 const LOAD_WAITS = __NETPLAY__ ? [800, 2000] : [];
 async function loadAgain(load) {
   for (let i = 0; ; i++) {
-    try { return await load(); } catch (e) {
+    // `i`, the try, to the load: one after the first is a new request (fetch-steady.js).
+    try { return await load(i); } catch (e) {
       // Still not here after its tries: whatever the browser called it (a cut connection, or bytes cut short that
       // the engine then can't compile, Sol c263fd78), it is a file that didn't come.
       if (i >= LOAD_WAITS.length) throw Object.assign(e instanceof Error ? e : Error(String(e)), {cutOff: true});
@@ -389,7 +391,7 @@ async function main() {
     && (ceramicArg === '1' || (__JUDGE__ && __COMBAT__ === 'position' && ceramicArg !== '0'));
   let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
-  await loadAgain(() => loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]));
+  await loadAgain(again => loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))], again));
   await stage.kitchen.ready;
   el.busy.hidden = true;
   // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
@@ -643,7 +645,9 @@ async function main() {
       // ceb73008), so both phones say the same number, whatever ended the last one and after a reload (Elara dd0a5a95).
       const round = net.state?.round;
       el.go.querySelector('span').textContent = sent ? '已准备' : round > 1 ? `准备第 ${round} 局` : '准备';
-      el.go.querySelector('small').textContent = !el.error.hidden ? el.error.dataset.why ?? '' : !other?.connected ? '对面暂时不在' : other.ready ? '对面已准备' : net.peerWarm ? '对面在热身' : sent ? '等对面准备…' : '对面在选装';
+      // Both ready, this phone's files in and the other's not yet: it is the other phone still loading (Elara 9930fb52).
+      const theirsLoading = net.state?.phase === 'preparing' && net.state.seats?.[ME]?.assetsReady && !other?.assetsReady;
+      el.go.querySelector('small').textContent = !el.error.hidden ? el.error.dataset.why ?? '' : !other?.connected ? '对面暂时不在' : theirsLoading ? '对面还在加载…' : other.ready ? '对面已准备' : net.peerWarm ? '对面在热身' : sent ? '等对面准备…' : '对面在选装';
       el.go.disabled = sent || !el.error.hidden;
       return;
     }
@@ -669,8 +673,9 @@ async function main() {
   const NET_MODELS = '/api/netplay/models/', netFiles = new Map();
   setFileSource(path => {
     if (typeof path !== 'string' || !path.startsWith(NET_MODELS)) return shootFile(path);
-    if (!netFiles.has(path)) netFiles.set(path, fetch(path, {headers: {'X-Netplay-Seat': friend?.client?.token ?? ''}})
-      .then(r => { if (!r.ok) throw Error(`对面的模型没下载下来（${r.status}）`); return r.blob(); })
+    // Watched as the other files are (fetch-steady.js): one held open is cut off, and the next try fetches it anew.
+    if (!netFiles.has(path)) netFiles.set(path, fetchSteady(path, 0, {headers: {'X-Netplay-Seat': friend?.client?.token ?? ''}})
+      .then(bytes => new Blob([bytes]), e => { throw e.status ? Error(`对面的模型没下载下来（${e.status}）`) : e; })
       .then(async b => {
         // A GLB says its own length (bytes 8–11): one shorter came cut off, though it may still read as a model.
         const head = new DataView(await b.slice(0, 12).arrayBuffer());
@@ -700,7 +705,7 @@ async function main() {
     // The room's bench draws 2P's default for the other phone, so its models come first, asked for again on a bad
     // network. One that never comes stops here, the room not opened and the page as it was, with 没加载完 and its
     // 重新加载 (a link's ?room= goes back to that room): the bench drawn without it broke half-way (Sol ad5547c5).
-    try { await loadAgain(() => loadModels((net ? FOE : DEFAULT_P2).parts.map(p => byId.get(p.item)))); } catch (e) { showError(e); return; }
+    try { await loadAgain(again => loadModels((net ? FOE : DEFAULT_P2).parts.map(p => byId.get(p.item)), again)); } catch (e) { showError(e); return; }
     // Until the other phone's build comes, its place on the bench is 一机双人's 2P default (the plate says 对面在选装).
     if (!net) { soloFoe = FOE; FOE = structuredClone(DEFAULT_P2); }
     net = {state: null, bench: null, score: [0, 0], scored: null, stall: 0};
@@ -751,6 +756,8 @@ async function main() {
     el.busyText.textContent = '连上对面';
     el.busy.classList.remove('say');
     el.busy.hidden = false;
+    // Which step it is on, for the test hook (status().net.prep): a start that never comes says where it stopped.
+    net.prep = 'check';
     try {
       const fresh = [];
       for (const lo of st.prepare.loadouts) for (const {item, hash, model} of lo.items) {
@@ -763,17 +770,22 @@ async function main() {
         } else if (!have) fresh.push({...item, glb: model});
       }
       if (fresh.length) {
+        net.prep = 'photos';
         const ok = await register(fresh);
         if (ok.length < fresh.length) throw Error('对面的一件东西这台手机用不了，请对面换一件');
         for (const it of ok) { byId.set(it.id, it); stage.items.set(it.id, it); }
         setNames(ok);
       }
-      await loadAgain(() => loadModels(st.prepare.loadouts.flatMap(lo => lo.parts.map(p => byId.get(p.item)))));
+      net.prep = 'models';
+      await loadAgain(again => loadModels(st.prepare.loadouts.flatMap(lo => lo.parts.map(p => byId.get(p.item))), again));
       // The match needs the engine here: one whose file never came is asked for again too.
+      net.prep = 'engine';
       await loadAgain(warmEngine);
+      net.prep = 'in';
       el.busy.hidden = true;
       return true;
     } catch (e) {
+      net.prep = 'failed';
       // A file still cut off after its tries: 没加载完 with its key, not the browser's English.
       if (e?.cutOff || CUT_OFF.test(e?.message)) { showError(e); return false; }
       console.error(e);
@@ -1948,7 +1960,7 @@ async function main() {
     el.busy.hidden = false;
     const defs = ns ? ns.prepare.loadouts.map(lo => ({parts: structuredClone(lo.parts)})) : stake ? (ME ? [toDef(DEFAULT_P2), toDef(mine)] : [toDef(mine), toDef(DEFAULT_P2)]) : [toDef(mine), toDef(FOE)];
     // A build only changes once its models are here, so this fails only on a lost connection: back to the build, 开打 lit.
-    try { await loadAgain(() => loadModels(defs.flatMap(d => d.parts).map(p => byId.get(p.item)))); } catch (e) {
+    try { await loadAgain(again => loadModels(defs.flatMap(d => d.parts).map(p => byId.get(p.item)), again)); } catch (e) {
       console.error(e);
       if (id !== runId) return;
       if (ns) { say('3D 没下载下来，这局开不了'); return; }
@@ -3049,7 +3061,7 @@ async function main() {
     replayJson: () => replay && JSON.stringify(replay),
     status: () => ({phase, pvp, pick, control, cam: camStyle, denied: test.denied, live: Boolean(live), foe: live && !live.done ? live.match.control(1 - ME) : null, me: live && !live.done ? live.match.control(ME) : null,
       feel: {reactions: test.feel.reactions, windups: test.feel.windups},
-      net: net && {seat: ME, room: friend?.state?.phase ?? null, matchId: live?.matchId ?? null, rtt: friend?.rtt ?? null, direct: Boolean(friend?.direct), stats: live?.session ? {...live.session.stats, badLine: friend?.client?.bad ?? 0} : null,
+      net: net && {seat: ME, room: friend?.state?.phase ?? null, prep: net.prep ?? null, matchId: live?.matchId ?? null, rtt: friend?.rtt ?? null, direct: Boolean(friend?.direct), stats: live?.session ? {...live.session.stats, badLine: friend?.client?.bad ?? 0} : null,
         desync: live?.session?.desync ?? null, seenRollbacks: test.net.seen, seenMaxSteps: test.net.seenMax, advantage: live?.session?.advantage ?? null, oneWayMs: live?.session ? +(live.session.oneWay * rules.dt * 1000).toFixed(1) : null, confirmed: live?.session?.confirmed ?? null}, inputs: live?.done ? replay?.meta.manual?.inputs ?? null : null, frozen: test.frozen, highlights: test.highlights, t: pb?.t ?? 0, simMs: test.simMs, seed, mine: structuredClone(mine), foeBuild: structuredClone(FOE), meta: replay && {...replay.meta, initial: undefined, rules: undefined}, decisive: replay?.decisive, reason: replay && reasonLine(replay), caption: el.caption.classList.contains('on'), teach: teach && {lesson: teach.lesson, stop: teach.stop?.kind ?? null, blockAt: teach.blockAt, armed: teach.armed}, warm: Boolean(warm), hint: live?.hint ? {...live.hint} : null}),
     freezeOn(type, delayMs = 60, nth = 1) { Object.assign(test, {freezeOn: type, freezeDelay: delayMs / 1000, pending: -1, nth, seen: 0}); },
     freeze() { test.frozen = true; },
