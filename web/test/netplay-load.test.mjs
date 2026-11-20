@@ -4,7 +4,8 @@
 //  - Cut off every time: one line in Chinese, a 重新加载 key, and 准备 says under it why it can't be pressed.
 //  - Never answered (the request held open, no error: 19:04's start that never came, Elara 9930fb52, Sol 11:20): the engine
 //    at the start, and a model only the match needs once both are 准备; each is cut off by the phone's own clock and
-//    asked for anew, and the match starts.
+//    asked for anew, and the match starts. Two models of one match failing out of step each get their own tries; a phone
+//    that goes 回首页 while one is stuck plays single-player after (Sol 0a5eee5d).
 //  - The other's photo item: its model short, then garbled, then whole: each fetched anew, never the bad copy kept
 //    (Sol f0c274a3), and they play. The photo backend is a stand-in here.
 //  - The bench's default for the other phone never comes to a friend from a link: the room is not opened, the page
@@ -145,6 +146,50 @@ test('a file that never answers is cut off by the phone\'s own clock and asked f
   assert.deepEqual(Object.values(host.asked.engine), [2], 'the engine, never answered, was asked for anew');
   assert.ok(Date.now() - t0 >= 11000, 'after the wait for a stalled file, not before');
   assert.equal((await bench(host)).error, null, 'nothing said: it came on its second try');
+  await Promise.all([host, guest].map(p => p.context.close()));
+});
+
+// The guest takes a build the host has not drawn, and both are 准备 once the host's own early fetch of those models
+// (评委版's prefetch) is by, so what is cut or stalled on the host is the match's own.
+async function foreignBuild(host, guest, names, parts) {
+  await room(host, guest);
+  await guest.page.evaluate(parts => window.__top.setBuild({parts, spread: 'e180'}), parts);
+  for (const p of [host, guest]) await p.page.waitForFunction(() => !document.querySelector('#goBtn').disabled);
+  for (const name of names) {
+    while (!Object.keys(host.before[name]).length) await host.page.waitForTimeout(100);
+    host.armed[name] = true;
+  }
+  for (const p of [guest, host]) await p.page.locator('#goBtn').tap();
+}
+
+test('two models of one match failing out of step each get their own tries, and the match starts', async () => {
+  // The knife cut off twice at once; the camera's first request held open meanwhile, its own second one only after.
+  const host = await phone([['knife', /\/assets\/fanshuo-knife-[^/]*\.glb/, 2, false, false], ['camera', /\/assets\/fanshuo-camera-[^/]*\.glb/, 1, 'stall', false]]), guest = await phone();
+  await foreignBuild(host, guest, ['knife', 'camera'], [{item: 'fanshuo-knife', orient: 'out'}, {item: 'fanshuo-camera', orient: 'hug'}]);
+  await Promise.all([host, guest].map(p => p.page.waitForFunction(() => window.__top.status().phase === 'play', null, {timeout: 40000})));
+  assert.deepEqual(Object.values(host.asked.knife), [3], 'the knife: cut twice, whole the third time');
+  assert.deepEqual(Object.values(host.asked.camera), [2], 'the camera: held open once, then asked for anew');
+  assert.equal((await bench(host)).error, null);
+  await Promise.all([host, guest].map(p => p.context.close()));
+});
+
+test('a phone that goes 回首页 while a model is stuck plays single-player after', async () => {
+  const host = await phone([['model', /\/assets\/fanshuo-knife-[^/]*\.glb/, 1, 'stall', false]]), guest = await phone();
+  const errors = [];
+  host.page.on('pageerror', e => errors.push(e.message));
+  await foreignBuild(host, guest, ['model'], [{item: 'fanshuo-knife', orient: 'out'}, {item: 'fanshuo-mouse', orient: 'hug'}]);
+  await host.page.waitForFunction(() => window.__top.status().net?.prep === 'models');
+  await host.page.evaluate(() => document.querySelector('#homeBtn').click());
+  await host.page.waitForFunction(() => !document.querySelector('#intro').hidden);
+  // The stalled model is cut off and comes on its next try, all after the room is left.
+  await host.page.waitForTimeout(16000);
+  assert.deepEqual(Object.values(host.asked.model), [2]);
+  await host.page.locator('#introGo:enabled').tap();
+  await host.page.waitForFunction(() => window.__top.status().phase === 'build' && !document.querySelector('#goBtn').disabled);
+  assert.equal((await bench(host)).error, null, 'nothing said on single-player\'s page');
+  await host.page.locator('#goBtn').tap();
+  await host.page.waitForFunction(() => window.__top.status().phase === 'play');
+  assert.deepEqual(errors, []);
   await Promise.all([host, guest].map(p => p.context.close()));
 });
 

@@ -137,14 +137,16 @@ export function itemThumbnail(itemId, renderer, environment) {
   }
 }
 
-/** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). */
-export function loadModels(items, again = 0) {
-  return Promise.all(items.map(item => {
+/** Loads the given items' GLBs, each once and only when first needed (keeps the first load small). `retry` (main.js
+ *  loadAgain) tries each item on its own, handing it the try: one cut off twice spends its own tries, not those of one
+ *  still waiting on its first request (Sol 0a5eee5d). */
+export function loadModels(items, retry = load => load(0)) {
+  return Promise.all(items.map(item => retry(again => {
     // One that didn't come (a backend file on a bad connection) is asked for again the next time it is needed; `again`
-    // is the try (loadAgain's), a new request past the browser's cache (fetch-steady.js).
+    // is the try, a new request past the browser's cache from the second (fetch-steady.js).
     if (!loading.has(item.id)) loading.set(item.id, loadOne(item, again).catch(e => { loading.delete(item.id); forgetFile(item.glb); throw e; }));
     return loading.get(item.id);
-  }));
+  })));
 }
 
 /** Puts the given items' GLBs in the browser's cache and nothing more (no decoding, so the screen never hitches), one at a

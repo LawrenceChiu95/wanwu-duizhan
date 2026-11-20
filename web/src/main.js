@@ -117,7 +117,8 @@ const ICON = {
 const LOAD_WAITS = __NETPLAY__ ? [800, 2000] : [];
 async function loadAgain(load) {
   for (let i = 0; ; i++) {
-    // `i`, the try, to the load: one after the first is a new request (fetch-steady.js).
+    // `i`, the try, to the load: one after the first is a new request (fetch-steady.js). Models are tried each on its own
+    // (models.js loadModels): one cut off fast doesn't spend the tries of one still waiting (Sol 0a5eee5d).
     try { return await load(i); } catch (e) {
       // Still not here after its tries: whatever the browser called it (a cut connection, or bytes cut short that
       // the engine then can't compile, Sol c263fd78), it is a file that didn't come.
@@ -391,7 +392,7 @@ async function main() {
     && (ceramicArg === '1' || (__JUDGE__ && __COMBAT__ === 'position' && ceramicArg !== '0'));
   let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
-  await loadAgain(again => loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))], again));
+  await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))], loadAgain);
   await stage.kitchen.ready;
   el.busy.hidden = true;
   // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
@@ -705,7 +706,7 @@ async function main() {
     // The room's bench draws 2P's default for the other phone, so its models come first, asked for again on a bad
     // network. One that never comes stops here, the room not opened and the page as it was, with 没加载完 and its
     // 重新加载 (a link's ?room= goes back to that room): the bench drawn without it broke half-way (Sol ad5547c5).
-    try { await loadAgain(again => loadModels((net ? FOE : DEFAULT_P2).parts.map(p => byId.get(p.item)), again)); } catch (e) { showError(e); return; }
+    try { await loadModels((net ? FOE : DEFAULT_P2).parts.map(p => byId.get(p.item)), loadAgain); } catch (e) { showError(e); return; }
     // Until the other phone's build comes, its place on the bench is 一机双人's 2P default (the plate says 对面在选装).
     if (!net) { soloFoe = FOE; FOE = structuredClone(DEFAULT_P2); }
     net = {state: null, bench: null, score: [0, 0], scored: null, stall: 0};
@@ -753,11 +754,14 @@ async function main() {
   // this phone's own copy to the byte, else the two phones play different rules; the other phone's photo items are taken
   // into the sim and the stage here (not into my 角色库), and their models come down. Only then 准备好了 to the room.
   async function netPrepare(st) {
+    // The room it is for: left (回首页) while its files come, it touches nothing more, the page single-player's again
+    // (Sol 0a5eee5d).
+    const room = net, gone = () => net !== room;
     el.busyText.textContent = '连上对面';
     el.busy.classList.remove('say');
     el.busy.hidden = false;
     // Which step it is on, for the test hook (status().net.prep): a start that never comes says where it stopped.
-    net.prep = 'check';
+    room.prep = 'check';
     try {
       const fresh = [];
       for (const lo of st.prepare.loadouts) for (const {item, hash, model} of lo.items) {
@@ -770,22 +774,25 @@ async function main() {
         } else if (!have) fresh.push({...item, glb: model});
       }
       if (fresh.length) {
-        net.prep = 'photos';
+        room.prep = 'photos';
         const ok = await register(fresh);
+        if (gone()) return false;
         if (ok.length < fresh.length) throw Error('对面的一件东西这台手机用不了，请对面换一件');
         for (const it of ok) { byId.set(it.id, it); stage.items.set(it.id, it); }
         setNames(ok);
       }
-      net.prep = 'models';
-      await loadAgain(again => loadModels(st.prepare.loadouts.flatMap(lo => lo.parts.map(p => byId.get(p.item))), again));
+      room.prep = 'models';
+      await loadModels(st.prepare.loadouts.flatMap(lo => lo.parts.map(p => byId.get(p.item))), loadAgain);
       // The match needs the engine here: one whose file never came is asked for again too.
-      net.prep = 'engine';
+      room.prep = 'engine';
       await loadAgain(warmEngine);
-      net.prep = 'in';
+      if (gone()) return false;
+      room.prep = 'in';
       el.busy.hidden = true;
       return true;
     } catch (e) {
-      net.prep = 'failed';
+      if (gone()) return false;
+      room.prep = 'failed';
       // A file still cut off after its tries: 没加载完 with its key, not the browser's English.
       if (e?.cutOff || CUT_OFF.test(e?.message)) { showError(e); return false; }
       console.error(e);
@@ -1960,7 +1967,7 @@ async function main() {
     el.busy.hidden = false;
     const defs = ns ? ns.prepare.loadouts.map(lo => ({parts: structuredClone(lo.parts)})) : stake ? (ME ? [toDef(DEFAULT_P2), toDef(mine)] : [toDef(mine), toDef(DEFAULT_P2)]) : [toDef(mine), toDef(FOE)];
     // A build only changes once its models are here, so this fails only on a lost connection: back to the build, 开打 lit.
-    try { await loadAgain(again => loadModels(defs.flatMap(d => d.parts).map(p => byId.get(p.item)), again)); } catch (e) {
+    try { await loadModels(defs.flatMap(d => d.parts).map(p => byId.get(p.item)), loadAgain); } catch (e) {
       console.error(e);
       if (id !== runId) return;
       if (ns) { say('3D 没下载下来，这局开不了'); return; }
