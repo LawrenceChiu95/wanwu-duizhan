@@ -165,7 +165,8 @@ export function createFriend(app, hooks) {
     if (state.phase === 'preparing' && state.prepare && prepared !== state.matchId) {
       prepared = state.matchId;
       const ok = await hooks.onPrepare(state);
-      if (ok && client.state?.matchId === state.matchId) tell('assets', {t: 'assetsReady', matchId: state.matchId, hash: state.prepare.hash});
+      // Left meanwhile (回首页): client is gone, and nothing is told.
+      if (ok && client?.state?.matchId === state.matchId) tell('assets', {t: 'assetsReady', matchId: state.matchId, hash: state.prepare.hash});
       return;
     }
     if (state.phase === 'countdown' && (fresh || was?.phase !== 'countdown' || was.startAt !== state.startAt)) hooks.onCountdown(state);
