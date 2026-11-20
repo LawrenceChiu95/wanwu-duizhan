@@ -148,7 +148,9 @@ export function createNetplayServer({origin, webRoot, upstream, storeTrace, ...r
         (req.headers.origin && req.headers.origin !== origin)) return publicError(res, 403, 'origin');
     const {pathname, search} = new URL(req.url, origin);
     if (pathname.startsWith('/api/') && search) return publicError(res, 404, 'not-found');
-    if (pathname === '/api/netplay/health' && req.method === 'GET') return json(res, 200, {status: 'ok'});
+    if (pathname === '/api/netplay/health' && req.method === 'GET') {
+      return json(res, 200, {status: 'ok', ...rooms.counts()});
+    }
 
     const lookup = pathname.match(modelPath);
     if (lookup && req.method === 'GET') {

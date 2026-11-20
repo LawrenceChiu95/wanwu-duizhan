@@ -1,0 +1,10 @@
+bindAddr = "127.0.0.1"
+bindPort = 17680
+proxyBindAddr = "127.0.0.1"
+allowPorts = [{single = 17681}]
+auth.method = "token"
+auth.token = "{{ .Envs.WANWU_NETPLAY_TUNNEL_TOKEN }}"
+auth.additionalScopes = ["HeartBeats", "NewWorkConns"]
+log.to = "console"
+log.level = "warn"
+log.disablePrintColor = true

@@ -19,7 +19,7 @@ const heartbeatEvery = 3000;
 const idleTimeout = 10 * 60_000;
 const playingTimeout = 4 * 60_000;
 
-export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, graceMs = 15_000, tickMs = 200}) {
+export function mountRooms(server, {origin, shoot, storeTrace, upgradeTunnel, now = Date.now, graceMs = 15_000, tickMs = 200}) {
   const rooms = new Map();
   const sockets = new WebSocketServer({noServer: true, maxPayload: 64 * 1024});
   const send = (ws, frame) => {
@@ -313,6 +313,7 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   });
 
   function upgrade(req, socket, head) {
+    if (upgradeTunnel?.(req, socket, head)) return;
     if (req.url !== '/api/netplay/ws' || req.headers.origin !== origin || sockets.clients.size >= maxClients) {
       socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
       return;
@@ -341,6 +342,15 @@ export function mountRooms(server, {origin, shoot, storeTrace, now = Date.now, g
   }, heartbeatEvery).unref();
 
   return {
+    counts() {
+      let connectedPlayers = 0;
+      for (const room of rooms.values()) {
+        for (const seat of room.seats) {
+          if (seat?.ws?.readyState === WebSocket.OPEN) connectedPlayers++;
+        }
+      }
+      return {rooms: rooms.size, connectedPlayers};
+    },
     model(code, id, itemId, seatToken) {
       const room = rooms.get(code);
       if (!room || id !== room.matchId || typeof seatToken !== 'string' ||
