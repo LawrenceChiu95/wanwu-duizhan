@@ -1,9 +1,9 @@
 /**
- * The opening page's 奶锅 you can turn (凡朔's viewer.js from his UI preview, 11-07): judge.js loads this only once the
- * page is ready, so the pot's model (meshopt-packed in this build) never holds up the first screen; until it comes, and if
- * it can't, the styled picture stays. Stops and lets the GPU go when the page closes. 看碰撞体 (Elara 742f4a4a) puts the
- * shell the fight would collide this pot with over it (hull.json, from the importer: tools/import-item/showcase-hull.mjs),
- * see-through in the arena's teal, turning with it.
+ * The opening page's example you can turn (凡朔's viewer.js from his UI preview, 11-07), now the 剪刀 (远夏 e0fe9b09;
+ * the 奶锅 before it): judge.js loads this only once the page is ready, so its model (meshopt-packed in this build) never
+ * holds up the first screen; until it comes, and if it can't, the still stays. Stops and lets the GPU go when the page
+ * closes. 看碰撞体 (Elara 742f4a4a) puts the shell the fight would collide it with over it (hull.json, worked out from
+ * this very model.glb: data/showcase/scissors/README.md), see-through in the arena's teal, turning with it.
  */
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -11,8 +11,8 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {ConvexGeometry} from 'three/addons/geometries/ConvexGeometry.js';
-import potUrl from '../../data/showcase/pot/model.glb?url';
-import hull from '../../data/showcase/pot/hull.json';
+import potUrl from '../../data/showcase/scissors/model.glb?url';
+import hull from '../../data/showcase/scissors/hull.json';
 
 /** Shows the pot in `box` (its <img> is the stand-in) and says so in `hint`, with `toggle` (if there is one) showing and
  *  hiding its collision shell; returns a function that takes it down. A load that `current()` says a later showing of the
@@ -37,7 +37,9 @@ export async function showPot(box, hint, toggle, current = () => true) {
   shell.visible = false;
   pot.add(shell);
   const camera = new THREE.PerspectiveCamera(34, 1, size / 100, size * 20);
-  camera.position.set(-1.25, 0.82, 0.42).normalize().multiplyScalar(size * 1.42);
+  // Back far enough that a long thin item's longest side fits too, not only a squat one's diagonal.
+  const longest = Math.max(...bounds.getSize(new THREE.Vector3()).toArray());
+  camera.position.set(-1.25, 0.82, 0.42).normalize().multiplyScalar(Math.max(size * 1.42, longest * 1.9));
   box.append(renderer.domElement);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enablePan = false; controls.enableZoom = false; controls.update();
