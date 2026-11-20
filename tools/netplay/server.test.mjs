@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import http from 'node:http';
 import test from 'node:test';
+import {gzipSync} from 'node:zlib';
 import {WebSocket} from 'ws';
 import {digest} from './items.mjs';
 import {createNetplayServer} from './server.mjs';
@@ -402,6 +403,40 @@ test('the bundled font, scene, music and license are served with their MIME type
     assert.equal(response.headers.get('content-type'), type);
     assert.equal(await response.text(), name);
   }
+});
+
+test('precompressed assets keep their media types and negotiate gzip or identity', async t => {
+  const webRoot = await mkdtemp(join(tmpdir(), 'netplay-gzip-'));
+  const f = await fixture(t, {webRoot});
+  const source = Buffer.from('netplay asset\n'.repeat(256)), compressed = gzipSync(source);
+  for (const [name, type] of Object.entries({
+    'engine.wasm': 'application/wasm', 'game.js': 'text/javascript; charset=utf-8', 'item.glb': 'model/gltf-binary'
+  })) {
+    await writeFile(join(webRoot, name), source);
+    await writeFile(join(webRoot, name + '.gz'), compressed);
+    const url = f.url + '/' + name;
+    for (const [accept, gzip] of [['br, GZip; q=0.5', true], ['*', true], ['gzip;q=0, *;q=1', false], ['identity', false]]) {
+      const headers = {'accept-encoding': accept};
+      const response = await fetch(url, {headers});
+      assert.equal(response.status, 200, name);
+      assert.equal(response.headers.get('content-type'), type);
+      assert.equal(response.headers.get('vary'), 'Accept-Encoding');
+      assert.equal(response.headers.get('content-encoding'), gzip ? 'gzip' : null);
+      assert.equal(Number(response.headers.get('content-length')), gzip ? compressed.length : source.length);
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), source);
+      const head = await fetch(url, {method: 'HEAD', headers});
+      assert.deepEqual(head.headers.get('content-encoding'), response.headers.get('content-encoding'));
+      assert.deepEqual(head.headers.get('content-length'), response.headers.get('content-length'));
+      assert.equal((await head.arrayBuffer()).byteLength, 0);
+    }
+    assert.equal((await fetch(url + '.gz')).status, 404);
+  }
+  await writeFile(join(webRoot, 'plain.js'), source);
+  const plain = await fetch(f.url + '/plain.js', {headers: {'accept-encoding': 'gzip'}});
+  assert.equal(plain.headers.get('content-encoding'), null);
+  assert.deepEqual(Buffer.from(await plain.arrayBuffer()), source);
+  const unavailable = await fetch(f.url + '/plain.js', {headers: {'accept-encoding': 'gzip, identity;q=0'}});
+  assert.equal(unavailable.status, 406);
 });
 
 test('a friend can use the invitation while the host shares it outside the browser', async t => {

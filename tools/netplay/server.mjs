@@ -70,6 +70,15 @@ async function forwardShoot(req, res, pathname, shoot) {
   await relayResponse(await shoot(pathname, init), res);
 }
 
+function encodingWeights(header = '') {
+  return new Map(header.toLowerCase().split(',').map(value => {
+    const [encoding, weight] = value.trim().split(/\s*;\s*/, 2);
+    if (weight === undefined) return [encoding, 1];
+    const quality = weight.match(/^q\s*=\s*(0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/)?.[1];
+    return [encoding, Number(quality ?? 0)];
+  }));
+}
+
 async function serveAsset(req, res, pathname, webRoot) {
   if (!webRoot || !/^[a-zA-Z0-9_./-]+$/.test(pathname) ||
       pathname.split('/').some(segment => segment.startsWith('.'))) return publicError(res, 404, 'not-found');
@@ -79,13 +88,35 @@ async function serveAsset(req, res, pathname, webRoot) {
   if (!type) return publicError(res, 404, 'not-found');
   const file = await stat(local);
   if (!file.isFile()) return publicError(res, 404, 'not-found');
+  let selected = local;
+  let size = file.size;
+  const weights = encodingWeights(req.headers['accept-encoding']);
+  const gzipWeight = weights.get('gzip') ?? weights.get('*') ?? 0;
+  const identityWeight = weights.get('identity');
+  if (/\.(?:wasm|js|glb)$/.test(local)) {
+    res.setHeader('Vary', 'Accept-Encoding');
+    if (gzipWeight > 0 && gzipWeight >= (identityWeight ?? 0)) {
+      const gzipPath = local + '.gz';
+      const gzip = await stat(gzipPath).catch(cause => {
+        if (cause.code !== 'ENOENT') throw cause;
+      });
+      if (gzip?.isFile()) {
+        selected = gzipPath;
+        size = gzip.size;
+        res.setHeader('Content-Encoding', 'gzip');
+      }
+    }
+  }
+  if (selected === local && (identityWeight ?? weights.get('*')) === 0) {
+    return publicError(res, 406, 'encoding');
+  }
   res.writeHead(200, {
-    'Content-Type': type, 'Content-Length': file.size,
+    'Content-Type': type, 'Content-Length': size,
     'Cache-Control': /^\/assets\/.+-[a-zA-Z0-9_-]{8,}\.[a-zA-Z0-9]+$/.test(pathname)
       ? 'public, max-age=31536000, immutable' : 'no-cache'
   });
   if (req.method === 'HEAD') return res.end();
-  await pipeline(createReadStream(local), res);
+  await pipeline(createReadStream(selected), res);
 }
 
 export async function traceWriter(directory) {
