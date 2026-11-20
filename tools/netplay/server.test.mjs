@@ -10,6 +10,7 @@ import {gzipSync} from 'node:zlib';
 import {WebSocket} from 'ws';
 import {digest} from './items.mjs';
 import {createNetplayServer} from './server.mjs';
+import {createGateway} from '../studio/gateway.mjs';
 
 const origin = 'https://netplay.example';
 const version = 'build-a';
@@ -30,7 +31,7 @@ async function listen(server) {
   return 'http://127.0.0.1:' + server.address().port;
 }
 
-async function fixture(t, {shoot = false, webRoot, beforeTrace} = {}) {
+async function fixture(t, {shoot = false, webRoot, beforeTrace, studio = false} = {}) {
   const requests = [], traces = [];
   let time = 1000;
   let upstream;
@@ -57,12 +58,21 @@ async function fixture(t, {shoot = false, webRoot, beforeTrace} = {}) {
     upstream = await listen(mock);
     t.after(() => new Promise(resolve => mock.close(resolve)));
   }
-  const app = createNetplayServer({origin, upstream, webRoot, tickMs: 5, now: () => time, storeTrace: async trace => {
+  const roomRequests = studio ? new EventEmitter() : null;
+  const gateway = roomRequests && createGateway({publicOrigin: origin, apiPort: Number(new URL(upstream).port), rooms: roomRequests});
+  const gatewayUrl = gateway && await listen(gateway.server);
+  const app = createNetplayServer({origin, upstream: gatewayUrl || upstream, webRoot, tickMs: 5, now: () => time, storeTrace: async trace => {
     if (beforeTrace) await beforeTrace(trace);
     traces.push(trace);
   }});
-  const url = await listen(app.server);
+  for (const event of ['request', 'upgrade']) roomRequests?.on(event, (...args) => app.server.emit(event, ...args));
+  const url = gatewayUrl || await listen(app.server);
   t.after(() => app.close());
+  if (gateway) t.after(() => new Promise(resolve => {
+    gateway.disconnect();
+    gateway.server.close(resolve);
+    gateway.server.closeAllConnections();
+  }));
   return {url, requests, traces, ahead: ms => { time += ms; }};
 }
 
@@ -332,6 +342,23 @@ test('source photograph is kept private and only the two seats can read the sele
   assert.equal(f.requests.every(req => req.origin === undefined), true);
   assert.equal(f.requests.filter(req => req.method === 'POST').length, 1);
   assert.equal(f.requests.filter(req => req.hasOwner && req.path === modelPath).length, 1);
+});
+
+test('judge gateway serves rooms and original shooting routes on the same listener', async t => {
+  const f = await fixture(t, {shoot: true, studio: true});
+  const {a, b, bSession, matchId} = await pair(f.url);
+  assert.equal((await (await fetch(f.url + '/api/netplay/health')).json()).connectedPlayers, 2);
+  assert.equal((await fetch(f.url + '/api/netplay/health', {headers: {origin: 'https://elsewhere.example'}})).status, 403);
+  const session = await fetch(f.url + '/api/shoot/session', {method: 'POST', headers: {origin}});
+  assert.equal((await session.json()).token, ownerToken);
+  assert.equal(f.requests.find(req => req.method === 'POST').origin, origin);
+  a.send('ready', {matchId, parts: [part(photoId)], shootSession: ownerToken});
+  b.send('ready', {matchId, parts: [plate]});
+  const {prepare} = await b.state('preparing');
+  const {model} = prepare.loadouts[0].items[0];
+  assert.equal((await fetch(f.url + model)).status, 404);
+  const file = await fetch(f.url + model, {headers: {'X-Netplay-Seat': bSession.token}});
+  assert.equal(await file.text(), 'glTFfixture');
 });
 
 test('desync preserves one trace per seat and unrelated origins cannot connect', async t => {
