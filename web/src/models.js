@@ -16,8 +16,10 @@ export const stillUrl = id => stillUrls[`../../data/stills/${id}.webp`] ?? null;
 const urlFor = glb => isUrl(glb) ? glb : Object.entries(urls).find(([key]) => key.endsWith('/' + glb))?.[1];
 // 拍一件's own models come from its backend with this page's session (shoot-api.js fileUrl): a path there becomes a
 // blob: URL only when the model is needed, so an item is in the 角色库 before its GLB is down (Elara c611b379).
-let fileSource = path => path;
-export const setFileSource = fn => { fileSource = fn; };
+let fileSource = path => path, forgetFile = () => {};
+// forget(path): a model that came but couldn't be read (its bytes cut short) is fetched anew next time, not read again from
+// the copy kept (Sol f0c274a3).
+export const setFileSource = (fn, forget = () => {}) => { fileSource = fn; forgetFile = forget; };
 
 const loader = new GLTFLoader();
 // 评委版's models are packed with meshopt (tools/import-item/pack-web-models.mjs); the normal build doesn't load this.
@@ -138,7 +140,7 @@ export function itemThumbnail(itemId, renderer, environment) {
 export function loadModels(items) {
   return Promise.all(items.map(item => {
     // One that didn't come (a backend file on a bad connection) is asked for again the next time it is needed.
-    if (!loading.has(item.id)) loading.set(item.id, loadOne(item).catch(e => { loading.delete(item.id); throw e; }));
+    if (!loading.has(item.id)) loading.set(item.id, loadOne(item).catch(e => { loading.delete(item.id); forgetFile(item.glb); throw e; }));
     return loading.get(item.id);
   }));
 }

@@ -880,6 +880,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #busy.say i { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 #error { position: absolute; left: 12px; right: 12px; top: 90px; padding: 10px 12px; background: #3a0f17; color: #ffd5da; font-size: 13px; line-height: 1.45; white-space: pre-wrap; user-select: text; -webkit-user-select: text; z-index: 9; }
+/* 好友对撞's 没加载完 (main.js showError): one plain line and a key to load the page again. */
+#error.cut { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 9px 9px 14px; font-size: 15px; user-select: none; -webkit-user-select: none; }
+#error.cut[hidden] { display: none; }
+#reloadBtn { flex: none; padding: 7px 14px; border: 1px solid #edbb59; background: #edbb59; color: #1d1608; font: 700 15px "PingFang SC", "Microsoft YaHei", sans-serif; }
 
 @media (max-width: 340px) {
   .bhead span { display: none; }
