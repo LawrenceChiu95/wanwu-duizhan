@@ -56,6 +56,8 @@ const phone = async (browser, name) => {
   const context = await browser.newContext({viewport: {width: 390, height: 780}, hasTouch: true, isMobile: browser.browserType().name() !== 'webkit' ? true : undefined});
   const page = await context.newPage();
   page.setDefaultTimeout(60000);
+  // Phones that have had their 木桩 (好友初见): 准备 goes straight to the room.
+  await page.addInitScript(() => localStorage.setItem('wanwu-netplay-warm-seen', '1'));
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !/favicon|shoot/i.test(m.text())) errors.push(m.text()); });

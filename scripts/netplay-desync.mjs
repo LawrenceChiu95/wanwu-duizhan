@@ -22,6 +22,8 @@ const phone = async name => {
   const context = await browser.newContext({viewport: {width: 390, height: 844}, deviceScaleFactor: 2, hasTouch: true, isMobile: true});
   const page = await context.newPage();
   page.setDefaultTimeout(60000);
+  // Phones that have had their 木桩 (好友初见): 准备 goes straight to the room.
+  await page.addInitScript(() => localStorage.setItem('wanwu-netplay-warm-seen', '1'));
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !/favicon|shoot/i.test(m.text())) errors.push(m.text()); });

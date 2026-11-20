@@ -13,7 +13,7 @@ export class NetClient {
   constructor({version, url = defaultUrl(), on = {}} = {}) {
     this.version = version;
     this.url = url;
-    this.on = on;          // {session, state, game, error, link}
+    this.on = on;          // {session, state, game, error, link, warm}
     this.ws = null;
     this.state = null;
     this.seat = null;
@@ -163,6 +163,7 @@ export class NetClient {
         this.send({t: 'signal', d: {sdp: pc.localDescription.toJSON()}});
       } else if (d?.sdp?.type === 'answer') await this.pc?.setRemoteDescription(d.sdp);
       else if (d?.ice) await this.pc?.addIceCandidate(d.ice);
+      else if (typeof d?.warm === 'boolean') this.on.warm?.(d.warm);
     } catch { /* a stale or broken offer: the presses go by the room service */ }
   }
   closePeer() { const pc = this.pc; this.pc = this.dc = null; this.direct = false; try { pc?.close(); } catch { /* already */ } }
