@@ -139,7 +139,7 @@ function showError(err) {
     again.onclick = () => location.reload();
     el.error.replaceChildren(Object.assign(document.createElement('span'), {textContent: '网络断了一下，没加载完'}), again);
   } else el.error.textContent = `出错了：${err?.message ?? err}`;
-  el.error.dataset.why = cut ? '没加载完，点上面重新加载' : '出错了，现在点不了';
+  el.error.dataset.why = cut ? '先点上面重新加载' : '出错了，现在点不了';
   if (el.app.classList.contains('net')) el.go.querySelector('small').textContent = el.error.dataset.why;
   console.error(err);
 }
@@ -697,11 +697,13 @@ async function main() {
     friend ??= createFriend(el.app, {version: buildVersion(), onBench: netBench, onPrepare: netPrepare, onCountdown: netCountdown,
       onState: netState, onGame: netGame, onHome: netHome, onReadyRefused: netRefused, onReload: netReload});
     if (pvp) await setPvp(false);
+    // The room's bench draws 2P's default for the other phone, so its models come first, asked for again on a bad
+    // network. One that never comes stops here, the room not opened and the page as it was, with 没加载完 and its
+    // 重新加载 (a link's ?room= goes back to that room): the bench drawn without it broke half-way (Sol ad5547c5).
+    try { await loadAgain(() => loadModels((net ? FOE : DEFAULT_P2).parts.map(p => byId.get(p.item)))); } catch (e) { showError(e); return; }
     // Until the other phone's build comes, its place on the bench is 一机双人's 2P default (the plate says 对面在选装).
     if (!net) { soloFoe = FOE; FOE = structuredClone(DEFAULT_P2); }
     net = {state: null, bench: null, score: [0, 0], scored: null, stall: 0};
-    // Asked for again on a bad network; one still missing is said (it was let go here, and the bench then broke on it).
-    await loadAgain(() => loadModels(FOE.parts.map(p => byId.get(p.item)))).catch(showError);
     combatOptions = NET_OPTIONS;
     el.app.classList.add('net');
     friend.open(code);

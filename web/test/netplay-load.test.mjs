@@ -4,6 +4,8 @@
 //  - Cut off every time: one line in Chinese, a 重新加载 key, and 准备 says under it why it can't be pressed.
 //  - The other's photo item: its model short, then garbled, then whole: each fetched anew, never the bad copy kept
 //    (Sol f0c274a3), and they play. The photo backend is a stand-in here.
+//  - The bench's default for the other phone never comes to a friend from a link: the room is not opened, the page
+//    says so with 重新加载 and throws nothing; with the network back, that key takes them into the room (Sol ad5547c5).
 // NETPLAY_WEB=<built 好友对撞 page> checks that page (tools/netplay/stage.mjs runs this before a release); without it the
 // page is built here first. NETPLAY_SHOTS=<dir> keeps a screenshot of each.
 import test, {after, before} from 'node:test';
@@ -127,7 +129,7 @@ test('an engine that never comes says so in Chinese, with 重新加载, and 准�
   assert.doesNotMatch(seen.error, /[A-Za-z]/, 'no browser English on the page');
   assert.ok(seen.reload, 'a 重新加载 key');
   assert.ok(seen.go, '准备 cannot be pressed');
-  assert.match(seen.why, /没加载完.*重新加载/, '准备 says why under it');
+  assert.match(seen.why, /重新加载/, '准备 says why under it');
   assert.deepEqual(Object.values(host.asked.engine), [3], 'asked three times before it said so');
   // The key loads the page again (the network back now), into the same room, the other's 准备 still there.
   await host.page.unrouteAll();
@@ -148,7 +150,7 @@ test('an engine whose bytes always end early says the same, not the browser\'s E
   if (shots) await host.page.screenshot({path: join(shots, 'load-short-host.png')});
   assert.equal(seen.error, '网络断了一下，没加载完重新加载');
   assert.ok(seen.reload && seen.go);
-  assert.match(seen.why, /没加载完.*重新加载/);
+  assert.match(seen.why, /重新加载/);
   assert.deepEqual(Object.values(host.asked.engine), [3]);
   await host.context.close();
 });
@@ -184,5 +186,33 @@ test('the other\'s photo model, come short, then garbled, is fetched anew each t
   await Promise.all([host, guest].map(p => p.page.waitForFunction(() => window.__top.status().phase === 'play')));
   assert.equal(asked.length, 3, 'asked for three times: short, garbled, whole');
   assert.equal((await bench(guest)).error, null);
+  await Promise.all([host, guest].map(p => p.context.close()));
+});
+
+test('a friend whose default opponent never comes is told, not let into a half-drawn room', async () => {
+  const host = await phone(), guest = await phone([['default', /\/assets\/fanshuo-(plate|roller)-[^/]+\.glb$/, Infinity]]);
+  const thrown = [];
+  guest.page.on('pageerror', e => thrown.push(e.message));
+  guest.page.on('console', m => { if (m.type() === 'error' && /Model not loaded/.test(m.text())) thrown.push(m.text()); });
+  await host.page.goto(origin + '/?shoot=off');
+  await host.page.locator('#introFriend').tap();
+  await host.page.locator('#netCreate').tap();
+  const code = await (await host.page.waitForFunction(() => document.querySelector('#netRoomCode')?.textContent || null)).jsonValue();
+  // Their own opponent on this phone is another build (?foe=), so the page itself comes up whole and only the room's
+  // default for the other phone is missing.
+  await guest.page.goto(origin + `/?shoot=off&foe=fanshuo-cup,out,fanshuo-knife,hug,e180&room=${code}`);
+  await guest.page.waitForFunction(() => !document.querySelector('#error').hidden);
+  await guest.page.waitForTimeout(1500);
+  const seen = await bench(guest);
+  if (shots) await guest.page.screenshot({path: join(shots, 'load-default-guest.png')});
+  assert.equal(seen.error, '网络断了一下，没加载完重新加载');
+  assert.ok(seen.reload && seen.go);
+  assert.deepEqual(thrown, [], 'nothing thrown, no half-drawn bench');
+  assert.equal(await guest.page.evaluate(() => window.__top.status().net), null, 'the room was not opened');
+  assert.ok(Object.values(guest.asked.default).every(n => n >= 3), 'each asked for three times at least (the page fetches ahead too)');
+  assert.equal(await host.page.evaluate(() => window.__top.status().net?.room), 'waiting', 'the host still waits for them');
+  await guest.page.unrouteAll();
+  await Promise.all([guest.page.waitForEvent('load'), guest.page.locator('#reloadBtn').tap()]);
+  await guest.page.waitForFunction(() => { const s = window.__top?.status(); return s?.net?.seat === 1 && s.net.room === 'loadout' && document.querySelector('#error').hidden; });
   await Promise.all([host, guest].map(p => p.context.close()));
 });
