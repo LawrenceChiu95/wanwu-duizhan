@@ -115,6 +115,8 @@ function realApi(base = '/api/shoot', {session: bySession = false} = {}) {
     now: () => Date.now(),
     // A file of this player's for an <img>: the styled picture while the job is still running (styledUrl).
     fileUrl: async path => file(path),
+    // One that came but didn't read as a model: the next ask downloads it again (models.js setFileSource).
+    forgetFile(path) { const kept = files.get(path); files.delete(path); kept?.then(URL.revokeObjectURL, () => {}); },
     async create(photo, clientKey) {
       const form = new FormData();
       form.append('photo', photo);

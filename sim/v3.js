@@ -12,7 +12,8 @@ const S2=Math.SQRT1_2;
 /** Unit direction in the equator plane for a slot angle in degrees; multiples of 45° only (exact constants). */
 function slotDirection(deg){const k=((deg%360)+360)%360,table={0:[0,1],45:[S2,S2],90:[1,0],135:[S2,-S2],180:[0,-1],225:[-S2,-S2],270:[-1,0],315:[-S2,S2]}[k];if(!table)throw Error(`Slot angle ${deg} must be a multiple of 45 degrees`);return [table[0],0,table[1]];}
 let initialized, rulesPromise;
-const ready=()=>initialized??=RAPIER.init();
+// A start that failed (its file cut off on a phone network) is forgotten, so the next call fetches it again.
+const ready=()=>initialized??=RAPIER.init().catch(e=>{initialized=undefined;throw e;});
 /** Starts the physics engine early (the same one-time start a match would do): 评委版 fetches it as a file after its first screen. */
 export const warmEngine=()=>ready();
 const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
