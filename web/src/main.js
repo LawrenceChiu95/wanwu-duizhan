@@ -139,7 +139,7 @@ function showError(err) {
     again.onclick = () => location.reload();
     el.error.replaceChildren(Object.assign(document.createElement('span'), {textContent: '网络断了一下，没加载完'}), again);
   } else el.error.textContent = `出错了：${err?.message ?? err}`;
-  el.error.dataset.why = cut ? '没加载完，点上面的「重新加载」' : '出错了，现在点不了';
+  el.error.dataset.why = cut ? '没加载完，点上面重新加载' : '出错了，现在点不了';
   if (el.app.classList.contains('net')) el.go.querySelector('small').textContent = el.error.dataset.why;
   console.error(err);
 }

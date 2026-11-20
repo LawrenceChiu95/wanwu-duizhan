@@ -673,6 +673,8 @@ button:focus-visible,summary:focus-visible { outline:2px solid var(--c1);outline
 #app.net .go small { grid-area:2/1;justify-self:center;font:700 12px/1 var(--kfont,"PingFang SC",sans-serif);letter-spacing:0;color:#4a3d17;text-shadow:none;white-space:nowrap; }
 #app.net .go svg { grid-area:1/2/3/3;align-self:center; }
 #app.net .go:disabled { opacity:.72; }
+/* Dark while the page says 没加载完 (main.js showError): it can't be pressed, and has to look it (远夏 801288e4). */
+#app.net:has(> #error:not([hidden])) .go:disabled { filter:grayscale(1) brightness(.7); }
 /* The opening page's third key: quieter than the two yellow ones (one main key a screen). */
 .kfriend { width:100%;margin-top:8px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:10px;min-height:52px;padding:0 10px;
   border:7px solid transparent;border-image:url('./assets/terminal/cream.webp') 80 fill stretch;background:#e7dcb9 padding-box;color:#242c20;font-family:var(--kfont);text-align:left; }
