@@ -1932,7 +1932,10 @@ async function main() {
   async function start(ns = null, restore = null, stake = false) {
     if (!ns && (phase !== 'build' || !el.error.hidden)) return;
     const id = ++runId;
-    if (ns) seed = ns.seed; else if (stake) seed = WARM_SEED; else if (!fixedSeed) seed = randomSeed();
+    // The room's match and the 木桩 each play their own seed: single-player's (?seed=, and the address it is written back
+    // to) is left as it was, so an old link still plays its match after a friend's room (Sol 518d4d78, Elara 0ca37ba8).
+    if (!ns && !stake && !fixedSeed) seed = randomSeed();
+    const matchSeed = ns ? ns.seed : stake ? WARM_SEED : seed;
     fought = pvp || ns || stake ? null : ladderOn ? ladder.at : pinned >= 0 ? pinned : null;
     outcome = null;
     phase = 'computing';
@@ -1971,8 +1974,8 @@ async function main() {
       const manual = pvp || ns || stake ? {sides: ['input', 'input']} : {sides: ['input', 'ai'], ...(blockTime ? {blockTime} : {}), ...(ai ? {aiProfiles: [null, structuredClone(ai)]} : {})};
       const tempo = ns || stake ? NET_TEMPO : lungeTier === null ? LUNGE_DEFAULT : LUNGE_TIERS[lungeTier][1];
       const extra = {...(ceramic && {ceramicShards: true}), ...(tempo !== 1 && {lungeTempo: tempo})};
-      const args = ns || stake ? {fighters: defs, mode: 'A', seed, ...NET_OPTIONS, manual}
-        : {fighters: defs, mode, seed, feel, ...combatOptions, ...(Object.keys(extra).length && {combatRules: {...combatOptions.combatRules, ...extra}}), manual};
+      const args = ns || stake ? {fighters: defs, mode: 'A', seed: matchSeed, ...NET_OPTIONS, manual}
+        : {fighters: defs, mode, seed: matchSeed, feel, ...combatOptions, ...(Object.keys(extra).length && {combatRules: {...combatOptions.combatRules, ...extra}}), manual};
       // The page's own copy of the lunge (its streak, the reach arrow) plays at the same tempo.
       Object.assign(rules.manual, applyLungeTempo({...baseManual}, tempo));
       const match = await createV3Match(args);
@@ -1986,7 +1989,7 @@ async function main() {
       if (ns) { live.hint = net.hint ? {left: WARM_HINTS, t: -1, shown: 0, caught: false} : null; net.hint = false; }
     } else {
       // Yield to the page every few hundred physics steps so the preview keeps spinning.
-      r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed, feel, ...combatOptions, onProgress: () => new Promise(res => setTimeout(res, 0))});
+      r = await simulateV3({fighters: [toDef(mine), toDef(FOE)], mode, seed: matchSeed, feel, ...combatOptions, onProgress: () => new Promise(res => setTimeout(res, 0))});
     }
     test.simMs = performance.now() - t0;
     if (id !== runId) return;

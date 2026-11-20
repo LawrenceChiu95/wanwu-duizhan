@@ -5,6 +5,8 @@
 //    beside its button at the other's flashes till the player has caught one, then never.
 //  - 跳过 on the card: 已准备 at once.
 //  - A phone that has had the single-player lesson: 准备 goes straight to the room.
+//  - An old 评委 link with ?seed=: after the 木桩 and a friend's match, single-player plays that seed and keeps it in the
+//    address (Sol 518d4d78, Elara 0ca37ba8).
 // NETPLAY_WEB=<built 好友对撞 page> checks that page; without it the page is built here first. NETPLAY_SHOTS=<dir> keeps a
 // screenshot of each step.
 import test, {after, before} from 'node:test';
@@ -35,7 +37,8 @@ before(async () => {
   }
   const port = await freePort();
   origin = `http://127.0.0.1:${port}`;
-  app = createNetplayServer({origin, webRoot: root});
+  // A phone gone from a match ends it after 4 s here (15 s live), so the seed check below doesn't wait long.
+  app = createNetplayServer({origin, webRoot: root, graceMs: 4000});
   await new Promise(ok => app.server.listen(port, '127.0.0.1', ok));
   browser = await chromium.launch({headless: true, args: ['--no-proxy-server']});
 });
@@ -61,8 +64,8 @@ const shot = (p, name) => shots && p.page.screenshot({path: join(shots, `warm-${
 const bench = p => p.page.evaluate(() => ({go: document.querySelector('#goBtn span').textContent, why: document.querySelector('#goBtn small').textContent, plate: document.querySelector('#foeLabel').textContent}));
 const card = p => p.page.evaluate(() => ({title: document.querySelector('#teachTitle').textContent, lit: document.querySelector('#pad').dataset.lit}));
 // Host opens a room from 首页, the guest comes in by the invite link; both on the bench of the room's first match.
-async function room(host, guest) {
-  await host.page.goto(origin + '/?shoot=off');
+async function room(host, guest, path = '/?shoot=off') {
+  await host.page.goto(origin + path);
   await host.page.locator('#introFriend').tap();
   await host.page.locator('#netCreate').tap();
   await host.page.waitForFunction(() => document.querySelector('#netLinkUrl')?.href);
@@ -164,4 +167,31 @@ test('a phone that has had the single-player lesson goes straight to the room', 
   assert.equal(s.warm, false);
   assert.equal(await host.page.evaluate(() => localStorage.getItem('wanwu-netplay-warm-seen')), null);
   await Promise.all([host, guest].map(p => p.context.close()));
+});
+
+test('an old link\'s ?seed= is single-player\'s still after the 木桩 and a friend\'s match', async () => {
+  const host = await phone(), guest = await phone(SEEN);
+  await room(host, guest, '/?shoot=off&seed=803');
+  // The 木桩, played through.
+  await host.page.locator('#goBtn').tap();
+  await host.page.waitForFunction(() => window.__top.status().teach?.stop === 'dash' && !document.querySelector('#teach').hidden);
+  await host.page.locator('#dashBtn').tap();
+  await host.page.waitForFunction(() => window.__top.status().teach?.stop === 'block' && !document.querySelector('#teach').hidden);
+  await host.page.locator('#blockBtn').tap();
+  await host.page.waitForFunction(() => window.__top.status().phase === 'build' && document.querySelector('#goBtn span').textContent === '已准备');
+  // The room's match, ended by the other phone going.
+  await guest.page.locator('#goBtn').tap();
+  await host.page.waitForFunction(() => { const s = window.__top.status(); return s.phase === 'play' && s.net?.room === 'playing'; });
+  await guest.context.close();
+  await host.page.waitForFunction(() => !document.getElementById('result').hidden && document.querySelector('#againBtn').dataset.act === 'home', null, {timeout: 30000});
+  await host.page.locator('#againBtn').tap();
+  // Single-player from the 首页: the link's seed, in the match and in the address.
+  await host.page.locator('#introGo:enabled').tap();
+  await host.page.waitForFunction(() => window.__top.status().phase === 'build' && !document.querySelector('#goBtn').disabled);
+  await host.page.locator('#goBtn').tap();
+  await host.page.waitForFunction(() => ['ready', 'play'].includes(window.__top.status().phase));
+  assert.equal(await host.page.evaluate(() => window.__top.status().seed), 803);
+  assert.equal(await host.page.evaluate(() => new URLSearchParams(location.search).get('seed')), '803');
+  assert.deepEqual(host.errors, []);
+  await host.context.close();
 });
