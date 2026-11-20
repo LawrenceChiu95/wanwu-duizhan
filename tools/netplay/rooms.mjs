@@ -342,6 +342,15 @@ export function mountRooms(server, {origin, shoot, storeTrace, upgradeTunnel, no
   }, heartbeatEvery).unref();
 
   return {
+    counts() {
+      let connectedPlayers = 0;
+      for (const room of rooms.values()) {
+        for (const seat of room.seats) {
+          if (seat?.ws?.readyState === WebSocket.OPEN) connectedPlayers++;
+        }
+      }
+      return {rooms: rooms.size, connectedPlayers};
+    },
     model(code, id, itemId, seatToken) {
       const room = rooms.get(code);
       if (!room || id !== room.matchId || typeof seatToken !== 'string' ||

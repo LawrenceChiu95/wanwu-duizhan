@@ -117,6 +117,40 @@ async function getPlaying(f, {a, b, matchId}) {
   assert.deepEqual(await a.state('playing'), await b.state('playing'));
 }
 
+test('health counts room seats with open connections, including while in the background', async t => {
+  const {url} = await fixture(t);
+  const health = async (rooms, connectedPlayers) => {
+    const res = await fetch(url + '/api/netplay/health');
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await res.json(), {status: 'ok', rooms, connectedPlayers});
+  };
+  await client(url); // An unseated socket is not a player.
+  await health(0, 0);
+
+  const a = await client(url);
+  a.send('create', {version});
+  const {code} = await a.next('session');
+  await a.state('waiting');
+  await health(1, 1);
+
+  const b = await client(url);
+  b.send('join', {code, version});
+  await a.state('loadout');
+  await health(1, 2);
+  b.send('presence', {active: false});
+  await a.next('state', frame => !frame.seats[1].connected);
+  await health(1, 2);
+
+  b.send('leave');
+  await a.state('finished');
+  await health(1, 1);
+  const closed = once(a.ws, 'close');
+  a.send('leave');
+  await closed;
+  await health(0, 0);
+});
+
 test('two seats negotiate versions, handshakes, countdown, relay, result and rematch', async t => {
   const f = await fixture(t), {a, b, aSession, bSession, state, matchId} = await pair(f.url);
   const c = await client(f.url);
