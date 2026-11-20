@@ -110,11 +110,37 @@ const ICON = {
   hug: '<svg class="ico" viewBox="0 0 24 24"><circle cx="10" cy="12" r="4" /><path d="M16.5 5.5a9 9 0 0 1 0 13" /></svg>'
 };
 
+// 好友对撞 is played on phone networks (远夏 801288e4: the engine's file cut off halfway, the page left in English with 准备
+// dead). There a file that didn't come is asked for again twice before anyone is told, and then the page says so in words
+// with a key to load it again (a reload goes back into the room, netplay/friend.js); 准备 says why it can't be pressed.
+const LOAD_WAITS = __NETPLAY__ ? [800, 2000] : [];
+async function loadAgain(load) {
+  for (let i = 0; ; i++) {
+    try { return await load(); } catch (e) {
+      // Still not here after its tries: whatever the browser called it (a cut connection, or bytes cut short that
+      // the engine then can't compile, Sol c263fd78), it is a file that didn't come.
+      if (i >= LOAD_WAITS.length) throw Object.assign(e instanceof Error ? e : Error(String(e)), {cutOff: true});
+      await new Promise(ok => setTimeout(ok, LOAD_WAITS[i]));
+    }
+  }
+}
+// The same said of one that reaches the page some other way (a script's chunk, an error no load above caught).
+const CUT_OFF = /network|fetch|abort|load|import|webassembly|wasm|compil|eof|end of (stream|input)/i;
 function showError(err) {
   el.go.disabled = true;
   el.busy.hidden = true;
   el.error.hidden = false;
-  el.error.textContent = `出错了：${err?.message ?? err}`;
+  const cut = __NETPLAY__ && (err?.cutOff === true || CUT_OFF.test(String(err?.message ?? err)));
+  el.error.classList.toggle('cut', cut);
+  if (cut) {
+    const again = document.createElement('button');
+    again.id = 'reloadBtn';
+    again.textContent = '重新加载';
+    again.onclick = () => location.reload();
+    el.error.replaceChildren(Object.assign(document.createElement('span'), {textContent: '网络断了一下，没加载完'}), again);
+  } else el.error.textContent = `出错了：${err?.message ?? err}`;
+  el.error.dataset.why = cut ? '没加载完，点上面的「重新加载」' : '出错了，现在点不了';
+  if (el.app.classList.contains('net')) el.go.querySelector('small').textContent = el.error.dataset.why;
   console.error(err);
 }
 addEventListener('error', e => showError(e.error ?? e.message));
@@ -363,7 +389,7 @@ async function main() {
     && (ceramicArg === '1' || (__JUDGE__ && __COMBAT__ === 'position' && ceramicArg !== '0'));
   let camStyle = ['v4', 'slow'].includes(q.get('cam')) ? q.get('cam') : 'new';
   stage.setCamStyle(camStyle);
-  await loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]);
+  await loadAgain(() => loadModels([...new Set([...mine.parts, ...FOE.parts].map(p => byId.get(p.item)))]));
   await stage.kitchen.ready;
   el.busy.hidden = true;
   // 评委版: the build screen needs no physics, so its engine (a separate file there) loads only now, while the judge reads
@@ -379,7 +405,7 @@ async function main() {
   // 「拍一件试试」 and not once the bench is set up, which waits on the opponent's 3D (Sol f143b0e8).
   let homeTrips = 0;
   const introShoot = () => { const trip = homeTrips; return () => shootUp.then(() => { if (trip !== homeTrips || phase !== 'build' || pvp) return; if (shoot) shoot.open('link', '组装台'); else if (judge) openHow(SAMPLES[0].item.id); }); };
-  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two)), introShoot); prefetched = warmEngine().then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
+  if (judge) { judge.readyIntro(two => whenSetUp.then(() => setPvp(two)), introShoot); prefetched = loadAgain(warmEngine).then(() => prefetchModels(OFFER.map(id => byId.get(id))), showError); }
   // ?scene=kitchen: the 3D kitchen behind the build bench (bench-kitchen.js) comes down last, after everything a match needs;
   // if it fails the bench just keeps the usual backdrop.
   if (stage.bench) prefetched.finally(() => stage.bench.want());
@@ -617,7 +643,7 @@ async function main() {
       // ceb73008), so both phones say the same number, whatever ended the last one and after a reload (Elara dd0a5a95).
       const round = net.state?.round;
       el.go.querySelector('span').textContent = sent ? '已准备' : round > 1 ? `准备第 ${round} 局` : '准备';
-      el.go.querySelector('small').textContent = !other?.connected ? '对面暂时不在' : other.ready ? '对面已准备' : sent ? '等对面准备…' : '对面在选装';
+      el.go.querySelector('small').textContent = !el.error.hidden ? el.error.dataset.why ?? '' : !other?.connected ? '对面暂时不在' : other.ready ? '对面已准备' : sent ? '等对面准备…' : '对面在选装';
       el.go.disabled = sent || !el.error.hidden;
       return;
     }
@@ -638,15 +664,25 @@ async function main() {
   // ---------- 好友对撞 (docs/netplay-spec.md) ----------
   // The room (netplay/friend.js) is made the first time it is opened. In it the bench shows this phone's own build: 准备
   // hands it to the room, and the match starts on both phones from what the room hands back, on the room's clock.
-  let friend = null, shootFile = path => path;
+  let friend = null, shootFile = path => path, shootForget = () => {};
   // An opponent's photo item comes from the room service with this seat's pass (Sol 2523c4d0): one blob: per model.
   const NET_MODELS = '/api/netplay/models/', netFiles = new Map();
   setFileSource(path => {
     if (typeof path !== 'string' || !path.startsWith(NET_MODELS)) return shootFile(path);
     if (!netFiles.has(path)) netFiles.set(path, fetch(path, {headers: {'X-Netplay-Seat': friend?.client?.token ?? ''}})
       .then(r => { if (!r.ok) throw Error(`对面的模型没下载下来（${r.status}）`); return r.blob(); })
-      .then(b => URL.createObjectURL(b)).catch(e => { netFiles.delete(path); throw e; }));
+      .then(async b => {
+        // A GLB says its own length (bytes 8–11): one shorter came cut off, though it may still read as a model.
+        const head = new DataView(await b.slice(0, 12).arrayBuffer());
+        if (head.byteLength < 12 || head.getUint32(0, true) !== 0x46546c67 || head.getUint32(8, true) !== b.size) throw Object.assign(Error('对面的模型没下载完整'), {cutOff: true});
+        return URL.createObjectURL(b);
+      }).catch(e => { netFiles.delete(path); throw e; }));
     return netFiles.get(path);
+  }, path => {
+    if (typeof path !== 'string' || !path.startsWith(NET_MODELS)) return shootForget(path);
+    const kept = netFiles.get(path);
+    netFiles.delete(path);
+    kept?.then(URL.revokeObjectURL, () => {});
   });
   // The rules both phones play: this build's 一机双人 ones, whatever either address says (?lunge, ?ceramic, ?seed, ?feel,
   // ?block are this phone's alone); the room has checked that both phones run the same build.
@@ -664,7 +700,8 @@ async function main() {
     // Until the other phone's build comes, its place on the bench is 一机双人's 2P default (the plate says 对面在选装).
     if (!net) { soloFoe = FOE; FOE = structuredClone(DEFAULT_P2); }
     net = {state: null, bench: null, score: [0, 0], scored: null, stall: 0};
-    await loadModels(FOE.parts.map(p => byId.get(p.item))).catch(() => {});
+    // Asked for again on a bad network; one still missing is said (it was let go here, and the bench then broke on it).
+    await loadAgain(() => loadModels(FOE.parts.map(p => byId.get(p.item)))).catch(showError);
     combatOptions = NET_OPTIONS;
     el.app.classList.add('net');
     friend.open(code);
@@ -719,10 +756,14 @@ async function main() {
         for (const it of ok) { byId.set(it.id, it); stage.items.set(it.id, it); }
         setNames(ok);
       }
-      await loadModels(st.prepare.loadouts.flatMap(lo => lo.parts.map(p => byId.get(p.item))));
+      await loadAgain(() => loadModels(st.prepare.loadouts.flatMap(lo => lo.parts.map(p => byId.get(p.item)))));
+      // The match needs the engine here: one whose file never came is asked for again too.
+      await loadAgain(warmEngine);
       el.busy.hidden = true;
       return true;
     } catch (e) {
+      // A file still cut off after its tries: 没加载完 with its key, not the browser's English.
+      if (e?.cutOff || CUT_OFF.test(e?.message)) { showError(e); return false; }
       console.error(e);
       say(e.message);
       return false;
@@ -1800,7 +1841,7 @@ async function main() {
     el.busy.hidden = false;
     const defs = ns ? ns.prepare.loadouts.map(lo => ({parts: structuredClone(lo.parts)})) : [toDef(mine), toDef(FOE)];
     // A build only changes once its models are here, so this fails only on a lost connection: back to the build, 开打 lit.
-    try { await loadModels(defs.flatMap(d => d.parts).map(p => byId.get(p.item))); } catch (e) {
+    try { await loadAgain(() => loadModels(defs.flatMap(d => d.parts).map(p => byId.get(p.item)))); } catch (e) {
       console.error(e);
       if (id !== runId) return;
       if (ns) { say('3D 没下载下来，这局开不了'); return; }
@@ -2464,6 +2505,7 @@ async function main() {
     if (!s) { mounted(); return; }
     const {api} = s;
     if (api.fileUrl) shootFile = api.fileUrl;
+    if (api.forgetFile) shootForget = api.forgetFile;
     if (judge) await addItems(s.items);
     // The backend is down: the 角色库 has what the page shipped with. The 评委版's backend was slow already, so 拍一件
     // doesn't wait for these.

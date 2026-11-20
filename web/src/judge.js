@@ -29,12 +29,16 @@ export const showcases = [
 let closePot = () => {};
 // The pot's 3D into its box, once per showing of the page: let go when the page closes, built again when it comes back
 // (Castor, Elara 3d42a0c1: back from a match it stayed the still).
-function loadPot() {
+function loadPot(tries = __NETPLAY__ ? 2 : 0) {
   const intro = document.getElementById('intro'), hint = document.getElementById('introHint'), req = closePot = () => {};
   import('./potview.js').then(m => m.showPot(document.getElementById('introModel'), hint, document.getElementById('introHull'),
     () => closePot === req && !intro.hidden)).then(close => {
     if (intro.hidden || closePot !== req) close(); else closePot = close;
-  }).catch(() => { hint.textContent = '3D 未载入 · 显示改装参考图'; });
+  }).catch(() => {
+    // 好友对撞 on a phone network: the pot's model cut off is asked for again before the picture stands in (远夏 801288e4).
+    if (tries && closePot === req && !intro.hidden) setTimeout(() => { if (closePot === req && !intro.hidden) loadPot(tries - 1); }, 1500);
+    else hint.textContent = '3D 未载入 · 显示改装参考图';
+  });
 }
 export function readyIntro(onPick, onShoot) {
   const intro = document.getElementById('intro'), go = document.getElementById('introGo'), pvp = document.getElementById('introPvp');
