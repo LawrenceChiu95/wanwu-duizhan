@@ -54,4 +54,6 @@ PORT=7860 NETPLAY_WEB_ROOT="$PWD/web/dist-judge-position" npm --prefix tools/net
 
 两个 HTTP 路径分别承担不同权限。`/api/netplay/models/…` 按房间和当前局只读，给同房两方下载所选模型。`/api/shoot/…` 给新站自己的浏览器转发原拍照接口，原有额度和身份校验继续由 4331 执行。服务器校验浏览器来源后才转发；只转发固定方法和路径。现有评委浏览器身份留在原域名。测试使用假接口，公网验证只查询健康和额度。
 
+启用生产拍照通道时设 `NETPLAY_SHOOT_TUNNEL=1`，`NETPLAY_SHOOT_BACKEND_ORIGIN` 填 4331 已接受的 HTTPS 源，`WANWU_NETPLAY_TUNNEL_TOKEN` 由该创空间的密文配置提供。Mac 另起一个客户端，沿用固定端口 4331 和已有的 WSS 证书校验，使用独立密钥，只在该创空间容器开放回环 17681。客户端配置见 `frpc.example.toml`。两边的 4331 会话权限、设备及全站额度由同一个后台校验。断线时内置件对战仍可使用。
+
 私有对账记录位于 `NETPLAY_TRACE_DIR`，与静态文件分开；容器更新前导出所需记录。室内状态存在内存中，容器重启时玩家要重新开房。

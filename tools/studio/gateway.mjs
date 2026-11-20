@@ -86,11 +86,11 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
   };
   const server = tls ? https.createServer({...tls, minVersion: 'TLSv1.2'}, handler) : http.createServer(handler);
   server.headersTimeout = 10000; server.requestTimeout = 35000;
-  server.on('upgrade', (req, socket, head) => {
-    socket.on('error', () => socket.destroy());
+  function upgradeTunnel(req, socket, head) {
     // ModelScope percent-encodes ! before forwarding the upgrade. Accept only
     // that observed spelling or frp's literal path, with no query or suffix.
-    if (!['/~!frp', '/~%21frp'].includes(req.url) || req.method !== 'GET') { socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return; }
+    if (!['/~!frp', '/~%21frp'].includes(req.url) || req.method !== 'GET') return false;
+    socket.on('error', () => socket.destroy());
     const upstream = http.request({host: '127.0.0.1', port: frpPort, path: '/~!frp', method: 'GET', headers: {...req.headers, host: '127.0.0.1:' + frpPort}, agent: false});
     upstream.setTimeout(10000, () => upstream.destroy());
     socket.on('close', () => upstream.destroy());
@@ -107,6 +107,12 @@ export function createGateway({publicOrigin, webRoot = null, apiPort = 7001, frp
       socket.pipe(other); other.pipe(socket);
     });
     upstream.end();
+    return true;
+  }
+  server.on('upgrade', (req, socket, head) => {
+    if (upgradeTunnel(req, socket, head)) return;
+    socket.on('error', () => socket.destroy());
+    socket.end('HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
   });
-  return {server, ready, disconnect() { for (const socket of sockets) socket.destroy(); }};
+  return {server, ready, upgradeTunnel, disconnect() { for (const socket of sockets) socket.destroy(); }};
 }
