@@ -2171,8 +2171,9 @@ async function main() {
   // One yellow key for what to do next, at most one outlined key under it, the rest a line of small links (远夏 a63667e4
   // 「我根本就不知道要点哪个」, Elara ee078f5c). Each key's `act` is one of RESULT_ACTS.
   function showOutcome(o, advice = null) {
-    // 「你」 goes the moment any card comes up, not fading over it (one the room ended never turned it off: Elara 8f0804a2).
-    stage.showMe = false; overlay.meShown = 0;
+    // 好友对撞: 「你」 goes the moment any card comes up, not fading over it (one the room ended never turned it off: Elara
+    // 8f0804a2). Single-player's fades as it always has (Elara 3f8972db).
+    if (net) { stage.showMe = false; overlay.meShown = 0; }
     el.result.classList.toggle('clear', Boolean(o.clear));
     el.result.classList.toggle('lost', Boolean(o.lost));
     $('clearTrio').hidden = !o.clear;
@@ -2305,8 +2306,9 @@ async function main() {
     el.libGrid.innerHTML = shown.map(id => cardHtml(id, k, first.includes(id))).join('');
     el.libGrid.scrollTop = again ? top : 0;
     // 好友对撞's address keeps its own photo items, not the 评委链接's: said the first time the 角色库 opens here, until 知道了
-    // or the 角色库 is shut (Elara 497bde95; docs/netplay-spec.md: the first version brings none over).
-    if (__NETPLAY__ && !again && !libNoteSeen()) $('libNote').hidden = false;
+    // or the 角色库 is shut (Elara 497bde95; docs/netplay-spec.md: the first version brings none over). The 评委链接 itself
+    // never says it (Elara 3f8972db).
+    if (__FRIEND_SITE__ && !again && !libNoteSeen()) $('libNote').hidden = false;
     el.library.hidden = false;
     revealUnseen();
     for (const card of el.libGrid.querySelectorAll('.card')) {
@@ -2330,8 +2332,9 @@ async function main() {
       };
       const how = card.querySelector('[data-how]');
       if (how) how.onclick = () => openHow(id);
-      // The card's foot (where it came from) picks it too: a tap anywhere on a card but 看它怎么来的 puts it on.
-      card.onclick = ev => { if (!ev.target.closest('.pick, [data-how]')) card.querySelector('.pick').click(); };
+      // The card's foot (where it came from) picks it too: a tap anywhere on a card but 看它怎么来的 puts it on. 好友对撞's own
+      // address only: the 评委链接's cards are as they were (Elara 3f8972db).
+      if (__FRIEND_SITE__) card.onclick = ev => { if (!ev.target.closest('.pick, [data-how]')) card.querySelector('.pick').click(); };
     }
     // The 3D turns in as each model arrives (the page only loads a model once a card or a build needs it): the cards on
     // screen together first, so a small model is not stuck behind a big one (task #37), then the rest.

@@ -25,12 +25,15 @@ try {
   console.log(JSON.stringify({width,checkpoint:'begin'}));
   const context=await browser.newContext({viewport:{width,height:700},hasTouch:true,isMobile:true});
   try {
-   const page=await context.newPage(),errors=[],api=[];
+   // asked: the 评委链接 built with 好友对撞 (WANWU_NETPLAY=judge) asks once whether rooms answer here; turned away, it is
+   // the 评委版 page as before, which the rest checks.
+   const page=await context.newPage(),errors=[],api=[],asked=[];
    page.setDefaultTimeout(30000);page.on('pageerror',e => errors.push(e.message));
    page.on('console',m => {if(m.type()==='error') console.error(m.text());});
    page.on('response',r => {if(r.status()>=400) console.error('HTTP',r.status(),r.url());});
    await page.route('**/*',route => {
     const url=new URL(route.request().url());
+    if(url.origin===origin && url.pathname==='/api/netplay/health') {asked.push(url.pathname);return route.abort();}
     if(url.origin!==origin || url.pathname.startsWith('/api/')) {api.push(url.pathname);return route.abort();}
     return route.continue();
    });
@@ -187,7 +190,8 @@ try {
    await goHome('pvp-2p-library',[() => page.locator('#libBack'),() => page.locator('#pvpBack')]);
    await choose(true);await page.locator('#goBtn').tap();await page.waitForFunction(() => window.__top.status().pick===1);await fight(true);
    await choose(false);assert.equal((await state()).pvp,false);await goHome('solo-again');
-   assert.deepEqual(api,[],'Fake album path makes zero backend/external requests');assert.deepEqual(errors,[],'No page errors');
+   assert.deepEqual(api,[],'Fake album path makes zero backend/external requests');assert.ok(asked.length<=1,'One ask for the room service at most');
+   assert.equal(await page.locator('#introFriend').count(),0,'No 好友对撞 key without the room service');assert.deepEqual(errors,[],'No page errors');
   } finally {await context.close();}
  }
  console.log(JSON.stringify({build,report,passed:true},null,2));
