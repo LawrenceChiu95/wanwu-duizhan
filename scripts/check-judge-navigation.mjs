@@ -7,6 +7,7 @@ import {chromium} from '../web/node_modules/playwright/index.mjs';
 // The ladder's second opponent, the one the first win over 狂冲 unlocks (data/foes.json order).
 const secondFoe=JSON.parse(await readFile(new URL('../data/foes.json',import.meta.url))).foes[1].name;
 const build=path.resolve(process.argv[2]??'web/dist-judge-position');
+const withFriends=process.argv.includes('--with-friends');
 assert((await stat(path.join(build,'index.html'))).isFile(),'Pass the built judge directory');
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.wasm':'application/wasm','.glb':'model/gltf-binary','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.mp3':'audio/mpeg'};
 const server=createServer(async(req,res) => {
@@ -25,15 +26,18 @@ try {
   console.log(JSON.stringify({width,checkpoint:'begin'}));
   const context=await browser.newContext({viewport:{width,height:700},hasTouch:true,isMobile:true});
   try {
-   // asked: the 评委链接 built with 好友对撞 (WANWU_NETPLAY=judge) asks once whether rooms answer here; turned away, it is
-   // the 评委版 page as before, which the rest checks.
+   // The judge bundle probes room availability once. The photo fixture still makes no backend request.
    const page=await context.newPage(),errors=[],api=[],asked=[];
    page.setDefaultTimeout(30000);page.on('pageerror',e => errors.push(e.message));
    page.on('console',m => {if(m.type()==='error') console.error(m.text());});
    page.on('response',r => {if(r.status()>=400) console.error('HTTP',r.status(),r.url());});
    await page.route('**/*',route => {
     const url=new URL(route.request().url());
-    if(url.origin===origin && url.pathname==='/api/netplay/health') {asked.push(url.pathname);return route.abort();}
+    if(url.origin===origin && url.pathname==='/api/netplay/health') {
+     asked.push(url.pathname);
+     if(withFriends) return route.fulfill({json:{status:'ok',rooms:0,connectedPlayers:0}});
+     return route.abort();
+    }
     if(url.origin!==origin || url.pathname.startsWith('/api/')) {api.push(url.pathname);return route.abort();}
     return route.continue();
    });
@@ -82,7 +86,9 @@ try {
      await back.tap();await welcome();report.push({width,screen,home:true,taps:keys.length+1});
     }
    };
-   await welcome();report.push({width,screen:'welcome',modes:true});
+   await welcome();
+   if(withFriends) await page.locator('#introFriend').waitFor({state:'visible'});
+   report.push({width,screen:'welcome',modes:true});
    await choose(false);await goHome('solo-build');
    await choose(false);await page.locator('[data-pick="0"]').tap();await page.locator('#library').waitFor({state:'visible'});
    await goHome('solo-library',() => page.locator('#libBack'));
@@ -190,8 +196,11 @@ try {
    await goHome('pvp-2p-library',[() => page.locator('#libBack'),() => page.locator('#pvpBack')]);
    await choose(true);await page.locator('#goBtn').tap();await page.waitForFunction(() => window.__top.status().pick===1);await fight(true);
    await choose(false);assert.equal((await state()).pvp,false);await goHome('solo-again');
-   assert.deepEqual(api,[],'Fake album path makes zero backend/external requests');assert.ok(asked.length<=1,'One ask for the room service at most');
-   assert.equal(await page.locator('#introFriend').count(),0,'No 好友对撞 key without the room service');assert.deepEqual(errors,[],'No page errors');
+   assert.deepEqual(api,[],'Fake album path makes zero backend/external requests');
+   if(withFriends) assert.equal(asked.length,1,'Check room availability once');
+   else assert.ok(asked.length<=1,'One ask for the room service at most');
+   assert.equal(await page.locator('#introFriend').count(),Number(withFriends),'Show 好友对撞 only when room service answers');
+   assert.deepEqual(errors,[],'No page errors');
   } finally {await context.close();}
  }
  console.log(JSON.stringify({build,report,passed:true},null,2));
